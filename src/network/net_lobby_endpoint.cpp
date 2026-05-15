@@ -13,18 +13,17 @@ namespace splonks::network {
 
 namespace {
 
-constexpr std::uint64_t kRemoteEndpointTimeoutFrames = 180;
+constexpr std::uint64_t kRemoteEndpointTimeoutPumpTicks = 180;
 
 } // namespace
 
 void MarkRemoteEndpointHeard(
     NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    std::uint64_t frame
+    const NetEndpoint& endpoint
 ) {
     for (NetRemoteEndpoint& remote : transport.remotes) {
         if (EndpointsEqual(remote.endpoint, endpoint)) {
-            remote.last_heard_frame = frame;
+            remote.last_heard_pump_tick = transport.pump_tick;
             return;
         }
     }
@@ -115,6 +114,10 @@ void RemoveRemotePlayers(
         ),
         transport.remotes.end()
     );
+
+    if (state.net_session.role == NetRole::Host) {
+        BeginJoinBarrierTopologyRemoval(state, transport, player_ids);
+    }
 }
 
 void RemoveRemoteEndpoint(
@@ -148,8 +151,8 @@ void RemoveRemoteEndpoint(
 void CleanupTimedOutRemoteEndpoints(State& state, NetTransportRuntime& transport) {
     std::vector<NetEndpoint> timed_out;
     for (const NetRemoteEndpoint& remote : transport.remotes) {
-        if (state.frame > remote.last_heard_frame &&
-            state.frame - remote.last_heard_frame > kRemoteEndpointTimeoutFrames) {
+        if (transport.pump_tick > remote.last_heard_pump_tick &&
+            transport.pump_tick - remote.last_heard_pump_tick > kRemoteEndpointTimeoutPumpTicks) {
             timed_out.push_back(remote.endpoint);
         }
     }

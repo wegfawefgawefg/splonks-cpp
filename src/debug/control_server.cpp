@@ -957,8 +957,7 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         const network::LockstepFrame debug_frame =
             state.net_session.lockstep_next_frame_to_step;
         for (const PlayerSlot& slot : state.players.slots) {
-            if (!slot.connected || slot.player_id == kInvalidPlayerId ||
-                !slot.ent_vid.has_value()) {
+            if (!slot.connected || slot.player_id == kInvalidPlayerId) {
                 continue;
             }
             if (!first_input_player) {
@@ -1040,6 +1039,7 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         out << "{\"socket_port\":" << state.net_transport->socket.BoundPort()
             << ",\"join_request_pending\":"
             << (state.net_transport->join_request_pending ? "true" : "false")
+            << ",\"pump_tick\":" << state.net_transport->pump_tick
             << ",\"remotes\":" << state.net_transport->remotes.size()
             << ",\"remote_endpoints\":[";
         for (std::size_t i = 0; i < state.net_transport->remotes.size(); ++i) {
@@ -1049,6 +1049,7 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
             }
             out << "{\"endpoint\":" << JsonString(remote.endpoint.address + ":" + std::to_string(remote.endpoint.port))
                 << ",\"last_heard_frame\":" << remote.last_heard_frame
+                << ",\"last_heard_pump_tick\":" << remote.last_heard_pump_tick
                 << ",\"players\":[";
             for (std::size_t player_index = 0; player_index < remote.player_ids.size(); ++player_index) {
                 if (player_index > 0) {

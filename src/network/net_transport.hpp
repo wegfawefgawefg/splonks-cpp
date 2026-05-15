@@ -56,6 +56,7 @@ struct NetRemoteEndpoint {
     std::vector<PlayerId> player_ids;
     NetEndpoint endpoint;
     std::uint64_t last_heard_frame = 0;
+    std::uint64_t last_heard_pump_tick = 0;
     std::uint64_t next_ping_send_time_ms = 0;
     std::uint32_t next_ping_sequence = 1;
 };
@@ -76,6 +77,7 @@ struct NetTransportRuntime {
     std::uint64_t fuzzer_next_bandwidth_send_time_ms = 0;
     std::uint32_t fuzzer_rng_state = 0xA341316CU;
     std::uint32_t fuzzer_burst_packets_remaining = 0;
+    std::uint64_t pump_tick = 0;
     std::string last_error;
     bool capture_outgoing_packets = false;
     std::vector<UdpPacket> captured_packets;

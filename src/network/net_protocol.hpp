@@ -36,6 +36,8 @@ enum class NetPacketType : std::uint16_t {
     SnapshotResyncAck = 25,
     JoinBarrierStatus = 26,
     JoinBarrierResume = 27,
+    JoinBarrierTopology = 28,
+    JoinBarrierTopologyAck = 29,
 };
 
 struct NetPacketHeader {
@@ -176,6 +178,26 @@ struct JoinBarrierResumePacket {
     std::uint64_t resume_frame = 0;
 };
 
+struct JoinBarrierTopologyPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t barrier_id = 0;
+    std::uint64_t barrier_frame = 0;
+    std::uint32_t player_count = 0;
+    std::array<PlayerId, kNetPlayersPerProcess> player_ids{};
+    std::array<float, kNetPlayersPerProcess> player_pos_x{};
+    std::array<float, kNetPlayersPerProcess> player_pos_y{};
+    std::uint32_t removed_player_count = 0;
+    std::array<PlayerId, kNetPlayersPerProcess> removed_player_ids{};
+};
+
+struct JoinBarrierTopologyAckPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t barrier_id = 0;
+    std::uint8_t success = 0;
+};
+
 struct EncodedNetPacket {
     std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
     std::size_t size = 0;
@@ -194,6 +216,8 @@ EncodedNetPacket EncodeSnapshotResyncChunk(const SnapshotResyncChunkPacket& pack
 EncodedNetPacket EncodeSnapshotResyncAck(const SnapshotResyncAckPacket& packet);
 EncodedNetPacket EncodeJoinBarrierStatus(const JoinBarrierStatusPacket& packet);
 EncodedNetPacket EncodeJoinBarrierResume(const JoinBarrierResumePacket& packet);
+EncodedNetPacket EncodeJoinBarrierTopology(const JoinBarrierTopologyPacket& packet);
+EncodedNetPacket EncodeJoinBarrierTopologyAck(const JoinBarrierTopologyAckPacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
 std::optional<PingPacket> TryDecodePing(const std::uint8_t* bytes, std::size_t size);
@@ -207,6 +231,8 @@ std::optional<SnapshotResyncChunkPacket> TryDecodeSnapshotResyncChunk(const std:
 std::optional<SnapshotResyncAckPacket> TryDecodeSnapshotResyncAck(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinBarrierStatusPacket> TryDecodeJoinBarrierStatus(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinBarrierResumePacket> TryDecodeJoinBarrierResume(const std::uint8_t* bytes, std::size_t size);
+std::optional<JoinBarrierTopologyPacket> TryDecodeJoinBarrierTopology(const std::uint8_t* bytes, std::size_t size);
+std::optional<JoinBarrierTopologyAckPacket> TryDecodeJoinBarrierTopologyAck(const std::uint8_t* bytes, std::size_t size);
 
 template <std::size_t N>
 std::string ReadFixedString(const std::array<char, N>& text) {

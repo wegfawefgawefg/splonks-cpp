@@ -258,6 +258,9 @@ struct NetSessionState {
     JoinBarrierPhase join_barrier_phase = JoinBarrierPhase::None;
     PlayerId join_barrier_active_peer_id = kInvalidPlayerId;
     std::vector<PlayerId> join_barrier_queue;
+    std::vector<PlayerId> join_barrier_topology_ack_peers;
+    std::vector<PlayerId> join_barrier_joined_player_ids;
+    std::vector<PlayerId> join_barrier_removed_player_ids;
     std::uint32_t join_barrier_transfer_id = 0;
     std::uint64_t join_barrier_snapshot_frame = 0;
     std::uint32_t join_barrier_chunk_count = 0;

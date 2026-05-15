@@ -17,6 +17,8 @@ static_assert(sizeof(SnapshotResyncChunkPacket) <= kNetPacketMaxBytes - sizeof(N
 static_assert(sizeof(SnapshotResyncAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(JoinBarrierStatusPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(JoinBarrierResumePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(JoinBarrierTopologyPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(JoinBarrierTopologyAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
 
@@ -120,6 +122,14 @@ EncodedNetPacket EncodeJoinBarrierStatus(const JoinBarrierStatusPacket& packet) 
 
 EncodedNetPacket EncodeJoinBarrierResume(const JoinBarrierResumePacket& packet) {
     return EncodePayload(NetPacketType::JoinBarrierResume, packet);
+}
+
+EncodedNetPacket EncodeJoinBarrierTopology(const JoinBarrierTopologyPacket& packet) {
+    return EncodePayload(NetPacketType::JoinBarrierTopology, packet);
+}
+
+EncodedNetPacket EncodeJoinBarrierTopologyAck(const JoinBarrierTopologyAckPacket& packet) {
+    return EncodePayload(NetPacketType::JoinBarrierTopologyAck, packet);
 }
 
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size) {
@@ -325,6 +335,44 @@ std::optional<JoinBarrierResumePacket> TryDecodeJoinBarrierResume(
         return std::nullopt;
     }
     JoinBarrierResumePacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    return packet;
+}
+
+std::optional<JoinBarrierTopologyPacket> TryDecodeJoinBarrierTopology(
+    const std::uint8_t* bytes,
+    std::size_t size
+) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::JoinBarrierTopology, offset)) {
+        return std::nullopt;
+    }
+    JoinBarrierTopologyPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.player_count = std::min<std::uint32_t>(
+        packet.player_count,
+        static_cast<std::uint32_t>(packet.player_ids.size())
+    );
+    packet.removed_player_count = std::min<std::uint32_t>(
+        packet.removed_player_count,
+        static_cast<std::uint32_t>(packet.removed_player_ids.size())
+    );
+    return packet;
+}
+
+std::optional<JoinBarrierTopologyAckPacket> TryDecodeJoinBarrierTopologyAck(
+    const std::uint8_t* bytes,
+    std::size_t size
+) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::JoinBarrierTopologyAck, offset)) {
+        return std::nullopt;
+    }
+    JoinBarrierTopologyAckPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }

@@ -9,6 +9,8 @@
 #include "state.hpp"
 #include "world_query.hpp"
 
+#include <algorithm>
+
 namespace splonks::world_ops {
 
 namespace {
@@ -80,6 +82,18 @@ bool DeactivateEnt(State& state, VID ent_vid) {
 
     ents::common::ReleaseEntFromHolder(*ent, state);
 
+    state.players.ClearEntRef(ent->vid);
+    auto& tool_states = state.ent_tools.tool_states;
+    tool_states.erase(
+        std::remove_if(
+            tool_states.begin(),
+            tool_states.end(),
+            [ent_vid](const EntToolState& tool_state) {
+                return tool_state.owner_vid == ent_vid;
+            }
+        ),
+        tool_states.end()
+    );
     state.ents.SetInactive(ent->vid.id);
     return true;
 }

@@ -416,7 +416,9 @@ void StepSingleTickWithMode(
     SimulationTickMode mode
 ) {
     if (mode == SimulationTickMode::Normal &&
-        (state.mode == Mode::Playing || state.mode == Mode::GameOver) &&
+        (state.mode == Mode::Playing ||
+         state.mode == Mode::StageTransition ||
+         state.mode == Mode::GameOver) &&
         network::IsInputLockstepActive(state) &&
         !network::PrepareInputLockstepFrame(state, graphics)) {
         return;
@@ -452,7 +454,7 @@ void StepSingleTickWithMode(
         StepPlaying(state, audio, graphics, kTimestep, mode);
         break;
     case Mode::StageTransition:
-        StepStageTransition(state, audio, graphics);
+        StepStageTransition(state, audio, graphics, mode);
         break;
     case Mode::GameOver:
         StepGameOver(state, audio, graphics, kTimestep, mode);
@@ -507,7 +509,7 @@ void StepPlaying(
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEnts(state, audio, graphics, dt);
-    if (mode == SimulationTickMode::Normal) {
+    if (mode == SimulationTickMode::Normal && !network::IsInputLockstepActive(state)) {
         network::StepNetworkLobby(state, graphics);
     }
     UpdateAudioEmitters(state, audio, graphics);
@@ -559,9 +561,16 @@ void StepPlaying(
     state.stage_frame += 1;
 }
 
-void StepStageTransition(State& state, Audio& audio, Graphics& graphics) {
+void StepStageTransition(
+    State& state,
+    Audio& audio,
+    Graphics& graphics,
+    SimulationTickMode mode
+) {
     (void)audio;
-    network::StepNetworkLobby(state, graphics);
+    if (mode == SimulationTickMode::Normal && !network::IsInputLockstepActive(state)) {
+        network::StepNetworkLobby(state, graphics);
+    }
 
     if (network::IsInputLockstepSession(state)) {
         if (state.scene_frame < kNetworkStageTransitionFrames) {
@@ -624,7 +633,7 @@ void StepGameOver(
     state.stage.SyncTileShakeGrid();
     StepEnts(state, audio, graphics, dt);
     ApplyLockstepGameOverConfirm(state, graphics);
-    if (mode == SimulationTickMode::Normal) {
+    if (mode == SimulationTickMode::Normal && !network::IsInputLockstepActive(state)) {
         network::StepNetworkLobby(state, graphics);
     }
     UpdateAudioEmitters(state, audio, graphics);

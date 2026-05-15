@@ -22,19 +22,20 @@ void RegisterRemoteEndpoint(
     NetTransportRuntime& transport,
     const std::vector<PlayerId>& player_ids,
     const NetEndpoint& endpoint,
-    std::uint64_t frame
+    std::uint64_t pump_tick
 ) {
     for (NetRemoteEndpoint& remote : transport.remotes) {
         if (EndpointsEqual(remote.endpoint, endpoint)) {
             remote.player_ids = player_ids;
-            remote.last_heard_frame = frame;
+            remote.last_heard_pump_tick = pump_tick;
             return;
         }
     }
     transport.remotes.push_back(NetRemoteEndpoint{
         .player_ids = player_ids,
         .endpoint = endpoint,
-        .last_heard_frame = frame,
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = pump_tick,
     });
 }
 
@@ -177,9 +178,11 @@ void HandleJoinRequestAsHost(
         kMaxPlayersPerEndpoint
     );
     std::vector<PlayerId> player_ids;
+    bool endpoint_already_registered = false;
     for (const NetRemoteEndpoint& remote : transport.remotes) {
         if (EndpointsEqual(remote.endpoint, udp_packet.endpoint)) {
             player_ids = remote.player_ids;
+            endpoint_already_registered = true;
             player_count = std::max<std::uint32_t>(
                 static_cast<std::uint32_t>(player_ids.size()),
                 1
@@ -248,7 +251,7 @@ void HandleJoinRequestAsHost(
         peer_state->endpoint_port = udp_packet.endpoint.port;
         peer_state->connected = true;
     }
-    RegisterRemoteEndpoint(transport, player_ids, udp_packet.endpoint, state.frame);
+    RegisterRemoteEndpoint(transport, player_ids, udp_packet.endpoint, transport.pump_tick);
 
     const Vec2 host_spawn = GetPrimaryPlayerSpawnPos(state);
     JoinAcceptPacket accept;
@@ -277,12 +280,10 @@ void HandleJoinRequestAsHost(
     const EncodedNetPacket encoded = EncodeJoinAccept(accept);
     SendEncodedPacket(transport, udp_packet.endpoint, encoded);
 
-    // Late join changes the lockstep player set. Pause stepping and catch every
-    // connected peer up from the same host snapshot before simulation resumes.
-    for (const NetRemoteEndpoint& remote : transport.remotes) {
-        if (!remote.player_ids.empty()) {
-            BeginJoinBarrierCatchup(state, remote.player_ids.front());
-        }
+    // Late join changes the lockstep player set. Pause stepping, snapshot only
+    // the joining endpoint, and send already-synced peers a small topology delta.
+    if (!endpoint_already_registered && !player_ids.empty()) {
+        BeginJoinBarrierTopologyChange(state, transport, player_ids);
     }
 }
 

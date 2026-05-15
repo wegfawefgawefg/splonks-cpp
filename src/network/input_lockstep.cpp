@@ -344,6 +344,23 @@ bool LockstepInputBuffer::HasPredictedRecordThroughFrame(LockstepFrame frame) co
     );
 }
 
+bool LockstepInputBuffer::HasNonCanonicalRecordThroughFrame(
+    const std::vector<PlayerId>& player_ids,
+    LockstepFrame frame
+) const {
+    return std::any_of(
+        records_.begin(),
+        records_.end(),
+        [&player_ids, frame](const LockstepInputRecord& record) {
+            if (record.frame > frame || record.canonical) {
+                return false;
+            }
+            return std::find(player_ids.begin(), player_ids.end(), record.player_id) !=
+                   player_ids.end();
+        }
+    );
+}
+
 void LockstepInputBuffer::ClearBefore(LockstepFrame frame) {
     records_.erase(
         std::remove_if(

@@ -58,8 +58,25 @@ void HandleLockstepSettingsPacket(State& state, const LockstepSettingsPacket& pa
 void HandleLockstepHashPacket(State& state, const LockstepHashNetPacket& packet);
 void RequestHostSnapshotResync(State& state, PlayerId target_peer_id);
 void BeginJoinBarrierCatchup(State& state, PlayerId target_peer_id);
+void BeginJoinBarrierTopologyChange(
+    State& state,
+    const NetTransportRuntime& transport,
+    const std::vector<PlayerId>& joined_player_ids
+);
+void BeginJoinBarrierTopologyRemoval(
+    State& state,
+    const NetTransportRuntime& transport,
+    const std::vector<PlayerId>& removed_player_ids
+);
 void HandleJoinBarrierStatus(State& state, const JoinBarrierStatusPacket& packet);
 void HandleJoinBarrierResume(State& state, const JoinBarrierResumePacket& packet);
+void HandleJoinBarrierTopology(
+    State& state,
+    const Graphics& graphics,
+    NetTransportRuntime& transport,
+    const JoinBarrierTopologyPacket& packet
+);
+void HandleJoinBarrierTopologyAck(State& state, const JoinBarrierTopologyAckPacket& packet);
 void HandleSnapshotResyncRequest(
     State& state,
     const Graphics& graphics,
@@ -90,8 +107,7 @@ void RelayLockstepHashToOtherRemotes(
 bool EnsureHostSyncedStage(State& state, std::string* status_out);
 void MarkRemoteEndpointHeard(
     NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    std::uint64_t frame
+    const NetEndpoint& endpoint
 );
 void RemoveRemotePlayers(
     State& state,

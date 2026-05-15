@@ -120,6 +120,7 @@ void HandlePong(State& state, const NetEndpoint& endpoint, const PongPacket& pon
 
 void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
     SendDueHostPings(state, transport);
+    CleanupTimedOutRemoteEndpoints(state, transport);
     for (int i = 0; i < kPacketsPerPump; ++i) {
         std::string error;
         const std::optional<UdpPacket> packet = transport.socket.Receive(&error);
@@ -127,12 +128,11 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             transport.last_error = error;
         }
         if (!packet.has_value()) {
-            CleanupTimedOutRemoteEndpoints(state, transport);
             return;
         }
         transport.fuzzer_stats.packets_received += 1U;
 
-        MarkRemoteEndpointHeard(transport, packet->endpoint, state.frame);
+        MarkRemoteEndpointHeard(transport, packet->endpoint);
 
         if (const std::optional<JoinRequestPacket> request =
                 TryDecodeJoinRequest(packet->bytes.data(), packet->size)) {
@@ -189,6 +189,12 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
+        if (const std::optional<JoinBarrierTopologyAckPacket> ack =
+                TryDecodeJoinBarrierTopologyAck(packet->bytes.data(), packet->size)) {
+            HandleJoinBarrierTopologyAck(state, *ack);
+            continue;
+        }
+
         if (const std::optional<JoinBarrierStatusPacket> status =
                 TryDecodeJoinBarrierStatus(packet->bytes.data(), packet->size)) {
             // Host owns join barriers. Ignore peer-originated status packets.
@@ -200,7 +206,14 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             // Host owns join barriers. Ignore peer-originated resume packets.
             continue;
         }
+
+        if (const std::optional<JoinBarrierTopologyPacket> topology =
+                TryDecodeJoinBarrierTopology(packet->bytes.data(), packet->size)) {
+            // Host owns topology deltas. Ignore peer-originated topology packets.
+            continue;
+        }
     }
+    CleanupTimedOutRemoteEndpoints(state, transport);
 }
 
 void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& transport) {
@@ -270,6 +283,12 @@ void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& tran
         if (const std::optional<JoinBarrierStatusPacket> status =
                 TryDecodeJoinBarrierStatus(packet->bytes.data(), packet->size)) {
             HandleJoinBarrierStatus(state, *status);
+            continue;
+        }
+
+        if (const std::optional<JoinBarrierTopologyPacket> topology =
+                TryDecodeJoinBarrierTopology(packet->bytes.data(), packet->size)) {
+            HandleJoinBarrierTopology(state, graphics, transport, *topology);
             continue;
         }
 

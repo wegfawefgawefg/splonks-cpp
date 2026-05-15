@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
-#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -25,7 +24,6 @@ constexpr LockstepFrame kInputHistoryFrames = 12;
 constexpr std::size_t kMaxPendingRemoteHashes = 128;
 constexpr std::uint32_t kInputRecordFlagCanonical = 1U << 31U;
 constexpr std::uint32_t kInputRecordFlagArbitratedMissing = 1U << 30U;
-constexpr LockstepFrame kSkippedInputNeutralAfterFrames = 6;
 // Snapshot chunks are UDP packets. Keep this below the packet pump receive budget
 // so a catchup burst does not overrun peer socket buffers and permanently miss chunks.
 constexpr std::uint32_t kSnapshotResyncChunksPerPump = 4;
@@ -42,6 +40,8 @@ struct RollbackPresentationSnapshot {
     StageLighting stage_lighting;
     Vec2 audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
     std::optional<Vec2> gameplay_camera_anchor_world_pos;
+    std::optional<VID> controlled_ent_vid;
+    std::optional<PlayerId> spectator_target_player_id;
     Vec2 play_cam_pos = Vec2::New(0.0F, 0.0F);
 };
 
@@ -423,6 +423,9 @@ void ClearJoinBarrier(State& state) {
     state.net_session.join_barrier_active = false;
     state.net_session.join_barrier_phase = JoinBarrierPhase::None;
     state.net_session.join_barrier_queue.clear();
+    state.net_session.join_barrier_topology_ack_peers.clear();
+    state.net_session.join_barrier_joined_player_ids.clear();
+    state.net_session.join_barrier_removed_player_ids.clear();
     ClearJoinBarrierTransfer(state);
     ClearLockstepHashState(state);
     SetPostCatchupHashQuietWindow(state, resume_frame);
@@ -435,13 +438,23 @@ bool IsJoinBarrierBlocking(const State& state) {
 
 void QueueJoinBarrierPeer(State& state, PlayerId target_peer_id) {
     if (target_peer_id == kInvalidPlayerId ||
-        target_peer_id == state.net_session.local_player_id ||
-        target_peer_id == state.net_session.join_barrier_active_peer_id) {
+        target_peer_id == state.net_session.local_player_id) {
         return;
     }
     std::vector<PlayerId>& queue = state.net_session.join_barrier_queue;
     if (std::find(queue.begin(), queue.end(), target_peer_id) == queue.end()) {
         queue.push_back(target_peer_id);
+    }
+}
+
+void QueueJoinBarrierTopologyAck(State& state, PlayerId target_peer_id) {
+    if (target_peer_id == kInvalidPlayerId ||
+        target_peer_id == state.net_session.local_player_id) {
+        return;
+    }
+    std::vector<PlayerId>& peers = state.net_session.join_barrier_topology_ack_peers;
+    if (std::find(peers.begin(), peers.end(), target_peer_id) == peers.end()) {
+        peers.push_back(target_peer_id);
     }
 }
 
@@ -501,6 +514,66 @@ void BroadcastJoinBarrierResume(State& state, NetTransportRuntime& transport) {
     }
 }
 
+JoinBarrierTopologyPacket BuildJoinBarrierTopologyPacket(const State& state) {
+    JoinBarrierTopologyPacket packet;
+    packet.stage_instance_id = state.net_session.stage_instance_id;
+    packet.sender_peer_id = static_cast<std::uint32_t>(state.net_session.local_player_id);
+    packet.barrier_id = state.net_session.join_barrier_id;
+    packet.barrier_frame = state.net_session.lockstep_next_frame_to_step;
+    packet.player_count = static_cast<std::uint32_t>(std::min<std::size_t>(
+        state.net_session.join_barrier_joined_player_ids.size(),
+        packet.player_ids.size()
+    ));
+    for (std::uint32_t i = 0; i < packet.player_count; ++i) {
+        const PlayerId player_id = state.net_session.join_barrier_joined_player_ids[i];
+        packet.player_ids[i] = player_id;
+        Vec2 pos = GetRemoteSpawnPos(state);
+        if (const PlayerSlot* const slot = state.players.Find(player_id)) {
+            if (slot->ent_vid.has_value()) {
+                if (const Ent* const ent = state.ents.GetEnt(*slot->ent_vid)) {
+                    pos = ent->pos;
+                }
+            }
+        }
+        packet.player_pos_x[i] = pos.x;
+        packet.player_pos_y[i] = pos.y;
+    }
+    packet.removed_player_count = static_cast<std::uint32_t>(std::min<std::size_t>(
+        state.net_session.join_barrier_removed_player_ids.size(),
+        packet.removed_player_ids.size()
+    ));
+    for (std::uint32_t i = 0; i < packet.removed_player_count; ++i) {
+        packet.removed_player_ids[i] = state.net_session.join_barrier_removed_player_ids[i];
+    }
+    return packet;
+}
+
+void SendJoinBarrierTopologyPackets(State& state, NetTransportRuntime& transport) {
+    if (state.net_session.join_barrier_topology_ack_peers.empty() ||
+        (state.net_session.join_barrier_joined_player_ids.empty() &&
+         state.net_session.join_barrier_removed_player_ids.empty())) {
+        return;
+    }
+    const EncodedNetPacket encoded =
+        EncodeJoinBarrierTopology(BuildJoinBarrierTopologyPacket(state));
+    for (const PlayerId peer_id : state.net_session.join_barrier_topology_ack_peers) {
+        if (state.net_session.join_barrier_transfer_id != 0 &&
+            peer_id == state.net_session.join_barrier_active_peer_id) {
+            continue;
+        }
+        const NetEndpoint* const endpoint = FindRemoteEndpointForPlayer(transport, peer_id);
+        if (endpoint != nullptr) {
+            SendEncodedPacket(transport, *endpoint, encoded);
+        }
+    }
+}
+
+bool JoinBarrierReadyToResume(const State& state) {
+    return state.net_session.join_barrier_transfer_id == 0 &&
+           state.net_session.join_barrier_queue.empty() &&
+           state.net_session.join_barrier_topology_ack_peers.empty();
+}
+
 void StartJoinBarrierSnapshotTransfer(
     State& state,
     const Graphics& graphics,
@@ -556,10 +629,14 @@ void SendPendingJoinBarrier(State& state, const Graphics& graphics, NetTransport
         return;
     }
 
+    SendJoinBarrierTopologyPackets(state, transport);
+
     if (state.net_session.join_barrier_transfer_id == 0) {
         const std::optional<PlayerId> next_peer = PopJoinBarrierPeer(state);
         if (!next_peer.has_value()) {
-            state.net_session.join_barrier_phase = JoinBarrierPhase::ReadyToResume;
+            state.net_session.join_barrier_phase = JoinBarrierReadyToResume(state)
+                ? JoinBarrierPhase::ReadyToResume
+                : JoinBarrierPhase::WaitingForCatchup;
             BroadcastJoinBarrierStatus(state, transport);
             return;
         }
@@ -611,7 +688,7 @@ bool HandleJoinBarrierSnapshotAck(State& state, const SnapshotResyncAckPacket& p
         QueueJoinBarrierPeer(state, static_cast<PlayerId>(packet.sender_peer_id));
         return true;
     }
-    state.net_session.join_barrier_phase = state.net_session.join_barrier_queue.empty()
+    state.net_session.join_barrier_phase = JoinBarrierReadyToResume(state)
         ? JoinBarrierPhase::ReadyToResume
         : JoinBarrierPhase::WaitingForCatchup;
     return true;
@@ -1039,6 +1116,8 @@ RollbackPresentationSnapshot CaptureRollbackPresentationState(
     snapshot.stage_lighting = state.stage_lighting;
     snapshot.audio_listener_world_pos = state.audio_listener_world_pos;
     snapshot.gameplay_camera_anchor_world_pos = state.gameplay_camera_anchor_world_pos;
+    snapshot.controlled_ent_vid = state.controlled_ent_vid;
+    snapshot.spectator_target_player_id = state.spectator_target_player_id;
     snapshot.play_cam_pos = graphics.play_cam.pos;
     return snapshot;
 }
@@ -1053,6 +1132,8 @@ void RestoreRollbackPresentationState(
     state.stage_lighting = snapshot.stage_lighting;
     state.audio_listener_world_pos = snapshot.audio_listener_world_pos;
     state.gameplay_camera_anchor_world_pos = snapshot.gameplay_camera_anchor_world_pos;
+    state.controlled_ent_vid = snapshot.controlled_ent_vid;
+    state.spectator_target_player_id = snapshot.spectator_target_player_id;
     graphics.play_cam.pos = snapshot.play_cam_pos;
 
     // Corrected gameplay may have changed tiles/fluids while presentation state was
@@ -1064,7 +1145,7 @@ void RestoreRollbackPresentationState(
 std::vector<PlayerId> GetConnectedPlayerIds(const State& state) {
     std::vector<PlayerId> player_ids;
     for (const PlayerSlot& slot : state.players.slots) {
-        if (slot.connected && slot.player_id != kInvalidPlayerId && slot.ent_vid.has_value()) {
+        if (slot.connected && slot.player_id != kInvalidPlayerId) {
             player_ids.push_back(slot.player_id);
         }
     }
@@ -1076,7 +1157,7 @@ std::vector<PlayerId> GetLocalPlayerIds(const State& state) {
     std::vector<PlayerId> player_ids;
     for (const PlayerSlot& slot : state.players.slots) {
         if (slot.connected && slot.connection_kind == PlayerConnectionKind::Local &&
-            slot.player_id != kInvalidPlayerId && slot.ent_vid.has_value()) {
+            slot.player_id != kInvalidPlayerId) {
             player_ids.push_back(slot.player_id);
         }
     }
@@ -1085,10 +1166,13 @@ std::vector<PlayerId> GetLocalPlayerIds(const State& state) {
 }
 
 bool AllRequiredInputsConfirmedForFrame(const State& state, LockstepFrame frame) {
-    if (state.net_session.lockstep_input_buffer.HasPredictedRecordThroughFrame(frame)) {
+    const std::vector<PlayerId> required_players = GetConnectedPlayerIds(state);
+    if (state.net_session.lockstep_input_buffer.HasNonCanonicalRecordThroughFrame(
+            required_players,
+            frame
+        )) {
         return false;
     }
-    const std::vector<PlayerId> required_players = GetConnectedPlayerIds(state);
     for (PlayerId player_id : required_players) {
         const LockstepInputRecord* const record =
             state.net_session.lockstep_input_buffer.FindRecord(player_id, frame);
@@ -1103,10 +1187,6 @@ bool CanStepWithoutRunningAheadOfRemoteInputs(
     const State& state,
     const std::vector<PlayerId>& required_players
 ) {
-    if (state.net_session.role == NetRole::Host && state.net_session.lockstep_rollback_enabled) {
-        return true;
-    }
-
     const std::vector<PlayerId> local_player_ids = GetLocalPlayerIds(state);
     const LockstepFrame frame_to_step = state.net_session.lockstep_next_frame_to_step;
     const LockstepFrame input_delay =
@@ -1156,27 +1236,6 @@ LockstepInputArbitrationStats& MutableArbitrationStatsForPlayer(
     return state.net_session.lockstep_arbitration_stats_by_player.back();
 }
 
-void RecordArbitratedMissingInput(
-    State& state,
-    PlayerId player_id,
-    LockstepFrame missing_span,
-    bool neutral
-) {
-    const std::uint32_t clamped_span =
-        static_cast<std::uint32_t>(
-            std::min<LockstepFrame>(missing_span, std::numeric_limits<std::uint32_t>::max())
-        );
-    state.net_session.lockstep_arbitrated_missing_input_count += 1;
-    state.net_session.lockstep_last_arbitrated_missing_span = clamped_span;
-    LockstepInputArbitrationStats& stats = MutableArbitrationStatsForPlayer(state, player_id);
-    stats.missing_input_count += 1;
-    stats.last_missing_span = clamped_span;
-    if (neutral) {
-        state.net_session.lockstep_arbitrated_neutral_input_count += 1;
-        stats.neutral_input_count += 1;
-    }
-}
-
 InputFrame GetCurrentLocalInputFrame(const State& state, const PlayerSlot& slot) {
     if (slot.primary_local) {
         return ToInputFrame(state.playing_input_snapshot);
@@ -1193,7 +1252,7 @@ void QueueLocalInputsThroughTargetFrame(State& state) {
         const LockstepFrame frame = state.net_session.lockstep_next_local_input_frame;
         for (const PlayerSlot& slot : state.players.slots) {
             if (!slot.connected || slot.connection_kind != PlayerConnectionKind::Local ||
-                slot.player_id == kInvalidPlayerId || !slot.ent_vid.has_value()) {
+                slot.player_id == kInvalidPlayerId) {
                 continue;
             }
             LockstepInputRecord record;
@@ -1606,53 +1665,6 @@ InputFrame PredictRemoteInputForFrame(
     return InputFrame::New();
 }
 
-InputFrame StopUnsafeInputActions(InputFrame input) {
-    input.left = false;
-    input.right = false;
-    input.up = false;
-    input.down = false;
-    input.jump = false;
-    input.run = false;
-    input.use_button = false;
-    input.equip_button = false;
-    input.pick_up_drop = false;
-    input.stop = true;
-    input.bomb = false;
-    input.rope = false;
-    input.attack = false;
-    input.buy_button = false;
-    input.emote_up = false;
-    input.emote_down = false;
-    input.quit = false;
-    input.toggle_collision_boxes = false;
-    input.regenerate_level = false;
-    return input;
-}
-
-InputFrame MakeHostArbitratedMissingInput(
-    State& state,
-    PlayerId player_id,
-    LockstepFrame frame
-) {
-    LockstepInputArbitrationStats& stats =
-        MutableArbitrationStatsForPlayer(state, player_id);
-    const LockstepFrame missing_span =
-        static_cast<LockstepFrame>(stats.last_missing_span) + 1;
-    const LockstepInputRecord* const previous =
-        state.net_session.lockstep_input_buffer.FindLatestRecordBefore(player_id, frame);
-    if (previous == nullptr) {
-        RecordArbitratedMissingInput(state, player_id, missing_span, true);
-        return InputFrame::New();
-    }
-
-    if (missing_span > kSkippedInputNeutralAfterFrames) {
-        RecordArbitratedMissingInput(state, player_id, missing_span, true);
-        return StopUnsafeInputActions(previous->input);
-    }
-    RecordArbitratedMissingInput(state, player_id, missing_span, false);
-    return previous->input;
-}
-
 void StoreHostCanonicalInput(
     State& state,
     PlayerId player_id,
@@ -1694,10 +1706,8 @@ bool BuildOrPredictFrameInputs(
         const InputFrame* input = state.net_session.lockstep_input_buffer.Find(player_id, frame);
         if (state.net_session.role == NetRole::Host) {
             if (input == nullptr) {
-                const InputFrame arbitrated_input =
-                    MakeHostArbitratedMissingInput(state, player_id, frame);
-                StoreHostCanonicalInput(state, player_id, frame, arbitrated_input, true);
-                input = state.net_session.lockstep_input_buffer.Find(player_id, frame);
+                out_inputs.clear();
+                return false;
             } else {
                 const LockstepInputRecord* const record =
                     state.net_session.lockstep_input_buffer.FindRecord(player_id, frame);
@@ -1811,6 +1821,7 @@ bool ReplayRollbackWindow(
 
 void PumpInputLockstepPackets(State& state, Graphics& graphics, NetTransportRuntime& transport) {
     const auto pump_start = std::chrono::steady_clock::now();
+    transport.pump_tick += 1U;
     FlushFuzzedOutgoingPackets(transport);
     if (state.net_session.role == NetRole::Host) {
         CleanupExpiredRetainedPlayerStates(state);
@@ -1846,6 +1857,125 @@ void BeginJoinBarrierCatchup(State& state, PlayerId target_peer_id) {
     QueueJoinBarrierPeer(state, target_peer_id);
 }
 
+void BeginJoinBarrierTopologyChange(
+    State& state,
+    const NetTransportRuntime& transport,
+    const std::vector<PlayerId>& joined_player_ids
+) {
+    if (state.net_session.role != NetRole::Host || joined_player_ids.empty()) {
+        return;
+    }
+    if (!state.net_session.join_barrier_active) {
+        BeginJoinBarrierCatchup(state, joined_player_ids.front());
+    }
+
+    std::vector<PlayerId>& joined = state.net_session.join_barrier_joined_player_ids;
+    for (const PlayerId player_id : joined_player_ids) {
+        if (player_id == kInvalidPlayerId) {
+            continue;
+        }
+        if (std::find(joined.begin(), joined.end(), player_id) == joined.end()) {
+            joined.push_back(player_id);
+        }
+        QueueJoinBarrierPeer(state, player_id);
+    }
+
+    // If another peer joins while a catchup snapshot is already in flight, the
+    // active peer's snapshot is stale only for topology. Finish its snapshot,
+    // then send a topology delta instead of forcing a second full snapshot.
+    if (state.net_session.join_barrier_active_peer_id != kInvalidPlayerId) {
+        QueueJoinBarrierTopologyAck(state, state.net_session.join_barrier_active_peer_id);
+    }
+
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        if (remote.player_ids.empty()) {
+            continue;
+        }
+        const PlayerId peer_id = remote.player_ids.front();
+        bool endpoint_is_joining = false;
+        for (const PlayerId player_id : remote.player_ids) {
+            if (std::find(joined.begin(), joined.end(), player_id) != joined.end() ||
+                std::find(
+                    state.net_session.join_barrier_queue.begin(),
+                    state.net_session.join_barrier_queue.end(),
+                    player_id
+                ) != state.net_session.join_barrier_queue.end() ||
+                player_id == state.net_session.join_barrier_active_peer_id) {
+                endpoint_is_joining = true;
+                break;
+            }
+        }
+        if (!endpoint_is_joining) {
+            QueueJoinBarrierTopologyAck(state, peer_id);
+        }
+    }
+}
+
+void BeginJoinBarrierTopologyRemoval(
+    State& state,
+    const NetTransportRuntime& transport,
+    const std::vector<PlayerId>& removed_player_ids
+) {
+    if (state.net_session.role != NetRole::Host || removed_player_ids.empty()) {
+        return;
+    }
+    if (!state.net_session.join_barrier_active) {
+        state.net_session.join_barrier_active = true;
+        state.net_session.join_barrier_id += 1U;
+        if (state.net_session.join_barrier_id == 0) {
+            state.net_session.join_barrier_id = 1;
+        }
+        state.net_session.join_barrier_phase = JoinBarrierPhase::WaitingForCatchup;
+        state.net_session.join_barrier_queue.clear();
+        ClearJoinBarrierTransfer(state);
+    }
+
+    std::vector<PlayerId>& removed = state.net_session.join_barrier_removed_player_ids;
+    for (const PlayerId player_id : removed_player_ids) {
+        if (player_id == kInvalidPlayerId ||
+            player_id == state.net_session.local_player_id) {
+            continue;
+        }
+        if (std::find(removed.begin(), removed.end(), player_id) == removed.end()) {
+            removed.push_back(player_id);
+        }
+    }
+
+    auto erase_removed = [&](std::vector<PlayerId>& values) {
+        values.erase(
+            std::remove_if(
+                values.begin(),
+                values.end(),
+                [&](PlayerId player_id) {
+                    return std::find(
+                        removed_player_ids.begin(),
+                        removed_player_ids.end(),
+                        player_id
+                    ) != removed_player_ids.end();
+                }
+            ),
+            values.end()
+        );
+    };
+    erase_removed(state.net_session.join_barrier_joined_player_ids);
+    erase_removed(state.net_session.join_barrier_queue);
+    erase_removed(state.net_session.join_barrier_topology_ack_peers);
+    if (std::find(
+            removed_player_ids.begin(),
+            removed_player_ids.end(),
+            state.net_session.join_barrier_active_peer_id
+        ) != removed_player_ids.end()) {
+        ClearJoinBarrierTransfer(state);
+    }
+
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        if (remote.player_ids.empty()) {
+            continue;
+        }
+        QueueJoinBarrierTopologyAck(state, remote.player_ids.front());
+    }
+}
+
 void HandleJoinBarrierStatus(State& state, const JoinBarrierStatusPacket& packet) {
     if (state.net_session.role != NetRole::Peer ||
         packet.stage_instance_id != state.net_session.stage_instance_id ||
@@ -1876,6 +2006,90 @@ void HandleJoinBarrierStatus(State& state, const JoinBarrierStatusPacket& packet
     state.net_session.join_barrier_chunks_done = packet.chunks_done;
     state.net_session.join_barrier_total_bytes = packet.total_bytes;
     state.net_session.join_barrier_bytes_done = packet.bytes_done;
+}
+
+void HandleJoinBarrierTopology(
+    State& state,
+    const Graphics& graphics,
+    NetTransportRuntime& transport,
+    const JoinBarrierTopologyPacket& packet
+) {
+    if (state.net_session.role != NetRole::Peer ||
+        packet.stage_instance_id != state.net_session.stage_instance_id ||
+        packet.barrier_id < state.net_session.join_barrier_id) {
+        return;
+    }
+
+    state.net_session.join_barrier_active = true;
+    state.net_session.join_barrier_id = packet.barrier_id;
+    state.net_session.join_barrier_phase = JoinBarrierPhase::WaitingForResume;
+    state.net_session.lockstep_next_frame_to_step = packet.barrier_frame;
+    state.net_session.lockstep_next_local_input_frame = packet.barrier_frame;
+    state.net_session.lockstep_input_buffer = LockstepInputBuffer{};
+    state.net_session.lockstep_rollback_snapshots.clear();
+    state.net_session.lockstep_rollback_requested_frame = std::nullopt;
+    state.net_session.join_barrier_joined_player_ids.clear();
+    state.net_session.join_barrier_removed_player_ids.clear();
+    ClearLockstepHashState(state);
+    SetPostCatchupHashQuietWindow(state, packet.barrier_frame);
+
+    std::vector<PlayerId> removed_player_ids;
+    removed_player_ids.reserve(packet.removed_player_count);
+    for (std::uint32_t i = 0; i < packet.removed_player_count; ++i) {
+        if (packet.removed_player_ids[i] != kInvalidPlayerId) {
+            removed_player_ids.push_back(packet.removed_player_ids[i]);
+            state.net_session.join_barrier_removed_player_ids.push_back(
+                packet.removed_player_ids[i]
+            );
+        }
+    }
+    if (!removed_player_ids.empty()) {
+        RemoveRemotePlayers(state, transport, removed_player_ids);
+    }
+
+    for (std::uint32_t i = 0; i < packet.player_count; ++i) {
+        const PlayerId player_id = packet.player_ids[i];
+        if (player_id == kInvalidPlayerId) {
+            continue;
+        }
+        if (const PlayerSlot* const existing = state.players.Find(player_id)) {
+            if (existing->connection_kind == PlayerConnectionKind::Local) {
+                continue;
+            }
+        }
+        state.net_session.join_barrier_joined_player_ids.push_back(player_id);
+        EnsureSpawnedPlayer(
+            state,
+            player_id,
+            false,
+            false,
+            Vec2::New(packet.player_pos_x[i], packet.player_pos_y[i]),
+            graphics
+        );
+    }
+
+    JoinBarrierTopologyAckPacket ack;
+    ack.stage_instance_id = state.net_session.stage_instance_id;
+    ack.sender_peer_id = static_cast<std::uint32_t>(state.net_session.local_player_id);
+    ack.barrier_id = packet.barrier_id;
+    ack.success = 1;
+    SendEncodedPacket(transport, transport.host_endpoint, EncodeJoinBarrierTopologyAck(ack));
+}
+
+void HandleJoinBarrierTopologyAck(State& state, const JoinBarrierTopologyAckPacket& packet) {
+    if (state.net_session.role != NetRole::Host ||
+        !state.net_session.join_barrier_active ||
+        packet.stage_instance_id != state.net_session.stage_instance_id ||
+        packet.barrier_id != state.net_session.join_barrier_id ||
+        packet.success == 0) {
+        return;
+    }
+    const PlayerId peer_id = static_cast<PlayerId>(packet.sender_peer_id);
+    std::vector<PlayerId>& peers = state.net_session.join_barrier_topology_ack_peers;
+    peers.erase(std::remove(peers.begin(), peers.end(), peer_id), peers.end());
+    if (JoinBarrierReadyToResume(state)) {
+        state.net_session.join_barrier_phase = JoinBarrierPhase::ReadyToResume;
+    }
 }
 
 void HandleJoinBarrierResume(State& state, const JoinBarrierResumePacket& packet) {
@@ -2323,6 +2537,7 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
             state.net_session.lockstep_rollback_enabled,
             frame_inputs
         )) {
+        state.net_session.lockstep_input_wait_block_count += 1;
         return false;
     }
 

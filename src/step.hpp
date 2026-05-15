@@ -30,7 +30,12 @@ void StepPlaying(
     float dt,
     SimulationTickMode mode = SimulationTickMode::Normal
 );
-void StepStageTransition(State& state, Audio& audio, Graphics& graphics);
+void StepStageTransition(
+    State& state,
+    Audio& audio,
+    Graphics& graphics,
+    SimulationTickMode mode = SimulationTickMode::Normal
+);
 void StepGameOver(
     State& state,
     Audio& audio,

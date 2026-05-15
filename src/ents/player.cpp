@@ -389,7 +389,7 @@ void StepEntLogicAsPlayer(
         Ent& player = state.ents.ents[ent_idx];
         const EntCondition player_condition = player.condition;
         if (player_condition == EntCondition::Dead) {
-            (void)common::SeverEntCarryLinksForReset(player, state);
+            (void)common::SeverEntOutboundCarryLinksForReset(player, state);
             gear_items::ClearEquippedPassiveItemVisuals(player, state, graphics);
 
             return;

@@ -421,6 +421,46 @@ std::vector<VID> SeverEntCarryLinksForReset(Ent& ent, State& state) {
     return changed_ents;
 }
 
+std::vector<VID> SeverEntOutboundCarryLinksForReset(Ent& ent, State& state) {
+    std::vector<VID> changed_ents;
+
+    const std::optional<VID> held_vid = ent.holding_vid;
+    const std::optional<VID> back_vid = ent.back_vid;
+    if (held_vid.has_value()) {
+        if (Ent* const held = state.ents.GetEntMut(*held_vid)) {
+            RestoreDetachedCarryEnt(*held);
+            TrackChangedEnt(changed_ents, held->vid);
+        }
+    }
+    if (back_vid.has_value()) {
+        if (Ent* const back = state.ents.GetEntMut(*back_vid)) {
+            RestoreDetachedCarryEnt(*back);
+            TrackChangedEnt(changed_ents, back->vid);
+        }
+    }
+
+    for (Ent& candidate : state.ents.ents) {
+        if (!candidate.active || candidate.vid == ent.vid) {
+            continue;
+        }
+
+        bool candidate_changed = false;
+        if (candidate.held_by_vid.has_value() && *candidate.held_by_vid == ent.vid) {
+            RestoreDetachedCarryEnt(candidate);
+            candidate_changed = true;
+        }
+        if (candidate_changed) {
+            TrackChangedEnt(changed_ents, candidate.vid);
+        }
+    }
+
+    ent.holding = false;
+    ent.holding_vid.reset();
+    ent.back_vid.reset();
+    TrackChangedEnt(changed_ents, ent.vid);
+    return changed_ents;
+}
+
 void DropHeldItemFromEnt(Ent& ent, State& state) {
     if (!ent.holding_vid.has_value()) {
         return;

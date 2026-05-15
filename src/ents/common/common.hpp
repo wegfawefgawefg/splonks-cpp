@@ -153,6 +153,7 @@ void AttachEntAsHeld(Ent& holder, Ent& held);
 void ReleaseEntFromHolder(Ent& ent, State& state);
 void ReleaseEntFromHolderIfAttached(Ent& ent, State& state);
 std::vector<VID> SeverEntCarryLinksForReset(Ent& ent, State& state);
+std::vector<VID> SeverEntOutboundCarryLinksForReset(Ent& ent, State& state);
 void DropHeldItemFromEnt(Ent& ent, State& state);
 bool TryPickupEntByVid(
     VID holder_vid,

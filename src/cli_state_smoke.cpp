@@ -1300,7 +1300,12 @@ bool StepReadyLockstepFrames(
                frame_inputs
            )) {
         ApplyLockstepInputsToState(peer.state, required_players, frame_inputs);
-        StepSingleTick(peer.state, audio, graphics);
+        StepSingleTickWithMode(
+            peer.state,
+            audio,
+            graphics,
+            SimulationTickMode::ReplayNoNetwork
+        );
         const CanonicalStateFingerprint fingerprint =
             ComputeGameplayDeterminismFingerprint(peer.state);
         peer.frame_hashes.push_back(fingerprint.value);
@@ -1417,6 +1422,14 @@ bool RunCanonicalInputBufferSmoke() {
     if (late_record == nullptr || late_record->canonical ||
         !late_record->input.left || late_record->input.right) {
         std::cerr << "canonical input buffer smoke failed: late owner input not retained for rollback\n";
+        return false;
+    }
+    if (!buffer.HasNonCanonicalRecordThroughFrame({2}, 7)) {
+        std::cerr << "canonical input buffer smoke failed: noncanonical history not detected\n";
+        return false;
+    }
+    if (buffer.HasNonCanonicalRecordThroughFrame({2}, 6)) {
+        std::cerr << "canonical input buffer smoke failed: noncanonical history leaked backward\n";
         return false;
     }
 
@@ -1545,11 +1558,57 @@ bool RunJoinBarrierProtocolSmoke() {
     host.net_session.join_barrier_total_bytes = 4096;
     host.net_session.join_barrier_bytes_done = 1600;
 
+    network::BeginJoinBarrierCatchup(host, 4);
     network::BeginJoinBarrierCatchup(host, 5);
-    if (host.net_session.join_barrier_queue.size() != 1 ||
-        host.net_session.join_barrier_queue[0] != 5 ||
+    if (host.net_session.join_barrier_queue.size() != 2 ||
+        host.net_session.join_barrier_queue[0] != 4 ||
+        host.net_session.join_barrier_queue[1] != 5 ||
         host.net_session.join_barrier_active_peer_id != 4) {
-        std::cerr << "join barrier protocol smoke failed: second late join did not wait behind active catchup\n";
+        std::cerr << "join barrier protocol smoke failed: active catchup peer was not requeued after topology change\n";
+        return false;
+    }
+
+    State simultaneous_host = State::New();
+    simultaneous_host.net_session.role = network::NetRole::Host;
+    simultaneous_host.net_session.local_player_id = 1;
+    simultaneous_host.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    simultaneous_host.net_session.lockstep_next_frame_to_step = 160;
+    network::NetTransportRuntime simultaneous_transport = network::NetTransportRuntime::New();
+    simultaneous_transport.remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {2},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39202},
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = 100,
+    });
+    network::BeginJoinBarrierTopologyChange(simultaneous_host, simultaneous_transport, {2});
+    if (!simultaneous_host.net_session.join_barrier_active ||
+        simultaneous_host.net_session.join_barrier_queue.size() != 1 ||
+        simultaneous_host.net_session.join_barrier_queue[0] != 2 ||
+        simultaneous_host.net_session.join_barrier_joined_player_ids.size() != 1 ||
+        simultaneous_host.net_session.join_barrier_joined_player_ids[0] != 2) {
+        std::cerr << "join barrier protocol smoke failed: first topology join was not queued for snapshot\n";
+        return false;
+    }
+
+    simultaneous_host.net_session.join_barrier_active_peer_id = 2;
+    simultaneous_host.net_session.join_barrier_phase =
+        network::JoinBarrierPhase::SendingSnapshot;
+    simultaneous_host.net_session.join_barrier_queue.clear();
+    simultaneous_host.net_session.join_barrier_transfer_id = 88;
+    simultaneous_transport.remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {3},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39203},
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = 100,
+    });
+    network::BeginJoinBarrierTopologyChange(simultaneous_host, simultaneous_transport, {3});
+    if (simultaneous_host.net_session.join_barrier_queue.size() != 1 ||
+        simultaneous_host.net_session.join_barrier_queue[0] != 3 ||
+        simultaneous_host.net_session.join_barrier_joined_player_ids.size() != 2 ||
+        simultaneous_host.net_session.join_barrier_joined_player_ids[1] != 3 ||
+        simultaneous_host.net_session.join_barrier_topology_ack_peers.size() != 1 ||
+        simultaneous_host.net_session.join_barrier_topology_ack_peers[0] != 2) {
+        std::cerr << "join barrier protocol smoke failed: simultaneous late join did not queue new peer and defer active peer topology\n";
         return false;
     }
 
@@ -1560,8 +1619,9 @@ bool RunJoinBarrierProtocolSmoke() {
     status.active = 1;
     status.phase = static_cast<std::uint8_t>(host.net_session.join_barrier_phase);
     status.active_player_id = host.net_session.join_barrier_active_peer_id;
-    status.queued_peer_count = 1;
+    status.queued_peer_count = 2;
     status.queued_peer_ids[0] = host.net_session.join_barrier_queue[0];
+    status.queued_peer_ids[1] = host.net_session.join_barrier_queue[1];
     status.transfer_id = host.net_session.join_barrier_transfer_id;
     status.snapshot_frame = host.net_session.join_barrier_snapshot_frame;
     status.chunk_count = host.net_session.join_barrier_chunk_count;
@@ -1580,6 +1640,7 @@ bool RunJoinBarrierProtocolSmoke() {
         decoded_status->active_player_id != status.active_player_id ||
         decoded_status->queued_peer_count != status.queued_peer_count ||
         decoded_status->queued_peer_ids[0] != status.queued_peer_ids[0] ||
+        decoded_status->queued_peer_ids[1] != status.queued_peer_ids[1] ||
         decoded_status->transfer_id != status.transfer_id ||
         decoded_status->snapshot_frame != status.snapshot_frame ||
         decoded_status->chunk_count != status.chunk_count ||
@@ -1587,6 +1648,131 @@ bool RunJoinBarrierProtocolSmoke() {
         decoded_status->total_bytes != status.total_bytes ||
         decoded_status->bytes_done != status.bytes_done) {
         std::cerr << "join barrier protocol smoke failed: status packet roundtrip mismatch\n";
+        return false;
+    }
+
+    network::JoinBarrierTopologyPacket topology;
+    topology.stage_instance_id = host.net_session.stage_instance_id;
+    topology.sender_peer_id = static_cast<std::uint32_t>(host.net_session.local_player_id);
+    topology.barrier_id = host.net_session.join_barrier_id;
+    topology.barrier_frame = host.net_session.lockstep_next_frame_to_step;
+    topology.player_count = 1;
+    topology.player_ids[0] = 6;
+    topology.player_pos_x[0] = 128.0F;
+    topology.player_pos_y[0] = 64.0F;
+    topology.removed_player_count = 1;
+    topology.removed_player_ids[0] = 4;
+    const network::EncodedNetPacket encoded_topology =
+        network::EncodeJoinBarrierTopology(topology);
+    const std::optional<network::JoinBarrierTopologyPacket> decoded_topology =
+        network::TryDecodeJoinBarrierTopology(
+            encoded_topology.bytes.data(),
+            encoded_topology.size
+        );
+    if (!decoded_topology.has_value() ||
+        decoded_topology->stage_instance_id != topology.stage_instance_id ||
+        decoded_topology->barrier_id != topology.barrier_id ||
+        decoded_topology->barrier_frame != topology.barrier_frame ||
+        decoded_topology->player_count != topology.player_count ||
+        decoded_topology->player_ids[0] != topology.player_ids[0] ||
+        decoded_topology->removed_player_count != topology.removed_player_count ||
+        decoded_topology->removed_player_ids[0] != topology.removed_player_ids[0]) {
+        std::cerr << "join barrier protocol smoke failed: topology packet roundtrip mismatch\n";
+        return false;
+    }
+
+    State topology_peer = State::New();
+    Graphics topology_graphics;
+    InitCliSmokeRuntimeTables(topology_graphics);
+    topology_peer.net_session.role = network::NetRole::Peer;
+    topology_peer.net_session.local_player_id = 2;
+    topology_peer.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    topology_peer.players.EnsureLocalPlayer(2, "Player 2", true);
+    topology_peer.players.EnsureRemotePlayer(4, "Player 4");
+    network::NetTransportRuntime topology_transport = network::NetTransportRuntime::New();
+    topology_transport.capture_outgoing_packets = true;
+    topology_transport.host_endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39000};
+    network::HandleJoinBarrierTopology(
+        topology_peer,
+        topology_graphics,
+        topology_transport,
+        *decoded_topology
+    );
+    const std::optional<network::JoinBarrierTopologyAckPacket> topology_ack =
+        topology_transport.captured_packets.empty()
+            ? std::nullopt
+            : network::TryDecodeJoinBarrierTopologyAck(
+                  topology_transport.captured_packets.back().bytes.data(),
+                  topology_transport.captured_packets.back().size
+              );
+    if (topology_peer.players.Find(4) != nullptr ||
+        topology_peer.players.Find(6) == nullptr ||
+        topology_peer.net_session.join_barrier_phase != network::JoinBarrierPhase::WaitingForResume ||
+        !topology_ack.has_value() ||
+        topology_ack->barrier_id != topology.barrier_id ||
+        topology_ack->sender_peer_id != 2 ||
+        topology_ack->success == 0) {
+        std::cerr << "join barrier protocol smoke failed: topology add/remove did not apply and ack\n";
+        return false;
+    }
+
+    State removal_host = State::New();
+    removal_host.net_session.role = network::NetRole::Host;
+    removal_host.net_session.local_player_id = 1;
+    removal_host.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    removal_host.net_session.lockstep_next_frame_to_step = 222;
+    network::NetTransportRuntime removal_transport = network::NetTransportRuntime::New();
+    removal_transport.remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {2},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39002},
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = 100,
+    });
+    removal_transport.remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {3},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39003},
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = 100,
+    });
+    removal_transport.pump_tick = 100;
+    network::BeginJoinBarrierTopologyRemoval(removal_host, removal_transport, {4});
+    if (!removal_host.net_session.join_barrier_active ||
+        removal_host.net_session.join_barrier_removed_player_ids.size() != 1 ||
+        removal_host.net_session.join_barrier_removed_player_ids[0] != 4 ||
+        removal_host.net_session.join_barrier_topology_ack_peers.size() != 2 ||
+        removal_host.net_session.join_barrier_topology_ack_peers[0] != 2 ||
+        removal_host.net_session.join_barrier_topology_ack_peers[1] != 3) {
+        std::cerr << "join barrier protocol smoke failed: topology removal did not queue remaining peer acks\n";
+        return false;
+    }
+
+    State timeout_host = State::New();
+    timeout_host.net_session.role = network::NetRole::Host;
+    timeout_host.net_session.local_player_id = 1;
+    timeout_host.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    network::NetTransportRuntime timeout_transport = network::NetTransportRuntime::New();
+    timeout_transport.pump_tick = 220;
+    timeout_transport.remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {2},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39102},
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = 220,
+    });
+    timeout_transport.remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {4},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39104},
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = 0,
+    });
+    network::CleanupTimedOutRemoteEndpoints(timeout_host, timeout_transport);
+    if (timeout_transport.remotes.size() != 1 ||
+        timeout_transport.remotes[0].player_ids.size() != 1 ||
+        timeout_transport.remotes[0].player_ids[0] != 2 ||
+        timeout_host.net_session.join_barrier_removed_player_ids.size() != 1 ||
+        timeout_host.net_session.join_barrier_removed_player_ids[0] != 4 ||
+        timeout_host.net_session.join_barrier_topology_ack_peers.size() != 1 ||
+        timeout_host.net_session.join_barrier_topology_ack_peers[0] != 2) {
+        std::cerr << "join barrier protocol smoke failed: pump-tick timeout did not remove dead peer\n";
         return false;
     }
 
@@ -1608,8 +1794,9 @@ bool RunJoinBarrierProtocolSmoke() {
         existing_peer.net_session.join_barrier_id != status.barrier_id ||
         existing_peer.net_session.join_barrier_phase != network::JoinBarrierPhase::SendingSnapshot ||
         existing_peer.net_session.join_barrier_active_peer_id != 4 ||
-        existing_peer.net_session.join_barrier_queue.size() != 1 ||
-        existing_peer.net_session.join_barrier_queue[0] != 5 ||
+        existing_peer.net_session.join_barrier_queue.size() != 2 ||
+        existing_peer.net_session.join_barrier_queue[0] != 4 ||
+        existing_peer.net_session.join_barrier_queue[1] != 5 ||
         existing_peer.net_session.join_barrier_transfer_id != 77 ||
         existing_peer.net_session.join_barrier_snapshot_frame != 120 ||
         existing_peer.net_session.join_barrier_chunk_count != 10 ||
@@ -1626,8 +1813,9 @@ bool RunJoinBarrierProtocolSmoke() {
     network::HandleJoinBarrierStatus(queued_peer, *decoded_status);
     if (!queued_peer.net_session.join_barrier_active ||
         queued_peer.net_session.join_barrier_active_peer_id != 4 ||
-        queued_peer.net_session.join_barrier_queue.size() != 1 ||
-        queued_peer.net_session.join_barrier_queue[0] != 5) {
+        queued_peer.net_session.join_barrier_queue.size() != 2 ||
+        queued_peer.net_session.join_barrier_queue[0] != 4 ||
+        queued_peer.net_session.join_barrier_queue[1] != 5) {
         std::cerr << "join barrier protocol smoke failed: queued peer did not observe active catchup\n";
         return false;
     }
@@ -1638,8 +1826,9 @@ bool RunJoinBarrierProtocolSmoke() {
     network::HandleJoinBarrierStatus(second_existing_peer, *decoded_status);
     if (!second_existing_peer.net_session.join_barrier_active ||
         second_existing_peer.net_session.join_barrier_active_peer_id != 4 ||
-        second_existing_peer.net_session.join_barrier_queue.size() != 1 ||
-        second_existing_peer.net_session.join_barrier_queue[0] != 5) {
+        second_existing_peer.net_session.join_barrier_queue.size() != 2 ||
+        second_existing_peer.net_session.join_barrier_queue[0] != 4 ||
+        second_existing_peer.net_session.join_barrier_queue[1] != 5) {
         std::cerr << "join barrier protocol smoke failed: second existing peer did not observe active catchup\n";
         return false;
     }
@@ -1663,18 +1852,35 @@ bool RunJoinBarrierProtocolSmoke() {
     if (host.net_session.join_barrier_transfer_id != 0 ||
         host.net_session.join_barrier_active_peer_id != kInvalidPlayerId ||
         host.net_session.join_barrier_phase != network::JoinBarrierPhase::WaitingForCatchup ||
+        host.net_session.join_barrier_queue.size() != 2 ||
+        host.net_session.join_barrier_queue[0] != 4 ||
+        host.net_session.join_barrier_queue[1] != 5) {
+        std::cerr << "join barrier protocol smoke failed: successful ack did not advance queued catchup\n";
+        return false;
+    }
+
+    host.net_session.join_barrier_active_peer_id = 4;
+    host.net_session.join_barrier_phase = network::JoinBarrierPhase::WaitingForAck;
+    host.net_session.join_barrier_transfer_id = 78;
+    host.net_session.join_barrier_queue.erase(host.net_session.join_barrier_queue.begin());
+    ack.sender_peer_id = 4;
+    ack.transfer_id = 78;
+    network::HandleSnapshotResyncAck(host, ack);
+    if (host.net_session.join_barrier_phase != network::JoinBarrierPhase::WaitingForCatchup ||
+        host.net_session.join_barrier_transfer_id != 0 ||
+        host.net_session.join_barrier_active_peer_id != kInvalidPlayerId ||
         host.net_session.join_barrier_queue.size() != 1 ||
         host.net_session.join_barrier_queue[0] != 5) {
-        std::cerr << "join barrier protocol smoke failed: successful ack did not advance queued catchup\n";
+        std::cerr << "join barrier protocol smoke failed: requeued active catchup did not advance\n";
         return false;
     }
 
     host.net_session.join_barrier_active_peer_id = 5;
     host.net_session.join_barrier_phase = network::JoinBarrierPhase::WaitingForAck;
-    host.net_session.join_barrier_transfer_id = 78;
+    host.net_session.join_barrier_transfer_id = 79;
     host.net_session.join_barrier_queue.clear();
     ack.sender_peer_id = 5;
-    ack.transfer_id = 78;
+    ack.transfer_id = 79;
     network::HandleSnapshotResyncAck(host, ack);
     if (host.net_session.join_barrier_phase != network::JoinBarrierPhase::ReadyToResume ||
         host.net_session.join_barrier_transfer_id != 0 ||
@@ -2299,6 +2505,11 @@ bool RunLockstepStageTransitionResyncBlockSmoke() {
                   << status << '\n';
         return false;
     }
+    state.net_transport->remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {2},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 9},
+        .last_heard_frame = state.frame,
+    });
 
     const StageTransitionTarget transition{
         .destination = StageLoadTarget::ForQuestStage("classic", "classic_mines_2"),
@@ -2316,6 +2527,31 @@ bool RunLockstepStageTransitionResyncBlockSmoke() {
 
     for (std::uint32_t i = 0; i < 70; ++i) {
         StepSingleTick(state, audio, graphics);
+    }
+
+    if (state.stage.quest_stage_id != "classic_mines_1" ||
+        state.mode != Mode::StageTransition ||
+        state.net_session.lockstep_last_desync_recovery_mode !=
+            network::LockstepDesyncRecoveryMode::SnapshotCatchup) {
+        std::cerr << "lockstep stage transition resync-block smoke failed:"
+                  << " transition advanced while snapshot catchup was active,"
+                  << " stage=" << state.stage.quest_stage_id
+                  << " mode=" << static_cast<int>(state.mode)
+                  << " recovery="
+                  << static_cast<int>(state.net_session.lockstep_last_desync_recovery_mode)
+                  << '\n';
+        return false;
+    }
+
+    state.net_session.lockstep_last_desync_recovery_mode =
+        network::LockstepDesyncRecoveryMode::None;
+    state.net_session.lockstep_snapshot_resync_waiting_for_ack = false;
+    state.net_session.lockstep_snapshot_resync_active_transfer_id = 0;
+    state.net_session.lockstep_snapshot_resync_target_peer_id = kInvalidPlayerId;
+    state.net_session.lockstep_snapshot_resync_bytes.clear();
+
+    for (std::uint32_t i = 0; i < 70; ++i) {
+        StepSingleTickWithMode(state, audio, graphics, SimulationTickMode::ReplayNoNetwork);
     }
 
     if (state.stage.quest_stage_id != "classic_mines_2" ||
@@ -2946,26 +3182,17 @@ bool RunLockstepSettingsScheduleSmoke() {
     return true;
 }
 
-bool RunHostArbitratedSkippedInputSmoke() {
+bool RunHostWaitsForMissingInputSmoke() {
     Graphics host_graphics;
-    Graphics replica_graphics;
     InitCliSmokeRuntimeTables(host_graphics);
-    InitCliSmokeRuntimeTables(replica_graphics);
 
     Audio host_audio;
-    Audio replica_audio;
     State host = State::New();
-    State replica = State::New();
     const char* failed_step = nullptr;
 
-    if (!PrepareLockstepSmokeState(host, host_graphics, {1}, failed_step) ||
-        !PrepareLockstepSmokeState(replica, replica_graphics, {1}, failed_step)) {
-        std::cerr << "host arbitrated skipped-input smoke failed during setup: "
+    if (!PrepareLockstepSmokeState(host, host_graphics, {1}, failed_step)) {
+        std::cerr << "host waits for missing input smoke failed during setup: "
                   << (failed_step != nullptr ? failed_step : "unknown") << '\n';
-        return false;
-    }
-    if (!CompareCanonicalFingerprints(host, replica, "host arbitration initial")) {
-        std::cerr << "  first simple diff: " << DescribeFirstStateDifference(host, replica) << '\n';
         return false;
     }
 
@@ -2973,7 +3200,7 @@ bool RunHostArbitratedSkippedInputSmoke() {
         std::make_unique<network::NetTransportRuntime>(network::NetTransportRuntime::New());
     std::string socket_error;
     if (!host.net_transport->socket.Open(0, &socket_error)) {
-        std::cerr << "host arbitrated skipped-input smoke failed opening UDP socket: "
+        std::cerr << "host waits for missing input smoke failed opening UDP socket: "
                   << socket_error << '\n';
         return false;
     }
@@ -2983,7 +3210,7 @@ bool RunHostArbitratedSkippedInputSmoke() {
     host.net_session.host_player_id = 1;
     host.net_session.input_lockstep_enabled = true;
     host.net_session.stage_instance_id = 0x51A7E010U;
-    host.net_session.lockstep_input_delay_frames = network::kDefaultLockstepInputDelayFrames;
+    host.net_session.lockstep_input_delay_frames = 0;
     host.net_session.lockstep_max_rollback_frames = network::kDefaultLockstepMaxRollbackFrames;
     network::ResetInputLockstepState(host);
     host.net_transport->remotes.push_back(network::NetRemoteEndpoint{
@@ -3011,103 +3238,49 @@ bool RunHostArbitratedSkippedInputSmoke() {
     slow_record.input = slow_initial;
     host.net_session.lockstep_input_buffer.Store(slow_record);
 
-    const std::vector<PlayerId> required_players = {1, 2};
-    constexpr network::LockstepFrame kTotalFrames = 24;
-    std::vector<InputFrame> canonical_inputs;
-    for (network::LockstepFrame frame = 0; frame < kTotalFrames; ++frame) {
-        InputFrame host_input = InputFrame::New();
-        host_input.right = true;
-        host_input.run = true;
-        host.playing_input_snapshot = ToPlayingInputSnapshot(host_input);
+    InputFrame host_input = InputFrame::New();
+    host_input.right = true;
+    host_input.run = true;
+    host.playing_input_snapshot = ToPlayingInputSnapshot(host_input);
 
-        if (!network::PrepareInputLockstepFrame(host, host_graphics)) {
-            std::cerr << "host arbitrated skipped-input smoke failed: host stalled at frame "
-                      << frame << " wait_blocks="
-                      << host.net_session.lockstep_input_wait_block_count
-                      << " missing="
-                      << host.net_session.lockstep_arbitrated_missing_input_count << '\n';
-            return false;
-        }
-        if (host.net_session.lockstep_next_frame_to_step != frame + 1) {
-            std::cerr << "host arbitrated skipped-input smoke failed: unexpected host frame "
-                      << host.net_session.lockstep_next_frame_to_step
-                      << " after stepping " << frame << '\n';
-            return false;
-        }
-        if (!host.net_session.lockstep_input_buffer.BuildFrameInputs(
-                required_players,
-                frame,
-                canonical_inputs
-            )) {
-            std::cerr << "host arbitrated skipped-input smoke failed: missing canonical frame "
-                      << frame << '\n';
-            return false;
-        }
-        for (PlayerId player_id : required_players) {
-            const network::LockstepInputRecord* const record =
-                host.net_session.lockstep_input_buffer.FindRecord(player_id, frame);
-            if (record == nullptr || !record->canonical || record->predicted) {
-                std::cerr << "host arbitrated skipped-input smoke failed: noncanonical player "
-                          << player_id << " frame " << frame << '\n';
-                return false;
-            }
-        }
-
-        StepSingleTickWithMode(
-            host,
-            host_audio,
-            host_graphics,
-            SimulationTickMode::ReplayNoNetwork
-        );
-        ApplyLockstepInputsToState(replica, required_players, canonical_inputs);
-        StepSingleTickWithMode(
-            replica,
-            replica_audio,
-            replica_graphics,
-            SimulationTickMode::ReplayNoNetwork
-        );
-
-        const CanonicalStateFingerprint host_fingerprint =
-            ComputeGameplayDeterminismFingerprint(host);
-        const CanonicalStateFingerprint replica_fingerprint =
-            ComputeGameplayDeterminismFingerprint(replica);
-        if (host_fingerprint.value != replica_fingerprint.value) {
-            std::cerr << "host arbitrated skipped-input smoke failed: hash mismatch at frame "
-                      << frame
-                      << "\n  host    " << host_fingerprint.summary
-                      << " hash=" << host_fingerprint.value
-                      << "\n  replica " << replica_fingerprint.summary
-                      << " hash=" << replica_fingerprint.value
-                      << "\n  first simple diff: "
-                      << DescribeFirstStateDifference(host, replica) << '\n';
-            return false;
-        }
-    }
-
-    if (host.net_session.lockstep_input_wait_block_count != 0) {
-        std::cerr << "host arbitrated skipped-input smoke failed: host waited "
-                  << host.net_session.lockstep_input_wait_block_count
-                  << " times for slow peer input\n";
+    if (!network::PrepareInputLockstepFrame(host, host_graphics)) {
+        std::cerr << "host waits for missing input smoke failed: host did not step frame 0\n";
         return false;
     }
-    if (host.net_session.lockstep_arbitrated_missing_input_count == 0 ||
-        host.net_session.lockstep_arbitrated_neutral_input_count == 0) {
-        std::cerr << "host arbitrated skipped-input smoke failed: expected missing and neutral"
-                  << " arbitration, missing="
-                  << host.net_session.lockstep_arbitrated_missing_input_count
-                  << " neutral="
-                  << host.net_session.lockstep_arbitrated_neutral_input_count << '\n';
+    if (host.net_session.lockstep_next_frame_to_step != 1) {
+        std::cerr << "host waits for missing input smoke failed: expected frame 1, got "
+                  << host.net_session.lockstep_next_frame_to_step << '\n';
         return false;
     }
-    if (host.net_session.lockstep_input_delay_frames != network::kDefaultLockstepInputDelayFrames) {
-        std::cerr << "host arbitrated skipped-input smoke failed: input delay changed to "
-                  << host.net_session.lockstep_input_delay_frames << '\n';
+    StepSingleTickWithMode(
+        host,
+        host_audio,
+        host_graphics,
+        SimulationTickMode::ReplayNoNetwork
+    );
+
+    if (network::PrepareInputLockstepFrame(host, host_graphics)) {
+        std::cerr << "host waits for missing input smoke failed: host stepped without remote"
+                  << " frame 1 input\n";
+        return false;
+    }
+    if (host.net_session.lockstep_next_frame_to_step != 1) {
+        std::cerr << "host waits for missing input smoke failed: host advanced while missing"
+                  << " remote input, frame=" << host.net_session.lockstep_next_frame_to_step
+                  << '\n';
+        return false;
+    }
+    if (host.net_session.lockstep_arbitrated_missing_input_count != 0 ||
+        host.net_session.lockstep_arbitrated_neutral_input_count != 0) {
+        std::cerr << "host waits for missing input smoke failed: host arbitrated missing input"
+                  << ", missing=" << host.net_session.lockstep_arbitrated_missing_input_count
+                  << " neutral=" << host.net_session.lockstep_arbitrated_neutral_input_count
+                  << '\n';
         return false;
     }
 
-    std::cout << "host arbitrated skipped-input smoke ok: frames=" << kTotalFrames
-              << " missing=" << host.net_session.lockstep_arbitrated_missing_input_count
-              << " neutral=" << host.net_session.lockstep_arbitrated_neutral_input_count
+    std::cout << "host waits for missing input smoke ok: frame="
+              << host.net_session.lockstep_next_frame_to_step
               << " wait_blocks=" << host.net_session.lockstep_input_wait_block_count
               << " delay=" << host.net_session.lockstep_input_delay_frames << '\n';
     return true;
@@ -3195,6 +3368,33 @@ bool CheckStateFingerprintSmoke() {
                       << left_network.value << "\n"
                       << "  right " << right_network.summary << " hash="
                       << right_network.value << "\n";
+            return false;
+        }
+
+        State deactivation_state = State::New();
+        if (!LoadQuestStage(deactivation_state, "classic", "classic_mines_1", false, seed)) {
+            std::cerr << "state fingerprint smoke failed: could not load deactivation test stage\n";
+            return false;
+        }
+        PlayerSlot* const primary_slot = deactivation_state.players.FindPrimaryLocal();
+        if (primary_slot == nullptr || !primary_slot->ent_vid.has_value()) {
+            std::cerr << "state fingerprint smoke failed: no deactivation test player\n";
+            return false;
+        }
+        const VID player_vid = *primary_slot->ent_vid;
+        FillToolSlot(
+            deactivation_state.ent_tools.EnsureToolSlot(player_vid, 0),
+            ToolKind::ThrowBomb,
+            3,
+            true
+        );
+        if (!world_ops::DeactivateEnt(deactivation_state, player_vid)) {
+            std::cerr << "state fingerprint smoke failed: could not deactivate test player\n";
+            return false;
+        }
+        if (primary_slot->ent_vid.has_value() ||
+            deactivation_state.ent_tools.FindEntToolState(player_vid) != nullptr) {
+            std::cerr << "state fingerprint smoke failed: deactivated player left slot/tool sim state\n";
             return false;
         }
 
@@ -3758,7 +3958,7 @@ bool CheckInputLockstepSmoke() {
         if (!RunLockstepSettingsScheduleSmoke()) {
             return false;
         }
-        if (!RunHostArbitratedSkippedInputSmoke()) {
+        if (!RunHostWaitsForMissingInputSmoke()) {
             return false;
         }
         if (!RunJoinBarrierProtocolSmoke()) {

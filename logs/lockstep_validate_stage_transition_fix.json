@@ -1,0 +1,55 @@
+{
+  "ok": false,
+  "profiles": [
+    "same-house"
+  ],
+  "repeat": 1,
+  "results": [
+    {
+      "profile": "same-house",
+      "run_index": 1,
+      "repeat_count": 1,
+      "ok": false,
+      "problems": [
+        "host: hash mismatches=1",
+        "host: no confirmed hash exchange",
+        "host: confirmed hash lag 1218 > 180",
+        "peer: hash mismatches=1",
+        "peer: no confirmed hash exchange",
+        "peer: confirmed hash lag 1223 > 180"
+      ],
+      "host": {
+        "stage": "classic_mines_1",
+        "frame": 1218,
+        "delay": 2,
+        "rollback": 12,
+        "rollbacks_per_second": 1.92118,
+        "prediction_misses": 0,
+        "skipped_inputs": 1077,
+        "confirmed_hash_frame": 0,
+        "confirmed_hash_lag": 1218,
+        "hash_mismatches": 1,
+        "network_hash": 12506893653821912360,
+        "multiplayer_sim_total_ms": 0.670888,
+        "hash_ms": 0.159409,
+        "rollback_replay_ms": 5.56083e-68
+      },
+      "peer": {
+        "stage": "classic_mines_1",
+        "frame": 1223,
+        "delay": 2,
+        "rollback": 12,
+        "rollbacks_per_second": 0.686836,
+        "prediction_misses": 6,
+        "skipped_inputs": 0,
+        "confirmed_hash_frame": 0,
+        "confirmed_hash_lag": 1223,
+        "hash_mismatches": 1,
+        "network_hash": 6664649923186586103,
+        "multiplayer_sim_total_ms": 0.44143,
+        "hash_ms": 3.53458e-69,
+        "rollback_replay_ms": 3.58208e-90
+      }
+    }
+  ]
+}

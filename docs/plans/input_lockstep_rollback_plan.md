@@ -924,9 +924,17 @@ Required work:
     old host stage-sync path.
   - Network transition seeds are derived from the current stage seed and target
     stage ident, not local wall-frame timing.
-  - Stage-transition frames are lockstep-gated while a transport is active, so
-    one peer cannot count down and load the next stage while another peer is
-    stalled waiting on input.
+  - Stage-transition countdown/application is lockstep-gated once the pending
+    transition is agreed. Peers must not count down and load the next stage
+    independently while another peer is stalled waiting on input or catchup.
+  - Normal stage transitions must not raise a full snapshot catchup barrier.
+    Snapshot catchup is reserved for late join/rejoin/manual repair, not the
+    ordinary exit-door path.
+- [x] Remove host-side missing-input arbitration from normal lockstep.
+  - The host no longer invents canonical inputs when a remote input is late.
+    It waits for owner input instead. This keeps lockstep canonical input
+    streams identical and prevents prediction differences from being promoted
+    into authoritative state.
 - [x] Add a headless same-process det replay test.
   Evidence: `--check-det-replay-smoke` runs movement, multi-local, broad,
   fluid, shop, and stage-transition replay scenarios without a renderer.
@@ -1041,6 +1049,24 @@ Important constraints:
   player set. They display a join/loading overlay until the host releases the
   barrier.
 - The host remains the source of the catchup snapshot.
+- Already-synced peers must not receive a full world snapshot just because a
+  different peer joined. They need only the topology delta for newly added
+  player slots/bodies, then they resume from the common barrier frame.
+- Already-synced peers also must not wait for a full world snapshot when a peer
+  leaves. The host retains/removes the departed player, sends a topology removal
+  delta to remaining peers, waits for topology acks, then resumes everyone from
+  the common barrier frame.
+- Leave timeout is measured in network pump ticks, not simulation frames.
+  Lockstep stalls stop simulation frames, so sim-frame timeout cannot evict the
+  exact peer whose missing input caused the stall.
+- Join/leave barriers should label the actual topology change for every
+  process, for example `client 4 joined` or `client 4 left`. Only the new
+  joining process should say it is catching up to the host; existing peers
+  should see that another client is being caught up.
+- If a second join arrives while a first joiner's snapshot is in flight, only
+  the active in-flight joiner is requeued for a fresh snapshot because its
+  snapshot topology is stale. Existing synced peers remain frozen and receive
+  topology deltas, not full resyncs.
 - Late join and desync repair can share chunked snapshot transport, but they
   must not share ambiguous state names. Join uses a `JoinBarrier`; desync repair
   uses `SnapshotRepair`.
@@ -1054,12 +1080,18 @@ Concrete behavior:
 - The host catches up exactly one queued peer at a time. If another peer joins
   during the barrier, it is accepted into the queue and sees a waiting/loading
   overlay until its turn.
+- The host broadcasts a `JoinBarrierTopology` delta to already-synced peers
+  whenever the barrier player set changes. Those peers create any missing
+  remote player bodies and ack the topology update while remaining paused.
+- On leave/timeout, the host stores retained player state, deactivates/removes
+  the departed body locally, broadcasts a `JoinBarrierTopology` removal delta to
+  remaining peers, and resumes after all remaining peers ack.
 - The active peer receives the current host gameplay snapshot in chunks, applies
   it, restores local runtime-only role/callback state, acks the transfer, and
   waits for a host resume packet.
-- After the queue drains, the host broadcasts a single resume frame. Every
-  process sets its next input/step frame from that resume frame and resumes
-  together.
+- After the snapshot queue drains and all topology acks arrive, the host
+  broadcasts a single resume frame. Every process sets its next input/step frame
+  from that resume frame and resumes together.
 - Desync hash exchange must ignore stale pre-barrier epochs and suppress hashes
   briefly after resume so a catchup snapshot is not immediately treated as a
   mismatch from old history.
@@ -1093,6 +1125,11 @@ Protocol work:
   text phase.
 - Add an explicit `JoinBarrierResume` packet with barrier id and resume
   lockstep frame.
+- Add an explicit `JoinBarrierTopology` packet plus ack. This packet contains
+  the current barrier id/frame, player ids/spawn positions that already-synced
+  peers need to add locally, and player ids that already-synced peers need to
+  remove locally. It is deliberately small and must not use the full world
+  snapshot path.
 - Reuse `SnapshotResyncChunkPacket` payload format if practical, but rename or
   wrap the active path so join catchup does not report as
   `last_desync_recovery_mode=snapshot-catchup`.
@@ -1145,7 +1182,19 @@ Implementation checklist:
   player ids, active player id, active transfer id, chunk counts, byte counts,
   phase text/status, and resume frame.
 - [x] Add explicit `JoinBarrierStatus` and `JoinBarrierResume` packets.
+- [x] Add explicit `JoinBarrierTopology` and `JoinBarrierTopologyAck` packets
+  so already-synced peers can add joined players and remove departed players
+  without a full snapshot.
 - [x] Replace join-time snapshot resync with join-barrier catchup.
+- [x] Snapshot only the active joining peer. If topology changes while that
+  peer's snapshot is in flight, requeue that peer only; do not snapshot
+  already-synced peers.
+- [x] Route leave/timeout through topology-only barrier removal for remaining
+  peers, with retained player state preserved on the host.
+- [x] Use network pump ticks for hard disconnect timeout so a missing peer can
+  be removed while lockstep is blocked waiting for that peer's input.
+- [x] Show join/leave topology text on the barrier overlay so remaining clients
+  see which client joined or left.
 - [x] Make `PrepareInputLockstepFrame` block on `JoinBarrier`, not on
   desync-recovery state.
 - [x] Keep packet pumping active during the barrier so chunks, acks, ping, and
