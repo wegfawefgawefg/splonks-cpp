@@ -545,7 +545,9 @@ void ProcessInput(
 
     switch (state.mode) {
     case Mode::Title:
-        ProcessInputTitle(window, state, audio, graphics, dt);
+        if (!state.gubsy_shell_ui_active) {
+            ProcessInputTitle(window, state, audio, graphics, dt);
+        }
         break;
     case Mode::Settings:
         ProcessInputSettingsMenu(window, state, audio, graphics, dt);

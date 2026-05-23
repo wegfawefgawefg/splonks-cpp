@@ -290,6 +290,7 @@ struct State {
     PlayingInputSnapshot previous_playing_input_snapshot;
     PlayingInputSnapshot previous_immediate_playing_input_snapshot;
     TitleMenuOption title_menu_selection = TitleMenuOption::Start;
+    bool gubsy_shell_ui_active = false;
     SettingsMenuOption settings_menu_selection = SettingsMenuOption::Video;
     VideoSettingsMenuOption video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
     UiSettingsMenuOption ui_settings_menu_selection = UiSettingsMenuOption::IconScale;

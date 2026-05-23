@@ -335,6 +335,7 @@ int main(int argc, char** argv) {
         splonks::PopulateToolSpecsTable();
         splonks::State state = splonks::State::New();
         state.running = true;
+        state.gubsy_shell_ui_active = true;
         GubsyRuntime gubsy;
         GubsyAppConfig gubsy_config = BuildGubsyConfig();
         if (!init_gubsy_runtime(gubsy, gubsy_config)) {

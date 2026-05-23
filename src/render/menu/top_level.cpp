@@ -49,6 +49,9 @@ void RenderTitle(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     render_layer(TextureName::TitleLayer2, 0.02F, 1.0F);
     render_layer(TextureName::TitleLayer1, 0.06F, 1.0F);
 
+    if (state.gubsy_shell_ui_active)
+        return;
+
     DrawMenuTitle(renderer, graphics, "Splonks");
 
     const float ten_percent = static_cast<float>(graphics.dims.y) * 0.10F;
