@@ -113,7 +113,7 @@ void AddShake(
 
 State State::New() {
     State state;
-    state.mode = Mode::Playing;
+    state.mode = Mode::Title;
     state.settings = LoadSettings();
     state.player_tuning = state.settings.player_tuning;
     state.menu_inputs = MenuInputs::New();

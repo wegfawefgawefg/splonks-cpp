@@ -45,3 +45,4 @@ logs/lockstep_playtest_audit.json
 logs/lockstep_playtest_verdict.json
 logs/lockstep_churn/
 .codex
+data/gubsy/

@@ -2,23 +2,23 @@
 #include "cli.hpp"
 #include "debug/control_server.hpp"
 #include "debug/playback.hpp"
-#include "ents/common/common.hpp"
 #include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 #include "graphics.hpp"
+#include "gubsy_shell.hpp"
 #include "imgui_layer.hpp"
 #include "inputs.hpp"
 #include "network/net_lobby.hpp"
-#include "render/render.hpp"
 #include "render/postfx.hpp"
-#include "state.hpp"
-#include "step.hpp"
+#include "render/render.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
-#include "tools/tool_spec.hpp"
+#include "state.hpp"
+#include "step.hpp"
 #include "text.hpp"
+#include "tools/tool_spec.hpp"
 
 #include <SDL3/SDL.h>
-#include <gubsy/runtime.hpp>
 #include <cmath>
 #include <filesystem>
 #include <iostream>
@@ -141,10 +141,8 @@ splonks::UVec2 GetWindowDims(SDL_Window* window) {
     int window_width = 0;
     int window_height = 0;
     SDL_GetWindowSize(window, &window_width, &window_height);
-    return splonks::UVec2::New(
-        static_cast<unsigned int>(std::max(window_width, 1)),
-        static_cast<unsigned int>(std::max(window_height, 1))
-    );
+    return splonks::UVec2::New(static_cast<unsigned int>(std::max(window_width, 1)),
+                               static_cast<unsigned int>(std::max(window_height, 1)));
 }
 
 void RebaseCwdToRepoRoot() {
@@ -163,61 +161,6 @@ void RebaseCwdToRepoRoot() {
             probe = probe.parent_path();
         }
     }
-}
-
-void StartSplonksFromGubsy(void* user_data, std::int32_t) {
-    auto* state = static_cast<splonks::State*>(user_data);
-    if (state == nullptr) {
-        return;
-    }
-    state->SetMode(splonks::Mode::StageTransition);
-}
-
-void QuitSplonksFromGubsy(void* user_data, std::int32_t) {
-    auto* state = static_cast<splonks::State*>(user_data);
-    if (state == nullptr) {
-        return;
-    }
-    state->running = false;
-}
-
-MenuInputState BuildGubsyMenuInput(const splonks::MenuInputs& inputs) {
-    MenuInputState result{};
-    result.up = inputs.up.pressed;
-    result.down = inputs.down.pressed;
-    result.left = inputs.left.pressed;
-    result.right = inputs.right.pressed;
-    result.select = inputs.confirm.pressed;
-    result.back = inputs.back.pressed;
-    return result;
-}
-
-BindsSchema BuildSplonksBindsSchema() {
-    BindsSchema schema;
-    schema.add_action(0, "Menu Up", "Menu");
-    schema.add_action(1, "Menu Down", "Menu");
-    schema.add_action(2, "Menu Left", "Menu");
-    schema.add_action(3, "Menu Right", "Menu");
-    schema.add_action(4, "Confirm / Jump", "Shared");
-    schema.add_action(5, "Back / Attack", "Shared");
-    schema.add_action(6, "Page Previous / Bomb", "Shared");
-    schema.add_action(7, "Page Next / Rope", "Shared");
-    schema.add_action(8, "Move Up", "Gameplay");
-    schema.add_action(9, "Move Down", "Gameplay");
-    schema.add_action(10, "Move Left", "Gameplay");
-    schema.add_action(11, "Move Right", "Gameplay");
-    schema.add_action(12, "Use", "Gameplay");
-    schema.add_axis_1d(0, "Analog Value", "Gameplay");
-    schema.add_axis_2d(0, "Analog Move", "Gameplay");
-    return schema;
-}
-
-GubsyAppConfig BuildGubsyConfig() {
-    GubsyAppConfig config{};
-    config.enable_mods = false;
-    config.project_root = std::filesystem::current_path().string();
-    config.data_root = (std::filesystem::current_path() / "data" / "gubsy").string();
-    return config;
 }
 
 } // namespace
@@ -255,15 +198,13 @@ int main(int argc, char** argv) {
 
         const SDL_WindowFlags window_flags =
             (loaded_settings.video.fullscreen ? SDL_WINDOW_FULLSCREEN : 0) |
-            SDL_WINDOW_HIGH_PIXEL_DENSITY | (!loaded_settings.video.fullscreen ? SDL_WINDOW_RESIZABLE : 0);
+            SDL_WINDOW_HIGH_PIXEL_DENSITY |
+            (!loaded_settings.video.fullscreen ? SDL_WINDOW_RESIZABLE : 0);
         const int startup_width = static_cast<int>(loaded_settings.video.resolution.x);
         const int startup_height = static_cast<int>(loaded_settings.video.resolution.y);
-        window = SDL_CreateWindow(
-            "Splonks",
-            startup_width > 0 ? startup_width : kWindowWidth,
-            startup_height > 0 ? startup_height : kWindowHeight,
-            window_flags
-        );
+        window =
+            SDL_CreateWindow("Splonks", startup_width > 0 ? startup_width : kWindowWidth,
+                             startup_height > 0 ? startup_height : kWindowHeight, window_flags);
         if (window == nullptr) {
             ThrowSdlError("SDL_CreateWindow failed");
         }
@@ -298,12 +239,8 @@ int main(int argc, char** argv) {
             }
 
             render_texture = SDL_CreateTexture(
-                renderer,
-                SDL_PIXELFORMAT_RGBA8888,
-                SDL_TEXTUREACCESS_TARGET,
-                static_cast<int>(graphics.dims.x),
-                static_cast<int>(graphics.dims.y)
-            );
+                renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
+                static_cast<int>(graphics.dims.x), static_cast<int>(graphics.dims.y));
             if (render_texture == nullptr) {
                 ThrowSdlError("SDL_CreateTexture render target failed");
             }
@@ -336,27 +273,9 @@ int main(int argc, char** argv) {
         splonks::State state = splonks::State::New();
         state.running = true;
         state.gubsy_shell_ui_active = true;
-        GubsyRuntime gubsy;
-        GubsyAppConfig gubsy_config = BuildGubsyConfig();
-        if (!init_gubsy_runtime(gubsy, gubsy_config)) {
-            ThrowSdlError("init_gubsy_runtime failed");
-        }
-        gubsy_register_binds_schema(gubsy, BuildSplonksBindsSchema());
-        if (!gubsy_attach_sdl_renderer(gubsy,
-                                       window,
-                                       renderer,
-                                       static_cast<int>(graphics.dims.x),
-                                       static_cast<int>(graphics.dims.y))) {
-            ThrowSdlError("gubsy_attach_sdl_renderer failed");
-        }
-        GubsyMainMenuCommands gubsy_menu_commands{};
-        gubsy_menu_commands.start_game =
-            gubsy_register_menu_command(gubsy, StartSplonksFromGubsy, &state);
-        gubsy_menu_commands.quit =
-            gubsy_register_menu_command(gubsy, QuitSplonksFromGubsy, &state);
-        gubsy_set_main_menu_commands(gubsy, gubsy_menu_commands);
-        if (!gubsy_show_main_menu(gubsy)) {
-            ThrowSdlError("gubsy_show_main_menu failed");
+        splonks::gubsy_shell::Shell gubsy_shell;
+        if (!splonks::gubsy_shell::Init(gubsy_shell, state, window, renderer, graphics)) {
+            ThrowSdlError("gubsy_shell::Init failed");
         }
         state.debug_primary_player_bot_enabled = debug_random_primary_input;
         debug.ui_visible = state.settings.debug_ui.menu_visible;
@@ -373,7 +292,8 @@ int main(int argc, char** argv) {
         debug.lighting_settings_window_visible = state.settings.debug_ui.lighting_settings_visible;
         debug.graphics_settings_window_visible = state.settings.debug_ui.graphics_settings_visible;
         debug.camera_settings_window_visible = state.settings.debug_ui.camera_settings_visible;
-        debug.performance_settings_window_visible = state.settings.debug_ui.performance_settings_visible;
+        debug.performance_settings_window_visible =
+            state.settings.debug_ui.performance_settings_visible;
         debug.player_tuning_window_visible = state.settings.debug_ui.player_tuning_visible;
         if (state.settings.debug_ui.ent_swap_type > 0 &&
             state.settings.debug_ui.ent_swap_type < splonks::kEntTypeCount) {
@@ -398,14 +318,11 @@ int main(int argc, char** argv) {
         if (startup_network.mode != StartupNetworkMode::None) {
             std::string network_status;
             const bool started = startup_network.mode == StartupNetworkMode::Host
-                ? splonks::network::StartHostSession(state, startup_network.port, &network_status)
-                : splonks::network::JoinHostSession(
-                      state,
-                      startup_network.host,
-                      startup_network.port,
-                      startup_network.preferred_player_ids,
-                      &network_status
-                  );
+                                     ? splonks::network::StartHostSession(
+                                           state, startup_network.port, &network_status)
+                                     : splonks::network::JoinHostSession(
+                                           state, startup_network.host, startup_network.port,
+                                           startup_network.preferred_player_ids, &network_status);
             debug.network_window_visible = true;
             debug.network_status = network_status;
             std::cerr << network_status << '\n';
@@ -416,8 +333,8 @@ int main(int argc, char** argv) {
         if (debug_control_port != 0) {
             std::string debug_control_error;
             if (debug_control_server.Start(debug_control_port, &debug_control_error)) {
-                std::cerr << "Debug control server listening on 127.0.0.1:"
-                          << debug_control_port << '\n';
+                std::cerr << "Debug control server listening on 127.0.0.1:" << debug_control_port
+                          << '\n';
             } else {
                 std::cerr << "Debug control server failed: " << debug_control_error << '\n';
             }
@@ -442,8 +359,7 @@ int main(int argc, char** argv) {
                            event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
                     graphics.window_dims = GetWindowDims(window);
                 } else if (event.type == SDL_EVENT_KEY_DOWN &&
-                           event.key.scancode == SDL_SCANCODE_ESCAPE &&
-                           !event.key.repeat) {
+                           event.key.scancode == SDL_SCANCODE_ESCAPE && !event.key.repeat) {
                     state.running = false;
                 }
             }
@@ -467,7 +383,7 @@ int main(int argc, char** argv) {
 
             const std::uint64_t frame_begin_counter = SDL_GetPerformanceCounter();
             splonks::ImGuiLayerNewFrame();
-            gubsy_begin_debug_frame(gubsy, dt);
+            splonks::gubsy_shell::BeginDebugFrame(gubsy_shell, dt);
             splonks::DrawDebugPlaybackControls(debug, state, audio, graphics, window, renderer);
             audio.music_volume = state.settings.audio.music_volume;
             audio.sound_effects_volume = state.settings.audio.sfx_volume;
@@ -484,21 +400,12 @@ int main(int argc, char** argv) {
             state.performance_stats.rollback_replay_frames_this_frame = 0;
             state.performance_stats.rollback_replay_ms_per_frame = 0.0;
             const std::uint64_t step_begin_counter = SDL_GetPerformanceCounter();
-            splonks::RunSimulationWithDebugControls(
-                window,
-                renderer,
-                state,
-                audio,
-                graphics,
-                debug,
-                dt
-            );
+            splonks::RunSimulationWithDebugControls(window, renderer, state, audio, graphics, debug,
+                                                    dt);
             if (state.mode == splonks::Mode::Title) {
-                gubsy_set_menu_input(gubsy, BuildGubsyMenuInput(state.menu_inputs));
-                gubsy_update_menu(gubsy,
-                                  dt,
-                                  static_cast<int>(graphics.window_dims.x),
-                                  static_cast<int>(graphics.window_dims.y));
+                splonks::gubsy_shell::UpdateTitleMenu(gubsy_shell, state, dt,
+                                                      static_cast<int>(graphics.window_dims.x),
+                                                      static_cast<int>(graphics.window_dims.y));
             }
             debug_control_server.Step(state);
             const std::uint64_t step_end_counter = SDL_GetPerformanceCounter();
@@ -507,18 +414,16 @@ int main(int argc, char** argv) {
             const std::uint64_t render_begin_counter = SDL_GetPerformanceCounter();
             splonks::Render(renderer, render_texture, post_fx, state, audio, graphics);
             if (state.mode == splonks::Mode::Title) {
-                gubsy_render_menu(gubsy,
-                                  renderer,
-                                  static_cast<int>(graphics.window_dims.x),
-                                  static_cast<int>(graphics.window_dims.y));
+                splonks::gubsy_shell::RenderTitleMenu(gubsy_shell, renderer,
+                                                      static_cast<int>(graphics.window_dims.x),
+                                                      static_cast<int>(graphics.window_dims.y));
             }
             const std::uint64_t render_end_counter = SDL_GetPerformanceCounter();
             splonks::UpdateDebugAudioBrush(debug, state, audio, graphics);
             const std::uint64_t imgui_begin_counter = SDL_GetPerformanceCounter();
-            gubsy_render_debug(gubsy,
-                               renderer,
-                               static_cast<int>(graphics.window_dims.x),
-                               static_cast<int>(graphics.window_dims.y));
+            splonks::gubsy_shell::RenderDebug(gubsy_shell, renderer,
+                                              static_cast<int>(graphics.window_dims.x),
+                                              static_cast<int>(graphics.window_dims.y));
             splonks::ImGuiLayerRender();
             const std::uint64_t imgui_end_counter = SDL_GetPerformanceCounter();
             const std::uint64_t present_begin_counter = SDL_GetPerformanceCounter();
@@ -527,7 +432,8 @@ int main(int argc, char** argv) {
             audio.UpdateCurrentMusicStreamData();
             const std::uint64_t frame_end_counter = SDL_GetPerformanceCounter();
 
-            state.performance_stats.frame_budget_ms = 1000.0 / static_cast<double>(splonks::kFramesPerSecond);
+            state.performance_stats.frame_budget_ms =
+                1000.0 / static_cast<double>(splonks::kFramesPerSecond);
             state.performance_stats.step_ms = counter_to_ms(step_begin_counter, step_end_counter);
             state.performance_stats.multiplayer_sim_total_ms = state.performance_stats.step_ms;
             if (state.performance_stats.rollback_replay_frames_this_frame > 0) {
@@ -535,15 +441,21 @@ int main(int argc, char** argv) {
                     state.performance_stats.rollback_replay_ms_this_frame /
                     static_cast<double>(state.performance_stats.rollback_replay_frames_this_frame);
             }
-            state.performance_stats.render_ms = counter_to_ms(render_begin_counter, render_end_counter);
-            state.performance_stats.imgui_ms = counter_to_ms(imgui_begin_counter, imgui_end_counter);
-            state.performance_stats.present_ms = counter_to_ms(present_begin_counter, present_end_counter);
-            state.performance_stats.frame_total_ms = counter_to_ms(frame_begin_counter, frame_end_counter);
+            state.performance_stats.render_ms =
+                counter_to_ms(render_begin_counter, render_end_counter);
+            state.performance_stats.imgui_ms =
+                counter_to_ms(imgui_begin_counter, imgui_end_counter);
+            state.performance_stats.present_ms =
+                counter_to_ms(present_begin_counter, present_end_counter);
+            state.performance_stats.frame_total_ms =
+                counter_to_ms(frame_begin_counter, frame_end_counter);
             const double smoothing_alpha = 1.0 - std::exp(-static_cast<double>(dt) * 8.0);
             if (state.performance_stats.step_smoothed_ms == 0.0) {
                 state.performance_stats.step_smoothed_ms = state.performance_stats.step_ms;
-                state.performance_stats.network_pump_smoothed_ms = state.performance_stats.network_pump_ms;
-                state.performance_stats.lockstep_hash_smoothed_ms = state.performance_stats.lockstep_hash_ms;
+                state.performance_stats.network_pump_smoothed_ms =
+                    state.performance_stats.network_pump_ms;
+                state.performance_stats.lockstep_hash_smoothed_ms =
+                    state.performance_stats.lockstep_hash_ms;
                 state.performance_stats.rollback_replay_smoothed_ms =
                     state.performance_stats.rollback_replay_ms_this_frame;
                 state.performance_stats.multiplayer_sim_total_smoothed_ms =
@@ -551,46 +463,67 @@ int main(int argc, char** argv) {
                 state.performance_stats.render_smoothed_ms = state.performance_stats.render_ms;
                 state.performance_stats.imgui_smoothed_ms = state.performance_stats.imgui_ms;
                 state.performance_stats.present_smoothed_ms = state.performance_stats.present_ms;
-                state.performance_stats.frame_total_smoothed_ms = state.performance_stats.frame_total_ms;
+                state.performance_stats.frame_total_smoothed_ms =
+                    state.performance_stats.frame_total_ms;
             } else {
                 state.performance_stats.step_smoothed_ms +=
-                    (state.performance_stats.step_ms - state.performance_stats.step_smoothed_ms) * smoothing_alpha;
+                    (state.performance_stats.step_ms - state.performance_stats.step_smoothed_ms) *
+                    smoothing_alpha;
                 state.performance_stats.network_pump_smoothed_ms +=
                     (state.performance_stats.network_pump_ms -
-                     state.performance_stats.network_pump_smoothed_ms) * smoothing_alpha;
+                     state.performance_stats.network_pump_smoothed_ms) *
+                    smoothing_alpha;
                 state.performance_stats.lockstep_hash_smoothed_ms +=
                     (state.performance_stats.lockstep_hash_ms -
-                     state.performance_stats.lockstep_hash_smoothed_ms) * smoothing_alpha;
+                     state.performance_stats.lockstep_hash_smoothed_ms) *
+                    smoothing_alpha;
                 state.performance_stats.rollback_replay_smoothed_ms +=
                     (state.performance_stats.rollback_replay_ms_this_frame -
-                     state.performance_stats.rollback_replay_smoothed_ms) * smoothing_alpha;
+                     state.performance_stats.rollback_replay_smoothed_ms) *
+                    smoothing_alpha;
                 state.performance_stats.multiplayer_sim_total_smoothed_ms +=
                     (state.performance_stats.multiplayer_sim_total_ms -
-                     state.performance_stats.multiplayer_sim_total_smoothed_ms) * smoothing_alpha;
+                     state.performance_stats.multiplayer_sim_total_smoothed_ms) *
+                    smoothing_alpha;
                 state.performance_stats.render_smoothed_ms +=
-                    (state.performance_stats.render_ms - state.performance_stats.render_smoothed_ms) * smoothing_alpha;
+                    (state.performance_stats.render_ms -
+                     state.performance_stats.render_smoothed_ms) *
+                    smoothing_alpha;
                 state.performance_stats.imgui_smoothed_ms +=
-                    (state.performance_stats.imgui_ms - state.performance_stats.imgui_smoothed_ms) * smoothing_alpha;
+                    (state.performance_stats.imgui_ms - state.performance_stats.imgui_smoothed_ms) *
+                    smoothing_alpha;
                 state.performance_stats.present_smoothed_ms +=
-                    (state.performance_stats.present_ms - state.performance_stats.present_smoothed_ms) * smoothing_alpha;
+                    (state.performance_stats.present_ms -
+                     state.performance_stats.present_smoothed_ms) *
+                    smoothing_alpha;
                 state.performance_stats.frame_total_smoothed_ms +=
-                    (state.performance_stats.frame_total_ms - state.performance_stats.frame_total_smoothed_ms) * smoothing_alpha;
+                    (state.performance_stats.frame_total_ms -
+                     state.performance_stats.frame_total_smoothed_ms) *
+                    smoothing_alpha;
             }
-            state.performance_stats.step_peak_ms = std::max(state.performance_stats.step_peak_ms, state.performance_stats.step_ms);
-            state.performance_stats.network_pump_peak_ms = std::max(state.performance_stats.network_pump_peak_ms, state.performance_stats.network_pump_ms);
-            state.performance_stats.lockstep_hash_peak_ms = std::max(state.performance_stats.lockstep_hash_peak_ms, state.performance_stats.lockstep_hash_ms);
-            state.performance_stats.rollback_replay_peak_ms = std::max(
-                state.performance_stats.rollback_replay_peak_ms,
-                state.performance_stats.rollback_replay_ms_this_frame
-            );
-            state.performance_stats.multiplayer_sim_total_peak_ms = std::max(
-                state.performance_stats.multiplayer_sim_total_peak_ms,
-                state.performance_stats.multiplayer_sim_total_ms
-            );
-            state.performance_stats.render_peak_ms = std::max(state.performance_stats.render_peak_ms, state.performance_stats.render_ms);
-            state.performance_stats.imgui_peak_ms = std::max(state.performance_stats.imgui_peak_ms, state.performance_stats.imgui_ms);
-            state.performance_stats.present_peak_ms = std::max(state.performance_stats.present_peak_ms, state.performance_stats.present_ms);
-            state.performance_stats.frame_total_peak_ms = std::max(state.performance_stats.frame_total_peak_ms, state.performance_stats.frame_total_ms);
+            state.performance_stats.step_peak_ms =
+                std::max(state.performance_stats.step_peak_ms, state.performance_stats.step_ms);
+            state.performance_stats.network_pump_peak_ms =
+                std::max(state.performance_stats.network_pump_peak_ms,
+                         state.performance_stats.network_pump_ms);
+            state.performance_stats.lockstep_hash_peak_ms =
+                std::max(state.performance_stats.lockstep_hash_peak_ms,
+                         state.performance_stats.lockstep_hash_ms);
+            state.performance_stats.rollback_replay_peak_ms =
+                std::max(state.performance_stats.rollback_replay_peak_ms,
+                         state.performance_stats.rollback_replay_ms_this_frame);
+            state.performance_stats.multiplayer_sim_total_peak_ms =
+                std::max(state.performance_stats.multiplayer_sim_total_peak_ms,
+                         state.performance_stats.multiplayer_sim_total_ms);
+            state.performance_stats.render_peak_ms =
+                std::max(state.performance_stats.render_peak_ms, state.performance_stats.render_ms);
+            state.performance_stats.imgui_peak_ms =
+                std::max(state.performance_stats.imgui_peak_ms, state.performance_stats.imgui_ms);
+            state.performance_stats.present_peak_ms = std::max(
+                state.performance_stats.present_peak_ms, state.performance_stats.present_ms);
+            state.performance_stats.frame_total_peak_ms =
+                std::max(state.performance_stats.frame_total_peak_ms,
+                         state.performance_stats.frame_total_ms);
         }
 
         if (render_texture != nullptr) {
@@ -609,7 +542,7 @@ int main(int argc, char** argv) {
         graphics.ShutdownTextures();
         graphics.ShutdownText();
         audio.Shutdown();
-        gubsy_shutdown_debug(gubsy);
+        splonks::gubsy_shell::ShutdownDebug(gubsy_shell);
         splonks::ShutdownImGuiLayer();
         splonks::ShutdownTextSubsystem();
         SDL_Quit();

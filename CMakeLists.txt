@@ -278,8 +278,10 @@ add_executable(splonks-cpp
     src/aframe_animator.cpp
     src/aframe.cpp
     src/graphics.cpp
+    src/gubsy_shell.cpp
     src/hitscan.cpp
     src/imgui_layer.cpp
+    src/input_bind_schema.cpp
     src/inputs.cpp
     src/main.cpp
     src/menu/lighting.cpp
