@@ -1,11 +1,14 @@
 #include <gubsy/runtime.hpp>
 
 #include <cstdio>
+#include <filesystem>
 
 int main() {
     GubsyRuntime runtime{};
     GubsyAppConfig config{};
     config.enable_mods = false;
+    config.project_root = std::filesystem::current_path().string();
+    config.data_root = (std::filesystem::current_path() / "build" / "gubsy_import_smoke_data").string();
 
     if (!init_gubsy_runtime(runtime, config)) {
         std::fprintf(stderr, "failed to initialize Gubsy runtime\n");

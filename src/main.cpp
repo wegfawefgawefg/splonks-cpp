@@ -19,8 +19,8 @@
 
 #include <SDL3/SDL.h>
 #include <gubsy/runtime.hpp>
-#include <filesystem>
 #include <cmath>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -212,6 +212,14 @@ BindsSchema BuildSplonksBindsSchema() {
     return schema;
 }
 
+GubsyAppConfig BuildGubsyConfig() {
+    GubsyAppConfig config{};
+    config.enable_mods = false;
+    config.project_root = std::filesystem::current_path().string();
+    config.data_root = (std::filesystem::current_path() / "data" / "gubsy").string();
+    return config;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -328,8 +336,7 @@ int main(int argc, char** argv) {
         splonks::State state = splonks::State::New();
         state.running = true;
         GubsyRuntime gubsy;
-        GubsyAppConfig gubsy_config{};
-        gubsy_config.enable_mods = false;
+        GubsyAppConfig gubsy_config = BuildGubsyConfig();
         if (!init_gubsy_runtime(gubsy, gubsy_config)) {
             ThrowSdlError("init_gubsy_runtime failed");
         }
