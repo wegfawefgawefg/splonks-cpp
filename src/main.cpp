@@ -18,6 +18,7 @@
 #include "text.hpp"
 
 #include <SDL3/SDL.h>
+#include <gubsy/runtime.hpp>
 #include <filesystem>
 #include <cmath>
 #include <iostream>
@@ -164,6 +165,33 @@ void RebaseCwdToRepoRoot() {
     }
 }
 
+void StartSplonksFromGubsy(void* user_data, std::int32_t) {
+    auto* state = static_cast<splonks::State*>(user_data);
+    if (state == nullptr) {
+        return;
+    }
+    state->SetMode(splonks::Mode::StageTransition);
+}
+
+void QuitSplonksFromGubsy(void* user_data, std::int32_t) {
+    auto* state = static_cast<splonks::State*>(user_data);
+    if (state == nullptr) {
+        return;
+    }
+    state->running = false;
+}
+
+MenuInputState BuildGubsyMenuInput(const splonks::MenuInputs& inputs) {
+    MenuInputState result{};
+    result.up = inputs.up.pressed;
+    result.down = inputs.down.pressed;
+    result.left = inputs.left.pressed;
+    result.right = inputs.right.pressed;
+    result.select = inputs.confirm.pressed;
+    result.back = inputs.back.pressed;
+    return result;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -279,6 +307,28 @@ int main(int argc, char** argv) {
         splonks::PopulateToolSpecsTable();
         splonks::State state = splonks::State::New();
         state.running = true;
+        GubsyRuntime gubsy;
+        GubsyAppConfig gubsy_config{};
+        gubsy_config.enable_mods = false;
+        if (!init_gubsy_runtime(gubsy, gubsy_config)) {
+            ThrowSdlError("init_gubsy_runtime failed");
+        }
+        if (!gubsy_attach_sdl_renderer(gubsy,
+                                       window,
+                                       renderer,
+                                       static_cast<int>(graphics.dims.x),
+                                       static_cast<int>(graphics.dims.y))) {
+            ThrowSdlError("gubsy_attach_sdl_renderer failed");
+        }
+        GubsyMainMenuCommands gubsy_menu_commands{};
+        gubsy_menu_commands.start_game =
+            gubsy_register_menu_command(gubsy, StartSplonksFromGubsy, &state);
+        gubsy_menu_commands.quit =
+            gubsy_register_menu_command(gubsy, QuitSplonksFromGubsy, &state);
+        gubsy_set_main_menu_commands(gubsy, gubsy_menu_commands);
+        if (!gubsy_show_main_menu(gubsy)) {
+            ThrowSdlError("gubsy_show_main_menu failed");
+        }
         state.debug_primary_player_bot_enabled = debug_random_primary_input;
         debug.ui_visible = state.settings.debug_ui.menu_visible;
         debug.playback_window_visible = state.settings.debug_ui.playback_visible;
@@ -413,12 +463,25 @@ int main(int argc, char** argv) {
                 debug,
                 dt
             );
+            if (state.mode == splonks::Mode::Title) {
+                gubsy_set_menu_input(gubsy, BuildGubsyMenuInput(state.menu_inputs));
+                gubsy_update_menu(gubsy,
+                                  dt,
+                                  static_cast<int>(graphics.window_dims.x),
+                                  static_cast<int>(graphics.window_dims.y));
+            }
             debug_control_server.Step(state);
             const std::uint64_t step_end_counter = SDL_GetPerformanceCounter();
             splonks::DrawDebugPlaybackInspector(debug, state, graphics);
             splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
             const std::uint64_t render_begin_counter = SDL_GetPerformanceCounter();
             splonks::Render(renderer, render_texture, post_fx, state, audio, graphics);
+            if (state.mode == splonks::Mode::Title) {
+                gubsy_render_menu(gubsy,
+                                  renderer,
+                                  static_cast<int>(graphics.window_dims.x),
+                                  static_cast<int>(graphics.window_dims.y));
+            }
             const std::uint64_t render_end_counter = SDL_GetPerformanceCounter();
             splonks::UpdateDebugAudioBrush(debug, state, audio, graphics);
             const std::uint64_t imgui_begin_counter = SDL_GetPerformanceCounter();

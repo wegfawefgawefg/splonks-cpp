@@ -122,6 +122,11 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
+set(GUB_BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
+set(GUB_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(GUB_COMPILE_IMGUI_SOURCES OFF CACHE BOOL "" FORCE)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../gubsy" gubsy)
+
 add_executable(splonks-cpp
     src/audio.cpp
     src/audio_asset.cpp
@@ -416,6 +421,7 @@ target_link_libraries(
         SDL3_ttf::SDL3_ttf
         SDL3_image::SDL3_image
         SDL3_mixer::SDL3_mixer
+        gubsy::engine
 )
 
 if (MSVC)
