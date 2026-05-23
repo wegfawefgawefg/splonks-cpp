@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(splonks_cpp VERSION 0.1.0 LANGUAGES CXX)
 
+include(CTest)
 include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -125,6 +126,7 @@ FetchContent_MakeAvailable(imgui)
 set(GUB_BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
 set(GUB_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(GUB_COMPILE_IMGUI_SOURCES OFF CACHE BOOL "" FORCE)
+set(GUB_ENABLE_LUA_MOD_HOST OFF CACHE BOOL "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../gubsy" gubsy)
 
 add_executable(splonks-cpp
@@ -456,3 +458,28 @@ endif()
 set_target_properties(splonks-cpp PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
+
+add_executable(
+    gubsy_import_smoke
+    tools/gubsy_import_smoke.cpp
+    ${SPLONKS_IMGUI_SOURCES}
+)
+target_include_directories(
+    gubsy_import_smoke
+    PRIVATE
+        "${imgui_SOURCE_DIR}"
+        "${imgui_SOURCE_DIR}/backends"
+)
+target_link_libraries(gubsy_import_smoke PRIVATE gubsy::engine)
+
+if (NOT MSVC)
+    set_source_files_properties(
+        ${SPLONKS_IMGUI_SOURCES}
+        PROPERTIES
+            COMPILE_OPTIONS "-Wno-error;-Wno-conversion;-Wno-sign-conversion;-Wno-shadow"
+    )
+endif()
+
+if (BUILD_TESTING)
+    add_test(NAME gubsy_import_smoke COMMAND gubsy_import_smoke)
+endif()
