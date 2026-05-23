@@ -192,6 +192,26 @@ MenuInputState BuildGubsyMenuInput(const splonks::MenuInputs& inputs) {
     return result;
 }
 
+BindsSchema BuildSplonksBindsSchema() {
+    BindsSchema schema;
+    schema.add_action(0, "Menu Up", "Menu");
+    schema.add_action(1, "Menu Down", "Menu");
+    schema.add_action(2, "Menu Left", "Menu");
+    schema.add_action(3, "Menu Right", "Menu");
+    schema.add_action(4, "Confirm / Jump", "Shared");
+    schema.add_action(5, "Back / Attack", "Shared");
+    schema.add_action(6, "Page Previous / Bomb", "Shared");
+    schema.add_action(7, "Page Next / Rope", "Shared");
+    schema.add_action(8, "Move Up", "Gameplay");
+    schema.add_action(9, "Move Down", "Gameplay");
+    schema.add_action(10, "Move Left", "Gameplay");
+    schema.add_action(11, "Move Right", "Gameplay");
+    schema.add_action(12, "Use", "Gameplay");
+    schema.add_axis_1d(0, "Analog Value", "Gameplay");
+    schema.add_axis_2d(0, "Analog Move", "Gameplay");
+    return schema;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -313,6 +333,7 @@ int main(int argc, char** argv) {
         if (!init_gubsy_runtime(gubsy, gubsy_config)) {
             ThrowSdlError("init_gubsy_runtime failed");
         }
+        gubsy_register_binds_schema(gubsy, BuildSplonksBindsSchema());
         if (!gubsy_attach_sdl_renderer(gubsy,
                                        window,
                                        renderer,
