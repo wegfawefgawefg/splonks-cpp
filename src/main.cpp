@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
         const SDL_WindowFlags window_flags =
             (loaded_settings.video.fullscreen ? SDL_WINDOW_FULLSCREEN : 0) |
             SDL_WINDOW_HIGH_PIXEL_DENSITY |
-            (!loaded_settings.video.fullscreen ? SDL_WINDOW_RESIZABLE : 0);
+            (!loaded_settings.video.fullscreen ? (SDL_WINDOW_RESIZABLE | SDL_WINDOW_UTILITY) : 0);
         const int startup_width = static_cast<int>(loaded_settings.video.resolution.x);
         const int startup_height = static_cast<int>(loaded_settings.video.resolution.y);
         window =
@@ -207,6 +207,9 @@ int main(int argc, char** argv) {
                              startup_height > 0 ? startup_height : kWindowHeight, window_flags);
         if (window == nullptr) {
             ThrowSdlError("SDL_CreateWindow failed");
+        }
+        if (!loaded_settings.video.fullscreen) {
+            SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
         }
 
         renderer = SDL_CreateRenderer(window, SDL_GPU_RENDERER);
