@@ -467,6 +467,7 @@ int main(int argc, char** argv) {
 
             const std::uint64_t frame_begin_counter = SDL_GetPerformanceCounter();
             splonks::ImGuiLayerNewFrame();
+            gubsy_begin_debug_frame(gubsy, dt);
             splonks::DrawDebugPlaybackControls(debug, state, audio, graphics, window, renderer);
             audio.music_volume = state.settings.audio.music_volume;
             audio.sound_effects_volume = state.settings.audio.sfx_volume;
@@ -514,6 +515,10 @@ int main(int argc, char** argv) {
             const std::uint64_t render_end_counter = SDL_GetPerformanceCounter();
             splonks::UpdateDebugAudioBrush(debug, state, audio, graphics);
             const std::uint64_t imgui_begin_counter = SDL_GetPerformanceCounter();
+            gubsy_render_debug(gubsy,
+                               renderer,
+                               static_cast<int>(graphics.window_dims.x),
+                               static_cast<int>(graphics.window_dims.y));
             splonks::ImGuiLayerRender();
             const std::uint64_t imgui_end_counter = SDL_GetPerformanceCounter();
             const std::uint64_t present_begin_counter = SDL_GetPerformanceCounter();
@@ -604,6 +609,7 @@ int main(int argc, char** argv) {
         graphics.ShutdownTextures();
         graphics.ShutdownText();
         audio.Shutdown();
+        gubsy_shutdown_debug(gubsy);
         splonks::ShutdownImGuiLayer();
         splonks::ShutdownTextSubsystem();
         SDL_Quit();
