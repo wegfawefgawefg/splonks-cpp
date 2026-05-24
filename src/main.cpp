@@ -347,9 +347,6 @@ int main(int argc, char** argv) {
                 } else if (event.type == SDL_EVENT_WINDOW_RESIZED ||
                            event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
                     sync_gubsy_frame(state.settings.post_process);
-                } else if (event.type == SDL_EVENT_KEY_DOWN &&
-                           event.key.scancode == SDL_SCANCODE_ESCAPE && !event.key.repeat) {
-                    state.running = false;
                 }
             }
 
@@ -403,6 +400,7 @@ int main(int argc, char** argv) {
             splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
             const std::uint64_t render_begin_counter = SDL_GetPerformanceCounter();
             splonks::Render(renderer, render_texture, post_fx, state, audio, graphics);
+            splonks::gubsy_shell::DrawFrameToWindow(gubsy_shell);
             if (state.mode == splonks::Mode::Title) {
                 splonks::gubsy_shell::RenderTitleMenu(gubsy_shell, renderer,
                                                       static_cast<int>(graphics.window_dims.x),
@@ -417,7 +415,7 @@ int main(int argc, char** argv) {
             splonks::ImGuiLayerRender();
             const std::uint64_t imgui_end_counter = SDL_GetPerformanceCounter();
             const std::uint64_t present_begin_counter = SDL_GetPerformanceCounter();
-            SDL_RenderPresent(renderer);
+            splonks::gubsy_shell::PresentFrame(gubsy_shell);
             const std::uint64_t present_end_counter = SDL_GetPerformanceCounter();
             audio.UpdateCurrentMusicStreamData();
             const std::uint64_t frame_end_counter = SDL_GetPerformanceCounter();

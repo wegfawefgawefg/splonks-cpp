@@ -17,6 +17,8 @@ bool Init(Shell& shell, State& state, SDL_Window* window, SDL_Renderer* renderer
           const Graphics& graphics);
 bool InitOwned(Shell& shell, State& state, const Settings& settings);
 GubsyFrame GetFrame(Shell& shell);
+bool DrawFrameToWindow(Shell& shell);
+void PresentFrame(Shell& shell);
 void BeginDebugFrame(Shell& shell, float dt);
 void UpdateTitleMenu(Shell& shell, const State& state, float dt, int screen_width,
                      int screen_height);

@@ -11,39 +11,25 @@
 #include "text.hpp"
 
 #include <SDL3/SDL.h>
-
 #include <algorithm>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace splonks {
 
 namespace {
 
-void DrawCenteredText(
-    SDL_Renderer* renderer,
-    Graphics& graphics,
-    TextType text_type,
-    const char* text,
-    float center_x,
-    float y,
-    SDL_Color color
-) {
+void DrawCenteredText(SDL_Renderer* renderer, Graphics& graphics, TextType text_type,
+                      const char* text, float center_x, float y, SDL_Color color) {
     int text_width = 0;
     int text_height = 0;
     if (!MeasureText(graphics, text_type, text, &text_width, &text_height)) {
         DrawText(renderer, graphics, text_type, text, center_x, y, color);
         return;
     }
-    DrawText(
-        renderer,
-        graphics,
-        text_type,
-        text,
-        center_x - (static_cast<float>(text_width) * 0.5F),
-        y - (static_cast<float>(text_height) * 0.5F),
-        color
-    );
+    DrawText(renderer, graphics, text_type, text,
+             center_x - (static_cast<float>(text_width) * 0.5F),
+             y - (static_cast<float>(text_height) * 0.5F), color);
 }
 
 const char* JoinBarrierPhaseText(network::JoinBarrierPhase phase) {
@@ -70,8 +56,7 @@ bool IsLocalJoinBarrierPeer(const State& state) {
         return false;
     }
     for (const PlayerSlot& slot : state.players.slots) {
-        if (slot.connected &&
-            slot.connection_kind == PlayerConnectionKind::Local &&
+        if (slot.connected && slot.connection_kind == PlayerConnectionKind::Local &&
             slot.player_id == active_peer_id) {
             return true;
         }
@@ -84,11 +69,9 @@ bool IsQueuedJoinBarrierPeer(const State& state) {
         if (!slot.connected || slot.connection_kind != PlayerConnectionKind::Local) {
             continue;
         }
-        if (std::find(
-                state.net_session.join_barrier_queue.begin(),
-                state.net_session.join_barrier_queue.end(),
-                slot.player_id
-            ) != state.net_session.join_barrier_queue.end()) {
+        if (std::find(state.net_session.join_barrier_queue.begin(),
+                      state.net_session.join_barrier_queue.end(),
+                      slot.player_id) != state.net_session.join_barrier_queue.end()) {
             return true;
         }
     }
@@ -151,9 +134,7 @@ std::string JoinBarrierStatusText(const State& state) {
         if (!change_text.empty() && !has_active_peer) {
             return change_text;
         }
-        return has_active_peer
-            ? "Sending world snapshot"
-            : "Preparing catchup";
+        return has_active_peer ? "Sending world snapshot" : "Preparing catchup";
     }
 
     if (IsLocalJoinBarrierPeer(state)) {
@@ -168,9 +149,7 @@ std::string JoinBarrierStatusText(const State& state) {
         return change_text;
     }
 
-    return has_active_peer
-        ? "Waiting for active sync"
-        : "Waiting for catchup";
+    return has_active_peer ? "Waiting for active sync" : "Waiting for catchup";
 }
 
 void RenderJoinBarrierOverlay(SDL_Renderer* renderer, State& state, Graphics& graphics) {
@@ -196,42 +175,21 @@ void RenderJoinBarrierOverlay(SDL_Renderer* renderer, State& state, Graphics& gr
     const std::string active_client_text = ActiveJoinBarrierClientText(state);
     const std::string status_text = JoinBarrierStatusText(state);
 
-    DrawCenteredText(
-        renderer,
-        graphics,
-        TextType::MenuItem,
-        local_client_text.c_str(),
-        center_x,
-        center_y - 76.0F,
-        SDL_Color{255, 255, 255, 255}
-    );
-    DrawCenteredText(
-        renderer,
-        graphics,
-        TextType::MenuItem,
-        active_client_text.c_str(),
-        center_x,
-        center_y - 50.0F,
-        SDL_Color{235, 240, 255, 255}
-    );
-    DrawCenteredText(
-        renderer,
-        graphics,
-        TextType::MenuItem,
-        status_text.c_str(),
-        center_x,
-        center_y - 24.0F,
-        SDL_Color{225, 225, 225, 255}
-    );
+    DrawCenteredText(renderer, graphics, TextType::MenuItem, local_client_text.c_str(), center_x,
+                     center_y - 76.0F, SDL_Color{255, 255, 255, 255});
+    DrawCenteredText(renderer, graphics, TextType::MenuItem, active_client_text.c_str(), center_x,
+                     center_y - 50.0F, SDL_Color{235, 240, 255, 255});
+    DrawCenteredText(renderer, graphics, TextType::MenuItem, status_text.c_str(), center_x,
+                     center_y - 24.0F, SDL_Color{225, 225, 225, 255});
 
     constexpr float kBarWidth = 420.0F;
     constexpr float kBarHeight = 20.0F;
     const float denom = session.join_barrier_total_bytes > 0
-        ? static_cast<float>(session.join_barrier_total_bytes)
-        : static_cast<float>(std::max(1U, session.join_barrier_chunk_count));
+                            ? static_cast<float>(session.join_barrier_total_bytes)
+                            : static_cast<float>(std::max(1U, session.join_barrier_chunk_count));
     const float numer = session.join_barrier_total_bytes > 0
-        ? static_cast<float>(session.join_barrier_bytes_done)
-        : static_cast<float>(session.join_barrier_chunks_done);
+                            ? static_cast<float>(session.join_barrier_bytes_done)
+                            : static_cast<float>(session.join_barrier_chunks_done);
     const float progress = std::clamp(numer / denom, 0.0F, 1.0F);
     const SDL_FRect bar_bg{
         center_x - kBarWidth * 0.5F,
@@ -253,36 +211,23 @@ void RenderJoinBarrierOverlay(SDL_Renderer* renderer, State& state, Graphics& gr
     SDL_RenderFillRect(renderer, &bar_fill);
 
     const std::string change_text = JoinBarrierChangeText(state);
-    const std::string phase_text =
-        std::string(JoinBarrierPhaseText(session.join_barrier_phase)) +
-        " - world snapshot " +
-        std::to_string(session.join_barrier_chunks_done) + "/" +
-        std::to_string(session.join_barrier_chunk_count) + " chunks, " +
-        std::to_string(session.join_barrier_bytes_done / 1024U) + "/" +
-        std::to_string(session.join_barrier_total_bytes / 1024U) + " KB";
-    const std::string detail =
-        change_text.empty() ? phase_text : change_text + " - " + phase_text;
-    DrawCenteredText(
-        renderer,
-        graphics,
-        TextType::MenuItem,
-        detail.c_str(),
-        center_x,
-        center_y + 42.0F,
-        SDL_Color{225, 225, 225, 255}
-    );
+    const std::string phase_text = std::string(JoinBarrierPhaseText(session.join_barrier_phase)) +
+                                   " - world snapshot " +
+                                   std::to_string(session.join_barrier_chunks_done) + "/" +
+                                   std::to_string(session.join_barrier_chunk_count) + " chunks, " +
+                                   std::to_string(session.join_barrier_bytes_done / 1024U) + "/" +
+                                   std::to_string(session.join_barrier_total_bytes / 1024U) + " KB";
+    const std::string detail = change_text.empty() ? phase_text : change_text + " - " + phase_text;
+    DrawCenteredText(renderer, graphics, TextType::MenuItem, detail.c_str(), center_x,
+                     center_y + 42.0F, SDL_Color{225, 225, 225, 255});
 }
 
 } // namespace
 
-void Render(
-    SDL_Renderer* renderer,
-    SDL_Texture* render_texture,
-    const RenderPostFx& post_fx,
-    State& state,
-    const Audio& audio,
-    Graphics& graphics
-) {
+void Render(SDL_Renderer* renderer, SDL_Texture* render_texture, const RenderPostFx& post_fx,
+            State& state, const Audio& audio, Graphics& graphics) {
+    (void)post_fx;
+
     if (render_texture == nullptr) {
         return;
     }
@@ -322,33 +267,6 @@ void Render(
         break;
     }
 
-    SDL_SetRenderTarget(renderer, nullptr);
-
-    int output_width = static_cast<int>(graphics.window_dims.x);
-    int output_height = static_cast<int>(graphics.window_dims.y);
-    if (graphics.fullscreen) {
-        SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
-    }
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-
-    const SDL_FRect src{
-        0.0F,
-        0.0F,
-        static_cast<float>(graphics.dims.x),
-        static_cast<float>(graphics.dims.y),
-    };
-    const SDL_FRect dst = GetPresRect(graphics, output_width, output_height);
-    SDL_GPURenderState* const post_fx_state = GetActivePostFxState(post_fx, state);
-    if (post_fx_state != nullptr) {
-        SDL_SetGPURenderState(renderer, post_fx_state);
-    }
-    SDL_RenderTexture(renderer, render_texture, &src, &dst);
-    if (post_fx_state != nullptr) {
-        SDL_SetGPURenderState(renderer, nullptr);
-    }
-
     if (state.mode == Mode::Playing || state.mode == Mode::GameOver) {
         RenderPlayingHud(renderer, state, graphics);
         if (state.mode == Mode::Playing) {
@@ -357,6 +275,8 @@ void Render(
         RenderDebugOverlay(renderer, graphics, state, audio);
         RenderJoinBarrierOverlay(renderer, state, graphics);
     }
+
+    SDL_SetRenderTarget(renderer, nullptr);
 }
 
 } // namespace splonks

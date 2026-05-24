@@ -91,6 +91,14 @@ GubsyFrame GetFrame(Shell& shell) {
     return gubsy_get_frame(shell.runtime);
 }
 
+bool DrawFrameToWindow(Shell& shell) {
+    return gubsy_draw_frame_to_window(shell.runtime);
+}
+
+void PresentFrame(Shell& shell) {
+    gubsy_present_frame(shell.runtime);
+}
+
 void BeginDebugFrame(Shell& shell, float dt) {
     gubsy_begin_debug_frame(shell.runtime, dt);
 }
