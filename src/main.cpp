@@ -421,6 +421,21 @@ int main(int argc, char** argv) {
             const std::uint64_t present_end_counter = SDL_GetPerformanceCounter();
             audio.UpdateCurrentMusicStreamData();
             const std::uint64_t frame_end_counter = SDL_GetPerformanceCounter();
+            std::uint64_t capped_frame_end_counter = frame_end_counter;
+            const int frame_cap_fps = splonks::gubsy_shell::ConfiguredFrameCapFps(gubsy_shell);
+            if (frame_cap_fps > 0) {
+                const double frame_seconds =
+                    static_cast<double>(frame_end_counter - frame_begin_counter) / perf_frequency;
+                const double target_seconds = 1.0 / static_cast<double>(frame_cap_fps);
+                if (frame_seconds < target_seconds) {
+                    const Uint32 delay_ms =
+                        static_cast<Uint32>((target_seconds - frame_seconds) * 1000.0);
+                    if (delay_ms > 0) {
+                        SDL_Delay(delay_ms);
+                        capped_frame_end_counter = SDL_GetPerformanceCounter();
+                    }
+                }
+            }
 
             state.performance_stats.frame_budget_ms =
                 1000.0 / static_cast<double>(splonks::kFramesPerSecond);
@@ -438,7 +453,7 @@ int main(int argc, char** argv) {
             state.performance_stats.present_ms =
                 counter_to_ms(present_begin_counter, present_end_counter);
             state.performance_stats.frame_total_ms =
-                counter_to_ms(frame_begin_counter, frame_end_counter);
+                counter_to_ms(frame_begin_counter, capped_frame_end_counter);
             const double smoothing_alpha = 1.0 - std::exp(-static_cast<double>(dt) * 8.0);
             if (state.performance_stats.step_smoothed_ms == 0.0) {
                 state.performance_stats.step_smoothed_ms = state.performance_stats.step_ms;

@@ -22,6 +22,7 @@ void UpdateDeviceState(Shell& shell);
 bool TextEditActive(Shell& shell);
 bool DrawFrameToWindow(Shell& shell);
 void PresentFrame(Shell& shell);
+int ConfiguredFrameCapFps(Shell& shell);
 void BeginDebugFrame(Shell& shell, float dt);
 void UpdateTitleMenu(Shell& shell, const State& state, float dt, int screen_width,
                      int screen_height);

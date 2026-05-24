@@ -111,6 +111,10 @@ void PresentFrame(Shell& shell) {
     gubsy_present_frame(shell.runtime);
 }
 
+int ConfiguredFrameCapFps(Shell& shell) {
+    return gubsy_configured_frame_cap_fps(shell.runtime);
+}
+
 void BeginDebugFrame(Shell& shell, float dt) {
     gubsy_begin_debug_frame(shell.runtime, dt);
 }
