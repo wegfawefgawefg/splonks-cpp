@@ -49,12 +49,28 @@ int FindRespawnOption(MultiplayerRespawnMode mode) {
     return 0;
 }
 
+const RespawnOption* FindRespawnOptionById(const std::string& id) {
+    for (const RespawnOption& option : kRespawnOptions) {
+        if (id == option.id)
+            return &option;
+    }
+    return nullptr;
+}
+
 int FindCharacterOption(EntType type) {
     for (int i = 0; i < static_cast<int>(std::size(kCharacterOptions)); ++i) {
         if (kCharacterOptions[i].type == type)
             return i;
     }
     return 0;
+}
+
+const CharacterOption* FindCharacterOptionById(const std::string& id) {
+    for (const CharacterOption& option : kCharacterOptions) {
+        if (id == option.id)
+            return &option;
+    }
+    return nullptr;
 }
 
 void EnsureLobbyConfigDefaults(Shell& shell, const GubsyLobbyState& lobby) {
@@ -200,6 +216,60 @@ bool ValidateSplonksLobbyConfig(void* user_data, const GubsyLobbyState& lobby,
     return true;
 }
 
+bool ValidateSplonksRemoteConfig(void*, const GubsyLobbyState&, const SessionContract& remote,
+                                 std::string& message) {
+    const nlohmann::json& config = remote.game_config;
+    if (!config.is_object()) {
+        message = "Remote Splonks config is not an object";
+        return false;
+    }
+    if (config.value("mode", "") != "campaign") {
+        message = "Remote Splonks mode is not campaign";
+        return false;
+    }
+    if (FindRespawnOptionById(config.value("respawn_policy", "")) == nullptr) {
+        message = "Remote Splonks respawn policy is unknown";
+        return false;
+    }
+
+    const auto players_it = config.find("players");
+    if (players_it == config.end())
+        return true;
+    if (!players_it->is_array()) {
+        message = "Remote Splonks players config is not a list";
+        return false;
+    }
+    for (const nlohmann::json& player : *players_it) {
+        if (!player.is_object()) {
+            message = "Remote Splonks player config is invalid";
+            return false;
+        }
+        if (FindCharacterOptionById(player.value("character", "")) == nullptr) {
+            message = "Remote Splonks character config is unknown";
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ApplySplonksRemoteConfig(void* user_data, GubsyLobbyState& lobby,
+                              const SessionContract& remote, std::string& message) {
+    auto* shell = static_cast<Shell*>(user_data);
+    if (shell == nullptr) {
+        message = "Splonks lobby config is not registered";
+        return false;
+    }
+    if (!ValidateSplonksRemoteConfig(user_data, lobby, remote, message))
+        return false;
+
+    const RespawnOption* respawn =
+        FindRespawnOptionById(remote.game_config.value("respawn_policy", ""));
+    if (respawn != nullptr)
+        shell->lobby_config.respawn_mode = respawn->mode;
+    ApplyLobbyConfigToSplonks(*shell, lobby, false);
+    return true;
+}
+
 void StartSplonksFromGubsy(void* user_data, std::int32_t) {
     auto* shell = static_cast<Shell*>(user_data);
     if (shell == nullptr || shell->state == nullptr)
@@ -312,6 +382,8 @@ bool RegisterShellMenu(Shell& shell, State& state) {
     config_provider.set_option = SetSplonksLobbyOption;
     config_provider.serialize = SerializeSplonksLobbyConfig;
     config_provider.validate = ValidateSplonksLobbyConfig;
+    config_provider.validate_remote = ValidateSplonksRemoteConfig;
+    config_provider.apply_remote = ApplySplonksRemoteConfig;
     gubsy_set_lobby_config_provider(shell.runtime, config_provider);
 
     GubsyLobbyCommands lobby_commands{};
