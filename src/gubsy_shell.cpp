@@ -1,5 +1,6 @@
 #include "gubsy_shell.hpp"
 
+#include "gubsy_shell_binds.hpp"
 #include "input_bind_schema.hpp"
 #include "inputs.hpp"
 #include "network/net_lobby.hpp"
@@ -372,6 +373,7 @@ GubsyAppConfig BuildGubsyConfig(const Settings* settings = nullptr) {
 bool RegisterShellMenu(Shell& shell, State& state) {
     shell.state = &state;
     gubsy_register_binds_schema(shell.runtime, BuildGubsyBindsSchema());
+    EnsureDefaultBinds(shell.runtime);
 
     GubsyMainMenuCommands commands{};
     commands.start_game = gubsy_register_menu_command(shell.runtime, StartSplonksFromGubsy, &shell);

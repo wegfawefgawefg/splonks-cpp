@@ -279,6 +279,7 @@ add_executable(splonks-cpp
     src/aframe.cpp
     src/graphics.cpp
     src/gubsy_shell.cpp
+    src/gubsy_shell_binds.cpp
     src/hitscan.cpp
     src/imgui_layer.cpp
     src/input_bind_schema.cpp
@@ -474,6 +475,22 @@ target_include_directories(
 )
 target_link_libraries(gubsy_import_smoke PRIVATE gubsy::engine)
 
+add_executable(
+    gubsy_binds_smoke
+    tools/gubsy_binds_smoke.cpp
+    src/gubsy_shell_binds.cpp
+    src/input_bind_schema.cpp
+    ${SPLONKS_IMGUI_SOURCES}
+)
+target_include_directories(
+    gubsy_binds_smoke
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${imgui_SOURCE_DIR}"
+        "${imgui_SOURCE_DIR}/backends"
+)
+target_link_libraries(gubsy_binds_smoke PRIVATE gubsy::engine)
+
 if (NOT MSVC)
     set_source_files_properties(
         ${SPLONKS_IMGUI_SOURCES}
@@ -484,4 +501,5 @@ endif()
 
 if (BUILD_TESTING)
     add_test(NAME gubsy_import_smoke COMMAND gubsy_import_smoke)
+    add_test(NAME gubsy_binds_smoke COMMAND gubsy_binds_smoke)
 endif()
