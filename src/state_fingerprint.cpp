@@ -27,8 +27,7 @@ struct FingerprintWriter {
         }
     }
 
-    template <typename T>
-    void AddPod(const T& pod) {
+    template <typename T> void AddPod(const T& pod) {
         AddBytes(&pod, sizeof(T));
     }
 
@@ -71,7 +70,8 @@ struct FingerprintWriter {
     }
 };
 
-void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage, bool include_cache_generation) {
+void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
+                         bool include_cache_generation) {
     writer.AddString(stage.quest_id);
     writer.AddString(stage.quest_stage_id);
     writer.AddString(stage.route_label);
@@ -93,19 +93,22 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage, bool inc
         const std::size_t row_y = static_cast<std::size_t>(y);
         for (unsigned int x = 0; x < dims.x; ++x) {
             const std::size_t col_x = static_cast<std::size_t>(x);
-            const auto read_tile_grid = [&](const std::vector<std::vector<Tile>>& grid, Tile fallback) {
+            const auto read_tile_grid = [&](const std::vector<std::vector<Tile>>& grid,
+                                            Tile fallback) {
                 if (row_y >= grid.size() || col_x >= grid[row_y].size()) {
                     return fallback;
                 }
                 return grid[row_y][col_x];
             };
             const auto read_rotation_grid = [&]() {
-                if (row_y >= stage.tile_rotations.size() || col_x >= stage.tile_rotations[row_y].size()) {
+                if (row_y >= stage.tile_rotations.size() ||
+                    col_x >= stage.tile_rotations[row_y].size()) {
                     return kTileRotation0;
                 }
                 return stage.tile_rotations[row_y][col_x];
             };
-            const auto read_float_grid = [](const std::vector<std::vector<float>>& grid, std::size_t y_, std::size_t x_) {
+            const auto read_float_grid = [](const std::vector<std::vector<float>>& grid,
+                                            std::size_t y_, std::size_t x_) {
                 if (y_ >= grid.size() || x_ >= grid[y_].size()) {
                     return 0.0F;
                 }
@@ -114,7 +117,8 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage, bool inc
 
             writer.AddPod(static_cast<std::uint16_t>(read_tile_grid(stage.tiles, Tile::Air)));
             writer.AddPod(static_cast<std::uint8_t>(read_rotation_grid()));
-            writer.AddPod(static_cast<std::uint16_t>(read_tile_grid(stage.backwall_tiles, Tile::Air)));
+            writer.AddPod(
+                static_cast<std::uint16_t>(read_tile_grid(stage.backwall_tiles, Tile::Air)));
             writer.AddPod(static_cast<std::uint16_t>(read_tile_grid(stage.fluid_tiles, Tile::Air)));
             writer.AddFloat(read_float_grid(stage.fluid_amount, row_y, col_x));
 
@@ -133,9 +137,8 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage, bool inc
     }
 
     std::vector<StageLight> lights = stage.lights;
-    std::sort(lights.begin(), lights.end(), [](const StageLight& lhs, const StageLight& rhs) {
-        return lhs.vid.id < rhs.vid.id;
-    });
+    std::sort(lights.begin(), lights.end(),
+              [](const StageLight& lhs, const StageLight& rhs) { return lhs.vid.id < rhs.vid.id; });
     writer.AddPod(lights.size());
     for (const StageLight& light : lights) {
         writer.AddVid(light.vid);
@@ -256,12 +259,14 @@ void AddPlayerRegistryFingerprint(FingerprintWriter& writer, const PlayerRegistr
             writer.AddVid(*slot.ent_vid);
         }
         writer.AddBool(slot.connected);
+        writer.AddPod(static_cast<std::uint16_t>(slot.preferred_spawn_type));
         AddInputFrameFingerprint(writer, slot.input_frame);
         AddInputFrameFingerprint(writer, slot.previous_input_frame);
     }
 }
 
-void AddToolInventoryFingerprint(FingerprintWriter& writer, const EntToolInventoryState& inventory) {
+void AddToolInventoryFingerprint(FingerprintWriter& writer,
+                                 const EntToolInventoryState& inventory) {
     writer.AddPod(inventory.tool_states.size());
     for (const EntToolState& tool_state : inventory.tool_states) {
         writer.AddVid(tool_state.owner_vid);
@@ -282,22 +287,15 @@ void AddNetworkVid(FingerprintWriter& writer, const State& state, const VID& vid
     writer.AddPod(NetEntIdForVid(state, vid));
 }
 
-void AddNetworkOptionalVid(
-    FingerprintWriter& writer,
-    const State& state,
-    const std::optional<VID>& vid
-) {
+void AddNetworkOptionalVid(FingerprintWriter& writer, const State& state,
+                           const std::optional<VID>& vid) {
     writer.AddBool(vid.has_value());
     if (vid.has_value()) {
         AddNetworkVid(writer, state, *vid);
     }
 }
 
-bool IsMotionIgnoredForPlayer(
-    const State& state,
-    const Ent& ent,
-    PlayerId player_id
-) {
+bool IsMotionIgnoredForPlayer(const State& state, const Ent& ent, PlayerId player_id) {
     const network::NetEntId ignored_player_ent_id = network::MakePlayerNetEntId(player_id);
     if (NetEntIdForVid(state, ent.vid) == ignored_player_ent_id) {
         return true;
@@ -332,11 +330,7 @@ bool IsMotionIgnoredForAnyPlayer(const State& state, const Ent& ent) {
     return false;
 }
 
-void AddNetworkEntFingerprint(
-    FingerprintWriter& writer,
-    const State& state,
-    const Ent& ent
-) {
+void AddNetworkEntFingerprint(FingerprintWriter& writer, const State& state, const Ent& ent) {
     const network::NetEntId ent_id = NetEntIdForVid(state, ent.vid);
     const bool ignore_motion = IsMotionIgnoredForAnyPlayer(state, ent);
 
@@ -427,14 +421,11 @@ void AddNetworkToolInventoryFingerprint(FingerprintWriter& writer, const State& 
         }
         tool_states.push_back(&tool_state);
     }
-    std::sort(
-        tool_states.begin(),
-        tool_states.end(),
-        [&state](const EntToolState* lhs, const EntToolState* rhs) {
-            return NetEntIdForVid(state, lhs->owner_vid) <
-                   NetEntIdForVid(state, rhs->owner_vid);
-        }
-    );
+    std::sort(tool_states.begin(), tool_states.end(),
+              [&state](const EntToolState* lhs, const EntToolState* rhs) {
+                  return NetEntIdForVid(state, lhs->owner_vid) <
+                         NetEntIdForVid(state, rhs->owner_vid);
+              });
 
     writer.AddPod(tool_states.size());
     for (const EntToolState* const tool_state : tool_states) {
@@ -450,10 +441,8 @@ void AddNetworkToolInventoryFingerprint(FingerprintWriter& writer, const State& 
 
 } // namespace
 
-CanonicalStateFingerprint ComputeCanonicalStateFingerprintWithOptions(
-    const State& state,
-    bool include_drng
-) {
+CanonicalStateFingerprint ComputeCanonicalStateFingerprintWithOptions(const State& state,
+                                                                      bool include_drng) {
     FingerprintWriter writer;
     writer.AddPod(static_cast<std::uint8_t>(state.mode));
     writer.AddPod(state.frame);
@@ -495,10 +484,8 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprintWithOptions(
     }
 
     std::ostringstream summary;
-    summary << "stage=" << state.stage.quest_stage_id
-            << " frame=" << state.frame
-            << " stage_frame=" << state.stage_frame
-            << " ents=" << active_ents
+    summary << "stage=" << state.stage.quest_stage_id << " frame=" << state.frame
+            << " stage_frame=" << state.stage_frame << " ents=" << active_ents
             << " tiles=" << state.stage.GetTileWidth() << "x" << state.stage.GetTileHeight();
     return CanonicalStateFingerprint{
         .value = writer.value,
@@ -514,9 +501,8 @@ CanonicalStateFingerprint ComputeGameplayDeterminismFingerprint(const State& sta
     return ComputeCanonicalStateFingerprintWithOptions(state, true);
 }
 
-std::uint64_t CombineNetworkStateFingerprintComponents(
-    const NetworkStateFingerprintComponents& components
-) {
+std::uint64_t
+CombineNetworkStateFingerprintComponents(const NetworkStateFingerprintComponents& components) {
     FingerprintWriter writer;
     writer.AddPod(components.root);
     writer.AddPod(components.stage);
@@ -537,10 +523,8 @@ CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state) {
     }
 
     std::ostringstream summary;
-    summary << "stage=" << state.stage.quest_stage_id
-            << " frame=" << state.frame
-            << " stage_frame=" << state.stage_frame
-            << " active_ents=" << active_ents
+    summary << "stage=" << state.stage.quest_stage_id << " frame=" << state.frame
+            << " stage_frame=" << state.stage_frame << " active_ents=" << active_ents
             << " tiles=" << state.stage.GetTileWidth() << "x" << state.stage.GetTileHeight();
     return CanonicalStateFingerprint{
         .value = CombineNetworkStateFingerprintComponents(components),
@@ -587,18 +571,14 @@ NetworkStateFingerprintComponents ComputeNetworkStateFingerprintComponents(const
             active_ents.push_back(&ent);
         }
     }
-    std::sort(
-        active_ents.begin(),
-        active_ents.end(),
-        [&state](const Ent* lhs, const Ent* rhs) {
-            const network::NetEntId lhs_id = NetEntIdForVid(state, lhs->vid);
-            const network::NetEntId rhs_id = NetEntIdForVid(state, rhs->vid);
-            if (lhs_id != rhs_id) {
-                return lhs_id < rhs_id;
-            }
-            return lhs->vid.id < rhs->vid.id;
+    std::sort(active_ents.begin(), active_ents.end(), [&state](const Ent* lhs, const Ent* rhs) {
+        const network::NetEntId lhs_id = NetEntIdForVid(state, lhs->vid);
+        const network::NetEntId rhs_id = NetEntIdForVid(state, rhs->vid);
+        if (lhs_id != rhs_id) {
+            return lhs_id < rhs_id;
         }
-    );
+        return lhs->vid.id < rhs->vid.id;
+    });
     FingerprintWriter ents;
     ents.AddPod(active_ents.size());
     for (const Ent* const ent : active_ents) {
@@ -622,18 +602,14 @@ std::vector<NetworkEntFingerprint> ComputeNetworkEntFingerprints(const State& st
             active_ents.push_back(&ent);
         }
     }
-    std::sort(
-        active_ents.begin(),
-        active_ents.end(),
-        [&state](const Ent* lhs, const Ent* rhs) {
-            const network::NetEntId lhs_id = NetEntIdForVid(state, lhs->vid);
-            const network::NetEntId rhs_id = NetEntIdForVid(state, rhs->vid);
-            if (lhs_id != rhs_id) {
-                return lhs_id < rhs_id;
-            }
-            return lhs->vid.id < rhs->vid.id;
+    std::sort(active_ents.begin(), active_ents.end(), [&state](const Ent* lhs, const Ent* rhs) {
+        const network::NetEntId lhs_id = NetEntIdForVid(state, lhs->vid);
+        const network::NetEntId rhs_id = NetEntIdForVid(state, rhs->vid);
+        if (lhs_id != rhs_id) {
+            return lhs_id < rhs_id;
         }
-    );
+        return lhs->vid.id < rhs->vid.id;
+    });
 
     std::vector<NetworkEntFingerprint> result;
     result.reserve(active_ents.size());

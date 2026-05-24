@@ -6,11 +6,19 @@
 
 #include <SDL3/SDL.h>
 #include <gubsy/runtime.hpp>
+#include <vector>
 
 namespace splonks::gubsy_shell {
 
+struct LobbyConfig {
+    MultiplayerRespawnMode respawn_mode = MultiplayerRespawnMode::GenerousNextLevel;
+    std::vector<EntType> character_by_player;
+};
+
 struct Shell {
     GubsyRuntime runtime;
+    State* state = nullptr;
+    LobbyConfig lobby_config;
 };
 
 bool Init(Shell& shell, State& state, SDL_Window* window, SDL_Renderer* renderer,

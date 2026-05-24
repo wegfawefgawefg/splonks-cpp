@@ -1,12 +1,12 @@
 #include "stage_spawning.hpp"
 
+#include "aframe_id.hpp"
 #include "buying.hpp"
 #include "ent/spec.hpp"
 #include "ent/spec_restore.hpp"
 #include "ents/common/common.hpp"
 #include "ents/shop.hpp"
 #include "ents/store_light.hpp"
-#include "aframe_id.hpp"
 #include "player_queries.hpp"
 #include "tools/tool_spec.hpp"
 
@@ -24,7 +24,12 @@ constexpr std::uint16_t kPlayerInitialBombs = 400;
 constexpr std::uint16_t kPlayerInitialRopes = 400;
 constexpr std::uint32_t kPlayerInitialTestingMoney = 100000;
 
-EntType GetConfiguredPlayerSpawnType(const State& state) {
+EntType GetConfiguredPlayerSpawnType(const State& state, PlayerId player_id) {
+    if (const PlayerSlot* const slot = state.players.Find(player_id)) {
+        if (IsPlayerLikeEntType(slot->preferred_spawn_type)) {
+            return slot->preferred_spawn_type;
+        }
+    }
     if (!state.settings.debug_ui.default_spawn_enabled) {
         return EntType::Player;
     }
@@ -38,21 +43,13 @@ EntType GetConfiguredPlayerSpawnType(const State& state) {
 
 void GrantPlayerStarterTools(State& state, const VID& player_vid) {
     if (const std::optional<ToolKind> bomb_tool_kind = FindPreferredToolKindForSlotIndex(0)) {
-        FillToolSlot(
-            state.ent_tools.EnsureToolSlot(player_vid, 0),
-            *bomb_tool_kind,
-            kPlayerInitialBombs,
-            true
-        );
+        FillToolSlot(state.ent_tools.EnsureToolSlot(player_vid, 0), *bomb_tool_kind,
+                     kPlayerInitialBombs, true);
     }
 
     if (const std::optional<ToolKind> rope_tool_kind = FindPreferredToolKindForSlotIndex(1)) {
-        FillToolSlot(
-            state.ent_tools.EnsureToolSlot(player_vid, 1),
-            *rope_tool_kind,
-            kPlayerInitialRopes,
-            true
-        );
+        FillToolSlot(state.ent_tools.EnsureToolSlot(player_vid, 1), *rope_tool_kind,
+                     kPlayerInitialRopes, true);
     }
 }
 
@@ -64,11 +61,7 @@ void RestoreEntSlot(EntPool& ents, const Ent& ent) {
     ents.ents[ent.vid.id] = ent;
     ents.ents[ent.vid.id].active = true;
 
-    const auto it = std::find(
-        ents.available_ids.begin(),
-        ents.available_ids.end(),
-        ent.vid.id
-    );
+    const auto it = std::find(ents.available_ids.begin(), ents.available_ids.end(), ent.vid.id);
     if (it != ents.available_ids.end()) {
         ents.available_ids.erase(it);
     }
@@ -138,8 +131,7 @@ StageCarryover CaptureStageCarryover(const State& state) {
     StageCarryover carryover;
     constexpr bool preserve_attached_items = true;
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected ||
-            !slot.ent_vid.has_value()) {
+        if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
         }
 
@@ -265,11 +257,9 @@ void SnapAttachedItemsToPlayer(State& state) {
                 const Vec2 hold_offset = Vec2::New(4.0F, 1.0F);
                 held_item->facing = player->facing;
                 held_item->draw_layer = DrawLayer::Foreground;
-                held_item->SetCenter(
-                    player->facing == Side::Left
-                        ? player_center + Vec2::New(-hold_offset.x, hold_offset.y)
-                        : player_center + hold_offset
-                );
+                held_item->SetCenter(player->facing == Side::Left
+                                         ? player_center + Vec2::New(-hold_offset.x, hold_offset.y)
+                                         : player_center + hold_offset);
             }
         }
 
@@ -279,11 +269,9 @@ void SnapAttachedItemsToPlayer(State& state) {
                 back_item->facing = player->facing;
                 back_item->draw_layer = DrawLayer::Background;
                 TrySetAnim(*back_item, EntDisplayState::Neutral);
-                back_item->SetCenter(
-                    player->facing == Side::Left
-                        ? player_center + Vec2::New(-back_offset.x, back_offset.y)
-                        : player_center + back_offset
-                );
+                back_item->SetCenter(player->facing == Side::Left
+                                         ? player_center + Vec2::New(-back_offset.x, back_offset.y)
+                                         : player_center + back_offset);
             }
         }
     }
@@ -301,7 +289,7 @@ void SpawnPlayer(State& state, const Vec2& pos) {
 std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, const Vec2& pos) {
     if (const std::optional<VID> player_vid = state.ents.NewEnt()) {
         if (Ent* const player = state.ents.GetEntMut(*player_vid)) {
-            const EntType spawn_type = GetConfiguredPlayerSpawnType(state);
+            const EntType spawn_type = GetConfiguredPlayerSpawnType(state, player_id);
             SetEntAs(*player, spawn_type);
             player->pos = pos;
             player->vel = Vec2::New(0.0F, 0.0F);
@@ -384,8 +372,9 @@ void SpawnAuthoredStageEnts(State& state) {
             ent->ai_state = *spawn.ai_state_override;
         }
         if (spawn.type_ == EntType::BasicExit) {
-            const std::string_view exit_id =
-                spawn.exit_id.empty() ? std::string_view("default") : std::string_view(spawn.exit_id);
+            const std::string_view exit_id = spawn.exit_id.empty()
+                                                 ? std::string_view("default")
+                                                 : std::string_view(spawn.exit_id);
             ent->stage_exit_id = state.stage.FindExitId(exit_id);
             if (!state.stage.exits.empty() && ent->stage_exit_id == kInvalidStageExitId) {
                 throw std::runtime_error("BasicExit spawn references unknown stage exit: " +
@@ -401,16 +390,12 @@ void SpawnAuthoredStageEnts(State& state) {
         }
     }
 
-    const auto resolve_spawn_link = [&](
-        std::size_t ent_spawn_index,
-        std::optional<std::size_t> linked_spawn_index,
-        int slot
-    ) {
+    const auto resolve_spawn_link = [&](std::size_t ent_spawn_index,
+                                        std::optional<std::size_t> linked_spawn_index, int slot) {
         if (!linked_spawn_index.has_value()) {
             return;
         }
-        if (ent_spawn_index >= spawned_vids.size() ||
-            !spawned_vids[ent_spawn_index].has_value()) {
+        if (ent_spawn_index >= spawned_vids.size() || !spawned_vids[ent_spawn_index].has_value()) {
             return;
         }
         if (*linked_spawn_index >= spawned_vids.size() ||
@@ -419,8 +404,7 @@ void SpawnAuthoredStageEnts(State& state) {
         }
 
         Ent* const ent = state.ents.GetEntMut(*spawned_vids[ent_spawn_index]);
-        const Ent* const linked_ent =
-            state.ents.GetEnt(*spawned_vids[*linked_spawn_index]);
+        const Ent* const linked_ent = state.ents.GetEnt(*spawned_vids[*linked_spawn_index]);
         if (ent == nullptr || linked_ent == nullptr) {
             return;
         }
@@ -491,8 +475,7 @@ void SpawnAuthoredStageEnts(State& state) {
             continue;
         }
 
-        Ent* const shop =
-            state.ents.GetEntMut(*spawned_vids[*spawn.shop_owner_spawn_index]);
+        Ent* const shop = state.ents.GetEntMut(*spawned_vids[*spawn.shop_owner_spawn_index]);
         if (shop == nullptr || !shop->active || shop->type_ != EntType::Shop) {
             continue;
         }

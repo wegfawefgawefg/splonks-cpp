@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ent/core_types.hpp"
 #include "inputs.hpp"
 #include "player_id.hpp"
 #include "vid.hpp"
@@ -23,6 +24,7 @@ struct PlayerSlot {
     bool connected = false;
     bool primary_local = false;
     std::string display_name;
+    EntType preferred_spawn_type = EntType::Player;
     InputFrame input_frame = InputFrame::New();
     InputFrame previous_input_frame = InputFrame::New();
     PlayingInputs inputs = PlayingInputs::New();
@@ -41,7 +43,8 @@ struct PlayerRegistry {
     PlayerSlot* FindPrimaryLocal();
     const PlayerSlot* FindPrimaryLocal() const;
 
-    PlayerSlot& EnsureLocalPlayer(PlayerId player_id, const std::string& display_name, bool primary);
+    PlayerSlot& EnsureLocalPlayer(PlayerId player_id, const std::string& display_name,
+                                  bool primary);
     PlayerSlot& EnsurePrimaryLocalPlayer();
     PlayerSlot& EnsureRemotePlayer(PlayerId player_id, const std::string& display_name);
     void Remove(PlayerId player_id);
@@ -53,13 +56,11 @@ struct PlayerRegistry {
     const PlayingInputs* FindInputsForEnt(VID ent_vid) const;
     const PlayingInputs* FindInputsForPlayer(PlayerId player_id) const;
     void SetInputFrameForPlayer(PlayerId player_id, const InputFrame& input_frame);
-    void SetInputFrameAndInputsForPlayer(
-        PlayerId player_id,
-        const InputFrame& input_frame,
-        const PlayingInputs& inputs,
-        const PlayingInputs& immediate_inputs
-    );
-    void SetInputsForPlayer(PlayerId player_id, const PlayingInputs& inputs, const PlayingInputs& immediate_inputs);
+    void SetInputFrameAndInputsForPlayer(PlayerId player_id, const InputFrame& input_frame,
+                                         const PlayingInputs& inputs,
+                                         const PlayingInputs& immediate_inputs);
+    void SetInputsForPlayer(PlayerId player_id, const PlayingInputs& inputs,
+                            const PlayingInputs& immediate_inputs);
     void SetPrimaryLocalInputs(const PlayingInputs& inputs, const PlayingInputs& immediate_inputs);
 };
 

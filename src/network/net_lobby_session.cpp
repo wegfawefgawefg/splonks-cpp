@@ -1,6 +1,5 @@
-#include "network/net_lobby.hpp"
-
 #include "network/net_ent_links.hpp"
+#include "network/net_lobby.hpp"
 #include "network/net_lobby_internal.hpp"
 #include "network/net_protocol.hpp"
 #include "state.hpp"
@@ -24,14 +23,20 @@ NetTransportRuntime& EnsureTransport(State& state) {
     return *state.net_transport;
 }
 
+PlayerId NextAvailablePlayerIdAfterExisting(const PlayerRegistry& players) {
+    PlayerId next = kFirstRemotePlayerId;
+    for (const PlayerSlot& slot : players.slots) {
+        if (slot.player_id >= next) {
+            next = slot.player_id + 1;
+        }
+    }
+    return next;
+}
+
 } // namespace
 
-bool StartHostSession(
-    State& state,
-    std::uint16_t port,
-    std::uint32_t input_delay_frames,
-    std::string* status_out
-) {
+bool StartHostSession(State& state, std::uint16_t port, std::uint32_t input_delay_frames,
+                      std::string* status_out) {
     NetTransportRuntime& transport = EnsureTransport(state);
     std::string error;
     if (!transport.socket.Open(port, &error)) {
@@ -44,17 +49,19 @@ bool StartHostSession(
     state.net_session = NetSessionState::NewOffline();
     state.net_session.role = NetRole::Host;
     state.net_session.input_lockstep_enabled = true;
-    state.net_session.lockstep_input_delay_frames = ClampLockstepInputDelayFrames(input_delay_frames);
+    state.net_session.lockstep_input_delay_frames =
+        ClampLockstepInputDelayFrames(input_delay_frames);
     state.net_session.local_player_id = kPrimaryLocalPlayerId;
     state.net_session.host_player_id = kPrimaryLocalPlayerId;
-    state.net_session.next_player_id = kFirstRemotePlayerId;
     if (!EnsureHostSyncedStage(state, status_out)) {
         transport.socket.Close();
         state.net_session = NetSessionState::NewOffline();
         return false;
     }
-    state.net_session.stage_instance_id = static_cast<StageInstanceId>(state.net_session.stage_seed);
+    state.net_session.stage_instance_id =
+        static_cast<StageInstanceId>(state.net_session.stage_seed);
     state.players.EnsurePrimaryLocalPlayer();
+    state.net_session.next_player_id = NextAvailablePlayerIdAfterExisting(state.players);
     ResetInputLockstepState(state);
     RegisterStageEntLinks(state);
     transport.remotes.clear();
@@ -68,7 +75,7 @@ bool StartHostSession(
         const std::vector<std::string> lan_addresses = GetLocalLanIpv4Addresses();
         if (!lan_addresses.empty()) {
             *status_out += " LAN join: " + lan_addresses.front() + ":" +
-                std::to_string(transport.socket.BoundPort()) + ".";
+                           std::to_string(transport.socket.BoundPort()) + ".";
         }
     }
     return true;
@@ -78,13 +85,8 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
     return StartHostSession(state, port, kDefaultLockstepInputDelayFrames, status_out);
 }
 
-bool JoinHostSession(
-    State& state,
-    const std::string& host,
-    std::uint16_t port,
-    const std::vector<PlayerId>& preferred_player_ids,
-    std::string* status_out
-) {
+bool JoinHostSession(State& state, const std::string& host, std::uint16_t port,
+                     const std::vector<PlayerId>& preferred_player_ids, std::string* status_out) {
     NetTransportRuntime& transport = EnsureTransport(state);
     std::string error;
     if (!transport.socket.Open(0, &error)) {
@@ -115,12 +117,8 @@ bool JoinHostSession(
     return true;
 }
 
-bool JoinHostSession(
-    State& state,
-    const std::string& host,
-    std::uint16_t port,
-    std::string* status_out
-) {
+bool JoinHostSession(State& state, const std::string& host, std::uint16_t port,
+                     std::string* status_out) {
     return JoinHostSession(state, host, port, {}, status_out);
 }
 
