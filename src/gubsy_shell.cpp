@@ -25,12 +25,12 @@ void QuitSplonksFromGubsy(void* user_data, std::int32_t) {
 
 MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs) {
     MenuInputState result{};
-    result.up = inputs.up.pressed;
-    result.down = inputs.down.pressed;
-    result.left = inputs.left.pressed;
-    result.right = inputs.right.pressed;
-    result.select = inputs.confirm.pressed;
-    result.back = inputs.back.pressed;
+    result.up = inputs.up.down;
+    result.down = inputs.down.down;
+    result.left = inputs.left.down;
+    result.right = inputs.right.down;
+    result.select = inputs.confirm.down;
+    result.back = inputs.back.down;
     return result;
 }
 
