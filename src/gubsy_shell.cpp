@@ -34,13 +34,33 @@ MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs) {
     return result;
 }
 
-GubsyAppConfig BuildGubsyConfig() {
+GubsyAppConfig BuildGubsyConfig(const Settings* settings = nullptr) {
     GubsyAppConfig config{};
     config.enable_mods = false;
     config.project_root = std::filesystem::current_path().string();
     config.data_root = (std::filesystem::current_path() / "data" / "gubsy").string();
     config.engine_assets_root = (std::filesystem::current_path() / "assets").string();
+    config.window_title = "Splonks";
+    config.utility_window = true;
+    config.always_on_top = false;
+    config.resizable_window = true;
+    if (settings != nullptr) {
+        config.window_width = static_cast<int>(settings->video.resolution.x);
+        config.window_height = static_cast<int>(settings->video.resolution.y);
+        config.render_width = static_cast<int>(settings->video.resolution.x);
+        config.render_height = static_cast<int>(settings->video.resolution.y);
+    }
     return config;
+}
+
+bool RegisterShellMenu(Shell& shell, State& state) {
+    gubsy_register_binds_schema(shell.runtime, BuildGubsyBindsSchema());
+
+    GubsyMainMenuCommands commands{};
+    commands.start_game = gubsy_register_menu_command(shell.runtime, StartSplonksFromGubsy, &state);
+    commands.quit = gubsy_register_menu_command(shell.runtime, QuitSplonksFromGubsy, &state);
+    gubsy_set_main_menu_commands(shell.runtime, commands);
+    return gubsy_show_main_menu(shell.runtime);
 }
 
 } // namespace
@@ -50,19 +70,25 @@ bool Init(Shell& shell, State& state, SDL_Window* window, SDL_Renderer* renderer
     if (!init_gubsy_runtime(shell.runtime, BuildGubsyConfig()))
         return false;
 
-    gubsy_register_binds_schema(shell.runtime, BuildGubsyBindsSchema());
-
     if (!gubsy_attach_sdl_renderer(shell.runtime, window, renderer,
                                    static_cast<int>(graphics.dims.x),
                                    static_cast<int>(graphics.dims.y))) {
         return false;
     }
 
-    GubsyMainMenuCommands commands{};
-    commands.start_game = gubsy_register_menu_command(shell.runtime, StartSplonksFromGubsy, &state);
-    commands.quit = gubsy_register_menu_command(shell.runtime, QuitSplonksFromGubsy, &state);
-    gubsy_set_main_menu_commands(shell.runtime, commands);
-    return gubsy_show_main_menu(shell.runtime);
+    return RegisterShellMenu(shell, state);
+}
+
+bool InitOwned(Shell& shell, State& state, const Settings& settings) {
+    if (!init_gubsy_runtime(shell.runtime, BuildGubsyConfig(&settings)))
+        return false;
+    if (!gubsy_init_sdl_renderer(shell.runtime))
+        return false;
+    return RegisterShellMenu(shell, state);
+}
+
+GubsyFrame GetFrame(Shell& shell) {
+    return gubsy_get_frame(shell.runtime);
 }
 
 void BeginDebugFrame(Shell& shell, float dt) {
@@ -85,6 +111,11 @@ void RenderDebug(Shell& shell, SDL_Renderer* renderer, int screen_width, int scr
 
 void ShutdownDebug(Shell& shell) {
     gubsy_shutdown_debug(shell.runtime);
+}
+
+void Shutdown(Shell& shell) {
+    gubsy_shutdown_debug(shell.runtime);
+    cleanup_gubsy_runtime(shell.runtime);
 }
 
 } // namespace splonks::gubsy_shell

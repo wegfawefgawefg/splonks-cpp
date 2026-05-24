@@ -28,9 +28,6 @@
 
 namespace {
 
-constexpr int kWindowWidth = 1920;
-constexpr int kWindowHeight = 540;
-
 enum class StartupNetworkMode {
     None,
     Host,
@@ -137,14 +134,6 @@ bool HasStartupFlag(int argc, char** argv, const std::string& flag) {
     throw std::runtime_error(std::string(message) + ": " + SDL_GetError());
 }
 
-splonks::UVec2 GetWindowDims(SDL_Window* window) {
-    int window_width = 0;
-    int window_height = 0;
-    SDL_GetWindowSize(window, &window_width, &window_height);
-    return splonks::UVec2::New(static_cast<unsigned int>(std::max(window_width, 1)),
-                               static_cast<unsigned int>(std::max(window_height, 1)));
-}
-
 void RebaseCwdToRepoRoot() {
     if (const char* base_path = SDL_GetBasePath()) {
         std::filesystem::path probe = std::filesystem::path(base_path);
@@ -184,41 +173,36 @@ int main(int argc, char** argv) {
     splonks::Audio audio;
     splonks::DebugPlayback debug = splonks::DebugPlayback::New();
     splonks::debug::DebugControlServer debug_control_server;
+    splonks::gubsy_shell::Shell gubsy_shell;
 
     try {
-        ////////////////        GRAPHICS INIT        ////////////////
-        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
-            ThrowSdlError("SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD) failed");
+        ////////////////        SHELL INIT        ////////////////
+        const splonks::Settings loaded_settings = splonks::LoadSettings();
+
+        splonks::PopulateEntSpecsTable();
+        splonks::PopulateToolSpecsTable();
+        splonks::State state = splonks::State::New();
+        state.running = true;
+        state.gubsy_shell_ui_active = true;
+
+        if (!splonks::gubsy_shell::InitOwned(gubsy_shell, state, loaded_settings)) {
+            ThrowSdlError("gubsy_shell::InitOwned failed");
+        }
+
+        GubsyFrame gubsy_frame = splonks::gubsy_shell::GetFrame(gubsy_shell);
+        window = gubsy_frame.window;
+        renderer = gubsy_frame.renderer;
+        render_texture = gubsy_frame.render_target;
+        if (window == nullptr || renderer == nullptr || render_texture == nullptr) {
+            ThrowSdlError("Gubsy frame was incomplete");
+        }
+        if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
+            ThrowSdlError("SDL_InitSubSystem(SDL_INIT_GAMEPAD) failed");
         }
         if (!splonks::InitTextSubsystem()) {
             ThrowSdlError("TTF_Init failed");
         }
 
-        const splonks::Settings loaded_settings = splonks::LoadSettings();
-
-        const SDL_WindowFlags window_flags =
-            (loaded_settings.video.fullscreen ? SDL_WINDOW_FULLSCREEN : 0) |
-            SDL_WINDOW_HIGH_PIXEL_DENSITY |
-            (!loaded_settings.video.fullscreen ? (SDL_WINDOW_RESIZABLE | SDL_WINDOW_UTILITY) : 0);
-        const int startup_width = static_cast<int>(loaded_settings.video.resolution.x);
-        const int startup_height = static_cast<int>(loaded_settings.video.resolution.y);
-        window =
-            SDL_CreateWindow("Splonks", startup_width > 0 ? startup_width : kWindowWidth,
-                             startup_height > 0 ? startup_height : kWindowHeight, window_flags);
-        if (window == nullptr) {
-            ThrowSdlError("SDL_CreateWindow failed");
-        }
-        if (!loaded_settings.video.fullscreen) {
-            SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-        }
-
-        renderer = SDL_CreateRenderer(window, SDL_GPU_RENDERER);
-        if (renderer == nullptr) {
-            renderer = SDL_CreateRenderer(window, nullptr);
-        }
-        if (renderer == nullptr) {
-            ThrowSdlError("SDL_CreateRenderer failed");
-        }
         if (!SDL_SetRenderVSync(renderer, loaded_settings.video.vsync ? 1 : 0)) {
             ThrowSdlError("SDL_SetRenderVSync failed");
         }
@@ -233,29 +217,40 @@ int main(int argc, char** argv) {
         }
         graphics.dims = loaded_settings.video.resolution;
         graphics.fullscreen = loaded_settings.video.fullscreen;
-        graphics.window_dims = GetWindowDims(window);
+        graphics.window_dims =
+            splonks::UVec2::New(static_cast<unsigned int>(std::max(gubsy_frame.window_width, 1)),
+                                static_cast<unsigned int>(std::max(gubsy_frame.window_height, 1)));
+        graphics.dims =
+            splonks::UVec2::New(static_cast<unsigned int>(std::max(gubsy_frame.render_width, 1)),
+                                static_cast<unsigned int>(std::max(gubsy_frame.render_height, 1)));
+        SDL_Texture* post_fx_target = nullptr;
 
-        const auto rebuild_render_texture = [&]() {
-            if (render_texture != nullptr) {
-                SDL_DestroyTexture(render_texture);
-                render_texture = nullptr;
+        const auto sync_gubsy_frame = [&](const splonks::PostProcessSettings& post_settings) {
+            gubsy_frame = splonks::gubsy_shell::GetFrame(gubsy_shell);
+            if (gubsy_frame.window == nullptr || gubsy_frame.renderer == nullptr ||
+                gubsy_frame.render_target == nullptr) {
+                ThrowSdlError("Gubsy frame was incomplete");
             }
-
-            render_texture = SDL_CreateTexture(
-                renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
-                static_cast<int>(graphics.dims.x), static_cast<int>(graphics.dims.y));
-            if (render_texture == nullptr) {
-                ThrowSdlError("SDL_CreateTexture render target failed");
-            }
-
-            SDL_SetTextureBlendMode(render_texture, SDL_BLENDMODE_BLEND);
-            SDL_SetTextureScaleMode(render_texture, SDL_SCALEMODE_NEAREST);
+            window = gubsy_frame.window;
+            renderer = gubsy_frame.renderer;
+            const bool target_changed = render_texture != gubsy_frame.render_target;
+            render_texture = gubsy_frame.render_target;
+            graphics.window_dims = splonks::UVec2::New(
+                static_cast<unsigned int>(std::max(gubsy_frame.window_width, 1)),
+                static_cast<unsigned int>(std::max(gubsy_frame.window_height, 1)));
+            graphics.dims = splonks::UVec2::New(
+                static_cast<unsigned int>(std::max(gubsy_frame.render_width, 1)),
+                static_cast<unsigned int>(std::max(gubsy_frame.render_height, 1)));
             graphics.camera.offset = splonks::ToVec2(graphics.dims / 2U);
-            splonks::RefreshRenderPostFx(post_fx, render_texture, loaded_settings.post_process);
+            if (target_changed || post_fx_target != render_texture) {
+                splonks::InitRenderPostFx(post_fx, renderer, render_texture, post_settings);
+                post_fx_target = render_texture;
+                graphics.gpu_renderer_active = post_fx.gpu_renderer_active;
+            }
         };
 
-        rebuild_render_texture();
         splonks::InitRenderPostFx(post_fx, renderer, render_texture, loaded_settings.post_process);
+        post_fx_target = render_texture;
         graphics.gpu_renderer_active = post_fx.gpu_renderer_active;
 
         ////////////////        AUDIO INIT        ////////////////
@@ -269,17 +264,8 @@ int main(int argc, char** argv) {
             audio = splonks::Audio{};
         }
 
-        ////////////////        MAIN LOOP        ////////////////
-        splonks::PopulateEntSpecsTable();
         splonks::SyncEntSpecSizesFromAFrame(graphics);
-        splonks::PopulateToolSpecsTable();
-        splonks::State state = splonks::State::New();
-        state.running = true;
-        state.gubsy_shell_ui_active = true;
-        splonks::gubsy_shell::Shell gubsy_shell;
-        if (!splonks::gubsy_shell::Init(gubsy_shell, state, window, renderer, graphics)) {
-            ThrowSdlError("gubsy_shell::Init failed");
-        }
+        ////////////////        MAIN LOOP        ////////////////
         state.debug_primary_player_bot_enabled = debug_random_primary_input;
         debug.ui_visible = state.settings.debug_ui.menu_visible;
         debug.playback_window_visible = state.settings.debug_ui.playback_visible;
@@ -360,7 +346,7 @@ int main(int argc, char** argv) {
                     state.running = false;
                 } else if (event.type == SDL_EVENT_WINDOW_RESIZED ||
                            event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-                    graphics.window_dims = GetWindowDims(window);
+                    sync_gubsy_frame(state.settings.post_process);
                 } else if (event.type == SDL_EVENT_KEY_DOWN &&
                            event.key.scancode == SDL_SCANCODE_ESCAPE && !event.key.repeat) {
                     state.running = false;
@@ -372,9 +358,10 @@ int main(int argc, char** argv) {
             last_ticks = now;
 
             if (state.rebuild_render_texture) {
-                rebuild_render_texture();
+                sync_gubsy_frame(state.settings.post_process);
                 state.rebuild_render_texture = false;
             }
+            sync_gubsy_frame(state.settings.post_process);
 
             if (debug.aframe_auto_reload && renderer != nullptr) {
                 if (graphics.ReloadAFrameIfChanged(renderer, &debug.aframe_reload_status)) {
@@ -529,42 +516,28 @@ int main(int argc, char** argv) {
                          state.performance_stats.frame_total_ms);
         }
 
-        if (render_texture != nullptr) {
-            SDL_DestroyTexture(render_texture);
-            render_texture = nullptr;
-        }
         post_fx.Shutdown();
-        if (renderer != nullptr) {
-            SDL_DestroyRenderer(renderer);
-            renderer = nullptr;
-        }
-        if (window != nullptr) {
-            SDL_DestroyWindow(window);
-            window = nullptr;
-        }
         graphics.ShutdownTextures();
         graphics.ShutdownText();
         audio.Shutdown();
-        splonks::gubsy_shell::ShutdownDebug(gubsy_shell);
         splonks::ShutdownImGuiLayer();
+        splonks::gubsy_shell::Shutdown(gubsy_shell);
+        render_texture = nullptr;
+        renderer = nullptr;
+        window = nullptr;
         splonks::ShutdownTextSubsystem();
         SDL_Quit();
         return 0;
     } catch (const std::exception& exception) {
         const std::string error_message = exception.what();
+        post_fx.Shutdown();
         graphics.ShutdownTextures();
         graphics.ShutdownText();
         splonks::ShutdownImGuiLayer();
-        if (render_texture != nullptr) {
-            SDL_DestroyTexture(render_texture);
-        }
-        post_fx.Shutdown();
-        if (renderer != nullptr) {
-            SDL_DestroyRenderer(renderer);
-        }
-        if (window != nullptr) {
-            SDL_DestroyWindow(window);
-        }
+        splonks::gubsy_shell::Shutdown(gubsy_shell);
+        render_texture = nullptr;
+        renderer = nullptr;
+        window = nullptr;
         audio.Shutdown();
         splonks::ShutdownTextSubsystem();
         SDL_Quit();
