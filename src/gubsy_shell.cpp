@@ -291,6 +291,9 @@ std::string AdvertisedHost() {
         if (*value != '\0')
             return value;
     }
+    const std::vector<std::string> addresses = network::GetLocalLanIpv4Addresses();
+    if (!addresses.empty())
+        return addresses.front();
     return "127.0.0.1";
 }
 
