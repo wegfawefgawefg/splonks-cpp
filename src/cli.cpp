@@ -7,6 +7,7 @@
 #include "ent/spec.hpp"
 #include "aframe.hpp"
 #include "graphics.hpp"
+#include "gubsy_shell_smoke.hpp"
 #include "quest.hpp"
 #include "quest_stage_loader.hpp"
 #include "raw_aframe.hpp"
@@ -501,6 +502,10 @@ bool RunCliCommand(int argc, char** argv) {
 
     if (command == "--check-input-lockstep-smoke") {
         std::exit(CheckInputLockstepSmoke() ? 0 : 1);
+    }
+
+    if (command == "--check-gubsy-shell-smoke") {
+        std::exit(CheckGubsyShellSmoke() ? 0 : 1);
     }
 
     if (command == "--dump-recording-text") {

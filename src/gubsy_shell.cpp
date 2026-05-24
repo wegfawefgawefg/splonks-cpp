@@ -418,6 +418,12 @@ bool Init(Shell& shell, State& state, SDL_Window* window, SDL_Renderer* renderer
     return RegisterShellMenu(shell, state);
 }
 
+bool InitHeadless(Shell& shell, State& state) {
+    if (!init_gubsy_runtime(shell.runtime, BuildGubsyConfig()))
+        return false;
+    return RegisterShellMenu(shell, state);
+}
+
 bool InitOwned(Shell& shell, State& state, const Settings& settings) {
     if (!init_gubsy_runtime(shell.runtime, BuildGubsyConfig(&settings)))
         return false;

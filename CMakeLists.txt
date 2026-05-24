@@ -281,6 +281,7 @@ add_executable(splonks-cpp
     src/gubsy_shell.cpp
     src/gubsy_shell_binds.cpp
     src/gubsy_shell_input.cpp
+    src/gubsy_shell_smoke.cpp
     src/hitscan.cpp
     src/imgui_layer.cpp
     src/input_bind_schema.cpp
@@ -503,4 +504,5 @@ endif()
 if (BUILD_TESTING)
     add_test(NAME gubsy_import_smoke COMMAND gubsy_import_smoke)
     add_test(NAME gubsy_binds_smoke COMMAND gubsy_binds_smoke)
+    add_test(NAME gubsy_shell_smoke COMMAND splonks-cpp --check-gubsy-shell-smoke)
 endif()
