@@ -23,14 +23,14 @@ void QuitSplonksFromGubsy(void* user_data, std::int32_t) {
     state->running = false;
 }
 
-MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs) {
+MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs, bool text_edit_active) {
     MenuInputState result{};
     result.up = inputs.up.down;
     result.down = inputs.down.down;
     result.left = inputs.left.down;
     result.right = inputs.right.down;
     result.select = inputs.confirm.down;
-    result.back = inputs.back.down;
+    result.back = !text_edit_active && inputs.back.down;
     return result;
 }
 
@@ -91,6 +91,18 @@ GubsyFrame GetFrame(Shell& shell) {
     return gubsy_get_frame(shell.runtime);
 }
 
+void ProcessEvent(Shell& shell, const SDL_Event& event) {
+    gubsy_process_sdl_event(shell.runtime, event);
+}
+
+void UpdateDeviceState(Shell& shell) {
+    gubsy_update_device_state(shell.runtime);
+}
+
+bool TextEditActive(Shell& shell) {
+    return gubsy_menu_text_edit_active(shell.runtime);
+}
+
 bool DrawFrameToWindow(Shell& shell) {
     return gubsy_draw_frame_to_window(shell.runtime);
 }
@@ -105,7 +117,8 @@ void BeginDebugFrame(Shell& shell, float dt) {
 
 void UpdateTitleMenu(Shell& shell, const State& state, float dt, int screen_width,
                      int screen_height) {
-    gubsy_set_menu_input(shell.runtime, BuildGubsyMenuInput(state.menu_inputs));
+    gubsy_set_menu_input(shell.runtime,
+                         BuildGubsyMenuInput(state.menu_inputs, TextEditActive(shell)));
     gubsy_update_menu(shell.runtime, dt, screen_width, screen_height);
 }
 

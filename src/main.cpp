@@ -342,6 +342,7 @@ int main(int argc, char** argv) {
             SDL_Event event{};
             while (SDL_PollEvent(&event)) {
                 splonks::ImGuiLayerProcessEvent(event);
+                splonks::gubsy_shell::ProcessEvent(gubsy_shell, event);
                 if (event.type == SDL_EVENT_QUIT) {
                     state.running = false;
                 } else if (event.type == SDL_EVENT_WINDOW_RESIZED ||
@@ -371,6 +372,7 @@ int main(int argc, char** argv) {
             const std::uint64_t frame_begin_counter = SDL_GetPerformanceCounter();
             splonks::ImGuiLayerNewFrame();
             splonks::gubsy_shell::BeginDebugFrame(gubsy_shell, dt);
+            splonks::gubsy_shell::UpdateDeviceState(gubsy_shell);
             splonks::DrawDebugPlaybackControls(debug, state, audio, graphics, window, renderer);
             audio.music_volume = state.settings.audio.music_volume;
             audio.sound_effects_volume = state.settings.audio.sfx_volume;
