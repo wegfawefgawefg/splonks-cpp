@@ -39,6 +39,7 @@ GubsyAppConfig BuildGubsyConfig() {
     config.enable_mods = false;
     config.project_root = std::filesystem::current_path().string();
     config.data_root = (std::filesystem::current_path() / "data" / "gubsy").string();
+    config.engine_assets_root = (std::filesystem::current_path() / "assets").string();
     return config;
 }
 

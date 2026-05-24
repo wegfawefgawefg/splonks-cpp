@@ -46,3 +46,7 @@ logs/lockstep_playtest_verdict.json
 logs/lockstep_churn/
 .codex
 data/gubsy/
+!data/gubsy/
+data/gubsy/*
+!data/gubsy/ui_layouts/
+!data/gubsy/ui_layouts/layouts.lisp
