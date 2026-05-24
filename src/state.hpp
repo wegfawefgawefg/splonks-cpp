@@ -289,6 +289,8 @@ struct State {
     PlayingInputSnapshot playing_input_snapshot;
     PlayingInputSnapshot previous_playing_input_snapshot;
     PlayingInputSnapshot previous_immediate_playing_input_snapshot;
+    std::vector<InputFrame> external_local_input_frames;
+    bool use_external_local_input_frames = false;
     TitleMenuOption title_menu_selection = TitleMenuOption::Start;
     bool gubsy_shell_ui_active = false;
     SettingsMenuOption settings_menu_selection = SettingsMenuOption::Video;

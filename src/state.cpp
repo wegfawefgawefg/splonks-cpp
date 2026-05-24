@@ -125,6 +125,8 @@ State State::New() {
     state.playing_input_snapshot = PlayingInputSnapshot::New();
     state.previous_playing_input_snapshot = PlayingInputSnapshot::New();
     state.previous_immediate_playing_input_snapshot = PlayingInputSnapshot::New();
+    state.external_local_input_frames.clear();
+    state.use_external_local_input_frames = false;
     state.title_menu_selection = TitleMenuOption::Start;
     state.gubsy_shell_ui_active = false;
     state.settings_menu_selection = SettingsMenuOption::Video;

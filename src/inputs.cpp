@@ -139,7 +139,7 @@ void SetMenuInputSnapshot(State& state) {
     state.menu_input_snapshot = new_inputs;
 }
 
-void SetPlayingInputSnapshot(State& state) {
+PlayingInputSnapshot PollLegacyPlayingInputSnapshot() {
     const bool* keys = SDL_GetKeyboardState(nullptr);
     PlayingInputSnapshot new_inputs = PlayingInputSnapshot::New();
     new_inputs.left = keys[SDL_SCANCODE_A] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
@@ -168,6 +168,29 @@ void SetPlayingInputSnapshot(State& state) {
     new_inputs.toggle_collision_boxes = false;
     new_inputs.regenerate_level =
         keys[SDL_SCANCODE_R] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_LEFT_STICK);
+    return new_inputs;
+}
+
+InputFrame ExternalInputFrameForPlayer(const State& state, PlayerId player_id) {
+    if (player_id < 1)
+        return InputFrame::New();
+    const std::size_t index = static_cast<std::size_t>(player_id - 1);
+    if (index >= state.external_local_input_frames.size())
+        return InputFrame::New();
+    return state.external_local_input_frames[index];
+}
+
+PlayingInputSnapshot ExternalPrimaryPlayingInputSnapshot(const State& state) {
+    const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal();
+    if (primary_slot == nullptr)
+        return PlayingInputSnapshot::New();
+    return ToPlayingInputSnapshot(ExternalInputFrameForPlayer(state, primary_slot->player_id));
+}
+
+void SetPlayingInputSnapshot(State& state) {
+    PlayingInputSnapshot new_inputs = state.use_external_local_input_frames
+        ? ExternalPrimaryPlayingInputSnapshot(state)
+        : PollLegacyPlayingInputSnapshot();
     float mx = 0.0F;
     float my = 0.0F;
     SDL_GetMouseState(&mx, &my);
@@ -602,6 +625,18 @@ void LatchPlayingInputsForTick(State& state) {
     const PlayingInputSnapshot current = state.playing_input_snapshot;
     state.playing_inputs = BuildPlayingInputs(current, state.previous_playing_input_snapshot);
     state.previous_playing_input_snapshot = current;
+    if (state.use_external_local_input_frames) {
+        for (const PlayerSlot& slot : state.players.slots) {
+            if (!slot.connected || slot.connection_kind != PlayerConnectionKind::Local)
+                continue;
+            if (slot.primary_local)
+                continue;
+            state.players.SetInputFrameForPlayer(
+                slot.player_id,
+                ExternalInputFrameForPlayer(state, slot.player_id)
+            );
+        }
+    }
     if (const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal()) {
         state.players.SetInputFrameAndInputsForPlayer(
             primary_slot->player_id,

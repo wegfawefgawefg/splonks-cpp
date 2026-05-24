@@ -280,6 +280,7 @@ add_executable(splonks-cpp
     src/graphics.cpp
     src/gubsy_shell.cpp
     src/gubsy_shell_binds.cpp
+    src/gubsy_shell_input.cpp
     src/hitscan.cpp
     src/imgui_layer.cpp
     src/input_bind_schema.cpp

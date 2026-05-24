@@ -27,6 +27,7 @@ bool InitOwned(Shell& shell, State& state, const Settings& settings);
 GubsyFrame GetFrame(Shell& shell);
 void ProcessEvent(Shell& shell, const SDL_Event& event);
 void UpdateDeviceState(Shell& shell);
+void ApplyLobbyGameplayInput(Shell& shell);
 bool TextEditActive(Shell& shell);
 bool DrawFrameToWindow(Shell& shell);
 void PresentFrame(Shell& shell);

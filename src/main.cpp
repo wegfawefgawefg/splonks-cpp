@@ -373,6 +373,7 @@ int main(int argc, char** argv) {
             splonks::ImGuiLayerNewFrame();
             splonks::gubsy_shell::BeginDebugFrame(gubsy_shell, dt);
             splonks::gubsy_shell::UpdateDeviceState(gubsy_shell);
+            splonks::gubsy_shell::ApplyLobbyGameplayInput(gubsy_shell);
             splonks::DrawDebugPlaybackControls(debug, state, audio, graphics, window, renderer);
             audio.music_volume = state.settings.audio.music_volume;
             audio.sound_effects_volume = state.settings.audio.sfx_volume;
