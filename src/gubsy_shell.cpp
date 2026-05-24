@@ -2,8 +2,10 @@
 
 #include "input_bind_schema.hpp"
 #include "inputs.hpp"
+#include "network/net_lobby.hpp"
 
 #include <filesystem>
+#include <iostream>
 
 namespace splonks::gubsy_shell {
 
@@ -21,6 +23,31 @@ void QuitSplonksFromGubsy(void* user_data, std::int32_t) {
     if (state == nullptr)
         return;
     state->running = false;
+}
+
+bool HostSplonksFromGubsy(void* user_data,
+                          const GubsyLobbyState&,
+                          std::uint16_t port) {
+    auto* state = static_cast<State*>(user_data);
+    if (state == nullptr)
+        return false;
+    std::string status;
+    bool ok = network::StartHostSession(*state, port, &status);
+    std::cerr << status << '\n';
+    return ok;
+}
+
+bool JoinSplonksFromGubsy(void* user_data,
+                          const GubsyLobbyState&,
+                          const char* host,
+                          std::uint16_t port) {
+    auto* state = static_cast<State*>(user_data);
+    if (state == nullptr || host == nullptr || *host == '\0')
+        return false;
+    std::string status;
+    bool ok = network::JoinHostSession(*state, host, port, &status);
+    std::cerr << status << '\n';
+    return ok;
 }
 
 MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs, bool text_edit_active) {
@@ -60,6 +87,13 @@ bool RegisterShellMenu(Shell& shell, State& state) {
     commands.start_game = gubsy_register_menu_command(shell.runtime, StartSplonksFromGubsy, &state);
     commands.quit = gubsy_register_menu_command(shell.runtime, QuitSplonksFromGubsy, &state);
     gubsy_set_main_menu_commands(shell.runtime, commands);
+
+    GubsyLobbyCommands lobby_commands{};
+    lobby_commands.host = HostSplonksFromGubsy;
+    lobby_commands.host_user_data = &state;
+    lobby_commands.join = JoinSplonksFromGubsy;
+    lobby_commands.join_user_data = &state;
+    gubsy_set_lobby_commands(shell.runtime, lobby_commands);
     return gubsy_show_main_menu(shell.runtime);
 }
 
