@@ -4,6 +4,7 @@
 #include "inputs.hpp"
 #include "network/net_lobby.hpp"
 
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 
@@ -25,29 +26,55 @@ void QuitSplonksFromGubsy(void* user_data, std::int32_t) {
     state->running = false;
 }
 
-bool HostSplonksFromGubsy(void* user_data,
-                          const GubsyLobbyState&,
-                          std::uint16_t port) {
-    auto* state = static_cast<State*>(user_data);
-    if (state == nullptr)
-        return false;
-    std::string status;
-    bool ok = network::StartHostSession(*state, port, &status);
-    std::cerr << status << '\n';
-    return ok;
+std::string AdvertisedHost() {
+    if (const char* value = std::getenv("SPLONKS_ADVERTISE_HOST")) {
+        if (*value != '\0')
+            return value;
+    }
+    return "127.0.0.1";
 }
 
-bool JoinSplonksFromGubsy(void* user_data,
-                          const GubsyLobbyState&,
-                          const char* host,
-                          std::uint16_t port) {
+GubsyLobbyHostResult HostSplonksFromGubsy(void* user_data,
+                                          const GubsyLobbyState&,
+                                          std::uint16_t port) {
+    GubsyLobbyHostResult result;
+    auto* state = static_cast<State*>(user_data);
+    if (state == nullptr)
+        return result;
+    result.ok = network::StartHostSession(*state, port, &result.status);
+    if (result.ok) {
+        std::uint16_t bound_port = network::BoundTransportPort(*state);
+        if (bound_port == 0)
+            bound_port = port;
+        result.advertised_endpoint = AdvertisedHost() + ":" + std::to_string(bound_port);
+    }
+    std::cerr << result.status << '\n';
+    return result;
+}
+
+GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data,
+                                          const GubsyLobbyState&,
+                                          const char* host,
+                                          std::uint16_t port) {
+    GubsyLobbyJoinResult result;
     auto* state = static_cast<State*>(user_data);
     if (state == nullptr || host == nullptr || *host == '\0')
-        return false;
-    std::string status;
-    bool ok = network::JoinHostSession(*state, host, port, &status);
-    std::cerr << status << '\n';
-    return ok;
+        return result;
+    result.ok = network::JoinHostSession(*state, host, port, &result.status);
+    std::cerr << result.status << '\n';
+    return result;
+}
+
+GubsyLobbyLeaveResult LeaveSplonksFromGubsy(void* user_data, const GubsyLobbyState&) {
+    GubsyLobbyLeaveResult result;
+    auto* state = static_cast<State*>(user_data);
+    if (state == nullptr)
+        return result;
+    network::DisconnectSession(*state, &result.status);
+    result.ok = true;
+    if (!result.status.empty())
+        std::cerr << result.status << '\n';
+    return result;
 }
 
 MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs, bool text_edit_active) {
@@ -93,6 +120,8 @@ bool RegisterShellMenu(Shell& shell, State& state) {
     lobby_commands.host_user_data = &state;
     lobby_commands.join = JoinSplonksFromGubsy;
     lobby_commands.join_user_data = &state;
+    lobby_commands.leave = LeaveSplonksFromGubsy;
+    lobby_commands.leave_user_data = &state;
     gubsy_set_lobby_commands(shell.runtime, lobby_commands);
     return gubsy_show_main_menu(shell.runtime);
 }
