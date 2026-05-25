@@ -80,6 +80,25 @@ struct SmokeMatchmaking final : IMatchmaking {
     }
 };
 
+void StepMenu(gubsy_shell::Shell& shell, State& state, const MenuInputs& inputs = MenuInputs{}) {
+    state.menu_inputs = inputs;
+    gubsy_shell::UpdateMenu(shell, state, 0.016F, 1280, 720);
+}
+
+void PressDown(gubsy_shell::Shell& shell, State& state) {
+    MenuInputs inputs = MenuInputs::New();
+    inputs.down.down = true;
+    StepMenu(shell, state, inputs);
+    StepMenu(shell, state);
+}
+
+void PressSelect(gubsy_shell::Shell& shell, State& state) {
+    MenuInputs inputs = MenuInputs::New();
+    inputs.confirm.down = true;
+    StepMenu(shell, state, inputs);
+    StepMenu(shell, state);
+}
+
 bool CheckOfflineStart() {
     State state = State::New();
     gubsy_shell::Shell shell;
@@ -151,6 +170,80 @@ bool CheckInGameMenuShell() {
     return true;
 }
 
+bool CheckInGameRestartCommand() {
+    State state = State::New();
+    gubsy_shell::Shell shell;
+    if (!gubsy_shell::InitHeadless(shell, state)) {
+        std::cerr << "Gubsy shell smoke failed: InitHeadless for restart failed\n";
+        return false;
+    }
+
+    state.SetMode(Mode::Playing);
+    if (!gubsy_shell::OpenInGameMenu(shell)) {
+        std::cerr << "Gubsy shell smoke failed: restart menu did not open\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    StepMenu(shell, state);
+    PressDown(shell, state);
+    PressSelect(shell, state);
+
+    const bool queued_mines_1 =
+        state.pending_stage_transition.has_value() &&
+        state.pending_stage_transition->destination.kind == StageLoadTargetKind::QuestStage &&
+        std::string_view(state.pending_stage_transition->destination.quest_id.data()) ==
+            "classic" &&
+        std::string_view(state.pending_stage_transition->destination.quest_stage_id.data()) ==
+            "classic_mines_1";
+    if (gubsy_shell::InGameMenuOpen(shell) || state.mode != Mode::StageTransition ||
+        !queued_mines_1 || state.pause) {
+        std::cerr << "Gubsy shell smoke failed: restart command did not queue run restart\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    gubsy_shell::Shutdown(shell);
+    return true;
+}
+
+bool CheckInGameQuitCommand() {
+    State state = State::New();
+    gubsy_shell::Shell shell;
+    if (!gubsy_shell::InitHeadless(shell, state)) {
+        std::cerr << "Gubsy shell smoke failed: InitHeadless for quit failed\n";
+        return false;
+    }
+
+    state.SetMode(Mode::Playing);
+    std::string status;
+    if (!network::StartHostSession(state, 0, &status)) {
+        std::cerr << "Gubsy shell smoke failed: host session for quit failed: " << status << '\n';
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    if (!gubsy_shell::OpenInGameMenu(shell)) {
+        std::cerr << "Gubsy shell smoke failed: quit menu did not open\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    StepMenu(shell, state);
+    PressDown(shell, state);
+    PressDown(shell, state);
+    PressSelect(shell, state);
+
+    if (gubsy_shell::InGameMenuOpen(shell) || state.mode != Mode::Title ||
+        state.net_session.role != network::NetRole::Offline || state.pause) {
+        std::cerr << "Gubsy shell smoke failed: quit command did not return to title offline\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    gubsy_shell::Shutdown(shell);
+    return true;
+}
+
 bool CheckHostJoin() {
     SmokeMatchmaking matchmaking;
     std::string message;
@@ -211,7 +304,8 @@ bool CheckHostJoin() {
 
 bool CheckGubsyShellSmoke() {
     try {
-        return CheckOfflineStart() && CheckInGameMenuShell() && CheckHostJoin();
+        return CheckOfflineStart() && CheckInGameMenuShell() && CheckInGameRestartCommand() &&
+               CheckInGameQuitCommand() && CheckHostJoin();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';
         return false;
