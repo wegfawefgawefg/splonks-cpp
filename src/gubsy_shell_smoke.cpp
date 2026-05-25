@@ -158,6 +158,17 @@ bool CheckInGameMenuShell() {
         return false;
     }
 
+    MenuInputs held_back = MenuInputs::New();
+    held_back.back.down = true;
+    StepMenu(shell, state, held_back);
+    StepMenu(shell, state, held_back);
+    if (!gubsy_shell::InGameMenuOpen(shell)) {
+        std::cerr << "Gubsy shell smoke failed: opening back input closed menu immediately\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    StepMenu(shell, state);
+
     gubsy_shell::CloseInGameMenu(shell);
     if (gubsy_shell::InGameMenuOpen(shell) || state.pause ||
         state.gameplay_input_suppression_frames <= 0) {

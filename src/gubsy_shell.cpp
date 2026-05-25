@@ -403,11 +403,18 @@ MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs, bool text_edit_acti
 }
 
 MenuInputState BuildFrameMenuInput(Shell& shell, const State& state) {
+    MenuInputState input = BuildGubsyMenuInput(state.menu_inputs, TextEditActive(shell));
     if (shell.block_next_menu_input) {
         shell.block_next_menu_input = false;
         return {};
     }
-    return BuildGubsyMenuInput(state.menu_inputs, TextEditActive(shell));
+    if (shell.block_menu_input_until_release) {
+        const bool any_open_input_held = input.back || input.select;
+        shell.block_menu_input_until_release = any_open_input_held;
+        if (any_open_input_held)
+            return {};
+    }
+    return input;
 }
 
 GubsyAppConfig BuildGubsyConfig(const Settings* settings = nullptr) {
@@ -538,6 +545,7 @@ bool OpenInGameMenu(Shell& shell) {
     if (!gubsy_open_in_game_menu(shell.runtime))
         return false;
     shell.block_next_menu_input = true;
+    shell.block_menu_input_until_release = true;
     shell.state->suppress_gameplay_input = true;
     shell.state->gameplay_input_suppression_frames = 1;
     shell.state->pause = shell.state->net_session.role == network::NetRole::Offline;

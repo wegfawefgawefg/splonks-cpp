@@ -20,6 +20,7 @@ struct Shell {
     State* state = nullptr;
     LobbyConfig lobby_config;
     bool block_next_menu_input = false;
+    bool block_menu_input_until_release = false;
 };
 
 bool Init(Shell& shell, State& state, SDL_Window* window, SDL_Renderer* renderer,
