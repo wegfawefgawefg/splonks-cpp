@@ -130,6 +130,10 @@ void SetMenuInputSnapshot(State& state) {
                          GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH);
     new_inputs.back = keys[SDL_SCANCODE_ESCAPE] || keys[SDL_SCANCODE_BACKSPACE] ||
                       GamepadButtonDown(SDL_GAMEPAD_BUTTON_EAST);
+    new_inputs.page_prev = GamepadButtonDown(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER) ||
+                           GamepadAxisPressed(SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
+    new_inputs.page_next = GamepadButtonDown(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER) ||
+                           GamepadAxisPressed(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
     state.menu_input_snapshot = new_inputs;
 }
 
@@ -577,6 +581,8 @@ void LatchMenuInputsForFrame(State& state, float dt) {
     inputs.down = BuildButtonState(current.down, previous.down);
     inputs.confirm = BuildButtonState(current.confirm, previous.confirm);
     inputs.back = BuildButtonState(current.back, previous.back);
+    inputs.page_prev = BuildButtonState(current.page_prev, previous.page_prev);
+    inputs.page_next = BuildButtonState(current.page_next, previous.page_next);
 
     state.menu_input_debounce_timers.Step(dt);
     state.menu_input_debounce_timers.ApplyRepeat(inputs);

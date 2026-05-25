@@ -24,6 +24,8 @@ struct MenuInputs {
     ButtonState down;
     ButtonState confirm;
     ButtonState back;
+    ButtonState page_prev;
+    ButtonState page_next;
 
     static MenuInputs New();
 };
@@ -35,6 +37,8 @@ struct MenuInputSnapshot {
     bool down = false;
     bool confirm = false;
     bool back = false;
+    bool page_prev = false;
+    bool page_next = false;
 
     static MenuInputSnapshot New();
 };

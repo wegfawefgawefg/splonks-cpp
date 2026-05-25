@@ -399,6 +399,8 @@ MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs, bool text_edit_acti
     result.right = inputs.right.down;
     result.select = inputs.confirm.down;
     result.back = !text_edit_active && inputs.back.down;
+    result.page_prev = inputs.page_prev.down;
+    result.page_next = inputs.page_next.down;
     return result;
 }
 
