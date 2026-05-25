@@ -1,9 +1,9 @@
 #include "state.hpp"
-#include "world_query.hpp"
 
 #include "ents/common/common.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_init.hpp"
+#include "world_query.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -19,23 +19,15 @@ bool HasAnyAreaListenerCallback(const Ent& ent) {
 
 } // namespace
 
-void AddShake(
-    State& state,
-    const Vec2& world_pos,
-    float foreground_tile_amount,
-    float background_tile_amount,
-    float ent_amount,
-    float radius_tiles,
-    std::optional<VID> exclude_ent_vid
-) {
+void AddShake(State& state, const Vec2& world_pos, float foreground_tile_amount,
+              float background_tile_amount, float ent_amount, float radius_tiles,
+              std::optional<VID> exclude_ent_vid) {
     if (foreground_tile_amount <= 0.0F && background_tile_amount <= 0.0F && ent_amount <= 0.0F) {
         return;
     }
 
-    const IVec2 world_pixel = IVec2::New(
-        static_cast<int>(std::floor(world_pos.x)),
-        static_cast<int>(std::floor(world_pos.y))
-    );
+    const IVec2 world_pixel = IVec2::New(static_cast<int>(std::floor(world_pos.x)),
+                                         static_cast<int>(std::floor(world_pos.y)));
     const IVec2 tile_pos = state.stage.GetTileCoordAtWc(world_pixel);
 
     if (foreground_tile_amount > 0.0F) {
@@ -49,10 +41,8 @@ void AddShake(
     }
 
     const float radius_world = radius_tiles * static_cast<float>(kTileSize);
-    const AABB area = AABB::New(
-        world_pos - Vec2::New(radius_world, radius_world),
-        world_pos + Vec2::New(radius_world, radius_world)
-    );
+    const AABB area = AABB::New(world_pos - Vec2::New(radius_world, radius_world),
+                                world_pos + Vec2::New(radius_world, radius_world));
     for (const VID& vid : QueryEntsInAabb(state, area, exclude_ent_vid)) {
         Ent* const ent = state.ents.GetEntMut(vid);
         if (ent == nullptr || !ent->active) {
@@ -78,37 +68,20 @@ void AddShake(
     }
 }
 
-void AddShake(
-    State& state,
-    const Vec2& world_pos,
-    float amount,
-    float radius_tiles,
-    std::optional<VID> exclude_ent_vid
-) {
+void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles,
+              std::optional<VID> exclude_ent_vid) {
     AddShake(state, world_pos, amount, amount, amount, radius_tiles, exclude_ent_vid);
 }
 
-void AddShake(
-    State& state,
-    const Vec2& world_pos,
-    float amount,
-    float radius_tiles,
-    ShakeMask mask,
-    std::optional<VID> exclude_ent_vid
-) {
+void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles, ShakeMask mask,
+              std::optional<VID> exclude_ent_vid) {
     if (amount <= 0.0F || mask == ShakeMask::None) {
         return;
     }
 
-    AddShake(
-        state,
-        world_pos,
-        HasShakeMask(mask, ShakeMask::ForegroundTiles) ? amount : 0.0F,
-        HasShakeMask(mask, ShakeMask::BackgroundTiles) ? amount : 0.0F,
-        HasShakeMask(mask, ShakeMask::Ents) ? amount : 0.0F,
-        radius_tiles,
-        exclude_ent_vid
-    );
+    AddShake(state, world_pos, HasShakeMask(mask, ShakeMask::ForegroundTiles) ? amount : 0.0F,
+             HasShakeMask(mask, ShakeMask::BackgroundTiles) ? amount : 0.0F,
+             HasShakeMask(mask, ShakeMask::Ents) ? amount : 0.0F, radius_tiles, exclude_ent_vid);
 }
 
 State State::New() {
@@ -138,6 +111,8 @@ State State::New() {
     state.video_settings_target_resolution_index.reset();
     state.video_settings_target_fullscreen.reset();
     state.choosing_control_binding = false;
+    state.suppress_gameplay_input = false;
+    state.gameplay_input_suppression_frames = 0;
     state.rebuild_render_texture = false;
     state.scene_frame = 0;
     state.time_since_last_update = 0.0F;
@@ -189,17 +164,12 @@ State State::New() {
     state.debug_fluid_brush.enabled = state.settings.debug_ui.fluid_brush_enabled;
     state.debug_fluid_brush.replace_solid_tiles =
         state.settings.debug_ui.fluid_brush_replace_solid_tiles;
-    state.debug_fluid_brush.mode = static_cast<DebugFluidBrushState::Mode>(std::clamp(
-        state.settings.debug_ui.fluid_brush_mode,
-        0,
-        3
-    ));
+    state.debug_fluid_brush.mode = static_cast<DebugFluidBrushState::Mode>(
+        std::clamp(state.settings.debug_ui.fluid_brush_mode, 0, 3));
     state.debug_fluid_brush.radius_tiles =
         std::max(0, state.settings.debug_ui.fluid_brush_radius_tiles);
-    state.debug_fluid_brush.paint_gravity_x =
-        state.settings.debug_ui.fluid_brush_paint_gravity_x;
-    state.debug_fluid_brush.paint_gravity_y =
-        state.settings.debug_ui.fluid_brush_paint_gravity_y;
+    state.debug_fluid_brush.paint_gravity_x = state.settings.debug_ui.fluid_brush_paint_gravity_x;
+    state.debug_fluid_brush.paint_gravity_y = state.settings.debug_ui.fluid_brush_paint_gravity_y;
     state.debug_fluid_brush.show_flow_indicators =
         state.settings.debug_ui.fluid_brush_show_flow_indicators;
     (void)LoadQuestStage(state, "classic", "classic_mines_1", false);
@@ -257,15 +227,9 @@ void State::UpdateAreaListenerCacheForEnt(std::size_t ent_id) {
 
     const Ent& ent = ents.ents[ent_id];
     area_listener_vids.erase(
-        std::remove_if(
-            area_listener_vids.begin(),
-            area_listener_vids.end(),
-            [&](const VID& candidate) {
-                return candidate.id == ent.vid.id;
-            }
-        ),
-        area_listener_vids.end()
-    );
+        std::remove_if(area_listener_vids.begin(), area_listener_vids.end(),
+                       [&](const VID& candidate) { return candidate.id == ent.vid.id; }),
+        area_listener_vids.end());
 
     if (!ent.active || !HasAnyAreaListenerCallback(ent)) {
         return;
@@ -300,8 +264,7 @@ void State::ClearInteractClaims() {
 }
 
 void State::ClaimInteractForEnt(VID ent_vid) {
-    if (std::find(interact_claimed_vids_this_frame.begin(),
-                  interact_claimed_vids_this_frame.end(),
+    if (std::find(interact_claimed_vids_this_frame.begin(), interact_claimed_vids_this_frame.end(),
                   ent_vid) == interact_claimed_vids_this_frame.end()) {
         interact_claimed_vids_this_frame.push_back(ent_vid);
     }

@@ -18,10 +18,8 @@ struct SmokeMatchmaking final : IMatchmaking {
     bool join_called = false;
     bool leave_called = false;
 
-    bool create_room(const std::string&,
-                     const MatchmakingRoom& created_room,
-                     MatchmakingCreateResult& out,
-                     std::string&) override {
+    bool create_room(const std::string&, const MatchmakingRoom& created_room,
+                     MatchmakingCreateResult& out, std::string&) override {
         create_called = true;
         room = created_room;
         room.room_code = "SMOKE1";
@@ -32,11 +30,8 @@ struct SmokeMatchmaking final : IMatchmaking {
         return true;
     }
 
-    bool join_room(const std::string&,
-                   const std::string& room_code,
-                   const std::string&,
-                   std::string& member_id_out,
-                   std::string& err) override {
+    bool join_room(const std::string&, const std::string& room_code, const std::string&,
+                   std::string& member_id_out, std::string& err) override {
         join_called = true;
         if (!has_room || room_code != room.room_code) {
             err = "room not found";
@@ -46,11 +41,8 @@ struct SmokeMatchmaking final : IMatchmaking {
         return true;
     }
 
-    bool leave_room(const std::string&,
-                    const std::string& room_code,
-                    const std::string&,
-                    const std::string&,
-                    std::string& err) override {
+    bool leave_room(const std::string&, const std::string& room_code, const std::string&,
+                    const std::string&, std::string& err) override {
         leave_called = true;
         if (room_code != room.room_code) {
             err = "room not found";
@@ -59,27 +51,18 @@ struct SmokeMatchmaking final : IMatchmaking {
         return true;
     }
 
-    bool remove_member(const std::string&,
-                       const std::string&,
-                       const std::string&,
-                       const std::string&,
-                       std::string&) override {
+    bool remove_member(const std::string&, const std::string&, const std::string&,
+                       const std::string&, std::string&) override {
         return true;
     }
 
-    bool heartbeat_room(const std::string&,
-                        const std::string&,
-                        const std::string&,
-                        const std::string&,
-                        const std::string&,
-                        const MatchmakingRoom*,
+    bool heartbeat_room(const std::string&, const std::string&, const std::string&,
+                        const std::string&, const std::string&, const MatchmakingRoom*,
                         std::string&) override {
         return true;
     }
 
-    bool fetch_room(const std::string&,
-                    const std::string& room_code,
-                    MatchmakingRoom& out,
+    bool fetch_room(const std::string&, const std::string& room_code, MatchmakingRoom& out,
                     std::string& err) override {
         if (!has_room || room_code != room.room_code) {
             err = "room not found";
@@ -133,6 +116,38 @@ bool CheckOfflineStart() {
         std::cerr << "Gubsy shell smoke failed: lobby config was not applied\n";
         return false;
     }
+    return true;
+}
+
+bool CheckInGameMenuShell() {
+    State state = State::New();
+    gubsy_shell::Shell shell;
+    if (!gubsy_shell::InitHeadless(shell, state)) {
+        std::cerr << "Gubsy shell smoke failed: InitHeadless for in-game menu failed\n";
+        return false;
+    }
+
+    state.SetMode(Mode::Playing);
+    if (!gubsy_shell::OpenInGameMenu(shell)) {
+        std::cerr << "Gubsy shell smoke failed: in-game menu did not open\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    if (!gubsy_shell::InGameMenuOpen(shell) || !state.pause || !state.suppress_gameplay_input) {
+        std::cerr << "Gubsy shell smoke failed: in-game menu did not pause offline play\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    gubsy_shell::CloseInGameMenu(shell);
+    if (gubsy_shell::InGameMenuOpen(shell) || state.pause ||
+        state.gameplay_input_suppression_frames <= 0) {
+        std::cerr << "Gubsy shell smoke failed: in-game menu did not close cleanly\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    gubsy_shell::Shutdown(shell);
     return true;
 }
 
@@ -196,7 +211,7 @@ bool CheckHostJoin() {
 
 bool CheckGubsyShellSmoke() {
     try {
-        return CheckOfflineStart() && CheckHostJoin();
+        return CheckOfflineStart() && CheckInGameMenuShell() && CheckHostJoin();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';
         return false;

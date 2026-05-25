@@ -19,6 +19,7 @@ struct Shell {
     GubsyRuntime runtime;
     State* state = nullptr;
     LobbyConfig lobby_config;
+    bool block_next_menu_input = false;
 };
 
 bool Init(Shell& shell, State& state, SDL_Window* window, SDL_Renderer* renderer,
@@ -34,6 +35,11 @@ bool DrawFrameToWindow(Shell& shell);
 void PresentFrame(Shell& shell);
 int ConfiguredFrameCapFps(Shell& shell);
 void BeginDebugFrame(Shell& shell, float dt);
+bool OpenInGameMenu(Shell& shell);
+void CloseInGameMenu(Shell& shell);
+bool InGameMenuOpen(Shell& shell);
+void UpdateMenu(Shell& shell, const State& state, float dt, int screen_width, int screen_height);
+void RenderMenu(Shell& shell, SDL_Renderer* renderer, int screen_width, int screen_height);
 void UpdateTitleMenu(Shell& shell, const State& state, float dt, int screen_width,
                      int screen_height);
 void RenderTitleMenu(Shell& shell, SDL_Renderer* renderer, int screen_width, int screen_height);

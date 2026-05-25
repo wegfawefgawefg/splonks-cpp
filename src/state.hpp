@@ -1,35 +1,35 @@
 #pragma once
 
+#include "aframe_id.hpp"
 #include "audio.hpp"
 #include "audio_emitters.hpp"
 #include "contact_bookkeeping.hpp"
 #include "ent/manager.hpp"
 #include "ent_tool_inventory.hpp"
-#include "aframe_id.hpp"
 #include "inputs.hpp"
-#include "menu/settings.hpp"
-#include "menu/postfx.hpp"
 #include "menu/lighting.hpp"
+#include "menu/postfx.hpp"
+#include "menu/settings.hpp"
 #include "menu/title.hpp"
 #include "menu/ui.hpp"
 #include "menu/video.hpp"
 #include "network/net_session.hpp"
 #include "network/net_transport.hpp"
+#include "particles/system.hpp"
 #include "player_registry.hpp"
+#include "quest.hpp"
 #include "settings.hpp"
 #include "sid.hpp"
-#include "particles/system.hpp"
-#include "tools/tool_spec.hpp"
 #include "stage.hpp"
 #include "stage_acoustics.hpp"
+#include "stage_lighting.hpp"
 #include "stage_progression.hpp"
 #include "stage_rotation.hpp"
-#include "quest.hpp"
-#include "stage_lighting.hpp"
+#include "tools/tool_spec.hpp"
 #include "utils.hpp"
 
-#include <cstdint>
 #include <array>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -304,6 +304,8 @@ struct State {
     std::optional<bool> video_settings_target_fullscreen;
     bool rebuild_render_texture = false;
     bool choosing_control_binding = false;
+    bool suppress_gameplay_input = false;
+    int gameplay_input_suppression_frames = 0;
 
     // Debug state.
     DebugOverlayState debug_overlay;
@@ -393,29 +395,12 @@ struct State {
     bool IsInteractClaimedForEnt(VID ent_vid) const;
 };
 
-void AddShake(
-    State& state,
-    const Vec2& world_pos,
-    float foreground_tile_amount,
-    float background_tile_amount,
-    float ent_amount,
-    float radius_tiles,
-    std::optional<VID> exclude_ent_vid = std::nullopt
-);
-void AddShake(
-    State& state,
-    const Vec2& world_pos,
-    float amount,
-    float radius_tiles,
-    std::optional<VID> exclude_ent_vid = std::nullopt
-);
-void AddShake(
-    State& state,
-    const Vec2& world_pos,
-    float amount,
-    float radius_tiles,
-    ShakeMask mask,
-    std::optional<VID> exclude_ent_vid = std::nullopt
-);
+void AddShake(State& state, const Vec2& world_pos, float foreground_tile_amount,
+              float background_tile_amount, float ent_amount, float radius_tiles,
+              std::optional<VID> exclude_ent_vid = std::nullopt);
+void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles,
+              std::optional<VID> exclude_ent_vid = std::nullopt);
+void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles, ShakeMask mask,
+              std::optional<VID> exclude_ent_vid = std::nullopt);
 
 } // namespace splonks

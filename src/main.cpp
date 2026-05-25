@@ -130,6 +130,27 @@ bool HasStartupFlag(int argc, char** argv, const std::string& flag) {
     return false;
 }
 
+bool InGameMenuOpenRequested() {
+    return splonks::KeyPressedEdge(SDL_SCANCODE_ESCAPE) ||
+           splonks::GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_START);
+}
+
+void UpdateInGameMenuState(splonks::State& state, splonks::gubsy_shell::Shell& shell) {
+    if (state.mode != splonks::Mode::Playing) {
+        return;
+    }
+
+    if (!splonks::gubsy_shell::InGameMenuOpen(shell)) {
+        if (InGameMenuOpenRequested()) {
+            (void)splonks::gubsy_shell::OpenInGameMenu(shell);
+        }
+        return;
+    }
+
+    state.suppress_gameplay_input = true;
+    state.pause = state.net_session.role == splonks::network::NetRole::Offline;
+}
+
 [[noreturn]] void ThrowSdlError(const char* message) {
     throw std::runtime_error(std::string(message) + ": " + SDL_GetError());
 }
@@ -374,6 +395,7 @@ int main(int argc, char** argv) {
             splonks::gubsy_shell::BeginDebugFrame(gubsy_shell, dt);
             splonks::gubsy_shell::UpdateDeviceState(gubsy_shell);
             splonks::gubsy_shell::ApplyLobbyGameplayInput(gubsy_shell);
+            UpdateInGameMenuState(state, gubsy_shell);
             splonks::DrawDebugPlaybackControls(debug, state, audio, graphics, window, renderer);
             audio.music_volume = state.settings.audio.music_volume;
             audio.sound_effects_volume = state.settings.audio.sfx_volume;
@@ -396,6 +418,10 @@ int main(int argc, char** argv) {
                 splonks::gubsy_shell::UpdateTitleMenu(gubsy_shell, state, dt,
                                                       static_cast<int>(graphics.window_dims.x),
                                                       static_cast<int>(graphics.window_dims.y));
+            } else if (splonks::gubsy_shell::InGameMenuOpen(gubsy_shell)) {
+                splonks::gubsy_shell::UpdateMenu(gubsy_shell, state, dt,
+                                                 static_cast<int>(graphics.window_dims.x),
+                                                 static_cast<int>(graphics.window_dims.y));
             }
             debug_control_server.Step(state);
             const std::uint64_t step_end_counter = SDL_GetPerformanceCounter();
@@ -408,6 +434,10 @@ int main(int argc, char** argv) {
                 splonks::gubsy_shell::RenderTitleMenu(gubsy_shell, renderer,
                                                       static_cast<int>(graphics.window_dims.x),
                                                       static_cast<int>(graphics.window_dims.y));
+            } else if (splonks::gubsy_shell::InGameMenuOpen(gubsy_shell)) {
+                splonks::gubsy_shell::RenderMenu(gubsy_shell, renderer,
+                                                 static_cast<int>(graphics.window_dims.x),
+                                                 static_cast<int>(graphics.window_dims.y));
             }
             const std::uint64_t render_end_counter = SDL_GetPerformanceCounter();
             splonks::UpdateDebugAudioBrush(debug, state, audio, graphics);

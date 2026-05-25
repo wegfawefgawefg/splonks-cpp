@@ -3,24 +3,24 @@
 #include "audio.hpp"
 #include "debug/input_bot.hpp"
 #include "graphics.hpp"
-#include "menu/postfx.hpp"
 #include "menu/lighting.hpp"
-#include "stage_acoustics.hpp"
+#include "menu/postfx.hpp"
 #include "menu/settings.hpp"
 #include "menu/title.hpp"
 #include "menu/ui.hpp"
 #include "menu/video.hpp"
 #include "network/net_lobby.hpp"
 #include "player_queries.hpp"
+#include "quest_stage_loader.hpp"
 #include "settings.hpp"
 #include "stage.hpp"
+#include "stage_acoustics.hpp"
 #include "stage_init.hpp"
-#include "stage_wrap.hpp"
-#include "state.hpp"
 #include "stage_lighting.hpp"
 #include "stage_progression.hpp"
-#include "quest_stage_loader.hpp"
 #include "stage_rotation.hpp"
+#include "stage_wrap.hpp"
+#include "state.hpp"
 
 #include <algorithm>
 #include <string>
@@ -118,24 +118,18 @@ void SetMenuInputSnapshot(State& state) {
     const bool* keys = SDL_GetKeyboardState(nullptr);
     MenuInputSnapshot new_inputs = MenuInputSnapshot::New();
 
-    new_inputs.left =
-        keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A] ||
-        GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
-    new_inputs.right =
-        keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D] ||
-        GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
-    new_inputs.up =
-        keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W] ||
-        GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_UP);
-    new_inputs.down =
-        keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S] ||
-        GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_DOWN);
-    new_inputs.confirm =
-        keys[SDL_SCANCODE_RETURN] || keys[SDL_SCANCODE_SPACE] ||
-        GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH);
-    new_inputs.back =
-        keys[SDL_SCANCODE_ESCAPE] || keys[SDL_SCANCODE_BACKSPACE] ||
-        GamepadButtonDown(SDL_GAMEPAD_BUTTON_EAST);
+    new_inputs.left = keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A] ||
+                      GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+    new_inputs.right = keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D] ||
+                       GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+    new_inputs.up = keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W] ||
+                    GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_UP);
+    new_inputs.down = keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S] ||
+                      GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+    new_inputs.confirm = keys[SDL_SCANCODE_RETURN] || keys[SDL_SCANCODE_SPACE] ||
+                         GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH);
+    new_inputs.back = keys[SDL_SCANCODE_ESCAPE] || keys[SDL_SCANCODE_BACKSPACE] ||
+                      GamepadButtonDown(SDL_GAMEPAD_BUTTON_EAST);
     state.menu_input_snapshot = new_inputs;
 }
 
@@ -148,20 +142,17 @@ PlayingInputSnapshot PollLegacyPlayingInputSnapshot() {
     new_inputs.down = keys[SDL_SCANCODE_S] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_DOWN);
     new_inputs.jump = keys[SDL_SCANCODE_SPACE] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH);
     new_inputs.run = keys[SDL_SCANCODE_LSHIFT] || GamepadAxisPressed(SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
-    new_inputs.use_button = keys[SDL_SCANCODE_J] || GamepadAxisPressed(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+    new_inputs.use_button =
+        keys[SDL_SCANCODE_J] || GamepadAxisPressed(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
     new_inputs.equip_button =
         keys[SDL_SCANCODE_I] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
-    new_inputs.pick_up_drop =
-        keys[SDL_SCANCODE_K] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_WEST);
+    new_inputs.pick_up_drop = keys[SDL_SCANCODE_K] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_WEST);
     new_inputs.stop = keys[SDL_SCANCODE_LCTRL] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_START);
     new_inputs.bomb = keys[SDL_SCANCODE_M] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_EAST);
     new_inputs.rope = keys[SDL_SCANCODE_O] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_NORTH);
-    new_inputs.attack =
-        keys[SDL_SCANCODE_H] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
-    new_inputs.buy_button =
-        keys[SDL_SCANCODE_U] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_BACK);
-    new_inputs.emote_up =
-        keys[SDL_SCANCODE_UP] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_UP);
+    new_inputs.attack = keys[SDL_SCANCODE_H] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
+    new_inputs.buy_button = keys[SDL_SCANCODE_U] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_BACK);
+    new_inputs.emote_up = keys[SDL_SCANCODE_UP] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_UP);
     new_inputs.emote_down =
         keys[SDL_SCANCODE_DOWN] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_DOWN);
     new_inputs.quit = keys[SDL_SCANCODE_ESCAPE] || keys[SDL_SCANCODE_Q];
@@ -189,8 +180,8 @@ PlayingInputSnapshot ExternalPrimaryPlayingInputSnapshot(const State& state) {
 
 void SetPlayingInputSnapshot(State& state) {
     PlayingInputSnapshot new_inputs = state.use_external_local_input_frames
-        ? ExternalPrimaryPlayingInputSnapshot(state)
-        : PollLegacyPlayingInputSnapshot();
+                                          ? ExternalPrimaryPlayingInputSnapshot(state)
+                                          : PollLegacyPlayingInputSnapshot();
     float mx = 0.0F;
     float my = 0.0F;
     SDL_GetMouseState(&mx, &my);
@@ -204,10 +195,10 @@ void SetPlayingInputSnapshot(State& state) {
         if (targets_primary) {
             new_inputs = ToPlayingInputSnapshot(state.debug_input_override.input);
         } else if (PlayerSlot* const slot = state.players.Find(target_player_id);
-                   slot != nullptr &&
-                   slot->connected &&
+                   slot != nullptr && slot->connected &&
                    slot->connection_kind == PlayerConnectionKind::Local) {
-            state.players.SetInputFrameForPlayer(target_player_id, state.debug_input_override.input);
+            state.players.SetInputFrameForPlayer(target_player_id,
+                                                 state.debug_input_override.input);
         }
 
         state.debug_input_override.frames_remaining -= 1;
@@ -223,19 +214,12 @@ void SetPlayingInputSnapshot(State& state) {
 void LatchImmediatePlayingInputsForFrame(State& state) {
     SetPlayingInputSnapshot(state);
     state.immediate_playing_inputs = BuildPlayingInputs(
-        state.playing_input_snapshot,
-        state.previous_immediate_playing_input_snapshot
-    );
+        state.playing_input_snapshot, state.previous_immediate_playing_input_snapshot);
     state.previous_immediate_playing_input_snapshot = state.playing_input_snapshot;
 }
 
-void ProcessInputPlaying(
-    SDL_Window* window,
-    State& state,
-    Audio& audio,
-    Graphics& graphics,
-    float dt
-) {
+void ProcessInputPlaying(SDL_Window* window, State& state, Audio& audio, Graphics& graphics,
+                         float dt) {
     (void)audio;
     (void)dt;
     const PlayingInputs& inputs = state.immediate_playing_inputs;
@@ -255,13 +239,9 @@ void ProcessInputPlaying(
         if (state.debug_level.kind == DebugLevelKind::BorderTest) {
             const BorderTestLevelConfig& border_test = state.debug_level.border_test;
             ApplyToroidalWrapSettings(
-                state,
-                graphics,
-                border_test.wrap_x,
-                border_test.wrap_y,
+                state, graphics, border_test.wrap_x, border_test.wrap_y,
                 static_cast<unsigned int>(std::max(0, border_test.wrap_padding_tiles)),
-                border_test.camera_clamp_enabled
-            );
+                border_test.camera_clamp_enabled);
         }
         graphics.ResetTileVariations();
         InvalidateStageLighting(state);
@@ -271,13 +251,8 @@ void ProcessInputPlaying(
     (void)graphics;
 }
 
-void ProcessInputStageTransition(
-    SDL_Window* window,
-    State& state,
-    Audio& audio,
-    Graphics& graphics,
-    float dt
-) {
+void ProcessInputStageTransition(SDL_Window* window, State& state, Audio& audio, Graphics& graphics,
+                                 float dt) {
     (void)window;
     (void)audio;
     (void)dt;
@@ -304,13 +279,8 @@ void ProcessInputStageTransition(
     (void)graphics;
 }
 
-void ProcessInputGameOver(
-    SDL_Window* window,
-    State& state,
-    Audio& audio,
-    Graphics& graphics,
-    float dt
-) {
+void ProcessInputGameOver(SDL_Window* window, State& state, Audio& audio, Graphics& graphics,
+                          float dt) {
     (void)window;
     (void)audio;
     (void)dt;
@@ -347,13 +317,7 @@ void ProcessInputGameOver(
     }
 }
 
-void ProcessInputWin(
-    SDL_Window* window,
-    State& state,
-    Audio& audio,
-    Graphics& graphics,
-    float dt
-) {
+void ProcessInputWin(SDL_Window* window, State& state, Audio& audio, Graphics& graphics, float dt) {
     (void)window;
     (void)audio;
     (void)dt;
@@ -470,10 +434,8 @@ PlayingInputSnapshot ToPlayingInputSnapshot(const InputFrame& frame) {
     return snapshot;
 }
 
-PlayingInputs BuildPlayingInputs(
-    const PlayingInputSnapshot& current,
-    const PlayingInputSnapshot& previous
-) {
+PlayingInputs BuildPlayingInputs(const PlayingInputSnapshot& current,
+                                 const PlayingInputSnapshot& previous) {
     PlayingInputs inputs = PlayingInputs::New();
     inputs.left = BuildButtonState(current.left, previous.left);
     inputs.right = BuildButtonState(current.right, previous.right);
@@ -492,14 +454,9 @@ PlayingInputs BuildPlayingInputs(
     inputs.emote_up = BuildButtonState(current.emote_up, previous.emote_up);
     inputs.emote_down = BuildButtonState(current.emote_down, previous.emote_down);
     inputs.quit = BuildButtonState(current.quit, previous.quit);
-    inputs.toggle_collision_boxes = BuildButtonState(
-        current.toggle_collision_boxes,
-        previous.toggle_collision_boxes
-    );
-    inputs.regenerate_level = BuildButtonState(
-        current.regenerate_level,
-        previous.regenerate_level
-    );
+    inputs.toggle_collision_boxes =
+        BuildButtonState(current.toggle_collision_boxes, previous.toggle_collision_boxes);
+    inputs.regenerate_level = BuildButtonState(current.regenerate_level, previous.regenerate_level);
     inputs.mouse_pos = current.mouse_pos;
     return inputs;
 }
@@ -538,21 +495,27 @@ void MenuInputDebounceTimers::ApplyRepeat(MenuInputs& menu_inputs) {
     }
 }
 
-void ProcessInput(
-    SDL_Window* window,
-    SDL_Renderer* renderer,
-    State& state,
-    Audio& audio,
-    Graphics& graphics,
-    float dt
-) {
+void ProcessInput(SDL_Window* window, SDL_Renderer* renderer, State& state, Audio& audio,
+                  Graphics& graphics, float dt) {
     (void)renderer;
     SDL_PumpEvents();
+    const bool suppress_gameplay_input_this_frame =
+        state.suppress_gameplay_input || state.gameplay_input_suppression_frames > 0;
 
     switch (state.mode) {
     case Mode::Playing:
-        LatchImmediatePlayingInputsForFrame(state);
-        debug::ApplyDebugPrimaryPlayerBotInput(state);
+        if (suppress_gameplay_input_this_frame) {
+            SetMenuInputSnapshot(state);
+            LatchMenuInputsForFrame(state, dt);
+            state.playing_input_snapshot = PlayingInputSnapshot::New();
+            state.immediate_playing_inputs = PlayingInputs::New();
+            state.previous_immediate_playing_input_snapshot = state.playing_input_snapshot;
+            if (state.gameplay_input_suppression_frames > 0)
+                state.gameplay_input_suppression_frames -= 1;
+        } else {
+            LatchImmediatePlayingInputsForFrame(state);
+            debug::ApplyDebugPrimaryPlayerBotInput(state);
+        }
         break;
     case Mode::GameOver:
         LatchImmediatePlayingInputsForFrame(state);
@@ -588,7 +551,8 @@ void ProcessInput(
         ProcessInputLightingSettingsMenu(window, state, audio, graphics, dt);
         break;
     case Mode::Playing:
-        ProcessInputPlaying(window, state, audio, graphics, dt);
+        if (!suppress_gameplay_input_this_frame)
+            ProcessInputPlaying(window, state, audio, graphics, dt);
         break;
     case Mode::StageTransition:
         ProcessInputStageTransition(window, state, audio, graphics, dt);
@@ -632,18 +596,13 @@ void LatchPlayingInputsForTick(State& state) {
             if (slot.primary_local)
                 continue;
             state.players.SetInputFrameForPlayer(
-                slot.player_id,
-                ExternalInputFrameForPlayer(state, slot.player_id)
-            );
+                slot.player_id, ExternalInputFrameForPlayer(state, slot.player_id));
         }
     }
     if (const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal()) {
-        state.players.SetInputFrameAndInputsForPlayer(
-            primary_slot->player_id,
-            ToInputFrame(current),
-            state.playing_inputs,
-            state.immediate_playing_inputs
-        );
+        state.players.SetInputFrameAndInputsForPlayer(primary_slot->player_id,
+                                                      ToInputFrame(current), state.playing_inputs,
+                                                      state.immediate_playing_inputs);
     }
 }
 

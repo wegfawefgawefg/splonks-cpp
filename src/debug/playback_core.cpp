@@ -1,20 +1,18 @@
-#include "debug/playback_internal.hpp"
-
 #include "audio_acoustics.hpp"
 #include "audio_emitters.hpp"
+#include "debug/playback_internal.hpp"
 #include "imgui_layer.hpp"
 #include "inputs.hpp"
-#include "step.hpp"
-#include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
+#include "stage_lighting.hpp"
+#include "step.hpp"
 #include "tile_spec.hpp"
 #include "world_ops.hpp"
-
-#include <imgui.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <imgui.h>
 #include <vector>
 
 namespace splonks::debug_playback_internal {
@@ -112,10 +110,8 @@ bool IsTileBrushActive(const DebugPlayback& debug) {
 }
 
 Vec2 StageCenterWorld(const Stage& stage) {
-    return Vec2::New(
-        static_cast<float>(stage.GetWidth()) * 0.5F,
-        static_cast<float>(stage.GetHeight()) * 0.5F
-    );
+    return Vec2::New(static_cast<float>(stage.GetWidth()) * 0.5F,
+                     static_cast<float>(stage.GetHeight()) * 0.5F);
 }
 
 bool CanFluidBrushOccupyTile(Tile terrain_tile) {
@@ -123,8 +119,7 @@ bool CanFluidBrushOccupyTile(Tile terrain_tile) {
         return true;
     }
     const TileSpec& spec = GetTileSpec(terrain_tile);
-    return !spec.simulated_fluid && spec.transparent && !spec.solid &&
-           !spec.one_way_top_solid;
+    return !spec.simulated_fluid && spec.transparent && !spec.solid && !spec.one_way_top_solid;
 }
 
 void PushChangedTile(std::vector<IVec2>& changed_tiles, const IVec2& tile_coord) {
@@ -152,22 +147,12 @@ void ApplyShakeBrush(State& state, Graphics& graphics) {
     const float radius_tiles = std::max(0.0F, brush.radius_tiles);
 
     if (brush.affect_foreground_tiles && brush.foreground_tile_amount > 0.0F) {
-        AddShake(
-            state,
-            mouse_world,
-            brush.foreground_tile_amount,
-            radius_tiles,
-            ShakeMask::ForegroundTiles
-        );
+        AddShake(state, mouse_world, brush.foreground_tile_amount, radius_tiles,
+                 ShakeMask::ForegroundTiles);
     }
     if (brush.affect_background_tiles && brush.background_tile_amount > 0.0F) {
-        AddShake(
-            state,
-            mouse_world,
-            brush.background_tile_amount,
-            radius_tiles,
-            ShakeMask::BackgroundTiles
-        );
+        AddShake(state, mouse_world, brush.background_tile_amount, radius_tiles,
+                 ShakeMask::BackgroundTiles);
     }
     if (brush.affect_ents && brush.ent_amount > 0.0F) {
         AddShake(state, mouse_world, brush.ent_amount, radius_tiles, ShakeMask::Ents);
@@ -196,8 +181,8 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
         if (paint_water) {
             constexpr float kGravityPickerScalePx = 64.0F;
             const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
-            const Vec2 gravity = (mouse_world - StageCenterWorld(state.stage)) /
-                                 kGravityPickerScalePx;
+            const Vec2 gravity =
+                (mouse_world - StageCenterWorld(state.stage)) / kGravityPickerScalePx;
             state.settings.fluid.gravity_x = std::clamp(gravity.x, -4.0F, 4.0F);
             state.settings.fluid.gravity_y = std::clamp(gravity.y, -4.0F, 4.0F);
         }
@@ -223,17 +208,14 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
                 continue;
             }
 
-            const Tile current_tile = state.stage.GetTile(
-                static_cast<unsigned int>(wrapped.x),
-                static_cast<unsigned int>(wrapped.y)
-            );
-            const float falloff = std::clamp(1.0F - (distance / (radius_for_falloff + 1.0F)), 0.0F, 1.0F);
+            const Tile current_tile = state.stage.GetTile(static_cast<unsigned int>(wrapped.x),
+                                                          static_cast<unsigned int>(wrapped.y));
+            const float falloff =
+                std::clamp(1.0F - (distance / (radius_for_falloff + 1.0F)), 0.0F, 1.0F);
             if (brush.mode == DebugFluidBrushState::Mode::PermanentGravity) {
                 if (paint_water) {
                     state.stage.SetFluidGravityOverride(
-                        wrapped,
-                        Vec2::New(brush.paint_gravity_x, brush.paint_gravity_y)
-                    );
+                        wrapped, Vec2::New(brush.paint_gravity_x, brush.paint_gravity_y));
                 } else if (erase_fluid) {
                     state.stage.ClearFluidGravityOverride(wrapped);
                 }
@@ -242,9 +224,7 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
             if (brush.mode == DebugFluidBrushState::Mode::TemporaryGravity) {
                 if (paint_water) {
                     state.stage.AddFluidTempGravity(
-                        wrapped,
-                        Vec2::New(brush.paint_gravity_x, brush.paint_gravity_y) * falloff
-                    );
+                        wrapped, Vec2::New(brush.paint_gravity_x, brush.paint_gravity_y) * falloff);
                 } else if (erase_fluid) {
                     state.stage.ClearFluidTempGravity(wrapped);
                 }
@@ -264,9 +244,7 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
                 PushChangedTile(changed_tiles, wrapped);
             } else if (erase_fluid) {
                 const Tile fluid_tile = state.stage.GetFluidTile(
-                    static_cast<unsigned int>(wrapped.x),
-                    static_cast<unsigned int>(wrapped.y)
-                );
+                    static_cast<unsigned int>(wrapped.x), static_cast<unsigned int>(wrapped.y));
                 if (GetTileSpec(current_tile).simulated_fluid) {
                     (void)world_ops::SetForegroundTile(state, wrapped, Tile::Air);
                     PushChangedTile(changed_tiles, wrapped);
@@ -305,9 +283,8 @@ void ApplyTileBrush(DebugPlayback& debug, State& state, Graphics& graphics) {
     const IVec2 mouse_tile = graphics.ScreenToTileCoords(state.immediate_playing_inputs.mouse_pos);
     const int radius_tiles = std::max(0, debug.tile_brush_radius_tiles);
     const Tile tile = paint_tile ? debug.tile_brush_tile : Tile::Air;
-    const TileRotation rotation = paint_tile
-        ? NormalizeTileRotation(debug.tile_brush_rotation)
-        : kTileRotation0;
+    const TileRotation rotation =
+        paint_tile ? NormalizeTileRotation(debug.tile_brush_rotation) : kTileRotation0;
 
     for (int y = mouse_tile.y - radius_tiles; y <= mouse_tile.y + radius_tiles; ++y) {
         for (int x = mouse_tile.x - radius_tiles; x <= mouse_tile.x + radius_tiles; ++x) {
@@ -324,15 +301,8 @@ void ApplyTileBrush(DebugPlayback& debug, State& state, Graphics& graphics) {
 
 } // namespace
 
-void AdvanceLiveSimulation(
-    SDL_Window* window,
-    SDL_Renderer* renderer,
-    State& state,
-    Audio& audio,
-    Graphics& graphics,
-    DebugPlayback& debug,
-    float frame_dt
-) {
+void AdvanceLiveSimulation(SDL_Window* window, SDL_Renderer* renderer, State& state, Audio& audio,
+                           Graphics& graphics, DebugPlayback& debug, float frame_dt) {
     graphics.debug_lock_play_camera = false;
 
     if (debug.skip_live_simulation_once) {
@@ -347,6 +317,10 @@ void AdvanceLiveSimulation(
     ApplyShakeBrush(state, graphics);
     ApplyTileBrush(debug, state, graphics);
     ApplyFluidBrush(state, graphics);
+
+    if (state.pause) {
+        return;
+    }
 
     if (debug.pause_live_simulation) {
         if (!debug.step_live_simulation_once) {
@@ -378,19 +352,14 @@ DebugPlayback DebugPlayback::New() {
     std::strncpy(result.file_path.data(), default_path, result.file_path.size() - 1);
     result.file_path[result.file_path.size() - 1] = '\0';
     const char* default_host = "127.0.0.1";
-    std::strncpy(result.network_join_host.data(), default_host, result.network_join_host.size() - 1);
+    std::strncpy(result.network_join_host.data(), default_host,
+                 result.network_join_host.size() - 1);
     result.network_join_host[result.network_join_host.size() - 1] = '\0';
     return result;
 }
 
-void DrawDebugPlaybackControls(
-    DebugPlayback& debug,
-    State& state,
-    Audio& audio,
-    Graphics& graphics,
-    SDL_Window* window,
-    SDL_Renderer* renderer
-) {
+void DrawDebugPlaybackControls(DebugPlayback& debug, State& state, Audio& audio, Graphics& graphics,
+                               SDL_Window* window, SDL_Renderer* renderer) {
     if (ImGui::IsKeyPressed(ImGuiKey_F1)) {
         debug.imgui_visible = !debug.imgui_visible;
     }
@@ -441,21 +410,15 @@ void StopDebugAudioBrushLoop(DebugPlayback& debug, Audio& audio) {
     debug.audio_brush_loop_audio_asset_id.reset();
 }
 
-AudioPlaybackParams MakeDebugAudioBrushPlaybackParams(
-    State& state,
-    const Graphics& graphics
-) {
+AudioPlaybackParams MakeDebugAudioBrushPlaybackParams(State& state, const Graphics& graphics) {
     const DebugAudioBrushState& brush = state.debug_audio_brush;
     AudioPlaybackParams params;
     params.volume_scale = brush.volume_scale;
     params.positional = true;
     params.loops = -1;
 
-    const PositionalAudioAcoustics acoustics = ComputePositionalAudioAcoustics(
-        state,
-        graphics.camera.target,
-        brush.source_world_pos
-    );
+    const PositionalAudioAcoustics acoustics =
+        ComputePositionalAudioAcoustics(state, graphics.camera.target, brush.source_world_pos);
     params.world_pos = acoustics.wrapped_source_world_pos;
     params.direct_gain = acoustics.direct_gain;
     params.low_pass_enabled = acoustics.low_pass_enabled;
@@ -489,43 +452,27 @@ void UpdateDebugAudioBrushInput(State& state, const Graphics& graphics) {
 
 } // namespace
 
-void RunSimulationWithDebugControls(
-    SDL_Window* window,
-    SDL_Renderer* renderer,
-    State& state,
-    Audio& audio,
-    Graphics& graphics,
-    DebugPlayback& debug,
-    float frame_dt
-) {
+void RunSimulationWithDebugControls(SDL_Window* window, SDL_Renderer* renderer, State& state,
+                                    Audio& audio, Graphics& graphics, DebugPlayback& debug,
+                                    float frame_dt) {
     if (debug.playback_active) {
         debug_playback_internal::ClampPlaybackIndex(debug);
         if (!debug.recorded_snapshots.empty()) {
-            RestoreGameplaySnapshot(debug.recorded_snapshots[debug.playback_index], state, graphics);
+            RestoreGameplaySnapshot(debug.recorded_snapshots[debug.playback_index], state,
+                                    graphics);
             InvalidateStageLighting(state);
-    InvalidateStageAcoustics(state);
+            InvalidateStageAcoustics(state);
         }
         graphics.debug_lock_play_camera = true;
         return;
     }
 
-    debug_playback_internal::AdvanceLiveSimulation(
-        window,
-        renderer,
-        state,
-        audio,
-        graphics,
-        debug,
-        frame_dt
-    );
+    debug_playback_internal::AdvanceLiveSimulation(window, renderer, state, audio, graphics, debug,
+                                                   frame_dt);
 }
 
-void UpdateDebugAudioBrush(
-    DebugPlayback& debug,
-    State& state,
-    Audio& audio,
-    const Graphics& graphics
-) {
+void UpdateDebugAudioBrush(DebugPlayback& debug, State& state, Audio& audio,
+                           const Graphics& graphics) {
     audio.SetListenerWorldPos(GetAudioListenerWorldPos(state));
     if (state.net_session.role == network::NetRole::Peer) {
         state.debug_audio_brush.enabled = false;
@@ -535,9 +482,7 @@ void UpdateDebugAudioBrush(
     }
     UpdateDebugAudioBrushInput(state, graphics);
 
-    if (debug.playback_active ||
-        state.mode != Mode::Playing ||
-        !state.debug_audio_brush.enabled ||
+    if (debug.playback_active || state.mode != Mode::Playing || !state.debug_audio_brush.enabled ||
         !state.debug_audio_brush.source_active) {
         StopDebugAudioBrushLoop(debug, audio);
         return;
@@ -549,16 +494,14 @@ void UpdateDebugAudioBrush(
         StopDebugAudioBrushLoop(debug, audio);
     }
 
-    const AudioPlaybackParams params =
-        MakeDebugAudioBrushPlaybackParams(state, graphics);
+    const AudioPlaybackParams params = MakeDebugAudioBrushPlaybackParams(state, graphics);
     if (IsValidAudioInstanceVID(debug.audio_brush_loop_handle) &&
         audio.UpdateAudioInstance(debug.audio_brush_loop_handle, params)) {
         debug.audio_brush_loop_audio_asset_id = brush.audio_asset_id;
         return;
     }
 
-    debug.audio_brush_loop_handle =
-        audio.PlayAudioAssetInstance(brush.audio_asset_id, params);
+    debug.audio_brush_loop_handle = audio.PlayAudioAssetInstance(brush.audio_asset_id, params);
     if (IsValidAudioInstanceVID(debug.audio_brush_loop_handle)) {
         debug.audio_brush_loop_audio_asset_id = brush.audio_asset_id;
         return;

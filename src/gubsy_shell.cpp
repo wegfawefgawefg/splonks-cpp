@@ -284,6 +284,53 @@ void StartSplonksFromGubsy(void* user_data, std::int32_t) {
     shell->state->SetMode(Mode::StageTransition);
 }
 
+void SuppressGameplayInputAfterMenu(State& state) {
+    state.suppress_gameplay_input = false;
+    state.gameplay_input_suppression_frames = 2;
+    state.playing_input_snapshot = PlayingInputSnapshot::New();
+    state.immediate_playing_inputs = PlayingInputs::New();
+    state.previous_immediate_playing_input_snapshot = state.playing_input_snapshot;
+}
+
+void ResumeSplonksFromGubsy(void* user_data, std::int32_t) {
+    auto* shell = static_cast<Shell*>(user_data);
+    if (shell == nullptr || shell->state == nullptr)
+        return;
+    gubsy_close_in_game_menu(shell->runtime);
+    shell->state->pause = false;
+    SuppressGameplayInputAfterMenu(*shell->state);
+}
+
+void RestartSplonksFromGubsy(void* user_data, std::int32_t) {
+    auto* shell = static_cast<Shell*>(user_data);
+    if (shell == nullptr || shell->state == nullptr)
+        return;
+    if (shell->state->net_session.role == network::NetRole::Peer)
+        return;
+    gubsy_close_in_game_menu(shell->runtime);
+    QueueStageTransition(*shell->state,
+                         StageLoadTarget::ForQuestStage("classic", "classic_mines_1"), false);
+    shell->state->scene_frame = 0;
+    shell->state->game_over = false;
+    shell->state->pause = false;
+    shell->state->SetMode(Mode::StageTransition);
+    SuppressGameplayInputAfterMenu(*shell->state);
+}
+
+void QuitRunToMainMenuFromGubsy(void* user_data, std::int32_t) {
+    auto* shell = static_cast<Shell*>(user_data);
+    if (shell == nullptr || shell->state == nullptr)
+        return;
+    std::string status;
+    network::DisconnectSession(*shell->state, &status);
+    if (!status.empty())
+        std::cerr << status << '\n';
+    shell->state->pause = false;
+    shell->state->SetMode(Mode::Title);
+    SuppressGameplayInputAfterMenu(*shell->state);
+    (void)gubsy_show_main_menu(shell->runtime);
+}
+
 void QuitSplonksFromGubsy(void* user_data, std::int32_t) {
     auto* state = static_cast<State*>(user_data);
     if (state == nullptr)
@@ -355,6 +402,14 @@ MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs, bool text_edit_acti
     return result;
 }
 
+MenuInputState BuildFrameMenuInput(Shell& shell, const State& state) {
+    if (shell.block_next_menu_input) {
+        shell.block_next_menu_input = false;
+        return {};
+    }
+    return BuildGubsyMenuInput(state.menu_inputs, TextEditActive(shell));
+}
+
 GubsyAppConfig BuildGubsyConfig(const Settings* settings = nullptr) {
     GubsyAppConfig config{};
     config.enable_mods = false;
@@ -383,6 +438,15 @@ bool RegisterShellMenu(Shell& shell, State& state) {
     commands.start_game = gubsy_register_menu_command(shell.runtime, StartSplonksFromGubsy, &shell);
     commands.quit = gubsy_register_menu_command(shell.runtime, QuitSplonksFromGubsy, &state);
     gubsy_set_main_menu_commands(shell.runtime, commands);
+
+    GubsyInGameMenuCommands in_game_commands{};
+    in_game_commands.resume =
+        gubsy_register_menu_command(shell.runtime, ResumeSplonksFromGubsy, &shell);
+    in_game_commands.restart_run =
+        gubsy_register_menu_command(shell.runtime, RestartSplonksFromGubsy, &shell);
+    in_game_commands.quit_to_main_menu =
+        gubsy_register_menu_command(shell.runtime, QuitRunToMainMenuFromGubsy, &shell);
+    gubsy_set_in_game_menu_commands(shell.runtime, in_game_commands);
 
     GubsyLobbyConfigProvider config_provider{};
     config_provider.user_data = &shell;
@@ -468,15 +532,46 @@ void BeginDebugFrame(Shell& shell, float dt) {
     gubsy_begin_debug_frame(shell.runtime, dt);
 }
 
-void UpdateTitleMenu(Shell& shell, const State& state, float dt, int screen_width,
-                     int screen_height) {
-    gubsy_set_menu_input(shell.runtime,
-                         BuildGubsyMenuInput(state.menu_inputs, TextEditActive(shell)));
+bool OpenInGameMenu(Shell& shell) {
+    if (shell.state == nullptr)
+        return false;
+    if (!gubsy_open_in_game_menu(shell.runtime))
+        return false;
+    shell.block_next_menu_input = true;
+    shell.state->suppress_gameplay_input = true;
+    shell.state->gameplay_input_suppression_frames = 1;
+    shell.state->pause = shell.state->net_session.role == network::NetRole::Offline;
+    return true;
+}
+
+void CloseInGameMenu(Shell& shell) {
+    gubsy_close_in_game_menu(shell.runtime);
+    if (shell.state == nullptr)
+        return;
+    shell.state->pause = false;
+    SuppressGameplayInputAfterMenu(*shell.state);
+}
+
+bool InGameMenuOpen(Shell& shell) {
+    return gubsy_in_game_menu_open(shell.runtime);
+}
+
+void UpdateMenu(Shell& shell, const State& state, float dt, int screen_width, int screen_height) {
+    gubsy_set_menu_input(shell.runtime, BuildFrameMenuInput(shell, state));
     gubsy_update_menu(shell.runtime, dt, screen_width, screen_height);
 }
 
-void RenderTitleMenu(Shell& shell, SDL_Renderer* renderer, int screen_width, int screen_height) {
+void RenderMenu(Shell& shell, SDL_Renderer* renderer, int screen_width, int screen_height) {
     gubsy_render_menu(shell.runtime, renderer, screen_width, screen_height);
+}
+
+void UpdateTitleMenu(Shell& shell, const State& state, float dt, int screen_width,
+                     int screen_height) {
+    UpdateMenu(shell, state, dt, screen_width, screen_height);
+}
+
+void RenderTitleMenu(Shell& shell, SDL_Renderer* renderer, int screen_width, int screen_height) {
+    RenderMenu(shell, renderer, screen_width, screen_height);
 }
 
 void RenderDebug(Shell& shell, SDL_Renderer* renderer, int screen_width, int screen_height) {
