@@ -4,9 +4,9 @@
 #include "network/net_lobby.hpp"
 
 #include <gubsy/runtime.hpp>
-
 #include <iostream>
 #include <string>
+#include <string_view>
 
 namespace splonks {
 namespace {
@@ -114,6 +114,15 @@ bool CheckOfflineStart() {
     }
     if (state.mode != Mode::StageTransition) {
         std::cerr << "Gubsy shell smoke failed: lobby start did not enter stage transition\n";
+        return false;
+    }
+    if (!state.pending_stage_transition.has_value() ||
+        state.pending_stage_transition->destination.kind != StageLoadTargetKind::QuestStage ||
+        std::string_view(state.pending_stage_transition->destination.quest_id.data()) !=
+            "classic" ||
+        std::string_view(state.pending_stage_transition->destination.quest_stage_id.data()) !=
+            "classic_mines_1") {
+        std::cerr << "Gubsy shell smoke failed: lobby start did not queue Mines 1\n";
         return false;
     }
     if (state.players.FindPrimaryLocal() == nullptr) {

@@ -4,6 +4,7 @@
 #include "input_bind_schema.hpp"
 #include "inputs.hpp"
 #include "network/net_lobby.hpp"
+#include "stage_progression.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -277,6 +278,9 @@ void StartSplonksFromGubsy(void* user_data, std::int32_t) {
         return;
     ApplyLobbyConfigToSplonks(*shell, gubsy_get_lobby_state(shell->runtime),
                               shell->state->net_session.role == network::NetRole::Offline);
+    QueueStageTransition(*shell->state,
+                         StageLoadTarget::ForQuestStage("classic", "classic_mines_1"), false);
+    shell->state->scene_frame = 0;
     shell->state->SetMode(Mode::StageTransition);
 }
 
