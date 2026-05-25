@@ -16,8 +16,20 @@ BindsSchema BuildGubsyBindsSchema() {
     schema.add_action(kGubsyActionMoveDown, "Move Down", "Gameplay");
     schema.add_action(kGubsyActionMoveLeft, "Move Left", "Gameplay");
     schema.add_action(kGubsyActionMoveRight, "Move Right", "Gameplay");
-    schema.add_action(kGubsyActionUse, "Use", "Gameplay");
-    schema.add_axis_1d(0, "Analog Value", "Gameplay");
+    schema.add_action(kGubsyActionRun, "Run", "Gameplay");
+    schema.add_action(kGubsyActionUse, "Use / Attack", "Gameplay");
+    schema.add_action(kGubsyActionUseBack, "Use Back / Drop Back", "Gameplay");
+    schema.add_action(kGubsyActionEquip, "Equip / Enter", "Gameplay");
+    schema.add_action(kGubsyActionPickUpDrop, "Pick Up / Drop", "Gameplay");
+    schema.add_action(kGubsyActionStopNextStage, "Stop / Next Stage", "Gameplay");
+    schema.add_action(kGubsyActionBombGrenade, "Bomb / Grenade", "Gameplay");
+    schema.add_action(kGubsyActionRope, "Rope", "Gameplay");
+    schema.add_action(kGubsyActionAttack, "Attack", "Gameplay");
+    schema.add_action(kGubsyActionBuy, "Buy", "Gameplay");
+    schema.add_action(kGubsyActionEmoteUp, "Emote Up", "Gameplay");
+    schema.add_action(kGubsyActionEmoteDown, "Emote Down", "Gameplay");
+    schema.add_axis_1d(kGubsyAxisRun, "Run Trigger", "Gameplay");
+    schema.add_axis_1d(kGubsyAxisUseBack, "Use Back Trigger", "Gameplay");
     schema.add_axis_2d(0, "Analog Move", "Gameplay");
     return schema;
 }

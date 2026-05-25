@@ -10,6 +10,11 @@ bool ActionDown(Shell& shell, int player_index, SplonksGubsyAction action) {
     return gubsy_lobby_player_action_down(shell.runtime, player_index, static_cast<int>(action));
 }
 
+bool AxisDown(Shell& shell, int player_index, SplonksGubsyAxis1D axis) {
+    return gubsy_lobby_player_axis_1d_down(shell.runtime, player_index, static_cast<int>(axis),
+                                           0.35F);
+}
+
 InputFrame BuildLobbyInputFrame(Shell& shell, int player_index) {
     InputFrame frame = InputFrame::New();
     frame.left = ActionDown(shell, player_index, kGubsyActionMoveLeft);
@@ -17,11 +22,20 @@ InputFrame BuildLobbyInputFrame(Shell& shell, int player_index) {
     frame.up = ActionDown(shell, player_index, kGubsyActionMoveUp);
     frame.down = ActionDown(shell, player_index, kGubsyActionMoveDown);
     frame.jump = ActionDown(shell, player_index, kGubsyActionConfirmJump);
-    frame.attack = ActionDown(shell, player_index, kGubsyActionBackAttack);
-    frame.bomb = ActionDown(shell, player_index, kGubsyActionPagePreviousBomb);
-    frame.rope = ActionDown(shell, player_index, kGubsyActionPageNextRope);
-    frame.use_button = ActionDown(shell, player_index, kGubsyActionUse);
-    frame.buy_button = frame.use_button;
+    frame.run = ActionDown(shell, player_index, kGubsyActionRun) ||
+                AxisDown(shell, player_index, kGubsyAxisRun);
+    frame.use_button = ActionDown(shell, player_index, kGubsyActionUseBack) ||
+                       AxisDown(shell, player_index, kGubsyAxisUseBack);
+    frame.equip_button = ActionDown(shell, player_index, kGubsyActionEquip);
+    frame.pick_up_drop = ActionDown(shell, player_index, kGubsyActionPickUpDrop);
+    frame.stop = ActionDown(shell, player_index, kGubsyActionStopNextStage);
+    frame.bomb = ActionDown(shell, player_index, kGubsyActionBombGrenade);
+    frame.rope = ActionDown(shell, player_index, kGubsyActionRope);
+    frame.attack = ActionDown(shell, player_index, kGubsyActionUse) ||
+                   ActionDown(shell, player_index, kGubsyActionAttack);
+    frame.buy_button = ActionDown(shell, player_index, kGubsyActionBuy);
+    frame.emote_up = ActionDown(shell, player_index, kGubsyActionEmoteUp);
+    frame.emote_down = ActionDown(shell, player_index, kGubsyActionEmoteDown);
     return frame;
 }
 
