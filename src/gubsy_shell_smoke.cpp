@@ -4,12 +4,29 @@
 #include "network/net_lobby.hpp"
 
 #include <gubsy/runtime.hpp>
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <string_view>
 
 namespace splonks {
 namespace {
+
+bool ParseEndpoint(const std::string& endpoint, std::string& host, std::uint16_t& port) {
+    const std::size_t colon = endpoint.rfind(':');
+    if (colon == std::string::npos || colon + 1 >= endpoint.size())
+        return false;
+    host = endpoint.substr(0, colon);
+    try {
+        const int parsed = std::stoi(endpoint.substr(colon + 1));
+        if (host.empty() || parsed <= 0 || parsed > 65535)
+            return false;
+        port = static_cast<std::uint16_t>(parsed);
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
 
 struct SmokeMatchmaking final : IMatchmaking {
     MatchmakingRoom room;
@@ -266,6 +283,49 @@ bool CheckHostJoin() {
         return false;
     }
     gubsy_set_lobby_matchmaking_backend(host_shell.runtime, &matchmaking);
+    if (!gubsy_host_lobby_direct(host_shell.runtime, 0, message)) {
+        std::cerr << "Gubsy shell smoke failed: direct host failed: " << message << '\n';
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (host_state.net_session.role != network::NetRole::Host) {
+        std::cerr << "Gubsy shell smoke failed: direct host callback was not used\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    const GubsyLobbyState& direct_lobby = gubsy_get_lobby_state(host_shell.runtime);
+    std::string direct_host;
+    std::uint16_t direct_port = 0;
+    if (!ParseEndpoint(direct_lobby.advertised_endpoint, direct_host, direct_port)) {
+        std::cerr << "Gubsy shell smoke failed: direct host endpoint invalid\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    State direct_guest_state = State::New();
+    gubsy_shell::Shell direct_guest_shell;
+    if (!gubsy_shell::InitHeadless(direct_guest_shell, direct_guest_state)) {
+        std::cerr << "Gubsy shell smoke failed: direct guest InitHeadless failed\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (!gubsy_join_lobby_direct(direct_guest_shell.runtime, direct_host, direct_port, message)) {
+        std::cerr << "Gubsy shell smoke failed: direct join failed: " << message << '\n';
+        gubsy_shell::Shutdown(direct_guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (direct_guest_state.net_session.role != network::NetRole::Peer) {
+        std::cerr << "Gubsy shell smoke failed: direct join callback was not used\n";
+        gubsy_shell::Shutdown(direct_guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    (void)gubsy_leave_lobby_room(direct_guest_shell.runtime, message);
+    (void)gubsy_leave_lobby_room(host_shell.runtime, message);
+    gubsy_shell::Shutdown(direct_guest_shell);
+
     if (!gubsy_host_lobby_room(host_shell.runtime, 0, message)) {
         std::cerr << "Gubsy shell smoke failed: host room failed: " << message << '\n';
         gubsy_shell::Shutdown(host_shell);
