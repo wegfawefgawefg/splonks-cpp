@@ -3,8 +3,8 @@
 #include "gubsy_shell.hpp"
 #include "network/net_lobby.hpp"
 
-#include <gubsy/runtime.hpp>
 #include <cstdint>
+#include <gubsy/runtime.hpp>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -116,6 +116,13 @@ void PressSelect(gubsy_shell::Shell& shell, State& state) {
     StepMenu(shell, state);
 }
 
+void PressRight(gubsy_shell::Shell& shell, State& state) {
+    MenuInputs inputs = MenuInputs::New();
+    inputs.right.down = true;
+    StepMenu(shell, state, inputs);
+    StepMenu(shell, state);
+}
+
 bool CheckOfflineStart() {
     State state = State::New();
     gubsy_shell::Shell shell;
@@ -215,6 +222,7 @@ bool CheckInGameRestartCommand() {
 
     StepMenu(shell, state);
     PressDown(shell, state);
+    PressDown(shell, state);
     PressSelect(shell, state);
 
     const bool queued_mines_1 =
@@ -257,6 +265,7 @@ bool CheckInGameQuitCommand() {
     }
 
     StepMenu(shell, state);
+    PressDown(shell, state);
     PressDown(shell, state);
     PressDown(shell, state);
     PressSelect(shell, state);
@@ -371,12 +380,76 @@ bool CheckHostJoin() {
     return true;
 }
 
+bool CheckDirectHostJoinViaMenu() {
+    std::string message;
+    State host_state = State::New();
+    gubsy_shell::Shell host_shell;
+    if (!gubsy_shell::InitHeadless(host_shell, host_state)) {
+        std::cerr << "Gubsy shell smoke failed: direct menu host InitHeadless failed\n";
+        return false;
+    }
+
+    if (!gubsy_push_menu_screen(host_shell.runtime, MenuScreenID::LOBBY_HOST_SETUP)) {
+        std::cerr << "Gubsy shell smoke failed: direct host menu screen missing\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    StepMenu(host_shell, host_state);
+    PressDown(host_shell, host_state);
+    PressDown(host_shell, host_state);
+    PressDown(host_shell, host_state);
+    PressDown(host_shell, host_state);
+    PressDown(host_shell, host_state);
+    PressRight(host_shell, host_state);
+    PressSelect(host_shell, host_state);
+    if (host_state.net_session.role != network::NetRole::Host) {
+        const GubsyLobbyState& lobby = gubsy_get_lobby_state(host_shell.runtime);
+        std::cerr << "Gubsy shell smoke failed: direct host menu did not start hosting: "
+                  << lobby.status_message << '\n';
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    State guest_state = State::New();
+    gubsy_shell::Shell guest_shell;
+    if (!gubsy_shell::InitHeadless(guest_shell, guest_state)) {
+        std::cerr << "Gubsy shell smoke failed: direct menu guest InitHeadless failed\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    if (!gubsy_push_menu_screen(guest_shell.runtime, MenuScreenID::LOBBY_SERVER_BROWSER)) {
+        std::cerr << "Gubsy shell smoke failed: direct join menu screen missing\n";
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    StepMenu(guest_shell, guest_state);
+    PressDown(guest_shell, guest_state);
+    PressDown(guest_shell, guest_state);
+    PressSelect(guest_shell, guest_state);
+    if (guest_state.net_session.role != network::NetRole::Peer) {
+        const GubsyLobbyState& lobby = gubsy_get_lobby_state(guest_shell.runtime);
+        std::cerr << "Gubsy shell smoke failed: direct join menu did not connect: "
+                  << lobby.status_message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
+    (void)gubsy_leave_lobby_room(host_shell.runtime, message);
+    gubsy_shell::Shutdown(guest_shell);
+    gubsy_shell::Shutdown(host_shell);
+    return true;
+}
+
 } // namespace
 
 bool CheckGubsyShellSmoke() {
     try {
         return CheckOfflineStart() && CheckInGameMenuShell() && CheckInGameRestartCommand() &&
-               CheckInGameQuitCommand() && CheckHostJoin();
+               CheckInGameQuitCommand() && CheckHostJoin() && CheckDirectHostJoinViaMenu();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';
         return false;
