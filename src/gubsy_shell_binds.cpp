@@ -16,6 +16,15 @@ bool has_axis_1d(const BindsProfile& profile, int axis_1d) {
     return !ginput::binds_for_axis_1d(profile, axis_1d).empty();
 }
 
+bool has_button_bind(const BindsProfile& profile, GubsyButton button, int action) {
+    const int button_id = static_cast<int>(button);
+    for (const ginput::ButtonBind& bind : ginput::button_binds_for_action(profile, action)) {
+        if (bind.device_button == button_id)
+            return true;
+    }
+    return false;
+}
+
 bool profile_is_playable(const BindsProfile& profile) {
     return has_action(profile, kGubsyActionConfirmJump) &&
            has_action(profile, kGubsyActionMoveUp) && has_action(profile, kGubsyActionMoveDown) &&
@@ -25,6 +34,11 @@ bool profile_is_playable(const BindsProfile& profile) {
            has_axis_1d(profile, kGubsyAxisUseBack) && has_action(profile, kGubsyActionUseBack) &&
            has_action(profile, kGubsyActionPickUpDrop) &&
            has_action(profile, kGubsyActionBombGrenade) && has_action(profile, kGubsyActionRope);
+}
+
+bool profile_has_current_default_keyboard_shape(const BindsProfile& profile) {
+    return has_button_bind(profile, GubsyButton::KB_J, kGubsyActionUse) &&
+           has_button_bind(profile, GubsyButton::KB_L, kGubsyActionUseBack);
 }
 
 void bind(BindsProfile& profile, GubsyButton button, int action) {
@@ -60,13 +74,13 @@ BindsProfile build_default_binds(int id, const std::string& name) {
     bind(profile, GubsyButton::KB_D, kGubsyActionMoveRight);
     bind(profile, GubsyButton::KB_SPACE, kGubsyActionConfirmJump);
     bind(profile, GubsyButton::KB_LSHIFT, kGubsyActionRun);
-    bind(profile, GubsyButton::KB_J, kGubsyActionUseBack);
+    bind(profile, GubsyButton::KB_J, kGubsyActionUse);
     bind(profile, GubsyButton::KB_I, kGubsyActionEquip);
     bind(profile, GubsyButton::KB_K, kGubsyActionPickUpDrop);
+    bind(profile, GubsyButton::KB_L, kGubsyActionUseBack);
     bind(profile, GubsyButton::KB_LCTRL, kGubsyActionStopNextStage);
     bind(profile, GubsyButton::KB_M, kGubsyActionBombGrenade);
     bind(profile, GubsyButton::KB_O, kGubsyActionRope);
-    bind(profile, GubsyButton::KB_H, kGubsyActionUse);
     bind(profile, GubsyButton::KB_U, kGubsyActionBuy);
     bind(profile, GubsyButton::KB_UP, kGubsyActionEmoteUp);
     bind(profile, GubsyButton::KB_DOWN, kGubsyActionEmoteDown);
@@ -108,7 +122,8 @@ const BindsProfile* find_named_default(GubsyRuntime& runtime) {
 
 void EnsureDefaultBinds(GubsyRuntime& runtime) {
     const BindsProfile* existing = find_named_default(runtime);
-    if (existing != nullptr && profile_is_playable(*existing))
+    if (existing != nullptr && profile_is_playable(*existing) &&
+        profile_has_current_default_keyboard_shape(*existing))
         return;
 
     const int profile_id = existing != nullptr ? existing->id : 1;

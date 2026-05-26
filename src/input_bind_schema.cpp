@@ -18,7 +18,7 @@ BindsSchema BuildGubsyBindsSchema() {
     schema.add_action(kGubsyActionMoveRight, "Move Right", "Gameplay");
     schema.add_action(kGubsyActionRun, "Run", "Gameplay");
     schema.add_action(kGubsyActionUse, "Use / Attack", "Gameplay");
-    schema.add_action(kGubsyActionUseBack, "Use Back / Drop Back", "Gameplay");
+    schema.add_action(kGubsyActionUseBack, "Use Back", "Gameplay");
     schema.add_action(kGubsyActionEquip, "Equip / Enter", "Gameplay");
     schema.add_action(kGubsyActionPickUpDrop, "Pick Up / Drop", "Gameplay");
     schema.add_action(kGubsyActionStopNextStage, "Stop / Next Stage", "Gameplay");
