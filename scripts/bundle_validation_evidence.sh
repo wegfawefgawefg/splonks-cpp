@@ -84,6 +84,94 @@ copy_file_if_exists() {
     fi
 }
 
+manifest_value() {
+    local path="$1"
+    local key="$2"
+    awk -F= -v key="${key}" '$1 == key {print substr($0, length(key) + 2)}' "${path}" | tail -n 1
+}
+
+skip_stale_manifest() {
+    local src="$1"
+    local reason="$2"
+    printf '[bundle] skipping stale manifest %s: %s\n' "${src#${repo_root}/}" "${reason}" >&2
+}
+
+copy_package_manifest_if_current() {
+    local src="$1"
+    local dst="$2"
+    local platform="$3"
+    local actual_platform
+    local actual_version
+    local actual_revision
+    if [[ ! -f "${src}" ]]; then
+        return 1
+    fi
+    if [[ "${allow_stale}" == "1" ]]; then
+        copy_file_if_exists "${src}" "${dst}"
+        return 0
+    fi
+    actual_platform="$(manifest_value "${src}" platform)"
+    actual_version="$(manifest_value "${src}" release_version)"
+    actual_revision="$(manifest_value "${src}" git_revision)"
+    if [[ "${actual_platform}" != "${platform}" ]]; then
+        skip_stale_manifest "${src}" "platform=${actual_platform:-<unset>}, expected ${platform}"
+        return 1
+    fi
+    if [[ "${actual_version}" != "${version}" ]]; then
+        skip_stale_manifest "${src}" "release_version=${actual_version:-<unset>}, expected ${version}"
+        return 1
+    fi
+    if [[ "${actual_revision}" != "${expected_revision}" ]]; then
+        skip_stale_manifest "${src}" "git_revision=${actual_revision:-<unset>}, expected ${expected_revision}"
+        return 1
+    fi
+    copy_file_if_exists "${src}" "${dst}"
+    return 0
+}
+
+copy_store_manifest_if_current() {
+    local src="$1"
+    local dst="$2"
+    local platform="$3"
+    local actual_platform
+    local actual_version
+    local actual_revision
+    if [[ ! -f "${src}" ]]; then
+        return 1
+    fi
+    if [[ "${allow_stale}" == "1" ]]; then
+        copy_file_if_exists "${src}" "${dst}"
+        return 0
+    fi
+    actual_platform="$(manifest_value "${src}" platform)"
+    actual_version="$(manifest_value "${src}" version_name)"
+    actual_revision="$(manifest_value "${src}" git_commit)"
+    if [[ "${actual_platform}" != "${platform}" ]]; then
+        skip_stale_manifest "${src}" "platform=${actual_platform:-<unset>}, expected ${platform}"
+        return 1
+    fi
+    if [[ "${actual_version}" != "${version}" ]]; then
+        skip_stale_manifest "${src}" "version_name=${actual_version:-<unset>}, expected ${version}"
+        return 1
+    fi
+    if [[ "${actual_revision}" != "${expected_revision}" ]]; then
+        skip_stale_manifest "${src}" "git_commit=${actual_revision:-<unset>}, expected ${expected_revision}"
+        return 1
+    fi
+    copy_file_if_exists "${src}" "${dst}"
+    return 0
+}
+
+copy_release_file_if_current() {
+    local enabled="$1"
+    local src="$2"
+    local dst_dir="$3"
+    if [[ "${enabled}" == "1" && -f "${src}" ]]; then
+        mkdir -p "${dst_dir}"
+        cp "${src}" "${dst_dir}/$(basename "${src}")"
+    fi
+}
+
 has_validation_logs() {
     [[ -d "${validation_dir}" ]] || return 1
     [[ -n "$(find "${validation_dir}" -maxdepth 1 -type f -name "*.log" -print -quit)" ]]
@@ -137,36 +225,43 @@ if [[ "${copied_logs}" -eq 0 ]]; then
     exit 1
 fi
 
-copy_file_if_exists "${repo_root}/dist/splonks-linux/PACKAGE_MANIFEST.txt" "${stage_dir}/manifests/linux-PACKAGE_MANIFEST.txt"
-copy_file_if_exists "${repo_root}/dist/splonks-macos/PACKAGE_MANIFEST.txt" "${stage_dir}/manifests/macos-PACKAGE_MANIFEST.txt"
-copy_file_if_exists "${repo_root}/dist/splonks-windows/PACKAGE_MANIFEST.txt" "${stage_dir}/manifests/windows-PACKAGE_MANIFEST.txt"
-copy_file_if_exists "${repo_root}/dist/splonks-android/manifest.txt" "${stage_dir}/manifests/android-manifest.txt"
-copy_file_if_exists "${repo_root}/dist/splonks-ios/manifest.txt" "${stage_dir}/manifests/ios-manifest.txt"
+copied_linux_manifest=0
+copied_macos_manifest=0
+copied_windows_manifest=0
+copied_android_manifest=0
+copied_ios_manifest=0
+if copy_package_manifest_if_current "${repo_root}/dist/splonks-linux/PACKAGE_MANIFEST.txt" "${stage_dir}/manifests/linux-PACKAGE_MANIFEST.txt" linux; then
+    copied_linux_manifest=1
+fi
+if copy_package_manifest_if_current "${repo_root}/dist/splonks-macos/PACKAGE_MANIFEST.txt" "${stage_dir}/manifests/macos-PACKAGE_MANIFEST.txt" macos; then
+    copied_macos_manifest=1
+fi
+if copy_package_manifest_if_current "${repo_root}/dist/splonks-windows/PACKAGE_MANIFEST.txt" "${stage_dir}/manifests/windows-PACKAGE_MANIFEST.txt" windows; then
+    copied_windows_manifest=1
+fi
+if copy_store_manifest_if_current "${repo_root}/dist/splonks-android/manifest.txt" "${stage_dir}/manifests/android-manifest.txt" android; then
+    copied_android_manifest=1
+fi
+if copy_store_manifest_if_current "${repo_root}/dist/splonks-ios/manifest.txt" "${stage_dir}/manifests/ios-manifest.txt" ios; then
+    copied_ios_manifest=1
+fi
 
 if [[ -d "${repo_root}/dist/releases" ]]; then
-    mkdir -p "${stage_dir}/release-checksums"
-    find "${repo_root}/dist/releases" -maxdepth 1 -type f \( \
-            -name "splonks-${version}-*.sha256" -o \
-            -name "splonks-${version}-*.txt" \
-        \) \
-        -exec cp {} "${stage_dir}/release-checksums/" \;
+    copy_release_file_if_current "${copied_linux_manifest}" "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz.sha256" "${stage_dir}/release-checksums"
+    copy_release_file_if_current "${copied_macos_manifest}" "${repo_root}/dist/releases/splonks-${version}-macos-arm64.zip.sha256" "${stage_dir}/release-checksums"
+    copy_release_file_if_current "${copied_windows_manifest}" "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip.sha256" "${stage_dir}/release-checksums"
+    copy_release_file_if_current "${copied_ios_manifest}" "${repo_root}/dist/releases/splonks-${version}-ios.ipa.sha256" "${stage_dir}/release-checksums"
+    copy_release_file_if_current "${copied_ios_manifest}" "${repo_root}/dist/releases/splonks-${version}-ios-manifest.txt" "${stage_dir}/release-checksums"
     if [[ "${include_artifacts}" -eq 1 ]]; then
-        mkdir -p "${stage_dir}/release-artifacts"
-        find "${repo_root}/dist/releases" -maxdepth 1 -type f \( \
-                -name "splonks-${version}-*.tar.gz" -o \
-                -name "splonks-${version}-*.zip" -o \
-                -name "splonks-${version}-*.ipa" \
-            \) \
-            -exec cp {} "${stage_dir}/release-artifacts/" \;
+        copy_release_file_if_current "${copied_linux_manifest}" "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz" "${stage_dir}/release-artifacts"
+        copy_release_file_if_current "${copied_macos_manifest}" "${repo_root}/dist/releases/splonks-${version}-macos-arm64.zip" "${stage_dir}/release-artifacts"
+        copy_release_file_if_current "${copied_windows_manifest}" "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip" "${stage_dir}/release-artifacts"
+        copy_release_file_if_current "${copied_ios_manifest}" "${repo_root}/dist/releases/splonks-${version}-ios.ipa" "${stage_dir}/release-artifacts"
     fi
 fi
 
 if [[ "${include_artifacts}" -eq 1 ]]; then
-    if [[ -d "${repo_root}/dist/splonks-android" ]]; then
-        mkdir -p "${stage_dir}/release-artifacts"
-        find "${repo_root}/dist/splonks-android" -maxdepth 1 -type f -name "splonks-${version}-*.aab" \
-            -exec cp {} "${stage_dir}/release-artifacts/" \;
-    fi
+    copy_release_file_if_current "${copied_android_manifest}" "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab" "${stage_dir}/release-artifacts"
 fi
 
 : > "${stage_dir}/CHECKSUMS.sha256"
