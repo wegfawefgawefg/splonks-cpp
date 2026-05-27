@@ -185,6 +185,9 @@ Normal branch pushes do not produce release artifacts. Real game distribution
 is manual or tag-driven only, through the package workflow and local package
 scripts.
 
+See [release_distribution.md](release_distribution.md) for the current
+per-platform release matrix, commands, and validation status.
+
 Current release package entry points:
 
 ```bash
