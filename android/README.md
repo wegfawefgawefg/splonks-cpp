@@ -31,9 +31,67 @@ Current status:
   pinned SDL3 AAR, and runs `scripts/android/build_apk.sh` to build a debug APK.
 - The package workflow uploads the debug APK as `splonks-android-debug-apk`
   after the build succeeds.
+- `scripts/android/build_release_aab.sh` builds a signed release AAB for real
+  distribution when upload-key environment variables are present.
 - Android setup still requires JDK 17+, Android command-line tools, and the
   SDK/NDK packages installed by `scripts/android/setup_sdk.sh`.
 - Runtime smoke scripting exists, but has not been validated on an Android
   emulator/device in this repo.
 - Asset extraction is implemented, but still needs a real Android runtime pass
   on an emulator/device to prove launch, rendering, audio, and settings writes.
+
+## Debug Build
+
+```bash
+scripts/android/setup_sdk.sh
+scripts/android/fetch_sdl3_aar.sh
+scripts/android/build_apk.sh
+```
+
+With an emulator or device connected:
+
+```bash
+scripts/android/install_apk.sh
+scripts/android/run_app.sh
+scripts/android/run_smoke.sh
+```
+
+## Signed Release AAB
+
+The release AAB path is intentionally manual/tag-driven. Do not commit
+keystores or passwords.
+
+```bash
+export SPLONKS_ANDROID_KEYSTORE=/absolute/path/to/upload-keystore.jks
+export SPLONKS_ANDROID_KEYSTORE_PASSWORD=...
+export SPLONKS_ANDROID_KEY_ALIAS=...
+export SPLONKS_ANDROID_KEY_PASSWORD=...
+export SPLONKS_ANDROID_VERSION_CODE=1
+export SPLONKS_ANDROID_VERSION_NAME=0.1.0
+scripts/android/setup_sdk.sh
+scripts/android/fetch_sdl3_aar.sh
+scripts/android/build_release_aab.sh
+```
+
+The script writes:
+
+```text
+dist/splonks-android/splonks-<version>-android-release.aab
+dist/splonks-android/manifest.txt
+```
+
+The Gradle release build reads signing from:
+
+```text
+SPLONKS_ANDROID_KEYSTORE
+SPLONKS_ANDROID_KEYSTORE_PASSWORD
+SPLONKS_ANDROID_KEY_ALIAS
+SPLONKS_ANDROID_KEY_PASSWORD
+```
+
+Version metadata is optional and defaults to `1` / `0.1.0`:
+
+```text
+SPLONKS_ANDROID_VERSION_CODE
+SPLONKS_ANDROID_VERSION_NAME
+```

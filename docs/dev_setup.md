@@ -127,8 +127,24 @@ With an emulator or device connected:
 ```
 
 Status: scaffold and scripts exist. Runtime smoke still needs a real
-emulator/device validation pass in this repo. Release distribution still needs
-the signed AAB path documented and scripted.
+emulator/device validation pass in this repo.
+
+Signed release AAB path:
+
+```bash
+export SPLONKS_ANDROID_KEYSTORE=/absolute/path/to/upload-keystore.jks
+export SPLONKS_ANDROID_KEYSTORE_PASSWORD=...
+export SPLONKS_ANDROID_KEY_ALIAS=...
+export SPLONKS_ANDROID_KEY_PASSWORD=...
+export SPLONKS_ANDROID_VERSION_CODE=1
+export SPLONKS_ANDROID_VERSION_NAME=0.1.0
+./scripts/android/setup_sdk.sh
+./scripts/android/fetch_sdl3_aar.sh
+./scripts/android/build_release_aab.sh
+```
+
+The release script writes the signed app bundle and manifest under
+`dist/splonks-android/`. Keep keystores and passwords outside the repo.
 
 ## iOS
 
@@ -165,7 +181,7 @@ Current release package entry points:
 ./scripts/package_linux.sh
 ./scripts/package_macos.sh
 ./scripts/package_windows.sh
-./scripts/android/build_apk.sh
+./scripts/android/build_release_aab.sh
 ```
 
 Release target state:
@@ -177,7 +193,8 @@ Release target state:
   Real distribution still needs Developer ID signing and notarization.
 - Windows: package script creates `dist/splonks-windows` with the executable,
   assets/data, DLLs, manifest, and launcher batch file.
-- Android: debug APK build exists. Release AAB/signing path remains to be
-  added.
+- Android: debug APK build exists. Signed release AAB path exists through
+  environment-provided upload-key settings. Runtime smoke still needs
+  emulator/device validation.
 - iOS: simulator scaffold, device signing, archive, and TestFlight/App Store
   path remain to be added.

@@ -2,6 +2,20 @@ plugins {
     id 'com.android.application'
 }
 
+def envOrDefault = { name, fallback ->
+    def value = System.getenv(name)
+    return value == null || value.isBlank() ? fallback : value
+}
+
+def releaseKeystore = System.getenv('SPLONKS_ANDROID_KEYSTORE')
+def releaseKeystorePassword = System.getenv('SPLONKS_ANDROID_KEYSTORE_PASSWORD')
+def releaseKeyAlias = System.getenv('SPLONKS_ANDROID_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('SPLONKS_ANDROID_KEY_PASSWORD')
+def hasReleaseSigning = releaseKeystore != null && !releaseKeystore.isBlank() &&
+                        releaseKeystorePassword != null && !releaseKeystorePassword.isBlank() &&
+                        releaseKeyAlias != null && !releaseKeyAlias.isBlank() &&
+                        releaseKeyPassword != null && !releaseKeyPassword.isBlank()
+
 android {
     namespace 'dev.splonks.game'
     compileSdk 34
@@ -10,8 +24,8 @@ android {
         applicationId 'dev.splonks.game'
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName '0.1.0'
+        versionCode envOrDefault('SPLONKS_ANDROID_VERSION_CODE', '1').toInteger()
+        versionName envOrDefault('SPLONKS_ANDROID_VERSION_NAME', '0.1.0')
 
         externalNativeBuild {
             cmake {
@@ -33,9 +47,23 @@ android {
         prefab true
     }
 
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile file(releaseKeystore)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
