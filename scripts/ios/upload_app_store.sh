@@ -6,6 +6,9 @@ version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 release_dir="${repo_root}/dist/releases"
 ipa_path="${SPLONKS_IOS_IPA_PATH:-${release_dir}/splonks-${version}-ios.ipa}"
 mode="${1:-validate-upload}"
+validation_dir="${repo_root}/dist/validation"
+timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
+log_path="${validation_dir}/ios-upload-${mode}-${timestamp}.log"
 
 usage() {
     cat >&2 <<EOF
@@ -130,6 +133,13 @@ if [[ ! -f "${ipa_path}" ]]; then
     exit 1
 fi
 
+mkdir -p "${validation_dir}"
+exec > >(tee "${log_path}") 2>&1
+
+echo "[ios-upload] mode=${mode}"
+echo "release_version=${version}"
+echo "[ios-upload] ipa=${ipa_path}"
+
 "${repo_root}/scripts/ios/verify_release_ipa.sh"
 
 case "${mode}" in
@@ -146,3 +156,4 @@ case "${mode}" in
 esac
 
 echo "[ios-upload] ${mode} complete for ${ipa_path}"
+echo "[ios-upload] wrote ${log_path}"

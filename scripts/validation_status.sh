@@ -190,7 +190,9 @@ check print_file_check "iOS IPA" "${repo_root}/dist/releases/splonks-${version}-
 check print_file_check "iOS IPA checksum" "${repo_root}/dist/releases/splonks-${version}-ios.ipa.sha256"
 check print_file_check "iOS release manifest" "${repo_root}/dist/splonks-ios/manifest.txt"
 check print_manifest_value_check "iOS manifest version" "${repo_root}/dist/splonks-ios/manifest.txt" version_name "${version}"
-check print_log_version_check "iOS App Store/TestFlight upload validation" "${repo_root}/dist/validation/macos-ios-upload-*.log"
+check print_log_version_check_any "iOS App Store/TestFlight upload validation" \
+    "${repo_root}/dist/validation/macos-ios-upload-*.log" \
+    "${repo_root}/dist/validation/ios-upload-*.log"
 echo
 
 echo "[handoff]"
