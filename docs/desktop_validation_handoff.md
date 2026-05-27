@@ -16,8 +16,7 @@ Run on a real macOS machine:
 xcode-select --install
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
-./scripts/bootstrap_dev.sh
-SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/bootstrap_dev.sh --run
 ./scripts/validate_platform.sh dev
 ```
 
@@ -74,8 +73,7 @@ Run in the MSYS2 UCRT64 terminal, not PowerShell or cmd.exe:
 pacman -Syu
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
-./scripts/bootstrap_dev.sh
-SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/bootstrap_dev.sh --run
 ./scripts/validate_platform.sh dev
 ```
 

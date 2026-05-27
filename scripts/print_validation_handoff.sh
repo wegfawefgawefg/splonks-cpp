@@ -43,8 +43,7 @@ Run on a real macOS machine with Xcode command line tools and Homebrew:
     git clone git@github.com:wegfawefgawefg/splonks-cpp.git
     cd splonks-cpp
     git checkout net-lockstep-experiment
-    ./scripts/bootstrap_dev.sh
-    SPLONKS_PRESET=dev ./scripts/run.sh
+    ./scripts/bootstrap_dev.sh --run
     ./scripts/validate_platform.sh dev
     SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_platform.sh release
     ./scripts/bundle_validation_evidence.sh --include-artifacts macos
@@ -74,8 +73,7 @@ If pacman asks to close the terminal, reopen MSYS2 UCRT64 and continue:
     git clone git@github.com:wegfawefgawefg/splonks-cpp.git
     cd splonks-cpp
     git checkout net-lockstep-experiment
-    ./scripts/bootstrap_dev.sh
-    SPLONKS_PRESET=dev ./scripts/run.sh
+    ./scripts/bootstrap_dev.sh --run
     ./scripts/validate_platform.sh dev
     SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_platform.sh release
     ./scripts/bundle_validation_evidence.sh --include-artifacts windows
