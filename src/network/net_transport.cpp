@@ -157,7 +157,8 @@ bool UdpSocket::Open(std::uint16_t bind_port, std::string* error_out) {
 
 #ifdef _WIN32
     u_long nonblocking = 1;
-    if (ioctlsocket(NativeHandle(fd_), FIONBIO, &nonblocking) != 0) {
+    const long nonblocking_command = static_cast<long>(FIONBIO);
+    if (ioctlsocket(NativeHandle(fd_), nonblocking_command, &nonblocking) != 0) {
         SetError(error_out, "ioctlsocket");
         Close();
         return false;
