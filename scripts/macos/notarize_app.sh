@@ -44,9 +44,9 @@ verify_quarantined_archive() {
     local extracted_app
     temp_dir="$(mktemp -d)"
     ditto -x -k "${artifact_zip}" "${temp_dir}"
-    extracted_app="${temp_dir}/Splonks.app"
+    extracted_app="${temp_dir}/splonks-macos/Splonks.app"
     if [[ ! -d "${extracted_app}" ]]; then
-        echo "Notarized archive did not extract Splonks.app from ${artifact_zip}" >&2
+        echo "Notarized archive did not extract splonks-macos/Splonks.app from ${artifact_zip}" >&2
         rm -rf "${temp_dir}"
         exit 1
     fi
@@ -99,10 +99,8 @@ fi
 xcrun stapler staple "${app_dir}"
 xcrun stapler validate "${app_dir}"
 
-ditto -c -k --keepParent "${app_dir}" "${artifact_zip}"
-if command -v shasum >/dev/null 2>&1; then
-    (cd "${release_dir}" && shasum -a 256 "$(basename "${artifact_zip}")" > "$(basename "${artifact_zip}").sha256")
-fi
+"${repo_root}/scripts/archive_release.sh" macos
+"${repo_root}/scripts/verify_release_archive.sh" macos
 
 verify_quarantined_archive
 
