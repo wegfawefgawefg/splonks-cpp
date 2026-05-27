@@ -37,6 +37,12 @@ cd "${repo_root}"
 
 preset="${SPLONKS_PRESET:-dev}"
 cmake --list-presets >/dev/null
-SPLONKS_PRESET="${preset}" "${repo_root}/scripts/build.sh" --configure-only
 
-echo "[verify] Splonks ${preset} configure path is ready"
+if [[ "${1:-}" == "--configure-only" ]]; then
+    SPLONKS_PRESET="${preset}" "${repo_root}/scripts/build.sh" --configure-only
+    echo "[verify] Splonks ${preset} configure path is ready"
+    exit 0
+fi
+
+SPLONKS_PRESET="${preset}" "${repo_root}/scripts/dev_smoke.sh"
+echo "[verify] Splonks ${preset} developer build path is ready"

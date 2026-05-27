@@ -18,6 +18,7 @@ assets, notes, and plans carried forward so we can move file-by-file without los
 For normal development, follow the platform setup guide first:
 
 ```bash
+SPLONKS_PRESET=dev bash scripts/verify_dev_env.sh
 SPLONKS_PRESET=dev bash scripts/run.sh
 ```
 

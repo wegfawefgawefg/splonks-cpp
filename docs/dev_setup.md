@@ -12,6 +12,10 @@ Use the `dev` preset for normal contributor work. It builds into `build-debug`
 with `SPLONKS_MODE=developer` and fetches the pinned SDL3/imgui dependencies
 when they are not already available.
 
+`verify_dev_env.sh` is the non-interactive onboarding check: it configures,
+builds, and runs a headless smoke through the dev binary. `run.sh` is the
+interactive game launch.
+
 ## Linux
 
 Supported path: Debian/Ubuntu through `apt`.
@@ -40,6 +44,7 @@ pkg-config, X11, Wayland, audio, udev, DRM/GBM, and libdecor development
 packages, then run:
 
 ```bash
+SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
@@ -99,6 +104,12 @@ mingw-w64-ucrt-x86_64-pkgconf
 
 Visual Studio is not the supported Windows onboarding path yet. Add it only
 after we validate a separate preset and package flow.
+
+For a faster configure-only prerequisite check on any desktop platform:
+
+```bash
+SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh --configure-only
+```
 
 ## Android
 
