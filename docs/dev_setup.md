@@ -14,7 +14,7 @@ when they are not already available.
 
 `verify_dev_env.sh` is the non-interactive onboarding check: it configures,
 builds, and runs a headless smoke through the dev binary. `run.sh` is the
-interactive game launch.
+interactive game launch and forwards any extra command-line flags to the game.
 
 `bootstrap_dev.sh` is the preferred desktop onboarding command. It runs the
 supported platform setup script, then runs `verify_dev_env.sh` with the `dev`
