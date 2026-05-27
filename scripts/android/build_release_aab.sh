@@ -27,6 +27,7 @@ require_java
 
 version_code="${SPLONKS_ANDROID_VERSION_CODE:-1}"
 version_name="${SPLONKS_ANDROID_VERSION_NAME:-${SPLONKS_RELEASE_VERSION:-0.1.0}}"
+keystore_purpose="${SPLONKS_ANDROID_KEYSTORE_PURPOSE:-unspecified}"
 dist_dir="${REPO_ROOT}/dist/splonks-android"
 aab_src="${ANDROID_DIR}/app/build/outputs/bundle/release/app-release.aab"
 aab_dst="${dist_dir}/splonks-${version_name}-android-release.aab"
@@ -64,6 +65,7 @@ version_code=${version_code}
 version_name=${version_name}
 git_commit=${commit}
 sha256=${sha256}
+keystore_purpose=${keystore_purpose}
 EOF
 
 echo "[package] ${aab_dst}"

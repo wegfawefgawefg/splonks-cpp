@@ -93,6 +93,11 @@ echo "[play-upload] aab=${aab_path}"
 echo "[play-upload] manifest=${manifest_path}"
 
 "${REPO_ROOT}/scripts/android/verify_release_aab.sh"
+if ! awk -F= '$1 == "keystore_purpose" && $2 == "upload" {found=1} END {exit found ? 0 : 1}' "${manifest_path}"; then
+    echo "Android release manifest must contain keystore_purpose=upload before Play upload." >&2
+    echo "Rebuild with the real upload key and SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload." >&2
+    exit 1
+fi
 require_upload_key_evidence
 
 cmd=(

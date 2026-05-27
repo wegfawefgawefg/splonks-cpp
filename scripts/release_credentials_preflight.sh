@@ -197,12 +197,13 @@ check_android_play() {
     require_cmd fastlane
     require_file "SPLONKS_PLAY_SERVICE_ACCOUNT_JSON" "${SPLONKS_PLAY_SERVICE_ACCOUNT_JSON:-}"
     require_manifest_value "Android release manifest" "${manifest_path}" version_name "${version_name}"
+    require_manifest_value "Android release manifest" "${manifest_path}" keystore_purpose upload
     require_android_upload_key_evidence "${version_name}"
     if env \
         SPLONKS_ANDROID_VERSION_NAME="${version_name}" \
         SPLONKS_ANDROID_AAB_PATH="${aab_path}" \
         "${repo_root}/scripts/android/verify_release_aab.sh"; then
-        ok "Android release AAB verified for Play upload"
+        ok "Android release AAB structure and checksum verified"
     else
         missing "Android release AAB failed verification for Play upload"
     fi

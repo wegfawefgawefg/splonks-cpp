@@ -210,8 +210,11 @@ The release script writes the signed app bundle and manifest under
 `dist/splonks-android/`. Keep keystores and passwords outside the repo.
 
 Status: signed arm64 release AAB build is validated locally with a throwaway
-upload keystore. Final store distribution still needs the real upload key and
-Play Console upload validation.
+validation keystore. The helper exports
+`SPLONKS_ANDROID_KEYSTORE_PURPOSE=validation`, and the generated manifest records
+that purpose so the artifact is not mistaken for a Play-ready AAB. Final store
+distribution still needs the real upload key, `SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload`,
+and Play Console upload validation.
 
 ## iOS
 

@@ -367,7 +367,9 @@ Current status: SDK setup, SDL3 AAR fetch, x86_64 debug APK build, emulator
 install/runtime smoke, signed arm64 release AAB, and AAB artifact verification
 have passed locally with a throwaway validation keystore. Final distribution
 still needs `SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload` evidence from the real
-upload key and Play Console upload validation. See
+upload key and Play Console upload validation. The Android release manifest
+records `keystore_purpose=validation` for throwaway local AABs and must record
+`keystore_purpose=upload` for Play-ready AABs. See
 [android_play_release.md](android_play_release.md) for the exact Play Console
 handoff and evidence to record.
 

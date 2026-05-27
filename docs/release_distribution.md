@@ -197,9 +197,12 @@ release AAB build, and AAB artifact verification are validated locally. The
 release AAB includes `libmain.so`, SDL3 runtime libraries, `assets/`, and
 `data/`, and writes a manifest with version, commit, and SHA-256. The AAB
 verifier checks the manifest version against the release version before upload.
-Final distribution still needs the real upload key and Play Console upload
-validation. See [android_play_release.md](android_play_release.md) for the Play
-Console internal testing and production handoff.
+The manifest also records `keystore_purpose`; local throwaway builds are stamped
+`validation`, while Play-ready AABs must be rebuilt with the real upload key and
+`SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload`. Final distribution still needs the
+real upload key and Play Console upload validation. See
+[android_play_release.md](android_play_release.md) for the Play Console internal
+testing and production handoff.
 
 Play internal testing upload helper:
 

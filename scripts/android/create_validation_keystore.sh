@@ -10,6 +10,7 @@ keystore_password="${SPLONKS_ANDROID_KEYSTORE_PASSWORD:-android}"
 key_alias="${SPLONKS_ANDROID_KEY_ALIAS:-splonks}"
 key_password="${SPLONKS_ANDROID_KEY_PASSWORD:-${keystore_password}}"
 distinguished_name="${SPLONKS_ANDROID_KEY_DNAME:-CN=Splonks Local Validation,O=Splonks,C=US}"
+keystore_purpose="validation"
 
 mkdir -p "$(dirname "${keystore_path}")"
 
@@ -34,6 +35,7 @@ cat <<EOF
 export SPLONKS_ANDROID_KEYSTORE="${keystore_path}"
 export SPLONKS_ANDROID_KEYSTORE_PASSWORD="${keystore_password}"
 export SPLONKS_ANDROID_KEYSTORE_TYPE="jks"
+export SPLONKS_ANDROID_KEYSTORE_PURPOSE="${keystore_purpose}"
 export SPLONKS_ANDROID_KEY_ALIAS="${key_alias}"
 export SPLONKS_ANDROID_KEY_PASSWORD="${key_password}"
 EOF
