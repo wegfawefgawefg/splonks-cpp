@@ -38,7 +38,7 @@ Return:
 
 Receiver import:
 
-    ./scripts/import_validation_evidence.sh path/to/splonks-validation-${label}-*.tar.gz
+    SPLONKS_RELEASE_VERSION=${version} SPLONKS_VALIDATION_REVISION=${short_revision} ./scripts/import_validation_evidence.sh path/to/splonks-validation-${label}-*.tar.gz
     SPLONKS_RELEASE_VERSION=${version} SPLONKS_VALIDATION_REVISION=${short_revision} ./scripts/validation_status.sh
 EOF
 }

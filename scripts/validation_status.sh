@@ -837,6 +837,7 @@ check print_verified_bundle_check "Validation evidence bundle" "${repo_root}/dis
 check check_file_contains "Evidence bundle filters stale manifests" "${repo_root}/scripts/bundle_validation_evidence.sh" "skip_stale_manifest"
 check check_file_contains "Evidence importer checks bundle release version" "${repo_root}/scripts/import_validation_evidence.sh" "Evidence bundle release_version="
 check check_file_contains "Evidence importer checks bundle revision" "${repo_root}/scripts/import_validation_evidence.sh" "Evidence bundle git_revision="
+check check_file_contains "Generated handoffs import pinned revisions" "${repo_root}/scripts/print_validation_handoff.sh" 'SPLONKS_VALIDATION_REVISION=${short_revision} ./scripts/import_validation_evidence.sh'
 echo
 
 echo "[ci]"
