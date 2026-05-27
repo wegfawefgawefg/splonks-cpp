@@ -126,7 +126,7 @@ signing_style=${SPLONKS_IOS_SIGNING_STYLE}
 sha256=${sha256}
 EOF
 
-"${repo_root}/scripts/ios/verify_release_ipa.sh"
+env SPLONKS_IOS_IPA_PATH="${ipa_path}" "${repo_root}/scripts/ios/verify_release_ipa.sh"
 
 echo "[ios] ${archive_path}"
 echo "[ios] ${archive_dir}/manifest.txt"
