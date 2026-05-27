@@ -38,6 +38,9 @@ Required evidence for every platform:
 Use `./scripts/validate_platform.sh <scope>` to collect a timestamped evidence
 log under `dist/validation/`. The setup scripts are still separate because they
 may install packages or require platform credentials.
+For desktop releases, `./scripts/verify_release_archive.sh <platform>` also
+extracts the archive into a temporary directory and runs the packaged smoke path
+from that extracted copy on the matching host platform.
 
 Use [desktop_validation_handoff.md](desktop_validation_handoff.md) when sending
 macOS or Windows validation tasks to another developer.

@@ -102,4 +102,60 @@ for entry in "${required_entries[@]}"; do
     fi
 done
 
+run_extracted_smoke() {
+    local temp_dir
+    temp_dir="$(mktemp -d)"
+    trap "rm -rf '${temp_dir}'" EXIT
+
+    case "${archive_name}" in
+        *.tar.gz)
+            tar -C "${temp_dir}" -xzf "${archive_path}"
+            ;;
+        *.zip)
+            unzip -q "${archive_path}" -d "${temp_dir}"
+            ;;
+    esac
+
+    case "${platform}" in
+        linux)
+            "${temp_dir}/splonks-linux/run-splonks.sh" \
+                --check-state-fingerprint-smoke \
+                --project-root "${temp_dir}/splonks-linux" \
+                >"${temp_dir}/smoke.txt"
+            ;;
+        macos)
+            if [[ "$(uname -s)" != "Darwin" ]]; then
+                echo "[verify-release] skipped macOS extracted launch on non-macOS host"
+                return
+            fi
+            "${temp_dir}/splonks-macos/Splonks.app/Contents/MacOS/Splonks" \
+                --check-state-fingerprint-smoke \
+                --project-root "${temp_dir}/splonks-macos/Splonks.app/Contents/Resources" \
+                >"${temp_dir}/smoke.txt"
+            ;;
+        windows)
+            case "${OS:-}:$(uname -s)" in
+                Windows_NT:*|*:MINGW*|*:MSYS*|*:CYGWIN*) ;;
+                *)
+                    echo "[verify-release] skipped Windows extracted launch on non-Windows host"
+                    return
+                    ;;
+            esac
+            (
+                cd "${temp_dir}/splonks-windows"
+                PATH="${temp_dir}/splonks-windows:${PATH}" ./splonks-cpp.exe \
+                    --check-state-fingerprint-smoke \
+                    --project-root "${temp_dir}/splonks-windows" \
+                    >"${temp_dir}/smoke.txt"
+            )
+            ;;
+    esac
+
+    grep -q "state fingerprint smoke ok" "${temp_dir}/smoke.txt"
+    rm -rf "${temp_dir}"
+    trap - EXIT
+}
+
+run_extracted_smoke
+
 echo "[verify-release] ${archive_path} ok"

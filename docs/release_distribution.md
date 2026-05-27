@@ -13,6 +13,9 @@ launch/install/signing/upload evidence are recorded there.
 For handoff validation on a real platform, run
 `SPLONKS_RELEASE_VERSION=<version> ./scripts/validate_platform.sh release`.
 The script writes a timestamped evidence log under `dist/validation/`.
+Desktop archive verification extracts the release artifact into a temporary
+directory and runs the packaged smoke path from that extracted copy on the
+matching host platform.
 
 ## Linux
 
