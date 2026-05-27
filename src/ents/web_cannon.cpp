@@ -25,7 +25,6 @@ constexpr float kWebGunFireCooldownFrames = 10.0F;
 constexpr float kWebGunReloadCooldownFrames = 42.0F;
 constexpr float kWebGunBurstShots = 3.0F;
 constexpr float kWebBallSpeedX = 6.5F;
-constexpr float kWebBallSpeedY = -0.15F;
 constexpr float kWebBallLifetimeFrames = 110.0F;
 constexpr float kWebBallEntArmDelayFrames = 2.0F;
 constexpr float kWebBallTrailIntervalFrames = 3.0F;
