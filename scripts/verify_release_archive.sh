@@ -143,15 +143,18 @@ run_extracted_smoke() {
             esac
             (
                 cd "${temp_dir}/splonks-windows"
-                PATH="${temp_dir}/splonks-windows:${PATH}" ./splonks-cpp.exe \
+                PATH="${temp_dir}/splonks-windows:${PATH}" cmd.exe /C run-splonks.bat \
                     --check-state-fingerprint-smoke \
-                    --project-root "${temp_dir}/splonks-windows" \
+                    --project-root . \
                     >"${temp_dir}/smoke.txt"
             )
             ;;
     esac
 
     grep -q "state fingerprint smoke ok" "${temp_dir}/smoke.txt"
+    if [[ "${platform}" == "windows" ]]; then
+        echo "[verify-release] Windows batch launcher smoke ok"
+    fi
     rm -rf "${temp_dir}"
     trap - EXIT
 }

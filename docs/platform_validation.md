@@ -271,6 +271,8 @@ dist/releases/splonks-0.1.0-windows-x86_64.zip.sha256
 Current status: MSYS2 setup, package, verify, and archive scripts exist. Needs
 validation on a real Windows machine, including launch through
 `run-splonks.bat` from the extracted release zip.
+The Windows package and archive verifiers exercise `run-splonks.bat` directly
+instead of launching the executable directly.
 
 ## Android
 

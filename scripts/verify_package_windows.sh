@@ -51,11 +51,12 @@ require_dll "SDL3_ttf" "*SDL3_ttf*.dll"
 
 (
     cd "${dist_dir}"
-    PATH="${dist_dir}:${PATH}" ./splonks-cpp.exe \
+    PATH="${dist_dir}:${PATH}" cmd.exe /C run-splonks.bat \
         --check-state-fingerprint-smoke \
-        --project-root "${dist_dir}" \
+        --project-root . \
         >/tmp/splonks-windows-package-smoke.txt
 )
 grep -q "state fingerprint smoke ok" /tmp/splonks-windows-package-smoke.txt
 
+echo "[verify-package] Windows batch launcher smoke ok"
 echo "[verify-package] ${dist_dir} ok"

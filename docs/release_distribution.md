@@ -128,8 +128,9 @@ dist/releases/splonks-0.1.0-windows-x86_64.zip.sha256
 ```
 
 Current status: package script exists. It copies the executable, assets/data,
-DLLs, manifest, and `run-splonks.bat`. It still needs validation on a real
-Windows machine after the desktop onboarding cleanup.
+DLLs, manifest, and `run-splonks.bat`. The package and archive verifiers launch
+through `run-splonks.bat` from the packaged/extracted directory. It still needs
+validation on a real Windows machine after the desktop onboarding cleanup.
 
 ## Android
 
