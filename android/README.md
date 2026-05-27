@@ -18,9 +18,11 @@ Current status:
   with checksum verification.
 - A Gradle wrapper is committed under `android/` so APK builds do not require a
   global Gradle install.
+- GitHub Actions installs the pinned Android SDK/NDK/CMake packages, fetches the
+  pinned SDL3 AAR, and runs `scripts/android/build_apk.sh` to build a debug APK.
 - Android setup still requires JDK 17+, Android command-line tools, and the
   SDK/NDK packages installed by `scripts/android/setup_sdk.sh`.
-- The scaffold has not been validated on an Android SDK/NDK host in this repo.
+- Runtime has not been validated on an Android emulator/device in this repo.
 - Asset loading still needs a real Android runtime pass. Gradle packages repo
   `assets/` and `data/` under those same APK asset prefixes, while existing C++
   code mostly uses filesystem-relative paths.

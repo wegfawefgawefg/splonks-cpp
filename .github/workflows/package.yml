@@ -77,8 +77,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verify Android scripts and pinned SDL3 AAR fetch
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Verify Android scripts
         run: |
           bash -n scripts/android/*.sh
+      - name: Install Android SDK packages
+        run: ./scripts/android/setup_sdk.sh
+      - name: Fetch pinned SDL3 Android AAR
+        run: |
           ./scripts/android/fetch_sdl3_aar.sh
           test -f android/app/libs/SDL3-3.4.0.aar
+      - name: Build Android debug APK
+        run: ./scripts/android/build_apk.sh
