@@ -22,6 +22,9 @@ Current status:
 - Scripts under `scripts/android/` define the dev loop.
 - `scripts/android/fetch_sdl3_aar.sh` downloads the pinned SDL3 Android AAR
   with checksum verification.
+- `scripts/android/run_smoke.sh` launches the installed app with
+  `--check-state-fingerprint-smoke` through an SDL activity intent extra and
+  verifies the expected success line in logcat.
 - A Gradle wrapper is committed under `android/` so APK builds do not require a
   global Gradle install.
 - GitHub Actions installs the pinned Android SDK/NDK/CMake packages, fetches the
@@ -30,6 +33,7 @@ Current status:
   after the build succeeds.
 - Android setup still requires JDK 17+, Android command-line tools, and the
   SDK/NDK packages installed by `scripts/android/setup_sdk.sh`.
-- Runtime has not been validated on an Android emulator/device in this repo.
+- Runtime smoke scripting exists, but has not been validated on an Android
+  emulator/device in this repo.
 - Asset extraction is implemented, but still needs a real Android runtime pass
   on an emulator/device to prove launch, rendering, audio, and settings writes.

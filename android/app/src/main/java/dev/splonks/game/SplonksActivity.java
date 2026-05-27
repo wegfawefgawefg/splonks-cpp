@@ -6,6 +6,7 @@ import android.util.Log;
 
 import org.libsdl.app.SDLActivity;
 
+import java.util.ArrayList;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.io.InputStream;
 
 public class SplonksActivity extends SDLActivity {
     private static final String TAG = "SplonksActivity";
+    private static final String EXTRA_ARGS = "dev.splonks.game.ARGS";
     private File projectRoot;
 
     @Override
@@ -36,7 +38,18 @@ public class SplonksActivity extends SDLActivity {
         if (projectRoot == null) {
             projectRoot = new File(getFilesDir(), "splonks");
         }
-        return new String[] {"--project-root", projectRoot.getAbsolutePath()};
+        final ArrayList<String> args = new ArrayList<>();
+        final String extraArgs = getIntent().getStringExtra(EXTRA_ARGS);
+        if (extraArgs != null && !extraArgs.trim().isEmpty()) {
+            for (String arg : extraArgs.trim().split("\\s+")) {
+                if (!arg.isEmpty()) {
+                    args.add(arg);
+                }
+            }
+        }
+        args.add("--project-root");
+        args.add(projectRoot.getAbsolutePath());
+        return args.toArray(new String[0]);
     }
 
     private void extractProjectTree() throws IOException {
