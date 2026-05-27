@@ -425,7 +425,9 @@ The default wrapper mode is allowed to return simulator-only or otherwise
 partial evidence. Final iOS release evidence must set
 `SPLONKS_IOS_REQUIRE_COMPLETE=1` with signing, physical device, and upload
 inputs so the handoff fails before bundling if it would not satisfy the
-complete `ios` evidence target.
+complete `ios` evidence target. Partial/default runs write an `ios-partial`
+bundle; final complete runs write the `ios` bundle that should be imported with
+`SPLONKS_IMPORT_EXPECT_TARGET=ios`.
 
 Simulator validation on macOS/Xcode:
 

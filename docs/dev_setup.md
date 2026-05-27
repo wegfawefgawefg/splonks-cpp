@@ -288,7 +288,8 @@ External iOS validators should use `./scripts/validate_ios_handoff.sh` after
 clone/checkout; it runs simulator validation by default and adds signed archive,
 device, and upload validation when the corresponding signing/device/upload
 environment variables are set. The default wrapper mode may produce partial
-evidence. Complete final iOS evidence must use
+evidence and writes an `ios-partial` validation bundle. Complete final iOS
+evidence must use
 `SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1` with signing, physical
 device, and App Store Connect inputs set.
 We still need:

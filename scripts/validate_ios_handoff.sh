@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 run_upload="${SPLONKS_IOS_UPLOAD:-0}"
 require_complete="${SPLONKS_IOS_REQUIRE_COMPLETE:-0}"
+bundle_label="ios-partial"
 
 usage() {
     cat >&2 <<EOF
@@ -57,6 +58,7 @@ echo "[ios-handoff] release_version=${version}"
 echo "[ios-handoff] revision=$(git rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
 
 if [[ "${require_complete}" == "1" ]]; then
+    bundle_label="ios"
     complete_failures=0
     require_complete_env() {
         local name="$1"
@@ -102,6 +104,6 @@ else
     echo "[ios-handoff] skipped App Store Connect upload; set SPLONKS_IOS_UPLOAD=1 for release upload validation"
 fi
 
-./scripts/bundle_validation_evidence.sh --include-artifacts ios
+./scripts/bundle_validation_evidence.sh --include-artifacts "${bundle_label}"
 
 echo "[ios-handoff] iOS handoff complete"

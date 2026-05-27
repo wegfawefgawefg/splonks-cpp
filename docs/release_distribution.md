@@ -239,7 +239,9 @@ Use the default wrapper mode for simulator-only or partial iOS validation. For
 final release evidence, run the handoff with
 `SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1` after setting the signing,
 device, and App Store Connect credentials; that mode fails before bundling if
-the returned evidence would not satisfy the complete `ios` target.
+the returned evidence would not satisfy the complete `ios` target. Default
+partial runs write `splonks-validation-ios-partial-*.tar.gz`; only complete
+mode writes the importable final `splonks-validation-ios-*.tar.gz` bundle.
 
 Simulator build on macOS/Xcode:
 

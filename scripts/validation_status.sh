@@ -874,6 +874,8 @@ check check_workflow_contains "Package workflow uses iOS handoff wrapper" "./scr
 check check_workflow_not_contains "Package workflow does not pretend hosted iOS upload is complete" "upload_ios_app_store"
 check check_workflow_not_contains "Package workflow does not use hosted iOS upload variable" "SPLONKS_UPLOAD_IOS_APP_STORE"
 check check_file_contains "iOS handoff has complete evidence mode" "${repo_root}/scripts/validate_ios_handoff.sh" "SPLONKS_IOS_REQUIRE_COMPLETE"
+check check_file_contains "Partial iOS handoff uses non-final bundle label" "${repo_root}/scripts/validate_ios_handoff.sh" 'bundle_label="ios-partial"'
+check check_file_contains "Complete iOS handoff uses final bundle label" "${repo_root}/scripts/validate_ios_handoff.sh" 'bundle_label="ios"'
 check check_file_contains "Generated iOS handoff requires complete final evidence" "${repo_root}/scripts/print_validation_handoff.sh" "SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1"
 
 echo
