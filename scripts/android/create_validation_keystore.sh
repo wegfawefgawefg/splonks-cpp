@@ -14,23 +14,21 @@ distinguished_name="${SPLONKS_ANDROID_KEY_DNAME:-CN=Splonks Local Validation,O=S
 mkdir -p "$(dirname "${keystore_path}")"
 
 if [[ -e "${keystore_path}" ]]; then
-    echo "Refusing to overwrite existing keystore: ${keystore_path}" >&2
-    echo "Delete it first, or pass a different output path." >&2
-    exit 1
+    echo "[android-validation-keystore] reusing ${keystore_path}" >&2
+else
+    keytool -genkeypair \
+        -storetype JKS \
+        -keystore "${keystore_path}" \
+        -storepass "${keystore_password}" \
+        -keypass "${key_password}" \
+        -alias "${key_alias}" \
+        -keyalg RSA \
+        -keysize 2048 \
+        -validity 10000 \
+        -dname "${distinguished_name}"
+
+    echo "[android-validation-keystore] ${keystore_path}" >&2
 fi
-
-keytool -genkeypair \
-    -storetype JKS \
-    -keystore "${keystore_path}" \
-    -storepass "${keystore_password}" \
-    -keypass "${key_password}" \
-    -alias "${key_alias}" \
-    -keyalg RSA \
-    -keysize 2048 \
-    -validity 10000 \
-    -dname "${distinguished_name}"
-
-echo "[android-validation-keystore] ${keystore_path}" >&2
 
 cat <<EOF
 export SPLONKS_ANDROID_KEYSTORE="${keystore_path}"
