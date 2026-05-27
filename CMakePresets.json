@@ -104,6 +104,24 @@
         "SPLONKS_WARN_AS_ERROR": true,
         "SPLONKS_FETCH_DEPS": true
       }
+    },
+    {
+      "name": "ios-device",
+      "displayName": "iOS Device",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build/ios-device",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_OSX_SYSROOT": "iphoneos",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_BUILD_TYPE": "Release",
+        "SPLONKS_MODE": "release",
+        "SPLONKS_STRICT": true,
+        "SPLONKS_WARN_AS_ERROR": true,
+        "SPLONKS_FETCH_DEPS": true,
+        "SPLONKS_IOS_DEVELOPMENT_TEAM": "$env{SPLONKS_IOS_DEVELOPMENT_TEAM}",
+        "SPLONKS_IOS_CODE_SIGN_IDENTITY": "$env{SPLONKS_IOS_CODE_SIGN_IDENTITY}"
+      }
     }
   ],
   "buildPresets": [
@@ -140,6 +158,11 @@
     {
       "name": "ios-sim",
       "configurePreset": "ios-sim",
+      "jobs": 0
+    },
+    {
+      "name": "ios-device",
+      "configurePreset": "ios-device",
       "jobs": 0
     }
   ]

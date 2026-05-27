@@ -176,8 +176,8 @@ Status: simulator scaffold exists. We still need:
 
 - macOS/Xcode validation of `./scripts/ios/build_sim.sh`.
 - Simulator launch validation.
-- Device signing/provisioning docs.
-- TestFlight/App Store release path.
+- macOS/Xcode validation of `./scripts/ios/archive_release.sh`.
+- TestFlight/App Store upload validation.
 
 ## Release Distribution
 

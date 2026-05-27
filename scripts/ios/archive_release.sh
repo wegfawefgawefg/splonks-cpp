@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$(uname -s)" != "Darwin" ]]; then
+    echo "archive_release.sh must run on macOS with Xcode installed" >&2
+    exit 1
+fi
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
+build_dir="${repo_root}/build/ios-device"
+archive_dir="${repo_root}/dist/splonks-ios"
+release_dir="${repo_root}/dist/releases"
+archive_path="${archive_dir}/Splonks.xcarchive"
+export_path="${archive_dir}/export"
+export_options="${archive_dir}/ExportOptions.plist"
+ipa_path="${release_dir}/splonks-${version}-ios.ipa"
+
+require_cmd() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "Missing command: $1" >&2
+        exit 1
+    fi
+}
+
+require_cmd cmake
+require_cmd xcodebuild
+
+if [[ -z "${SPLONKS_IOS_DEVELOPMENT_TEAM:-}" ]]; then
+    echo "Missing SPLONKS_IOS_DEVELOPMENT_TEAM for device signing." >&2
+    exit 1
+fi
+
+export SPLONKS_IOS_CODE_SIGN_IDENTITY="${SPLONKS_IOS_CODE_SIGN_IDENTITY:-Apple Distribution}"
+export SPLONKS_IOS_EXPORT_METHOD="${SPLONKS_IOS_EXPORT_METHOD:-app-store-connect}"
+export SPLONKS_IOS_BUNDLE_ID="${SPLONKS_IOS_BUNDLE_ID:-dev.splonks.game}"
+export SPLONKS_IOS_SIGNING_STYLE="${SPLONKS_IOS_SIGNING_STYLE:-automatic}"
+
+cd "${repo_root}"
+cmake --preset ios-device
+
+rm -rf "${archive_path}" "${export_path}"
+mkdir -p "${archive_dir}" "${release_dir}"
+
+xcodebuild \
+    -project "${build_dir}/splonks_cpp.xcodeproj" \
+    -scheme splonks-cpp \
+    -configuration Release \
+    -sdk iphoneos \
+    -archivePath "${archive_path}" \
+    DEVELOPMENT_TEAM="${SPLONKS_IOS_DEVELOPMENT_TEAM}" \
+    CODE_SIGN_IDENTITY="${SPLONKS_IOS_CODE_SIGN_IDENTITY}" \
+    archive
+
+cat > "${export_options}" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>${SPLONKS_IOS_EXPORT_METHOD}</string>
+  <key>teamID</key>
+  <string>${SPLONKS_IOS_DEVELOPMENT_TEAM}</string>
+  <key>signingStyle</key>
+  <string>${SPLONKS_IOS_SIGNING_STYLE}</string>
+  <key>destination</key>
+  <string>export</string>
+  <key>stripSwiftSymbols</key>
+  <true/>
+  <key>uploadSymbols</key>
+  <true/>
+</dict>
+</plist>
+EOF
+
+xcodebuild -exportArchive \
+    -archivePath "${archive_path}" \
+    -exportPath "${export_path}" \
+    -exportOptionsPlist "${export_options}"
+
+found_ipa="$(find "${export_path}" -maxdepth 1 -type f -name "*.ipa" | head -n 1)"
+if [[ -z "${found_ipa}" ]]; then
+    echo "No IPA found in ${export_path}" >&2
+    exit 1
+fi
+
+cp "${found_ipa}" "${ipa_path}"
+if command -v shasum >/dev/null 2>&1; then
+    (cd "${release_dir}" && shasum -a 256 "$(basename "${ipa_path}")" > "$(basename "${ipa_path}").sha256")
+fi
+
+echo "[ios] ${archive_path}"
+echo "[ios] ${ipa_path}"
+echo "[ios] ${ipa_path}.sha256"

@@ -18,6 +18,8 @@ endif()
 option(SPLONKS_STRICT "Enable stricter warning sets." ON)
 option(SPLONKS_WARN_AS_ERROR "Treat warnings as errors." ON)
 option(SPLONKS_FETCH_DEPS "Fetch missing SDL/imgui dependencies with CMake FetchContent" ON)
+set(SPLONKS_IOS_DEVELOPMENT_TEAM "" CACHE STRING "Apple Developer Team ID for iOS device builds")
+set(SPLONKS_IOS_CODE_SIGN_IDENTITY "Apple Development" CACHE STRING "Code signing identity for iOS device builds")
 
 find_package(SDL3 3.4.0 CONFIG QUIET)
 
@@ -473,15 +475,27 @@ if (ANDROID)
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(SPLONKS_IOS_CODE_SIGNING_ALLOWED "NO")
+    if (CMAKE_OSX_SYSROOT STREQUAL "iphoneos")
+        set(SPLONKS_IOS_CODE_SIGNING_ALLOWED "YES")
+    endif()
+
     set_target_properties(splonks-cpp PROPERTIES
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_GUI_IDENTIFIER "dev.splonks.game"
         MACOSX_BUNDLE_BUNDLE_NAME "Splonks"
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
-        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "${SPLONKS_IOS_CODE_SIGNING_ALLOWED}"
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "dev.splonks.game"
     )
+    if (SPLONKS_IOS_DEVELOPMENT_TEAM)
+        set_target_properties(splonks-cpp PROPERTIES
+            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${SPLONKS_IOS_DEVELOPMENT_TEAM}"
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${SPLONKS_IOS_CODE_SIGN_IDENTITY}"
+            XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+        )
+    endif()
     add_custom_command(TARGET splonks-cpp POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/assets"

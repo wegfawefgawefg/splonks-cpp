@@ -142,17 +142,32 @@ Simulator build on macOS/Xcode:
 ./scripts/ios/build_sim.sh
 ```
 
-Current status: `ios-sim` CMake/Xcode scaffold exists and copies `assets/` and
-`data/` into the app bundle. It still needs macOS/Xcode configure, build, and
-simulator launch validation.
+Device archive/export path on macOS/Xcode:
 
-Device/TestFlight/App Store release still needs:
+```bash
+export SPLONKS_RELEASE_VERSION=0.1.0
+export SPLONKS_IOS_DEVELOPMENT_TEAM=TEAMID
+export SPLONKS_IOS_CODE_SIGN_IDENTITY="Apple Distribution"
+export SPLONKS_IOS_EXPORT_METHOD=app-store-connect
+./scripts/ios/archive_release.sh
+```
 
-- Apple Developer team selection.
-- Signing certificate and provisioning profile setup.
-- Archive/export options.
-- TestFlight upload path.
+Output:
+
+```text
+dist/splonks-ios/Splonks.xcarchive
+dist/splonks-ios/export/
+dist/releases/splonks-0.1.0-ios.ipa
+dist/releases/splonks-0.1.0-ios.ipa.sha256
+```
+
+Current status: `ios-sim` and `ios-device` CMake/Xcode scaffolds exist and copy
+`assets/` and `data/` into the app bundle. The archive/export script exists,
+but still needs macOS/Xcode validation with an Apple Developer team.
+
 - Final App Store distribution checklist.
+- Validation of upload through Xcode Organizer, Transporter, or `xcrun altool`.
+- Confirmation of provisioning profile and entitlements for the final bundle ID.
 
 ## GitHub Actions
 
