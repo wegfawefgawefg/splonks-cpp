@@ -11,9 +11,9 @@ packaging, not as the normal development feedback loop.
 - A new developer on Linux, macOS, or Windows should be able to clone Splonks,
   follow one platform-specific setup section, run one build command, and launch
   the game locally.
-- Android and iOS need equivalent documented setup paths, but they can require
-  their normal mobile toolchains: JDK/Android SDK/NDK for Android, and
-  macOS/Xcode/signing prerequisites for iOS.
+- Android has a documented SDK/NDK/JDK setup, debug APK, emulator smoke, and
+  signed AAB path. iOS has documented simulator/device archive scaffolding, but
+  still needs macOS/Xcode/signing validation.
 
 ## Onboarding Deliverables
 
@@ -37,7 +37,8 @@ need to understand or package Gubsy manually.
 - The package workflow runs only when manually dispatched or when a version tag
   matching `v*` is pushed.
 - Release builds are responsible for platform packages, including Linux, macOS,
-  Windows, Android, and iOS.
+  Windows, Android, and iOS. Android signing uses environment-provided upload
+  key settings; iOS signing uses the Xcode/provisioning path.
 - iOS release work requires an explicit Xcode/signing/provisioning path and
   should not be added as an automatic per-push build.
 - Use `/home/vega/Coding/GameDev/how-to-multi-backend-rendering` as the local

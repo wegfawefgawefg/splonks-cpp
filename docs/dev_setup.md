@@ -222,8 +222,8 @@ Release target state:
   Real distribution still needs Developer ID signing and notarization.
 - Windows: package script creates `dist/splonks-windows` with the executable,
   assets/data, DLLs, manifest, and launcher batch file.
-- Android: debug APK build exists. Signed release AAB path exists through
-  environment-provided upload-key settings. Runtime smoke still needs
-  emulator/device validation.
+- Android: debug APK build, x86_64 emulator smoke, and signed arm64 release
+  AAB path are validated locally. Final store distribution still needs the real
+  upload key and Play Console upload validation.
 - iOS: simulator scaffold exists. macOS/Xcode validation, device signing,
   archive, and TestFlight/App Store path remain to be added.
