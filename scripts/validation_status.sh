@@ -125,6 +125,76 @@ print_file_check() {
     return 1
 }
 
+sha256_of_file() {
+    local path="$1"
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "${path}" | awk '{print tolower($1)}'
+    else
+        shasum -a 256 "${path}" | awk '{print tolower($1)}'
+    fi
+}
+
+print_checksum_match_check() {
+    local label="$1"
+    local artifact_path="$2"
+    local checksum_path="$3"
+    local expected
+    local actual
+    if [[ ! -f "${artifact_path}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${artifact_path#${repo_root}/}"
+        return 1
+    fi
+    if [[ ! -f "${checksum_path}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${checksum_path#${repo_root}/}"
+        return 1
+    fi
+    expected="$(awk 'NF >= 1 {print tolower($1); exit}' "${checksum_path}")"
+    actual="$(sha256_of_file "${artifact_path}")"
+    if [[ -n "${expected}" && "${actual}" == "${expected}" ]]; then
+        printf '[ok]      %s: %s matches %s\n' \
+            "${label}" \
+            "${artifact_path#${repo_root}/}" \
+            "${checksum_path#${repo_root}/}"
+        return 0
+    fi
+    printf '[missing] %s: %s sha256=%s, expected %s\n' \
+        "${label}" \
+        "${artifact_path#${repo_root}/}" \
+        "${actual:-<unset>}" \
+        "${expected:-<unset>}"
+    return 1
+}
+
+print_manifest_sha256_check() {
+    local label="$1"
+    local artifact_path="$2"
+    local manifest_path="$3"
+    local expected
+    local actual
+    if [[ ! -f "${artifact_path}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${artifact_path#${repo_root}/}"
+        return 1
+    fi
+    if [[ ! -f "${manifest_path}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${manifest_path#${repo_root}/}"
+        return 1
+    fi
+    expected="$(awk -F= '$1 == "sha256" {print tolower(substr($0, length("sha256") + 2))}' "${manifest_path}" | tail -n 1)"
+    actual="$(sha256_of_file "${artifact_path}")"
+    if [[ -n "${expected}" && "${actual}" == "${expected}" ]]; then
+        printf '[ok]      %s: %s matches manifest sha256\n' \
+            "${label}" \
+            "${artifact_path#${repo_root}/}"
+        return 0
+    fi
+    printf '[missing] %s: %s sha256=%s, expected %s\n' \
+        "${label}" \
+        "${artifact_path#${repo_root}/}" \
+        "${actual:-<unset>}" \
+        "${expected:-<unset>}"
+    return 1
+}
+
 print_manifest_value_check() {
     local label="$1"
     local path="$2"
@@ -160,16 +230,25 @@ echo "[desktop]"
 check print_check "Linux dev validation" "${repo_root}/dist/validation/linux-dev-*.log"
 check print_log_version_check "Linux release validation" "${repo_root}/dist/validation/linux-release-*.log"
 check print_file_check "Linux release archive" "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz"
-check print_file_check "Linux release checksum" "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz.sha256"
+check print_checksum_match_check \
+    "Linux release checksum" \
+    "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz" \
+    "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz.sha256"
 check print_check "macOS dev validation" "${repo_root}/dist/validation/macos-dev-*.log"
 check print_log_version_check "macOS release validation" "${repo_root}/dist/validation/macos-release-*.log"
 check print_log_version_check "macOS notarized validation" "${repo_root}/dist/validation/macos-macos-notarized-*.log"
 check print_file_check "macOS release archive" "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip"
-check print_file_check "macOS release checksum" "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip.sha256"
+check print_checksum_match_check \
+    "macOS release checksum" \
+    "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip" \
+    "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip.sha256"
 check print_check "Windows dev validation" "${repo_root}/dist/validation/windows-dev-*.log"
 check print_log_version_check "Windows release validation" "${repo_root}/dist/validation/windows-release-*.log"
 check print_file_check "Windows release archive" "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip"
-check print_file_check "Windows release checksum" "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip.sha256"
+check print_checksum_match_check \
+    "Windows release checksum" \
+    "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip" \
+    "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip.sha256"
 echo
 
 echo "[android]"
@@ -178,6 +257,10 @@ check print_log_version_check "Android signed AAB validation" "${repo_root}/dist
 check print_file_check "Android release AAB" "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab"
 check print_file_check "Android release manifest" "${repo_root}/dist/splonks-android/manifest.txt"
 check print_manifest_value_check "Android manifest version" "${repo_root}/dist/splonks-android/manifest.txt" version_name "${version}"
+check print_manifest_sha256_check \
+    "Android AAB checksum" \
+    "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab" \
+    "${repo_root}/dist/splonks-android/manifest.txt"
 check print_log_version_check_any "Android Play upload validation" \
     "${repo_root}/dist/validation/*-android-play-upload-*.log" \
     "${repo_root}/dist/validation/android-play-*.log"
@@ -187,9 +270,16 @@ echo "[ios]"
 check print_check "iOS simulator validation" "${repo_root}/dist/validation/macos-ios-sim-*.log"
 check print_log_version_check "iOS release archive validation" "${repo_root}/dist/validation/macos-ios-release-*.log"
 check print_file_check "iOS IPA" "${repo_root}/dist/releases/splonks-${version}-ios.ipa"
-check print_file_check "iOS IPA checksum" "${repo_root}/dist/releases/splonks-${version}-ios.ipa.sha256"
+check print_checksum_match_check \
+    "iOS IPA checksum" \
+    "${repo_root}/dist/releases/splonks-${version}-ios.ipa" \
+    "${repo_root}/dist/releases/splonks-${version}-ios.ipa.sha256"
 check print_file_check "iOS release manifest" "${repo_root}/dist/splonks-ios/manifest.txt"
 check print_manifest_value_check "iOS manifest version" "${repo_root}/dist/splonks-ios/manifest.txt" version_name "${version}"
+check print_manifest_sha256_check \
+    "iOS manifest checksum" \
+    "${repo_root}/dist/releases/splonks-${version}-ios.ipa" \
+    "${repo_root}/dist/splonks-ios/manifest.txt"
 check print_log_version_check_any "iOS App Store/TestFlight upload validation" \
     "${repo_root}/dist/validation/macos-ios-upload-*.log" \
     "${repo_root}/dist/validation/ios-upload-*.log"

@@ -64,6 +64,9 @@ When receiving a bundle from another machine, import it with:
 ```
 
 Then rerun `./scripts/validation_status.sh`.
+The status script verifies release artifact SHA-256 values against imported
+`.sha256` files or package manifests; a present artifact with a mismatched hash
+does not count as release evidence.
 
 To inspect the current evidence state, run:
 
@@ -104,8 +107,7 @@ preflight helper before a long package/archive/upload command:
 Developer validation:
 
 ```bash
-./scripts/bootstrap_dev.sh
-SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/bootstrap_dev.sh --run
 ```
 
 Evidence helper after setup:
@@ -147,8 +149,7 @@ Developer validation:
 
 ```bash
 xcode-select --install
-./scripts/bootstrap_dev.sh
-SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/bootstrap_dev.sh --run
 ```
 
 Evidence helper after setup:
@@ -201,8 +202,7 @@ Package metadata is wired through `SPLONKS_RELEASE_VERSION`,
 Developer validation from the MSYS2 UCRT64 terminal:
 
 ```bash
-./scripts/bootstrap_dev.sh
-SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/bootstrap_dev.sh --run
 ```
 
 Evidence helper after setup:
