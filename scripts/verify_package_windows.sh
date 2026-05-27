@@ -30,10 +30,19 @@ for path in "${required_files[@]}"; do
     fi
 done
 
-if ! find "${dist_dir}" -maxdepth 1 -type f -iname "SDL3*.dll" | grep -q .; then
-    echo "[verify-package] missing SDL3 DLL in ${dist_dir}" >&2
-    exit 1
-fi
+require_dll() {
+    local label="$1"
+    local pattern="$2"
+    if ! find "${dist_dir}" -maxdepth 1 -type f -iname "${pattern}" | grep -q .; then
+        echo "[verify-package] missing ${label} DLL in ${dist_dir}" >&2
+        exit 1
+    fi
+}
+
+require_dll "SDL3" "*SDL3.dll"
+require_dll "SDL3_image" "*SDL3_image*.dll"
+require_dll "SDL3_mixer" "*SDL3_mixer*.dll"
+require_dll "SDL3_ttf" "*SDL3_ttf*.dll"
 
 (
     cd "${dist_dir}"

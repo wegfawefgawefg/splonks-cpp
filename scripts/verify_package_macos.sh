@@ -30,10 +30,19 @@ for path in "${required_files[@]}"; do
     fi
 done
 
-if ! find "${frameworks_dir}" -type f -name "*SDL3*.dylib" | grep -q .; then
-    echo "[verify-package] missing bundled SDL3 dylib in ${frameworks_dir}" >&2
-    exit 1
-fi
+require_dylib() {
+    local label="$1"
+    local pattern="$2"
+    if ! find "${frameworks_dir}" -type f -name "${pattern}" | grep -q .; then
+        echo "[verify-package] missing bundled ${label} dylib in ${frameworks_dir}" >&2
+        exit 1
+    fi
+}
+
+require_dylib "SDL3" "*SDL3*.dylib"
+require_dylib "SDL3_image" "*SDL3_image*.dylib"
+require_dylib "SDL3_mixer" "*SDL3_mixer*.dylib"
+require_dylib "SDL3_ttf" "*SDL3_ttf*.dylib"
 
 otool -L "${app_dir}/Contents/MacOS/splonks-bin"
 "${app_dir}/Contents/MacOS/Splonks" --check-state-fingerprint-smoke >/tmp/splonks-macos-package-smoke.txt
