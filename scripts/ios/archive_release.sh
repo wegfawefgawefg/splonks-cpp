@@ -111,7 +111,7 @@ if command -v shasum >/dev/null 2>&1; then
     sha256="$(awk '{print $1}' "${ipa_path}.sha256")"
 fi
 
-commit="$(git -C "${repo_root}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+commit="$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
 cat > "${archive_dir}/manifest.txt" <<EOF
 name=splonks
 platform=ios

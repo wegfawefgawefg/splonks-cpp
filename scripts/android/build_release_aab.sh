@@ -54,7 +54,7 @@ else
     require_cmd shasum
     sha256="$(shasum -a 256 "${aab_dst}" | awk '{print $1}')"
 fi
-commit="$(git -C "${REPO_ROOT}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+commit="$(git -C "${REPO_ROOT}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
 cat > "${dist_dir}/manifest.txt" <<EOF
 name=splonks
 platform=android
