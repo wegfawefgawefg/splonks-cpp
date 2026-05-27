@@ -45,7 +45,10 @@ contributors should not need to clone, understand, or package Gubsy manually.
   release matrix.
 - The package workflow uploads versioned Linux/macOS/Windows release archives
   with SHA-256 files. It also uploads an Android debug APK, and uploads a signed
-  Android release AAB when Android signing secrets are configured.
+  Android release AAB plus validation evidence when Android signing secrets are
+  configured. Android release and Play upload jobs must go through
+  `scripts/android/validate_play_handoff.sh` so upload-key evidence is recorded
+  before any Play upload.
 - Android Play and iOS App Store/TestFlight delivery are explicit release
   actions. The package workflow only runs them when a manual input requests it
   or when an intentional tag-release repository variable enables it.
@@ -53,6 +56,9 @@ contributors should not need to clone, understand, or package Gubsy manually.
   package workflow has an opt-in signed IPA job for manual dispatch
   (`include_ios` or `upload_ios_app_store`) or tagged releases with
   `SPLONKS_BUILD_IOS_RELEASE=true`; it does not run on normal branch pushes.
+  The workflow uses `scripts/validate_ios_handoff.sh` so simulator, signed
+  archive/export, optional upload, and evidence bundling follow the same path
+  as external macOS validators.
 - Use `/home/vega/Coding/GameDev/how-to-multi-backend-rendering` as the local
   iOS scaffold reference. Its working `ios-sim` CMake preset uses the Xcode
   generator, `CMAKE_SYSTEM_NAME=iOS`, simulator sysroot, arm64 simulator arch,

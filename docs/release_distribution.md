@@ -360,15 +360,16 @@ Workflow artifacts:
 - Windows: `splonks-<version>-windows-x86_64.zip` plus `.sha256`.
 - Android: debug APK for remote sanity checks on every manual/tag run.
 - Android release: signed `splonks-<version>-android-release.aab` plus
-  `manifest.txt` when Android signing secrets are configured.
-- Android Play: optional upload through `scripts/android/upload_play.sh` when
-  explicitly requested and Google Play credentials are configured.
+  `manifest.txt`, validation logs, and validation bundles when Android signing
+  secrets are configured.
+- Android Play: optional upload through `scripts/android/validate_play_handoff.sh`
+  when explicitly requested and Google Play credentials are configured.
 - iOS release: signed `splonks-<version>-ios.ipa`, `.sha256`, and
-  `manifest.txt` when the opt-in iOS job and Apple signing secrets are
-  configured.
+  `manifest.txt`, validation logs, and validation bundles when the opt-in iOS
+  job and Apple signing secrets are configured.
 - iOS App Store/TestFlight: optional upload through
-  `scripts/ios/upload_app_store.sh validate-upload` when explicitly requested
-  and App Store Connect credentials are configured.
+  `scripts/validate_ios_handoff.sh` with `SPLONKS_IOS_UPLOAD=1` when explicitly
+  requested and App Store Connect credentials are configured.
 
 Required Android release secrets:
 
