@@ -74,6 +74,10 @@ Then rerun `./scripts/validation_status.sh`.
 The status script verifies release artifact SHA-256 values against imported
 `.sha256` files or package manifests; a present artifact with a mismatched hash
 does not count as release evidence.
+Imports keep validation logs additive, and overwrite generated manifests,
+checksums, and release artifacts with the versions from the latest imported
+bundle. This lets a validator rerun a platform and send a corrected bundle
+without the receiver manually clearing stale `dist/` files first.
 
 To inspect the current evidence state, run:
 

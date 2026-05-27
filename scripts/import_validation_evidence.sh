@@ -62,16 +62,6 @@ if [[ -f "${bundle_dir}/CHECKSUMS.sha256" ]]; then
     fi
 fi
 
-copy_all_if_exists() {
-    local src_dir="$1"
-    local dst_dir="$2"
-    local pattern="$3"
-    if [[ -d "${src_dir}" ]] && find "${src_dir}" -maxdepth 1 -type f -name "${pattern}" | grep -q .; then
-        mkdir -p "${dst_dir}"
-        find "${src_dir}" -maxdepth 1 -type f -name "${pattern}" -exec cp -n {} "${dst_dir}/" \;
-    fi
-}
-
 copy_all_no_clobber_if_exists() {
     local src_dir="$1"
     local dst_dir="$2"
@@ -89,28 +79,42 @@ copy_all_no_clobber_if_exists() {
     done < <(find "${src_dir}" -maxdepth 1 -type f -name "${pattern}" | sort)
 }
 
-copy_file_if_exists() {
+copy_all_overwrite_if_exists() {
+    local src_dir="$1"
+    local dst_dir="$2"
+    local pattern="$3"
+    local src
+    if [[ ! -d "${src_dir}" ]]; then
+        return
+    fi
+    mkdir -p "${dst_dir}"
+    while IFS= read -r src; do
+        cp -f "${src}" "${dst_dir}/$(basename "${src}")"
+    done < <(find "${src_dir}" -maxdepth 1 -type f -name "${pattern}" | sort)
+}
+
+copy_file_overwrite_if_exists() {
     local src="$1"
     local dst="$2"
-    if [[ -f "${src}" && ! -e "${dst}" ]]; then
+    if [[ -f "${src}" ]]; then
         mkdir -p "$(dirname "${dst}")"
-        cp "${src}" "${dst}"
+        cp -f "${src}" "${dst}"
     fi
 }
 
 copy_all_no_clobber_if_exists "${bundle_dir}/validation" "${repo_root}/dist/validation" "*.log"
-copy_all_no_clobber_if_exists "${bundle_dir}/release-checksums" "${repo_root}/dist/releases" "*.sha256"
-copy_all_no_clobber_if_exists "${bundle_dir}/release-checksums" "${repo_root}/dist/releases" "*.txt"
-copy_all_no_clobber_if_exists "${bundle_dir}/release-artifacts" "${repo_root}/dist/releases" "*.tar.gz"
-copy_all_no_clobber_if_exists "${bundle_dir}/release-artifacts" "${repo_root}/dist/releases" "*.zip"
-copy_all_no_clobber_if_exists "${bundle_dir}/release-artifacts" "${repo_root}/dist/releases" "*.ipa"
-copy_all_no_clobber_if_exists "${bundle_dir}/release-artifacts" "${repo_root}/dist/splonks-android" "*.aab"
+copy_all_overwrite_if_exists "${bundle_dir}/release-checksums" "${repo_root}/dist/releases" "*.sha256"
+copy_all_overwrite_if_exists "${bundle_dir}/release-checksums" "${repo_root}/dist/releases" "*.txt"
+copy_all_overwrite_if_exists "${bundle_dir}/release-artifacts" "${repo_root}/dist/releases" "*.tar.gz"
+copy_all_overwrite_if_exists "${bundle_dir}/release-artifacts" "${repo_root}/dist/releases" "*.zip"
+copy_all_overwrite_if_exists "${bundle_dir}/release-artifacts" "${repo_root}/dist/releases" "*.ipa"
+copy_all_overwrite_if_exists "${bundle_dir}/release-artifacts" "${repo_root}/dist/splonks-android" "*.aab"
 
-copy_file_if_exists "${bundle_dir}/manifests/linux-PACKAGE_MANIFEST.txt" "${repo_root}/dist/splonks-linux/PACKAGE_MANIFEST.txt"
-copy_file_if_exists "${bundle_dir}/manifests/macos-PACKAGE_MANIFEST.txt" "${repo_root}/dist/splonks-macos/PACKAGE_MANIFEST.txt"
-copy_file_if_exists "${bundle_dir}/manifests/windows-PACKAGE_MANIFEST.txt" "${repo_root}/dist/splonks-windows/PACKAGE_MANIFEST.txt"
-copy_file_if_exists "${bundle_dir}/manifests/android-manifest.txt" "${repo_root}/dist/splonks-android/manifest.txt"
-copy_file_if_exists "${bundle_dir}/manifests/ios-manifest.txt" "${repo_root}/dist/splonks-ios/manifest.txt"
+copy_file_overwrite_if_exists "${bundle_dir}/manifests/linux-PACKAGE_MANIFEST.txt" "${repo_root}/dist/splonks-linux/PACKAGE_MANIFEST.txt"
+copy_file_overwrite_if_exists "${bundle_dir}/manifests/macos-PACKAGE_MANIFEST.txt" "${repo_root}/dist/splonks-macos/PACKAGE_MANIFEST.txt"
+copy_file_overwrite_if_exists "${bundle_dir}/manifests/windows-PACKAGE_MANIFEST.txt" "${repo_root}/dist/splonks-windows/PACKAGE_MANIFEST.txt"
+copy_file_overwrite_if_exists "${bundle_dir}/manifests/android-manifest.txt" "${repo_root}/dist/splonks-android/manifest.txt"
+copy_file_overwrite_if_exists "${bundle_dir}/manifests/ios-manifest.txt" "${repo_root}/dist/splonks-ios/manifest.txt"
 
 mkdir -p "${repo_root}/dist/validation-bundles"
 bundle_dst="${repo_root}/dist/validation-bundles/$(basename "${bundle_path}")"
