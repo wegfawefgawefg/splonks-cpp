@@ -44,6 +44,10 @@ need to understand or package Gubsy manually.
   iOS scaffold reference. Its working `ios-sim` CMake preset uses the Xcode
   generator, `CMAKE_SYSTEM_NAME=iOS`, simulator sysroot, arm64 simulator arch,
   bundled SDL, and app bundle metadata.
+- Splonks now has an `ios-sim` CMake preset and `scripts/ios/build_sim.sh`.
+  That path must be validated on macOS/Xcode before it is treated as complete.
+  Device distribution still needs signing, provisioning, archive, and
+  TestFlight/App Store documentation.
 - Use the full matrix when we are making or validating a real release build.
 
 ## Gubsy dependency

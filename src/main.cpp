@@ -173,6 +173,11 @@ void RebaseCwdToRepoRoot() {
         std::filesystem::path probe = std::filesystem::path(base_path);
         for (int i = 0; i < 4; ++i) {
             if (std::filesystem::exists(probe / "assets") &&
+                std::filesystem::exists(probe / "data")) {
+                std::filesystem::current_path(probe);
+                return;
+            }
+            if (std::filesystem::exists(probe / "assets") &&
                 std::filesystem::exists(probe / "src") &&
                 std::filesystem::exists(probe / "CMakeLists.txt")) {
                 std::filesystem::current_path(probe);

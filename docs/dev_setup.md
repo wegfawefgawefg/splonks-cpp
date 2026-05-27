@@ -161,10 +161,20 @@ cmake --build --preset ios-sim
 That preset uses the Xcode generator, `CMAKE_SYSTEM_NAME=iOS`, simulator SDK,
 arm64 simulator architecture, bundled SDL, and app bundle metadata.
 
-Status: Splonks iOS scaffold is not implemented yet. We still need:
+Simulator build path:
 
-- `ios-sim` configure/build presets.
-- App bundle metadata and asset/data packaging.
+```bash
+./scripts/ios/build_sim.sh
+```
+
+The Splonks `ios-sim` preset uses the Xcode generator, `CMAKE_SYSTEM_NAME=iOS`,
+`iphonesimulator`, arm64 simulator architecture, SDL3 FetchContent, and an iOS
+`.app` bundle. CMake copies `assets/` and `data/` into the app bundle so startup
+can use the bundle as its content root.
+
+Status: simulator scaffold exists. We still need:
+
+- macOS/Xcode validation of `./scripts/ios/build_sim.sh`.
 - Simulator launch validation.
 - Device signing/provisioning docs.
 - TestFlight/App Store release path.
@@ -196,5 +206,5 @@ Release target state:
 - Android: debug APK build exists. Signed release AAB path exists through
   environment-provided upload-key settings. Runtime smoke still needs
   emulator/device validation.
-- iOS: simulator scaffold, device signing, archive, and TestFlight/App Store
-  path remain to be added.
+- iOS: simulator scaffold exists. macOS/Xcode validation, device signing,
+  archive, and TestFlight/App Store path remain to be added.
