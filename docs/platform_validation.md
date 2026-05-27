@@ -338,7 +338,7 @@ Simulator validation on macOS/Xcode:
 
 ```bash
 ./scripts/ios/build_sim.sh
-./scripts/ios/run_sim.sh
+./scripts/ios/run_sim.sh --check-state-fingerprint-smoke
 ```
 
 Evidence helper:
@@ -406,11 +406,13 @@ dist/releases/splonks-0.1.0-ios.ipa.sha256
 ```
 
 Current status: simulator and device archive scaffolds exist, based on the
-working local `how-to-multi-backend-rendering` iOS shape. The upload helper
-exists for App Store Connect/TestFlight delivery, and the IPA verifier checks
-the exported IPA, checksum, manifest, and bundled content before upload. Needs
-macOS/Xcode validation, real signing/provisioning, device install validation,
-and TestFlight/App Store upload validation.
+working local `how-to-multi-backend-rendering` iOS shape. The simulator
+validation path now installs, launches, and requires the state-fingerprint
+runtime smoke line. The upload helper exists for App Store Connect/TestFlight
+delivery, and the IPA verifier checks the exported IPA, checksum, manifest, and
+bundled content before upload. Needs macOS/Xcode validation, real
+signing/provisioning, device install validation, and TestFlight/App Store
+upload validation.
 
 ## Completion Criteria
 

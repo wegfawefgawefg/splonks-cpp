@@ -223,17 +223,20 @@ Simulator install/launch path:
 
 `run_sim.sh` builds the simulator app, installs it into a booted iPhone
 simulator when one exists, or boots the first available iPhone simulator. Set
-`SPLONKS_IOS_SIMULATOR_UDID` to target a specific simulator.
+`SPLONKS_IOS_SIMULATOR_UDID` to target a specific simulator. For validation,
+run `./scripts/ios/run_sim.sh --check-state-fingerprint-smoke`; the script
+attaches to simulator output and requires the smoke success line.
 
 The Splonks `ios-sim` preset uses the Xcode generator, `CMAKE_SYSTEM_NAME=iOS`,
 `iphonesimulator`, arm64 simulator architecture, SDL3 FetchContent, and an iOS
 `.app` bundle. CMake copies `assets/` and `data/` into the app bundle so startup
 can use the bundle as its content root.
 
-Status: simulator scaffold exists. We still need:
+Status: simulator scaffold exists and has a runtime smoke validation command.
+We still need:
 
 - macOS/Xcode validation of `./scripts/ios/build_sim.sh`.
-- macOS/Xcode validation of `./scripts/ios/run_sim.sh`.
+- macOS/Xcode validation of `./scripts/ios/run_sim.sh --check-state-fingerprint-smoke`.
 - macOS/Xcode validation of `./scripts/ios/archive_release.sh`.
 - TestFlight/App Store upload validation.
 

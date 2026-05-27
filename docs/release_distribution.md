@@ -200,7 +200,7 @@ Simulator build on macOS/Xcode:
 
 ```bash
 ./scripts/ios/build_sim.sh
-./scripts/ios/run_sim.sh
+./scripts/ios/run_sim.sh --check-state-fingerprint-smoke
 ```
 
 Device archive/export path on macOS/Xcode:
@@ -253,7 +253,8 @@ dist/releases/splonks-0.1.0-ios.ipa.sha256
 
 Current status: `ios-sim` and `ios-device` CMake/Xcode scaffolds exist and copy
 `assets/` and `data/` into the app bundle. The simulator build/install/launch
-script and archive/export script exist, and the archive path writes a manifest
+script now has a runtime smoke mode that requires the state-fingerprint success
+line. The archive/export script exists, and the archive path writes a manifest
 with bundle id, export method, commit, version, and SHA-256. The IPA verifier
 checks the exported IPA, checksum, manifest, and bundled content before upload.
 The upload helper uses `xcrun altool` to validate and upload the exported IPA

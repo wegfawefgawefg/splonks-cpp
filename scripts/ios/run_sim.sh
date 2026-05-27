@@ -9,12 +9,29 @@ fi
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 bundle_id="${SPLONKS_IOS_BUNDLE_ID:-dev.splonks.game}"
 
+usage() {
+    cat >&2 <<EOF
+Usage: $0 [game arguments...]
+
+Builds, installs, and launches the iOS simulator app. Any extra arguments are
+forwarded to the app. When --check-state-fingerprint-smoke is present, this
+script attaches to simulator stdout/stderr and requires the smoke success line.
+EOF
+}
+
 require_cmd() {
     if ! command -v "$1" >/dev/null 2>&1; then
         echo "Missing command: $1" >&2
         exit 1
     fi
 }
+
+case "${1:-}" in
+    -h|--help|help)
+        usage
+        exit 0
+        ;;
+esac
 
 require_cmd xcrun
 
@@ -47,6 +64,26 @@ fi
 xcrun simctl boot "${device}" >/dev/null 2>&1 || true
 xcrun simctl bootstatus "${device}" -b
 xcrun simctl install "${device}" "${app_path}"
-xcrun simctl launch "${device}" "${bundle_id}"
 
-echo "[ios] launched ${bundle_id} on simulator ${device}"
+requires_smoke=0
+for arg in "$@"; do
+    if [[ "${arg}" == "--check-state-fingerprint-smoke" ]]; then
+        requires_smoke=1
+    fi
+done
+
+if [[ "${requires_smoke}" -eq 1 ]]; then
+    smoke_log="$(mktemp)"
+    xcrun simctl launch --console --terminate-running-process "${device}" "${bundle_id}" "$@" \
+        2>&1 | tee "${smoke_log}"
+    if ! grep -q "state fingerprint smoke ok" "${smoke_log}"; then
+        echo "iOS simulator smoke did not report success." >&2
+        rm -f "${smoke_log}"
+        exit 1
+    fi
+    rm -f "${smoke_log}"
+    echo "[ios] simulator runtime smoke ok on ${device}"
+else
+    xcrun simctl launch --terminate-running-process "${device}" "${bundle_id}" "$@"
+    echo "[ios] launched ${bundle_id} on simulator ${device}"
+fi

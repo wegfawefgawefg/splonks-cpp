@@ -180,9 +180,8 @@ validate_android_play_upload() {
 validate_ios_sim() {
     local platform="$1"
     require_host macos "${platform}"
-    run_step "${repo_root}/scripts/ios/build_sim.sh"
-    run_step "${repo_root}/scripts/ios/run_sim.sh"
-    echo "[validated] ios simulator build and launch"
+    run_step "${repo_root}/scripts/ios/run_sim.sh" --check-state-fingerprint-smoke
+    echo "[validated] ios simulator build, install, launch, and runtime smoke"
 }
 
 validate_ios_release() {

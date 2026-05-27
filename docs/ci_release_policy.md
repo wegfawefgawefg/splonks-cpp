@@ -54,7 +54,8 @@ need to understand or package Gubsy manually.
   generator, `CMAKE_SYSTEM_NAME=iOS`, simulator sysroot, arm64 simulator arch,
   bundled SDL, and app bundle metadata.
 - Splonks now has `ios-sim` and `ios-device` CMake presets,
-  `scripts/ios/build_sim.sh`, `scripts/ios/run_sim.sh`, and
+  `scripts/ios/build_sim.sh`, a simulator runtime smoke path through
+  `scripts/ios/run_sim.sh --check-state-fingerprint-smoke`, and
   `scripts/ios/archive_release.sh`. CI signing assets can be imported with
   `scripts/ios/import_signing_assets.sh`. These paths must be validated on
   macOS/Xcode before iOS is treated as complete.
