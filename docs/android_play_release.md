@@ -49,7 +49,8 @@ cat dist/splonks-android/manifest.txt
 
 The manifest must include `keystore_purpose=upload` for Play handoff. The
 local `create_validation_keystore.sh` helper stamps `keystore_purpose=validation`
-and is only for proving the release AAB build path, not for Play-ready evidence.
+and defaults to `dist/local/android-validation.jks`; it is only for proving the
+release AAB build path, not for Play-ready evidence.
 
 ## Internal Testing Upload
 

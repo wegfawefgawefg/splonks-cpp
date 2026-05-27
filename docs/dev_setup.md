@@ -212,7 +212,8 @@ The release script writes the signed app bundle and manifest under
 Status: signed arm64 release AAB build is validated locally with a throwaway
 validation keystore. The helper exports
 `SPLONKS_ANDROID_KEYSTORE_PURPOSE=validation`, and the generated manifest records
-that purpose so the artifact is not mistaken for a Play-ready AAB. Final store
+that purpose so the artifact is not mistaken for a Play-ready AAB. The default
+local validation key path is `dist/local/android-validation.jks`. Final store
 distribution still needs the real upload key, `SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload`,
 and Play Console upload validation.
 

@@ -5,7 +5,7 @@ source "$(dirname "$0")/env.sh"
 require_java
 require_cmd keytool
 
-keystore_path="${1:-${REPO_ROOT}/dist/local/android-validation-upload.jks}"
+keystore_path="${1:-${REPO_ROOT}/dist/local/android-validation.jks}"
 keystore_password="${SPLONKS_ANDROID_KEYSTORE_PASSWORD:-android}"
 key_alias="${SPLONKS_ANDROID_KEY_ALIAS:-splonks}"
 key_password="${SPLONKS_ANDROID_KEY_PASSWORD:-${keystore_password}}"

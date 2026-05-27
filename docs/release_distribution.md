@@ -199,8 +199,9 @@ release AAB includes `libmain.so`, SDL3 runtime libraries, `assets/`, and
 verifier checks the manifest version against the release version before upload.
 The manifest also records `keystore_purpose`; local throwaway builds are stamped
 `validation`, while Play-ready AABs must be rebuilt with the real upload key and
-`SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload`. Final distribution still needs the
-real upload key and Play Console upload validation. See
+`SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload`. The throwaway helper defaults to
+`dist/local/android-validation.jks`; do not use that key for Play. Final
+distribution still needs the real upload key and Play Console upload validation. See
 [android_play_release.md](android_play_release.md) for the Play Console internal
 testing and production handoff.
 
