@@ -90,6 +90,9 @@ Evidence path:
 scripts/validate_platform.sh android-release
 ```
 
+Use [docs/android_play_release.md](../docs/android_play_release.md) for the
+Play Console internal testing and production handoff after the AAB verifies.
+
 The script writes:
 
 ```text

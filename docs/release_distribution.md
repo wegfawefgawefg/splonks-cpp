@@ -153,7 +153,8 @@ release AAB build, and AAB artifact verification are validated locally. The
 release AAB includes `libmain.so`, SDL3 runtime libraries, `assets/`, and
 `data/`, and writes a manifest with version, commit, and SHA-256. Final
 distribution still needs the real upload key and Play Console upload
-validation.
+validation. See [android_play_release.md](android_play_release.md) for the Play
+Console internal testing and production handoff.
 
 ## iOS
 

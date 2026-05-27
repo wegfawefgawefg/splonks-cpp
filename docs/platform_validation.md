@@ -241,7 +241,9 @@ dist/splonks-android/manifest.txt
 Current status: SDK setup, SDL3 AAR fetch, x86_64 debug APK build, emulator
 install/runtime smoke, signed arm64 release AAB, and AAB artifact verification
 have passed locally with a throwaway upload keystore. Final distribution still
-needs the real upload key and Play Console upload validation.
+needs the real upload key and Play Console upload validation. See
+[android_play_release.md](android_play_release.md) for the exact Play Console
+handoff and evidence to record.
 
 ## iOS
 

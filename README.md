@@ -26,6 +26,8 @@ See [docs/dev_setup.md](docs/dev_setup.md) for Linux, macOS, Windows, Android,
 and iOS setup/distribution status. See
 [docs/platform_validation.md](docs/platform_validation.md) for the checklist
 that defines when onboarding and release distribution are actually proven.
+Android Play Console release handoff lives in
+[docs/android_play_release.md](docs/android_play_release.md).
 
 The default release build path is:
 
