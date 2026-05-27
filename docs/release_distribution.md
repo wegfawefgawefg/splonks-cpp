@@ -22,7 +22,9 @@ under `dist/validation-bundles/`.
 Use `--include-artifacts` for release handoff bundles that should carry the
 actual distributable archives, Android AAB, or iOS IPA.
 Use `./scripts/release_credentials_preflight.sh <target>` before credentialed
-release paths to catch missing signing/upload tools and secrets early.
+release paths to catch missing signing/upload tools, secrets, and upload
+artifacts early. Store upload preflights also check the already-built AAB or
+IPA plus its manifest/checksum before invoking the store upload path.
 
 ## Linux
 

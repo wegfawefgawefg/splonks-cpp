@@ -57,6 +57,51 @@ require_env() {
     fi
 }
 
+require_manifest_value() {
+    local label="$1"
+    local path="$2"
+    local key="$3"
+    local expected="$4"
+    local actual
+    if [[ ! -f "${path}" ]]; then
+        missing "${label}: ${path}"
+        return
+    fi
+    actual="$(awk -F= -v key="${key}" '$1 == key {print substr($0, length(key) + 2)}' "${path}" | tail -n 1)"
+    if [[ "${actual}" == "${expected}" ]]; then
+        ok "${label}: ${key}=${expected}"
+    else
+        missing "${label}: ${key}=${actual:-<unset>}, expected ${expected}"
+    fi
+}
+
+require_checksum_file() {
+    local label="$1"
+    local artifact="$2"
+    local checksum="$3"
+    local expected
+    local actual
+    require_file "${label}" "${artifact}"
+    require_file "${label} checksum" "${checksum}"
+    if [[ ! -f "${artifact}" || ! -f "${checksum}" ]]; then
+        return
+    fi
+    expected="$(awk 'NF >= 1 {print tolower($1); exit}' "${checksum}")"
+    if command -v sha256sum >/dev/null 2>&1; then
+        actual="$(sha256sum "${artifact}" | awk '{print tolower($1)}')"
+    elif command -v shasum >/dev/null 2>&1; then
+        actual="$(shasum -a 256 "${artifact}" | awk '{print tolower($1)}')"
+    else
+        missing "command sha256sum or shasum"
+        return
+    fi
+    if [[ -n "${expected}" && "${actual}" == "${expected}" ]]; then
+        ok "${label} checksum matches"
+    else
+        missing "${label} checksum mismatch: ${actual:-<unset>}, expected ${expected:-<unset>}"
+    fi
+}
+
 require_macos_host() {
     if [[ "$(uname -s)" == "Darwin" ]]; then
         ok "macOS host"
@@ -112,8 +157,14 @@ check_android_play() {
     echo
     echo "[android-play]"
     local app_id="${APP_ID:-dev.splonks.game}"
+    local version_name="${SPLONKS_ANDROID_VERSION_NAME:-${SPLONKS_RELEASE_VERSION:-${version}}}"
+    local dist_dir="${repo_root}/dist/splonks-android"
+    local aab_path="${SPLONKS_ANDROID_AAB_PATH:-${dist_dir}/splonks-${version_name}-android-release.aab}"
+    local manifest_path="${dist_dir}/manifest.txt"
     require_cmd fastlane
     require_file "SPLONKS_PLAY_SERVICE_ACCOUNT_JSON" "${SPLONKS_PLAY_SERVICE_ACCOUNT_JSON:-}"
+    require_file "Android release AAB" "${aab_path}"
+    require_manifest_value "Android release manifest" "${manifest_path}" version_name "${version_name}"
     echo "[info] package=${SPLONKS_ANDROID_PACKAGE_NAME:-${app_id}} track=${SPLONKS_PLAY_TRACK:-internal} status=${SPLONKS_PLAY_RELEASE_STATUS:-draft}"
 }
 
@@ -140,8 +191,12 @@ check_ios_release() {
 check_ios_upload() {
     echo
     echo "[ios-upload]"
+    local ipa_path="${SPLONKS_IOS_IPA_PATH:-${repo_root}/dist/releases/splonks-${version}-ios.ipa}"
+    local manifest_path="${repo_root}/dist/splonks-ios/manifest.txt"
     require_macos_host
     require_cmd xcrun
+    require_checksum_file "iOS IPA" "${ipa_path}" "${ipa_path}.sha256"
+    require_manifest_value "iOS release manifest" "${manifest_path}" version_name "${version}"
     if [[ -n "${SPLONKS_APP_STORE_API_KEY:-}" && -n "${SPLONKS_APP_STORE_API_ISSUER:-}" ]]; then
         ok "App Store Connect API key/issuer are set"
         local key_dir="${SPLONKS_APP_STORE_API_PRIVATE_KEYS_DIR:-${API_PRIVATE_KEYS_DIR:-}}"

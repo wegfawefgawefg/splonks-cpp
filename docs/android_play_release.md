@@ -119,8 +119,9 @@ SPLONKS_PLAY_RELEASE_STATUS              repository variable, default draft
 ```
 
 The workflow decodes the service account JSON into the runner temp directory,
-runs `release_credentials_preflight.sh android-play`, then uses the same
-`scripts/android/upload_play.sh` helper as the local path.
+runs `release_credentials_preflight.sh android-play` to check the Play
+credentials and the signed AAB/manifest for the selected version, then uses the
+same `scripts/android/upload_play.sh` helper as the local path.
 
 Evidence helper:
 
