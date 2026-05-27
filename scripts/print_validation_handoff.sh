@@ -109,6 +109,7 @@ Then install the pre-clone tool and continue:
 EOF
     checkout_commands
     cat <<EOF
+    test "\${MSYSTEM:-}" = UCRT64
     ./scripts/bootstrap_dev.sh --run
     ./scripts/validate_platform.sh dev
     SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_platform.sh release

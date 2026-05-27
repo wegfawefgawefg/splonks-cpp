@@ -99,6 +99,7 @@ pacman -S --needed --noconfirm git
 git clone https://github.com/wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
 git checkout <handoff-git-revision>
+test "${MSYSTEM:-}" = UCRT64
 ./scripts/bootstrap_dev.sh --run
 ./scripts/validate_platform.sh dev
 ```
@@ -124,6 +125,7 @@ setup.
 Run after developer validation in MSYS2 UCRT64:
 
 ```bash
+test "${MSYSTEM:-}" = UCRT64
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_platform.sh release
 ```
 

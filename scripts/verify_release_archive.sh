@@ -169,6 +169,10 @@ run_extracted_smoke() {
                     return
                     ;;
             esac
+            if [[ "${MSYSTEM:-}" != "UCRT64" ]]; then
+                echo "Windows release archive verification must run in MSYS2 UCRT64. Current MSYSTEM=${MSYSTEM:-unset}" >&2
+                exit 1
+            fi
             (
                 cd "${temp_dir}/splonks-windows"
                 PATH="${temp_dir}/splonks-windows:${PATH}" cmd.exe /C run-splonks.bat \

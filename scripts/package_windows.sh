@@ -4,10 +4,15 @@ set -euo pipefail
 case "${OS:-}:$(uname -s)" in
     Windows_NT:*|*:MINGW*|*:MSYS*|*:CYGWIN*) ;;
     *)
-        echo "package_windows.sh must run on Windows through Git Bash/MSYS/MinGW/Cygwin" >&2
+        echo "package_windows.sh must run in the MSYS2 UCRT64 terminal on Windows" >&2
         exit 1
         ;;
 esac
+
+if [[ "${MSYSTEM:-}" != "UCRT64" ]]; then
+    echo "package_windows.sh must run in the MSYS2 UCRT64 terminal. Current MSYSTEM=${MSYSTEM:-unset}" >&2
+    exit 1
+fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 build_dir="${repo_root}/build-package-windows"

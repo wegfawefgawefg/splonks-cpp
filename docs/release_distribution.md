@@ -118,6 +118,7 @@ SPLONKS_RELEASE_VERSION=0.1.0
 Build, verify, and archive from MSYS2 UCRT64 on Windows:
 
 ```bash
+test "${MSYSTEM:-}" = UCRT64
 ./scripts/package_windows.sh
 ./scripts/verify_package_windows.sh
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/archive_release.sh windows
