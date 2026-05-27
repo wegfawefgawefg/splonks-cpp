@@ -284,8 +284,9 @@ Release target state:
 - Linux: package script bundles the game, assets/data, runtime libraries,
   manifest, and launcher under `dist/splonks-linux`.
 - macOS: package script creates `dist/splonks-macos/Splonks.app`, bundles
-  assets/data and dylibs, rewrites local dylib refs, and ad-hoc signs locally.
-  Real distribution still needs Developer ID signing and notarization.
+  assets/data and dylibs, rewrites local dylib refs, builds/verifies a
+  universal `arm64;x86_64` app binary, and ad-hoc signs locally. Real
+  distribution still needs Developer ID signing and notarization.
 - Windows: package script creates `dist/splonks-windows` with the executable,
   assets/data, DLLs, manifest, and launcher batch file.
 - Android: debug APK build, x86_64 emulator smoke, and signed arm64 release

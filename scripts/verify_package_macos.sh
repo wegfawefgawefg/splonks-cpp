@@ -54,6 +54,12 @@ require_dylib "SDL3_image" "*SDL3_image*.dylib"
 require_dylib "SDL3_mixer" "*SDL3_mixer*.dylib"
 require_dylib "SDL3_ttf" "*SDL3_ttf*.dylib"
 
+archs="$(lipo -archs "${app_dir}/Contents/MacOS/splonks-bin")"
+if [[ " ${archs} " != *" arm64 "* || " ${archs} " != *" x86_64 "* ]]; then
+    echo "[verify-package] splonks-bin is not universal arm64+x86_64; archs=${archs}" >&2
+    exit 1
+fi
+
 otool -L "${app_dir}/Contents/MacOS/splonks-bin"
 "${app_dir}/Contents/MacOS/Splonks" \
     --check-state-fingerprint-smoke \

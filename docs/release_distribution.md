@@ -67,9 +67,10 @@ dist/splonks-macos/Splonks.app
 ```
 
 Current status: package script exists. It creates an app bundle, copies
-assets/data, bundles dylibs, rewrites local dylib references, and ad-hoc signs
-locally. Real outside-Mac-distribution still needs Developer ID signing,
-notarization, and stapling validation.
+assets/data, bundles dylibs, rewrites local dylib references, builds the app
+binary as universal `arm64;x86_64`, verifies that universal slice set with
+`lipo`, and ad-hoc signs locally. Real outside-Mac-distribution still needs
+Developer ID signing, notarization, and stapling validation.
 
 Developer ID signing and notarization path:
 
