@@ -138,6 +138,7 @@ export SPLONKS_ANDROID_VERSION_NAME=0.1.0
 ./scripts/android/setup_sdk.sh
 ./scripts/android/fetch_sdl3_aar.sh
 ./scripts/android/build_release_aab.sh
+./scripts/android/verify_release_aab.sh
 ```
 
 Output:
@@ -147,11 +148,12 @@ dist/splonks-android/splonks-<version>-android-release.aab
 dist/splonks-android/manifest.txt
 ```
 
-Current status: debug APK build, x86_64 emulator runtime smoke, and signed
-arm64 release AAB build are validated locally. The release AAB includes
-`libmain.so`, SDL3 runtime libraries, `assets/`, and `data/`, and writes a
-manifest with version, commit, and SHA-256. Final distribution still needs the
-real upload key and Play Console upload validation.
+Current status: debug APK build, x86_64 emulator runtime smoke, signed arm64
+release AAB build, and AAB artifact verification are validated locally. The
+release AAB includes `libmain.so`, SDL3 runtime libraries, `assets/`, and
+`data/`, and writes a manifest with version, commit, and SHA-256. Final
+distribution still needs the real upload key and Play Console upload
+validation.
 
 ## iOS
 

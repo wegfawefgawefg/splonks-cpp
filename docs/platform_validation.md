@@ -222,6 +222,7 @@ export SPLONKS_ANDROID_VERSION_NAME=0.1.0
 ./scripts/android/setup_sdk.sh
 ./scripts/android/fetch_sdl3_aar.sh
 ./scripts/android/build_release_aab.sh
+./scripts/android/verify_release_aab.sh
 ```
 
 Evidence helper:
@@ -238,9 +239,9 @@ dist/splonks-android/manifest.txt
 ```
 
 Current status: SDK setup, SDL3 AAR fetch, x86_64 debug APK build, emulator
-install/runtime smoke, and signed arm64 release AAB have passed locally with a
-throwaway upload keystore. Final distribution still needs the real upload key
-and Play Console upload validation.
+install/runtime smoke, signed arm64 release AAB, and AAB artifact verification
+have passed locally with a throwaway upload keystore. Final distribution still
+needs the real upload key and Play Console upload validation.
 
 ## iOS
 

@@ -124,6 +124,7 @@ validate_android_release() {
     run_step "${repo_root}/scripts/android/setup_sdk.sh"
     run_step "${repo_root}/scripts/android/fetch_sdl3_aar.sh"
     run_step "${repo_root}/scripts/android/build_release_aab.sh"
+    run_step "${repo_root}/scripts/android/verify_release_aab.sh"
     echo "[validated] android signed release AAB"
 }
 

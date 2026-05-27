@@ -39,6 +39,8 @@ Current status:
   `scripts/android/run_smoke.sh`.
 - Signed arm64 release AAB generation has been validated locally with a
   throwaway upload keystore.
+- `scripts/android/verify_release_aab.sh` verifies the release AAB manifest,
+  SHA-256, expected native libraries/assets, and Java signature.
 - Final Play Store distribution still needs the real upload key and Play
   Console upload validation.
 
@@ -79,6 +81,7 @@ export SPLONKS_ANDROID_VERSION_NAME=0.1.0
 scripts/android/setup_sdk.sh
 scripts/android/fetch_sdl3_aar.sh
 scripts/android/build_release_aab.sh
+scripts/android/verify_release_aab.sh
 ```
 
 Evidence path:
