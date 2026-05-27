@@ -22,6 +22,7 @@ if [[ $# -ne 1 ]]; then
 fi
 
 platform="$1"
+required_patterns=()
 case "${platform}" in
     linux)
         archive_name="splonks-${version}-linux-x86_64.tar.gz"
@@ -33,14 +34,28 @@ case "${platform}" in
             "splonks-linux/assets/fonts/DejaVuSans.ttf"
             "splonks-linux/data/settings.cfg"
         )
+        required_patterns=(
+            '^splonks-linux/lib/libSDL3\.so'
+            '^splonks-linux/lib/libSDL3_image\.so'
+            '^splonks-linux/lib/libSDL3_mixer\.so'
+            '^splonks-linux/lib/libSDL3_ttf\.so'
+        )
         ;;
     macos)
         archive_name="splonks-${version}-macos-universal.zip"
         required_entries=(
             "splonks-macos/Splonks.app/Contents/MacOS/Splonks"
+            "splonks-macos/Splonks.app/Contents/MacOS/splonks-bin"
             "splonks-macos/Splonks.app/Contents/Info.plist"
+            "splonks-macos/PACKAGE_MANIFEST.txt"
             "splonks-macos/Splonks.app/Contents/Resources/assets/fonts/DejaVuSans.ttf"
             "splonks-macos/Splonks.app/Contents/Resources/data/settings.cfg"
+        )
+        required_patterns=(
+            '^splonks-macos/Splonks\.app/Contents/Frameworks/.*SDL3.*\.dylib$'
+            '^splonks-macos/Splonks\.app/Contents/Frameworks/.*SDL3_image.*\.dylib$'
+            '^splonks-macos/Splonks\.app/Contents/Frameworks/.*SDL3_mixer.*\.dylib$'
+            '^splonks-macos/Splonks\.app/Contents/Frameworks/.*SDL3_ttf.*\.dylib$'
         )
         ;;
     windows)
@@ -51,6 +66,12 @@ case "${platform}" in
             "splonks-windows/PACKAGE_MANIFEST.txt"
             "splonks-windows/assets/fonts/DejaVuSans.ttf"
             "splonks-windows/data/settings.cfg"
+        )
+        required_patterns=(
+            '^splonks-windows/.*SDL3\.dll$'
+            '^splonks-windows/.*SDL3_image.*\.dll$'
+            '^splonks-windows/.*SDL3_mixer.*\.dll$'
+            '^splonks-windows/.*SDL3_ttf.*\.dll$'
         )
         ;;
     *)
@@ -98,6 +119,13 @@ esac
 for entry in "${required_entries[@]}"; do
     if ! grep -Fxq "${entry}" <<<"${listing}"; then
         echo "Missing archive entry: ${entry}" >&2
+        exit 1
+    fi
+done
+
+for pattern in "${required_patterns[@]}"; do
+    if ! grep -Eq "${pattern}" <<<"${listing}"; then
+        echo "Missing archive entry matching pattern: ${pattern}" >&2
         exit 1
     fi
 done
