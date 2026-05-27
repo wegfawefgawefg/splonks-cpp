@@ -128,8 +128,12 @@ check print_file_check "Linux release checksum" "${repo_root}/dist/releases/splo
 check print_check "macOS dev validation" "${repo_root}/dist/validation/macos-dev-*.log"
 check print_log_version_check "macOS release validation" "${repo_root}/dist/validation/macos-release-*.log"
 check print_log_version_check "macOS notarized validation" "${repo_root}/dist/validation/macos-macos-notarized-*.log"
+check print_file_check "macOS release archive" "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip"
+check print_file_check "macOS release checksum" "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip.sha256"
 check print_check "Windows dev validation" "${repo_root}/dist/validation/windows-dev-*.log"
 check print_log_version_check "Windows release validation" "${repo_root}/dist/validation/windows-release-*.log"
+check print_file_check "Windows release archive" "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip"
+check print_file_check "Windows release checksum" "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip.sha256"
 echo
 
 echo "[android]"
