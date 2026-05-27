@@ -63,6 +63,8 @@ and optional artifact. The import helper verifies `CHECKSUMS.sha256` before
 copying evidence into the local `dist/` tree. The status helper also verifies
 the latest evidence bundle has the expected release version and valid
 `CHECKSUMS.sha256`.
+Release archives, store bundles, and release checksum files are included only
+when their filenames match the selected `SPLONKS_RELEASE_VERSION`.
 Bundles include only validation logs for the current Git revision and selected
 `SPLONKS_RELEASE_VERSION` by default. If a validator intentionally needs a
 diagnostic bundle with stale logs, set `SPLONKS_BUNDLE_ALLOW_STALE=1`; those

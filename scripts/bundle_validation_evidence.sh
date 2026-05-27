@@ -140,11 +140,18 @@ copy_file_if_exists "${repo_root}/dist/splonks-ios/manifest.txt" "${stage_dir}/m
 
 if [[ -d "${repo_root}/dist/releases" ]]; then
     mkdir -p "${stage_dir}/release-checksums"
-    find "${repo_root}/dist/releases" -maxdepth 1 -type f \( -name "*.sha256" -o -name "*.txt" \) \
+    find "${repo_root}/dist/releases" -maxdepth 1 -type f \( \
+            -name "splonks-${version}-*.sha256" -o \
+            -name "splonks-${version}-*.txt" \
+        \) \
         -exec cp {} "${stage_dir}/release-checksums/" \;
     if [[ "${include_artifacts}" -eq 1 ]]; then
         mkdir -p "${stage_dir}/release-artifacts"
-        find "${repo_root}/dist/releases" -maxdepth 1 -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.ipa" \) \
+        find "${repo_root}/dist/releases" -maxdepth 1 -type f \( \
+                -name "splonks-${version}-*.tar.gz" -o \
+                -name "splonks-${version}-*.zip" -o \
+                -name "splonks-${version}-*.ipa" \
+            \) \
             -exec cp {} "${stage_dir}/release-artifacts/" \;
     fi
 fi
@@ -152,7 +159,7 @@ fi
 if [[ "${include_artifacts}" -eq 1 ]]; then
     if [[ -d "${repo_root}/dist/splonks-android" ]]; then
         mkdir -p "${stage_dir}/release-artifacts"
-        find "${repo_root}/dist/splonks-android" -maxdepth 1 -type f -name "*.aab" \
+        find "${repo_root}/dist/splonks-android" -maxdepth 1 -type f -name "splonks-${version}-*.aab" \
             -exec cp {} "${stage_dir}/release-artifacts/" \;
     fi
 fi
