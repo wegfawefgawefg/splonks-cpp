@@ -68,6 +68,13 @@ otool -L "${macos_dir}/splonks-bin" \
         esac
     done
 
+find "${build_dir}" -type f -name "*.dylib" \
+    \( -iname "*SDL3*.dylib" -o -iname "*png*.dylib" -o -iname "*freetype*.dylib" \
+       -o -iname "*harfbuzz*.dylib" -o -iname "*pluto*.dylib" -o -iname "*vorbis*.dylib" \
+       -o -iname "*ogg*.dylib" -o -iname "*zstd*.dylib" -o -iname "*brotli*.dylib" \
+       -o -iname "*bz2*.dylib" -o -iname "*jpeg*.dylib" -o -iname "*webp*.dylib" \) \
+    -exec cp -f {} "${frameworks_dir}/" \;
+
 find "${frameworks_dir}" -type f -name "*.dylib" -exec chmod u+w {} +
 while IFS= read -r dylib; do
     install_name_tool -id "@rpath/$(basename "${dylib}")" "${dylib}" 2>/dev/null || true
