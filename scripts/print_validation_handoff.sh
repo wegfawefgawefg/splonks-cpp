@@ -66,7 +66,9 @@ print_macos() {
     generated_for
     cat <<EOF
 
-Run on a real macOS machine with Xcode command line tools and Homebrew:
+Run on a real Apple Silicon macOS machine with Xcode command line tools and
+Homebrew. The macOS release artifact is arm64-only and is not expected to
+launch on Intel Macs:
 
     xcode-select --install
 EOF
@@ -74,6 +76,7 @@ EOF
     cat <<EOF
     ./scripts/bootstrap_dev.sh --run
     ./scripts/validate_platform.sh dev
+    test "\$(uname -m)" = arm64
     SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_platform.sh release
     ./scripts/bundle_validation_evidence.sh --include-artifacts macos
 
