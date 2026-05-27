@@ -122,8 +122,8 @@ SPLONKS_VALIDATION_REVISION=<release-commit> \
 
 For release credentials and upload prerequisites, validators can run the
 preflight helper before a long package/archive/upload command. Upload preflights
-also verify that the expected Android AAB or iOS IPA, manifest, and checksum
-are present for the selected release version:
+also verify that the expected Android AAB or iOS IPA, manifest, checksum, and
+bundled release contents are present for the selected release version:
 
 ```bash
 ./scripts/release_credentials_preflight.sh macos-notarized

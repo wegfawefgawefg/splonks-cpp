@@ -236,6 +236,14 @@ check_ios_upload() {
     require_cmd xcrun
     require_checksum_file "iOS IPA" "${ipa_path}" "${ipa_path}.sha256"
     require_manifest_value "iOS release manifest" "${manifest_path}" version_name "${version}"
+    if env \
+        SPLONKS_RELEASE_VERSION="${version}" \
+        SPLONKS_IOS_IPA_PATH="${ipa_path}" \
+        "${repo_root}/scripts/ios/verify_release_ipa.sh"; then
+        ok "iOS IPA verified for App Store upload"
+    else
+        missing "iOS IPA failed verification for App Store upload"
+    fi
     if [[ -n "${SPLONKS_APP_STORE_API_KEY:-}" && -n "${SPLONKS_APP_STORE_API_ISSUER:-}" ]]; then
         ok "App Store Connect API key/issuer are set"
         local key_dir="${SPLONKS_APP_STORE_API_PRIVATE_KEYS_DIR:-${API_PRIVATE_KEYS_DIR:-}}"
