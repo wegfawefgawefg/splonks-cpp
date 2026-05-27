@@ -545,6 +545,33 @@ print_manifest_value_check() {
     return 1
 }
 
+print_manifest_value_in_check() {
+    local label="$1"
+    local path="$2"
+    local key="$3"
+    shift 3
+    local actual
+    local expected
+    if [[ ! -f "${path}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${path#${repo_root}/}"
+        return 1
+    fi
+    actual="$(awk -F= -v key="${key}" '$1 == key {print substr($0, length(key) + 2)}' "${path}" | tail -n 1)"
+    for expected in "$@"; do
+        if [[ "${actual}" == "${expected}" ]]; then
+            printf '[ok]      %s: %s has %s=%s\n' "${label}" "${path#${repo_root}/}" "${key}" "${actual}"
+            return 0
+        fi
+    done
+    printf '[missing] %s: %s has %s=%s, expected one of: %s\n' \
+        "${label}" \
+        "${path#${repo_root}/}" \
+        "${key}" \
+        "${actual:-<unset>}" \
+        "$*"
+    return 1
+}
+
 print_manifest_revision_check() {
     local label="$1"
     local path="$2"
@@ -702,6 +729,12 @@ check print_file_check "Android release AAB" "${repo_root}/dist/splonks-android/
 check print_file_check "Android release manifest" "${repo_root}/dist/splonks-android/manifest.txt"
 check print_manifest_value_check "Android manifest version" "${repo_root}/dist/splonks-android/manifest.txt" version_name "${version}"
 check print_manifest_revision_check "Android manifest revision" "${repo_root}/dist/splonks-android/manifest.txt" git_commit
+check print_manifest_value_in_check \
+    "Android manifest keystore purpose" \
+    "${repo_root}/dist/splonks-android/manifest.txt" \
+    keystore_purpose \
+    validation \
+    upload
 check print_manifest_sha256_check \
     "Android AAB checksum" \
     "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab" \
