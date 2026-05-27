@@ -88,6 +88,17 @@ SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh android-play
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh ios
 ```
 
+For release credentials and upload prerequisites, validators can run the
+preflight helper before a long package/archive/upload command:
+
+```bash
+./scripts/release_credentials_preflight.sh macos-notarized
+./scripts/release_credentials_preflight.sh android-release
+./scripts/release_credentials_preflight.sh android-play
+./scripts/release_credentials_preflight.sh ios-release
+./scripts/release_credentials_preflight.sh ios-upload
+```
+
 ## Linux
 
 Developer validation:

@@ -55,6 +55,7 @@ If Developer ID credentials are available:
     export SPLONKS_MACOS_BUNDLE_ID=dev.splonks.game
     export SPLONKS_MACOS_SIGN_IDENTITY="Developer ID Application: Name (TEAMID)"
     export SPLONKS_NOTARYTOOL_PROFILE=splonks-notary
+    ./scripts/release_credentials_preflight.sh macos-notarized
     ./scripts/validate_platform.sh macos-notarized
     ./scripts/bundle_validation_evidence.sh --include-artifacts macos-notarized
 EOF
@@ -96,6 +97,7 @@ Run after the signed AAB has been built with the real upload key:
     export SPLONKS_ANDROID_KEY_PASSWORD=...
     export SPLONKS_ANDROID_VERSION_CODE=1
     export SPLONKS_ANDROID_VERSION_NAME=${version}
+    ./scripts/release_credentials_preflight.sh android-release
     ./scripts/validate_platform.sh android-release
 
 Then validate or upload to the internal Play track:
@@ -105,6 +107,7 @@ Then validate or upload to the internal Play track:
     export SPLONKS_ANDROID_PACKAGE_NAME=dev.splonks.game
     export SPLONKS_PLAY_TRACK=internal
     export SPLONKS_PLAY_RELEASE_STATUS=draft
+    ./scripts/release_credentials_preflight.sh android-play
     ./scripts/validate_platform.sh android-play-upload
     ./scripts/bundle_validation_evidence.sh --include-artifacts android-play
 EOF
@@ -128,6 +131,7 @@ Archive/export with signing:
     export SPLONKS_IOS_DEVELOPMENT_TEAM=TEAMID
     export SPLONKS_IOS_CODE_SIGN_IDENTITY="Apple Distribution"
     export SPLONKS_IOS_EXPORT_METHOD=app-store-connect
+    ./scripts/release_credentials_preflight.sh ios-release
     ./scripts/validate_platform.sh ios-release
 
 Validate/upload to App Store Connect/TestFlight:
@@ -135,6 +139,7 @@ Validate/upload to App Store Connect/TestFlight:
     export SPLONKS_APP_STORE_API_KEY=ABC123DEFG
     export SPLONKS_APP_STORE_API_ISSUER=00000000-0000-0000-0000-000000000000
     export API_PRIVATE_KEYS_DIR=/absolute/path/to/appstoreconnect/private_keys
+    ./scripts/release_credentials_preflight.sh ios-upload
     ./scripts/validate_platform.sh ios-upload
     ./scripts/bundle_validation_evidence.sh --include-artifacts ios
 EOF

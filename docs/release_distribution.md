@@ -21,6 +21,8 @@ collect logs, package manifests, and release checksums into a single archive
 under `dist/validation-bundles/`.
 Use `--include-artifacts` for release handoff bundles that should carry the
 actual distributable archives, Android AAB, or iOS IPA.
+Use `./scripts/release_credentials_preflight.sh <target>` before credentialed
+release paths to catch missing signing/upload tools and secrets early.
 
 ## Linux
 
