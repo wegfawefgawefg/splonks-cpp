@@ -84,7 +84,7 @@ jobs:
             dist/releases/splonks-*-linux-x86_64.tar.gz.sha256
 
   macos-package:
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 45
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
@@ -231,7 +231,7 @@ jobs:
 
   ios-release:
     if: ${{ (github.event_name == 'workflow_dispatch' && (github.event.inputs.include_ios == 'true' || github.event.inputs.upload_ios_app_store == 'true')) || (github.event_name == 'push' && (vars.SPLONKS_BUILD_IOS_RELEASE == 'true' || vars.SPLONKS_UPLOAD_IOS_APP_STORE == 'true')) }}
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 60
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2

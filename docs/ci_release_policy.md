@@ -42,7 +42,8 @@ contributors should not need to clone, understand, or package Gubsy manually.
 - macOS release builds are Apple Silicon only. Do not produce or validate a
   universal macOS app by default; the release target is `macos-arm64`, which
   keeps bundled native code smaller and removes Intel Macs from the normal
-  release matrix.
+  release matrix. Hosted macOS release jobs should use an explicit Apple Silicon
+  runner label such as `macos-15`, not a moving x64/universal assumption.
 - The package workflow uploads versioned Linux/macOS/Windows release archives
   with SHA-256 files. It also uploads an Android debug APK, and uploads a signed
   Android release AAB plus validation evidence when Android signing secrets are

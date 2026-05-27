@@ -342,6 +342,9 @@ export SPLONKS_IOS_KEYCHAIN_PASSWORD=<temporary keychain password>
 
 The package workflow is intentionally limited to manual dispatch and `v*` tags.
 Do not add package jobs back to normal branch pushes.
+macOS package and iOS release jobs use the explicit `macos-15` GitHub-hosted
+runner label so hosted release validation matches the Apple Silicon-only
+artifact policy.
 
 Manual dispatch accepts a `release_version` input. Version tags use the tag name
 with a leading `v` stripped, so `v0.1.0` produces `0.1.0` artifacts.
