@@ -179,8 +179,15 @@ check_android_play() {
     local manifest_path="${dist_dir}/manifest.txt"
     require_cmd fastlane
     require_file "SPLONKS_PLAY_SERVICE_ACCOUNT_JSON" "${SPLONKS_PLAY_SERVICE_ACCOUNT_JSON:-}"
-    require_file "Android release AAB" "${aab_path}"
     require_manifest_value "Android release manifest" "${manifest_path}" version_name "${version_name}"
+    if env \
+        SPLONKS_ANDROID_VERSION_NAME="${version_name}" \
+        SPLONKS_ANDROID_AAB_PATH="${aab_path}" \
+        "${repo_root}/scripts/android/verify_release_aab.sh"; then
+        ok "Android release AAB verified for Play upload"
+    else
+        missing "Android release AAB failed verification for Play upload"
+    fi
     echo "[info] package=${SPLONKS_ANDROID_PACKAGE_NAME:-${app_id}} track=${SPLONKS_PLAY_TRACK:-internal} status=${SPLONKS_PLAY_RELEASE_STATUS:-draft}"
 }
 
