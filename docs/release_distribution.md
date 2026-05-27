@@ -204,6 +204,8 @@ export SPLONKS_PLAY_RELEASE_STATUS=draft
 ./scripts/validate_platform.sh android-play-upload
 ```
 
+The upload helper requires current `android-release` validation evidence from
+the real upload key before it runs Fastlane.
 Set `SPLONKS_PLAY_RELEASE_STATUS=completed` only when intentionally rolling out
 to internal testers.
 

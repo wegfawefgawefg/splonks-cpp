@@ -102,6 +102,23 @@ require_checksum_file() {
     fi
 }
 
+require_android_upload_key_evidence() {
+    local version_name="$1"
+    local expected_revision
+    local log_path
+    expected_revision="$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+    while IFS= read -r log_path; do
+        if grep -Fxq "git_revision=${expected_revision}" "${log_path}" &&
+            grep -Fxq "release_version=${version_name}" "${log_path}" &&
+            grep -Fq "[validated] android signed release AAB with upload key" "${log_path}"; then
+            ok "Android upload-key AAB evidence: ${log_path#${repo_root}/}"
+            return
+        fi
+    done < <(find "${repo_root}/dist/validation" -maxdepth 1 -type f -name "*-android-release-*.log" 2>/dev/null | sort -r)
+
+    missing "Android upload-key AAB evidence is missing; run SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload ./scripts/validate_platform.sh android-release first"
+}
+
 require_macos_host() {
     if [[ "$(uname -s)" == "Darwin" ]]; then
         ok "macOS host"
@@ -180,6 +197,7 @@ check_android_play() {
     require_cmd fastlane
     require_file "SPLONKS_PLAY_SERVICE_ACCOUNT_JSON" "${SPLONKS_PLAY_SERVICE_ACCOUNT_JSON:-}"
     require_manifest_value "Android release manifest" "${manifest_path}" version_name "${version_name}"
+    require_android_upload_key_evidence "${version_name}"
     if env \
         SPLONKS_ANDROID_VERSION_NAME="${version_name}" \
         SPLONKS_ANDROID_AAB_PATH="${aab_path}" \

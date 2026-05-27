@@ -134,8 +134,8 @@ EOF
     export SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload
     export SPLONKS_ANDROID_KEY_ALIAS=...
     export SPLONKS_ANDROID_KEY_PASSWORD=...
+    export SPLONKS_RELEASE_VERSION=${version}
     export SPLONKS_ANDROID_VERSION_CODE=1
-    export SPLONKS_ANDROID_VERSION_NAME=${version}
     ./scripts/release_credentials_preflight.sh android-release
     ./scripts/validate_platform.sh android-release
 

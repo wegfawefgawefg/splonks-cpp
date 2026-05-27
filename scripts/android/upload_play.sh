@@ -65,6 +65,24 @@ require_cmd fastlane
 mkdir -p "${validation_dir}"
 exec > >(tee "${log_path}") 2>&1
 
+require_upload_key_evidence() {
+    local expected_revision
+    local release_log
+    expected_revision="$(git -C "${REPO_ROOT}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+    while IFS= read -r release_log; do
+        if grep -Fxq "git_revision=${expected_revision}" "${release_log}" &&
+            grep -Fxq "release_version=${version_name}" "${release_log}" &&
+            grep -Fq "[validated] android signed release AAB with upload key" "${release_log}"; then
+            echo "[play-upload] upload-key AAB evidence=${release_log}"
+            return
+        fi
+    done < <(find "${validation_dir}" -maxdepth 1 -type f -name "*-android-release-*.log" 2>/dev/null | sort -r)
+
+    echo "Missing Android upload-key AAB validation evidence for version ${version_name}." >&2
+    echo "Run with the real upload key first: SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload ./scripts/validate_platform.sh android-release" >&2
+    exit 1
+}
+
 echo "[play-upload] package_name=${package_name}"
 echo "release_version=${version_name}"
 echo "git_revision=$(git -C "${REPO_ROOT}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
@@ -75,6 +93,7 @@ echo "[play-upload] aab=${aab_path}"
 echo "[play-upload] manifest=${manifest_path}"
 
 "${REPO_ROOT}/scripts/android/verify_release_aab.sh"
+require_upload_key_evidence
 
 cmd=(
     fastlane supply

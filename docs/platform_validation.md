@@ -347,6 +347,9 @@ export SPLONKS_PLAY_RELEASE_STATUS=draft
 ./scripts/validate_platform.sh android-play-upload
 ```
 
+This upload validation requires current `android-release` evidence from the real
+upload key before it runs Fastlane.
+
 Expected release artifacts:
 
 ```text

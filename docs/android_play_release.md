@@ -87,8 +87,11 @@ export SPLONKS_PLAY_RELEASE_STATUS=draft
 ```
 
 The upload helper verifies the exact AAB first, then runs `fastlane supply` and
-writes a timestamped `dist/validation/android-play-*.log`. It defaults to
-`draft` so an upload can be reviewed in Play Console before rollout. For a
+writes a timestamped `dist/validation/android-play-*.log`. It requires current
+`android-release` evidence with `[validated] android signed release AAB with
+upload key`, so run the build-and-verify step above through
+`./scripts/validate_platform.sh android-release` before uploading. It defaults
+to `draft` so an upload can be reviewed in Play Console before rollout. For a
 validation-only API call, use:
 
 ```bash
