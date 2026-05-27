@@ -9,7 +9,7 @@ validation_dir="${repo_root}/dist/validation"
 
 usage() {
     cat >&2 <<EOF
-Usage: $0 [dev|release|all|macos-notarized|android-dev|android-emulator|android-release|ios-sim|ios-release|ios-upload]
+Usage: $0 [dev|release|all|macos-notarized|android-dev|android-emulator|android-release|android-play-upload|ios-sim|ios-release|ios-upload]
 
 Runs the platform validation commands and writes a timestamped evidence log.
 Run the platform setup script first when validating a fresh developer machine.
@@ -172,6 +172,11 @@ validate_android_release() {
     echo "[validated] android signed release AAB"
 }
 
+validate_android_play_upload() {
+    run_step "${repo_root}/scripts/android/upload_play.sh"
+    echo "[validated] android Google Play upload path"
+}
+
 validate_ios_sim() {
     local platform="$1"
     require_host macos "${platform}"
@@ -196,7 +201,7 @@ validate_ios_upload() {
 }
 
 case "${scope}" in
-    dev|release|all|macos-notarized|android-dev|android-emulator|android-release|ios-sim|ios-release|ios-upload) ;;
+    dev|release|all|macos-notarized|android-dev|android-emulator|android-release|android-play-upload|ios-sim|ios-release|ios-upload) ;;
     -h|--help|help)
         usage
         exit 0
@@ -239,6 +244,9 @@ log_path="${validation_dir}/${platform}-${scope}-${timestamp}.log"
             ;;
         android-release)
             validate_android_release
+            ;;
+        android-play-upload)
+            validate_android_play_upload
             ;;
         ios-sim)
             validate_ios_sim "${platform}"

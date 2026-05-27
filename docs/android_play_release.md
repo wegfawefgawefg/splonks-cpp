@@ -73,6 +73,35 @@ Evidence to record in `dist/validation/` or the release notes:
 - Tester link or release id, if available.
 - Device model, Android version, and smoke result.
 
+Command-line upload path:
+
+```bash
+gem install fastlane
+export SPLONKS_PLAY_SERVICE_ACCOUNT_JSON=/absolute/path/to/google-play-service-account.json
+export SPLONKS_ANDROID_PACKAGE_NAME=dev.splonks.game
+export SPLONKS_PLAY_TRACK=internal
+export SPLONKS_PLAY_RELEASE_STATUS=draft
+./scripts/android/upload_play.sh
+```
+
+The upload helper verifies the exact AAB first, then runs `fastlane supply` and
+writes a timestamped `dist/validation/android-play-*.log`. It defaults to
+`draft` so an upload can be reviewed in Play Console before rollout. For a
+validation-only API call, use:
+
+```bash
+./scripts/android/upload_play.sh --validate-only
+```
+
+To make the release available to internal testers from the command line, set
+`SPLONKS_PLAY_RELEASE_STATUS=completed` intentionally before running the helper.
+
+Evidence helper:
+
+```bash
+./scripts/validate_platform.sh android-play-upload
+```
+
 ## Production Upload
 
 Only move to production after internal testing has passed.

@@ -231,6 +231,16 @@ Evidence helper:
 ./scripts/validate_platform.sh android-release
 ```
 
+Play internal testing upload validation:
+
+```bash
+export SPLONKS_PLAY_SERVICE_ACCOUNT_JSON=/absolute/path/to/google-play-service-account.json
+export SPLONKS_ANDROID_PACKAGE_NAME=dev.splonks.game
+export SPLONKS_PLAY_TRACK=internal
+export SPLONKS_PLAY_RELEASE_STATUS=draft
+./scripts/validate_platform.sh android-play-upload
+```
+
 Expected release artifacts:
 
 ```text

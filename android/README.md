@@ -92,6 +92,9 @@ scripts/validate_platform.sh android-release
 
 Use [docs/android_play_release.md](../docs/android_play_release.md) for the
 Play Console internal testing and production handoff after the AAB verifies.
+For command-line Play upload validation, use
+`scripts/android/upload_play.sh` or the evidence wrapper
+`scripts/validate_platform.sh android-play-upload`.
 
 The script writes:
 

@@ -160,6 +160,19 @@ distribution still needs the real upload key and Play Console upload
 validation. See [android_play_release.md](android_play_release.md) for the Play
 Console internal testing and production handoff.
 
+Play internal testing upload helper:
+
+```bash
+export SPLONKS_PLAY_SERVICE_ACCOUNT_JSON=/absolute/path/to/google-play-service-account.json
+export SPLONKS_ANDROID_PACKAGE_NAME=dev.splonks.game
+export SPLONKS_PLAY_TRACK=internal
+export SPLONKS_PLAY_RELEASE_STATUS=draft
+./scripts/validate_platform.sh android-play-upload
+```
+
+Set `SPLONKS_PLAY_RELEASE_STATUS=completed` only when intentionally rolling out
+to internal testers.
+
 ## iOS
 
 Simulator build on macOS/Xcode:
