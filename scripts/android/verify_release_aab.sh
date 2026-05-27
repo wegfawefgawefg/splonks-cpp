@@ -39,6 +39,7 @@ require_manifest_value name splonks
 require_manifest_value platform android
 require_manifest_value mode release
 require_manifest_value artifact "$(basename "${aab_path}")"
+require_manifest_value version_name "${version_name}"
 
 expected_sha="$(manifest_value sha256)"
 if [[ -z "${expected_sha}" ]]; then

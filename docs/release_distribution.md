@@ -188,8 +188,9 @@ dist/splonks-android/manifest.txt
 Current status: debug APK build, x86_64 emulator runtime smoke, signed arm64
 release AAB build, and AAB artifact verification are validated locally. The
 release AAB includes `libmain.so`, SDL3 runtime libraries, `assets/`, and
-`data/`, and writes a manifest with version, commit, and SHA-256. Final
-distribution still needs the real upload key and Play Console upload
+`data/`, and writes a manifest with version, commit, and SHA-256. The AAB
+verifier checks the manifest version against the release version before upload.
+Final distribution still needs the real upload key and Play Console upload
 validation. See [android_play_release.md](android_play_release.md) for the Play
 Console internal testing and production handoff.
 
@@ -275,12 +276,12 @@ Current status: `ios-sim` and `ios-device` CMake/Xcode scaffolds exist and copy
 script now has a runtime smoke mode that requires the state-fingerprint success
 line. The archive/export script exists, and the archive path writes a manifest
 with bundle id, export method, commit, version, and SHA-256. The IPA verifier
-checks the exported IPA, checksum, manifest, and bundled content before upload.
-The device install helper uses `xcrun devicectl` to install and launch the
-signed archive app on a connected provisioned device. The upload helper uses
-`xcrun altool` to validate and upload the exported IPA to App Store
-Connect/TestFlight. These paths still need macOS/Xcode validation with an Apple
-Developer team.
+checks the exported IPA, release version, checksum, manifest, and bundled
+content before upload. The device install helper uses `xcrun devicectl` to
+install and launch the signed archive app on a connected provisioned device.
+The upload helper uses `xcrun altool` to validate and upload the exported IPA
+to App Store Connect/TestFlight. These paths still need macOS/Xcode validation
+with an Apple Developer team.
 
 - Final App Store distribution checklist.
 - Validation of upload through Xcode Organizer, Transporter, or
