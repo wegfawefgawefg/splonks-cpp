@@ -88,8 +88,8 @@ export SPLONKS_ANDROID_KEYSTORE_PASSWORD=...
 export SPLONKS_ANDROID_KEYSTORE_TYPE=jks
 export SPLONKS_ANDROID_KEY_ALIAS=...
 export SPLONKS_ANDROID_KEY_PASSWORD=...
+export SPLONKS_RELEASE_VERSION=0.1.0
 export SPLONKS_ANDROID_VERSION_CODE=1
-export SPLONKS_ANDROID_VERSION_NAME=0.1.0
 scripts/android/setup_sdk.sh
 scripts/android/fetch_sdl3_aar.sh
 scripts/android/build_release_aab.sh
@@ -100,8 +100,8 @@ Full local validation path:
 
 ```bash
 eval "$(scripts/android/create_validation_keystore.sh)"
+export SPLONKS_RELEASE_VERSION=0.1.0
 export SPLONKS_ANDROID_VERSION_CODE=1
-export SPLONKS_ANDROID_VERSION_NAME=0.1.0
 scripts/android/setup_sdk.sh
 scripts/android/fetch_sdl3_aar.sh
 scripts/android/build_release_aab.sh
@@ -137,9 +137,11 @@ SPLONKS_ANDROID_KEY_ALIAS
 SPLONKS_ANDROID_KEY_PASSWORD
 ```
 
-Version metadata is optional and defaults to `1` / `0.1.0`:
+Version metadata is optional. `SPLONKS_ANDROID_VERSION_NAME` defaults to
+`SPLONKS_RELEASE_VERSION`, then `0.1.0`:
 
 ```text
 SPLONKS_ANDROID_VERSION_CODE
 SPLONKS_ANDROID_VERSION_NAME
+SPLONKS_RELEASE_VERSION
 ```

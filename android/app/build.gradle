@@ -12,6 +12,8 @@ def releaseKeystorePassword = System.getenv('SPLONKS_ANDROID_KEYSTORE_PASSWORD')
 def releaseKeyAlias = System.getenv('SPLONKS_ANDROID_KEY_ALIAS')
 def releaseKeyPassword = System.getenv('SPLONKS_ANDROID_KEY_PASSWORD')
 def releaseKeystoreType = envOrDefault('SPLONKS_ANDROID_KEYSTORE_TYPE', 'jks')
+def androidVersionName = envOrDefault('SPLONKS_ANDROID_VERSION_NAME',
+                                      envOrDefault('SPLONKS_RELEASE_VERSION', '0.1.0'))
 def hasReleaseSigning = releaseKeystore != null && !releaseKeystore.isBlank() &&
                         releaseKeystorePassword != null && !releaseKeystorePassword.isBlank() &&
                         releaseKeyAlias != null && !releaseKeyAlias.isBlank() &&
@@ -30,7 +32,7 @@ android {
         minSdk 24
         targetSdk 34
         versionCode envOrDefault('SPLONKS_ANDROID_VERSION_CODE', '1').toInteger()
-        versionName envOrDefault('SPLONKS_ANDROID_VERSION_NAME', '0.1.0')
+        versionName androidVersionName
 
         externalNativeBuild {
             cmake {
