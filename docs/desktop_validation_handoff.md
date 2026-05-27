@@ -50,6 +50,11 @@ Record:
 
 Developer ID distribution still needs the signing/notarization path from
 [release_distribution.md](release_distribution.md).
+When Developer ID credentials are available, validate that path with:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_platform.sh macos-notarized
+```
 
 ## Windows Developer Validation
 

@@ -125,10 +125,7 @@ export SPLONKS_RELEASE_VERSION=0.1.0
 export SPLONKS_MACOS_BUNDLE_ID=dev.splonks.game
 export SPLONKS_MACOS_SIGN_IDENTITY="Developer ID Application: Name (TEAMID)"
 export SPLONKS_NOTARYTOOL_PROFILE=splonks-notary
-./scripts/package_macos.sh
-./scripts/verify_package_macos.sh
-./scripts/macos/notarize_app.sh
-./scripts/verify_release_archive.sh macos
+./scripts/validate_platform.sh macos-notarized
 ```
 
 Expected release artifacts:

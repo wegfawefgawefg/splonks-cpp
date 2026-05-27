@@ -67,10 +67,7 @@ export SPLONKS_RELEASE_VERSION=0.1.0
 export SPLONKS_MACOS_BUNDLE_ID=dev.splonks.game
 export SPLONKS_MACOS_SIGN_IDENTITY="Developer ID Application: Name (TEAMID)"
 export SPLONKS_NOTARYTOOL_PROFILE=splonks-notary
-./scripts/package_macos.sh
-./scripts/verify_package_macos.sh
-./scripts/macos/notarize_app.sh
-./scripts/verify_release_archive.sh macos
+./scripts/validate_platform.sh macos-notarized
 ```
 
 Alternatively, use Apple ID credentials instead of a stored notarytool profile:
@@ -87,6 +84,10 @@ Output:
 dist/releases/splonks-0.1.0-macos-universal.zip
 dist/releases/splonks-0.1.0-macos-universal.zip.sha256
 ```
+
+`macos-notarized` builds the package, verifies the local app bundle, signs with
+the Developer ID identity, submits to notarytool, staples the ticket, writes the
+release zip/checksum, and verifies the release archive.
 
 Optional macOS package metadata:
 

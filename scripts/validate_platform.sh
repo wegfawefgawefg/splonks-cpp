@@ -9,7 +9,7 @@ validation_dir="${repo_root}/dist/validation"
 
 usage() {
     cat >&2 <<EOF
-Usage: $0 [dev|release|all|android-dev|android-emulator|android-release|ios-sim|ios-release|ios-upload]
+Usage: $0 [dev|release|all|macos-notarized|android-dev|android-emulator|android-release|ios-sim|ios-release|ios-upload]
 
 Runs the platform validation commands and writes a timestamped evidence log.
 Run the platform setup script first when validating a fresh developer machine.
@@ -134,6 +134,16 @@ validate_desktop_release() {
     echo "[validated] ${platform} release package and archive"
 }
 
+validate_macos_notarized() {
+    local platform="$1"
+    require_host macos "${platform}"
+    run_step "${repo_root}/scripts/package_macos.sh"
+    run_step "${repo_root}/scripts/verify_package_macos.sh"
+    run_step "${repo_root}/scripts/macos/notarize_app.sh"
+    run_step env SPLONKS_RELEASE_VERSION="${version}" "${repo_root}/scripts/verify_release_archive.sh" macos
+    echo "[validated] macos Developer ID signed, notarized, stapled release archive"
+}
+
 validate_android_dev() {
     run_step "${repo_root}/scripts/android/setup_sdk.sh"
     run_step "${repo_root}/scripts/android/fetch_sdl3_aar.sh"
@@ -186,7 +196,7 @@ validate_ios_upload() {
 }
 
 case "${scope}" in
-    dev|release|all|android-dev|android-emulator|android-release|ios-sim|ios-release|ios-upload) ;;
+    dev|release|all|macos-notarized|android-dev|android-emulator|android-release|ios-sim|ios-release|ios-upload) ;;
     -h|--help|help)
         usage
         exit 0
@@ -217,6 +227,9 @@ log_path="${validation_dir}/${platform}-${scope}-${timestamp}.log"
             if [[ "${platform}" == "macos" ]]; then
                 validate_ios_sim "${platform}"
             fi
+            ;;
+        macos-notarized)
+            validate_macos_notarized "${platform}"
             ;;
         android-dev)
             validate_android_dev
