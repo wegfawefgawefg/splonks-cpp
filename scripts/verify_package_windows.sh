@@ -51,7 +51,10 @@ require_dll "SDL3_ttf" "*SDL3_ttf*.dll"
 
 (
     cd "${dist_dir}"
-    PATH="${dist_dir}:${PATH}" ./splonks-cpp.exe --check-state-fingerprint-smoke >/tmp/splonks-windows-package-smoke.txt
+    PATH="${dist_dir}:${PATH}" ./splonks-cpp.exe \
+        --check-state-fingerprint-smoke \
+        --project-root "${dist_dir}" \
+        >/tmp/splonks-windows-package-smoke.txt
 )
 grep -q "state fingerprint smoke ok" /tmp/splonks-windows-package-smoke.txt
 

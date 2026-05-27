@@ -9,6 +9,12 @@ The Gradle app owns APK/AAB packaging. CMake builds the native game target and
 renames the Android output library to `libmain.so`, which `SplonksActivity`
 loads through SDL's Android activity.
 
+At startup, `SplonksActivity` extracts the APK `assets/` tree into app-private
+storage, seeds missing `data/` files without overwriting player settings, and
+starts native code with `--project-root <path>`. The C++ entry point switches to
+that root before loading relative `assets/...` and `data/...` paths, matching
+the desktop package layout.
+
 Current status:
 
 - Android Gradle project exists.
@@ -25,6 +31,5 @@ Current status:
 - Android setup still requires JDK 17+, Android command-line tools, and the
   SDK/NDK packages installed by `scripts/android/setup_sdk.sh`.
 - Runtime has not been validated on an Android emulator/device in this repo.
-- Asset loading still needs a real Android runtime pass. Gradle packages repo
-  `assets/` and `data/` under those same APK asset prefixes, while existing C++
-  code mostly uses filesystem-relative paths.
+- Asset extraction is implemented, but still needs a real Android runtime pass
+  on an emulator/device to prove launch, rendering, audio, and settings writes.

@@ -20,6 +20,7 @@
 #include <SDL3/SDL.h>
 #include <filesystem>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -132,6 +133,27 @@ bool HasStartupFlag(int argc, char** argv, const std::string& flag) {
     return false;
 }
 
+bool RebaseCwdToExplicitProjectRoot(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i] != nullptr ? argv[i] : "";
+        if ((arg == "--project-root" || arg == "--content-root") && i + 1 < argc) {
+            const std::filesystem::path root = argv[++i] != nullptr ? argv[i] : "";
+            if (std::filesystem::exists(root / "assets") && std::filesystem::exists(root / "data")) {
+                std::filesystem::current_path(root);
+                return true;
+            }
+        }
+    }
+    if (const char* env_root = std::getenv("SPLONKS_PROJECT_ROOT")) {
+        const std::filesystem::path root = env_root;
+        if (std::filesystem::exists(root / "assets") && std::filesystem::exists(root / "data")) {
+            std::filesystem::current_path(root);
+            return true;
+        }
+    }
+    return false;
+}
+
 [[noreturn]] void ThrowSdlError(const char* message) {
     throw std::runtime_error(std::string(message) + ": " + SDL_GetError());
 }
@@ -167,7 +189,9 @@ void RebaseCwdToRepoRoot() {
 } // namespace
 
 int main(int argc, char** argv) {
-    RebaseCwdToRepoRoot();
+    if (!RebaseCwdToExplicitProjectRoot(argc, argv)) {
+        RebaseCwdToRepoRoot();
+    }
 
     if (splonks::RunCliCommand(argc, argv)) {
         return 0;

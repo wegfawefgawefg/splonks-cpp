@@ -50,7 +50,10 @@ require_dylib "SDL3_mixer" "*SDL3_mixer*.dylib"
 require_dylib "SDL3_ttf" "*SDL3_ttf*.dylib"
 
 otool -L "${app_dir}/Contents/MacOS/splonks-bin"
-"${app_dir}/Contents/MacOS/Splonks" --check-state-fingerprint-smoke >/tmp/splonks-macos-package-smoke.txt
+"${app_dir}/Contents/MacOS/Splonks" \
+    --check-state-fingerprint-smoke \
+    --project-root "${app_dir}/Contents/Resources" \
+    >/tmp/splonks-macos-package-smoke.txt
 grep -q "state fingerprint smoke ok" /tmp/splonks-macos-package-smoke.txt
 
 echo "[verify-package] ${dist_dir} ok"

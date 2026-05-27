@@ -44,7 +44,10 @@ for lib in libSDL3.so.0 libSDL3_image.so.0 libSDL3_mixer.so.0 libSDL3_ttf.so.0; 
     fi
 done
 
-"${dist_dir}/run-splonks.sh" --check-state-fingerprint-smoke >/tmp/splonks-package-smoke.txt
+"${dist_dir}/run-splonks.sh" \
+    --check-state-fingerprint-smoke \
+    --project-root "${dist_dir}" \
+    >/tmp/splonks-package-smoke.txt
 grep -q "state fingerprint smoke ok" /tmp/splonks-package-smoke.txt
 
 echo "[verify-package] ${dist_dir} ok"
