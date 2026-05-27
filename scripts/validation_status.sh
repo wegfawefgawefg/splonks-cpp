@@ -590,7 +590,10 @@ check print_log_revision_contains_check \
     "Android emulator/dev validation" \
     "${repo_root}/dist/validation/*-android-emulator-*.log" \
     "state fingerprint smoke ok"
-check print_log_version_check "Android signed AAB validation" "${repo_root}/dist/validation/*-android-release-*.log"
+check print_log_version_contains_check \
+    "Android signed AAB validation" \
+    "${repo_root}/dist/validation/*-android-release-*.log" \
+    "[validated] android signed release AAB"
 check print_file_check "Android release AAB" "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab"
 check print_file_check "Android release manifest" "${repo_root}/dist/splonks-android/manifest.txt"
 check print_manifest_value_check "Android manifest version" "${repo_root}/dist/splonks-android/manifest.txt" version_name "${version}"
@@ -611,7 +614,10 @@ check print_log_revision_contains_check \
     "iOS simulator validation" \
     "${repo_root}/dist/validation/macos-ios-sim-*.log" \
     "state fingerprint smoke ok"
-check print_log_version_check "iOS release archive validation" "${repo_root}/dist/validation/macos-ios-release-*.log"
+check print_log_version_contains_check \
+    "iOS release archive validation" \
+    "${repo_root}/dist/validation/macos-ios-release-*.log" \
+    "[validated] ios signed archive/export"
 check print_file_check "iOS IPA" "${repo_root}/dist/releases/splonks-${version}-ios.ipa"
 check print_checksum_match_check \
     "iOS IPA checksum" \
