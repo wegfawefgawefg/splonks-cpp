@@ -85,7 +85,7 @@ The bundle helper only includes validation logs for the handoff commit and
 release version, so rerun the `validate_platform.sh` commands after checking
 out the pinned revision if bundling reports no matching logs.
 On the receiving machine, import it with
-`SPLONKS_RELEASE_VERSION=0.1.0 SPLONKS_VALIDATION_REVISION=<handoff-short-revision> ./scripts/import_validation_evidence.sh path/to/splonks-validation-macos-*.tar.gz`,
+`SPLONKS_RELEASE_VERSION=0.1.0 SPLONKS_VALIDATION_REVISION=<handoff-short-revision> SPLONKS_IMPORT_EXPECT_TARGET=macos ./scripts/import_validation_evidence.sh path/to/splonks-validation-macos-*.tar.gz`,
 then run `validation_status.sh` with the same release version and handoff
 revision printed by `print_validation_handoff.sh`. The importer rejects stale
 or wrong-release bundles before copying logs or artifacts unless
@@ -161,7 +161,7 @@ The bundle helper only includes validation logs for the handoff commit and
 release version, so rerun the `validate_platform.sh` commands after checking
 out the pinned revision if bundling reports no matching logs.
 On the receiving machine, import it with
-`SPLONKS_RELEASE_VERSION=0.1.0 SPLONKS_VALIDATION_REVISION=<handoff-short-revision> ./scripts/import_validation_evidence.sh path/to/splonks-validation-windows-*.tar.gz`,
+`SPLONKS_RELEASE_VERSION=0.1.0 SPLONKS_VALIDATION_REVISION=<handoff-short-revision> SPLONKS_IMPORT_EXPECT_TARGET=windows ./scripts/import_validation_evidence.sh path/to/splonks-validation-windows-*.tar.gz`,
 then run `validation_status.sh` with the same release version and handoff
 revision printed by `print_validation_handoff.sh`. The importer rejects stale
 or wrong-release bundles before copying logs or artifacts unless

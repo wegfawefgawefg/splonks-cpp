@@ -30,6 +30,7 @@ header() {
 
 common_return() {
     local label="$1"
+    local import_target="${2:-${label}}"
     cat <<EOF
 
 Return:
@@ -38,7 +39,7 @@ Return:
 
 Receiver import:
 
-    SPLONKS_RELEASE_VERSION=${version} SPLONKS_VALIDATION_REVISION=${short_revision} ./scripts/import_validation_evidence.sh path/to/splonks-validation-${label}-*.tar.gz
+    SPLONKS_RELEASE_VERSION=${version} SPLONKS_VALIDATION_REVISION=${short_revision} SPLONKS_IMPORT_EXPECT_TARGET=${import_target} ./scripts/import_validation_evidence.sh path/to/splonks-validation-${label}-*.tar.gz
     SPLONKS_RELEASE_VERSION=${version} SPLONKS_VALIDATION_REVISION=${short_revision} ./scripts/validation_status.sh
 EOF
 }
@@ -88,7 +89,7 @@ If Developer ID credentials are available:
     ./scripts/validate_platform.sh macos-notarized
     ./scripts/bundle_validation_evidence.sh --include-artifacts macos-notarized
 EOF
-    common_return "macos"
+    common_return "macos" "macos"
 }
 
 print_windows() {
@@ -110,7 +111,7 @@ EOF
     test "\${MSYSTEM:-}" = UCRT64
     SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_desktop_handoff.sh
 EOF
-    common_return "windows"
+    common_return "windows" "windows"
 }
 
 print_android_play() {
@@ -142,7 +143,7 @@ Then validate or upload to the internal Play track:
     export SPLONKS_PLAY_RELEASE_STATUS=draft
     SPLONKS_PLAY_UPLOAD=1 ./scripts/android/validate_play_handoff.sh
 EOF
-    common_return "android-play"
+    common_return "android-play" "android-play"
 }
 
 print_ios() {
@@ -181,7 +182,7 @@ Validate/upload to App Store Connect/TestFlight:
     export API_PRIVATE_KEYS_DIR=/absolute/path/to/appstoreconnect/private_keys
     SPLONKS_IOS_UPLOAD=1 ./scripts/validate_ios_handoff.sh
 EOF
-    common_return "ios"
+    common_return "ios" "ios"
 }
 
 case "${target}" in

@@ -8,6 +8,7 @@ import_root="${repo_root}/dist/validation-imports"
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 expected_revision="${SPLONKS_VALIDATION_REVISION:-$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)}"
 allow_stale="${SPLONKS_IMPORT_ALLOW_STALE:-0}"
+expected_target="${SPLONKS_IMPORT_EXPECT_TARGET:-}"
 
 usage() {
     cat >&2 <<EOF
@@ -21,6 +22,8 @@ scripts/validation_status.sh can audit them.
 Environment:
   SPLONKS_RELEASE_VERSION      Expected release version, default: ${version}
   SPLONKS_VALIDATION_REVISION  Expected short git revision, default: ${expected_revision}
+  SPLONKS_IMPORT_EXPECT_TARGET Require target-specific evidence before import:
+                               macos, windows, android-play, or ios
   SPLONKS_IMPORT_ALLOW_STALE   Set to 1 to import a bundle for another revision/version
 EOF
 }
@@ -88,6 +91,68 @@ if [[ "${allow_stale}" != "1" ]]; then
         echo "Set SPLONKS_IMPORT_ALLOW_STALE=1 only for diagnostic imports." >&2
         exit 1
     fi
+fi
+
+has_file() {
+    local pattern="$1"
+    compgen -G "${bundle_dir}/${pattern}" >/dev/null
+}
+
+require_bundle_file() {
+    local label="$1"
+    local pattern="$2"
+    if has_file "${pattern}"; then
+        return 0
+    fi
+    echo "Evidence bundle missing ${label}: ${pattern}" >&2
+    return 1
+}
+
+target_failures=0
+check_target_file() {
+    require_bundle_file "$@" || target_failures=$((target_failures + 1))
+}
+
+case "${expected_target}" in
+    "")
+        ;;
+    macos)
+        check_target_file "macOS dev log" "validation/macos-dev-*.log"
+        check_target_file "macOS release log" "validation/macos-release-*.log"
+        check_target_file "macOS package manifest" "manifests/macos-PACKAGE_MANIFEST.txt"
+        check_target_file "macOS release archive" "release-artifacts/splonks-${version}-macos-arm64.zip"
+        check_target_file "macOS release checksum" "release-checksums/splonks-${version}-macos-arm64.zip.sha256"
+        ;;
+    windows)
+        check_target_file "Windows dev log" "validation/windows-dev-*.log"
+        check_target_file "Windows release log" "validation/windows-release-*.log"
+        check_target_file "Windows package manifest" "manifests/windows-PACKAGE_MANIFEST.txt"
+        check_target_file "Windows release archive" "release-artifacts/splonks-${version}-windows-x86_64.zip"
+        check_target_file "Windows release checksum" "release-checksums/splonks-${version}-windows-x86_64.zip.sha256"
+        ;;
+    android-play)
+        check_target_file "Android release log" "validation/*-android-release-*.log"
+        check_target_file "Android Play upload log" "validation/*-android-play-upload-*.log"
+        check_target_file "Android manifest" "manifests/android-manifest.txt"
+        check_target_file "Android release AAB" "release-artifacts/splonks-${version}-android-release.aab"
+        ;;
+    ios)
+        check_target_file "iOS simulator log" "validation/macos-ios-sim-*.log"
+        check_target_file "iOS release log" "validation/macos-ios-release-*.log"
+        check_target_file "iOS manifest" "manifests/ios-manifest.txt"
+        check_target_file "iOS IPA" "release-artifacts/splonks-${version}-ios.ipa"
+        check_target_file "iOS IPA checksum" "release-checksums/splonks-${version}-ios.ipa.sha256"
+        ;;
+    *)
+        echo "Unsupported SPLONKS_IMPORT_EXPECT_TARGET=${expected_target}" >&2
+        echo "Expected one of: macos, windows, android-play, ios" >&2
+        exit 1
+        ;;
+esac
+
+if [[ "${target_failures}" -ne 0 ]]; then
+    echo "Evidence bundle failed ${expected_target} target checks with ${target_failures} missing item(s)." >&2
+    exit 1
 fi
 
 copy_all_no_clobber_if_exists() {
