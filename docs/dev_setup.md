@@ -81,9 +81,9 @@ the headless smoke. To repeat that proof from the current checkout, run:
 
 ## macOS
 
-Supported path: Xcode command line tools plus Homebrew. Apple Silicon Macs are
-the supported macOS release target; Intel Macs are not a release validation
-target for the arm64 package.
+Supported path: Apple Silicon Mac, Xcode command line tools, and Homebrew.
+Intel Macs are not a supported Splonks macOS developer or release target for
+this distribution pass.
 
 ```bash
 xcode-select --install
@@ -103,6 +103,10 @@ The bootstrap script runs `setup_macos.sh`, which installs:
 ```text
 cmake ninja pkg-config
 ```
+
+`setup_macos.sh`, `verify_dev_env.sh`, and the macOS package scripts fail
+early on non-arm64 Macs so an Intel Mac cannot accidentally produce ambiguous
+handoff evidence.
 
 SDL3, SDL3_image, SDL3_mixer, SDL3_ttf, and imgui are fetched by CMake unless
 you intentionally override dependency discovery.

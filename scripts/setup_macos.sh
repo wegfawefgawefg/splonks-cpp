@@ -6,6 +6,12 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
     exit 1
 fi
 
+if [[ "$(uname -m)" != "arm64" ]]; then
+    echo "Splonks supports Apple Silicon macOS development and release packaging only." >&2
+    echo "Current architecture: $(uname -m)" >&2
+    exit 1
+fi
+
 if ! xcode-select -p >/dev/null 2>&1; then
     echo "Missing Xcode command line tools." >&2
     echo "Run: xcode-select --install" >&2
@@ -20,4 +26,4 @@ fi
 
 brew install cmake ninja pkg-config
 
-echo "[setup] macOS desktop build dependencies installed"
+echo "[setup] macOS Apple Silicon desktop build dependencies installed"

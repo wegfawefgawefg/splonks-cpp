@@ -19,6 +19,10 @@ case "$(uname -s)" in
         require_cmd ninja
         ;;
     Darwin)
+        if [[ "$(uname -m)" != "arm64" ]]; then
+            echo "Splonks supports Apple Silicon macOS development only. Current architecture: $(uname -m)" >&2
+            exit 1
+        fi
         if ! xcode-select -p >/dev/null 2>&1; then
             echo "Missing Xcode command line tools. Run: xcode-select --install" >&2
             exit 1
