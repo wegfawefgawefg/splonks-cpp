@@ -108,37 +108,56 @@ require_bundle_file() {
     return 1
 }
 
+require_bundle_file_contains() {
+    local label="$1"
+    local pattern="$2"
+    local required="$3"
+    local path
+    while IFS= read -r path; do
+        if grep -Fq "${required}" "${path}"; then
+            return 0
+        fi
+    done < <(compgen -G "${bundle_dir}/${pattern}" || true)
+    echo "Evidence bundle missing ${label} containing \"${required}\": ${pattern}" >&2
+    return 1
+}
+
 target_failures=0
 check_target_file() {
     require_bundle_file "$@" || target_failures=$((target_failures + 1))
+}
+check_target_file_contains() {
+    require_bundle_file_contains "$@" || target_failures=$((target_failures + 1))
 }
 
 case "${expected_target}" in
     "")
         ;;
     macos)
-        check_target_file "macOS dev log" "validation/macos-dev-*.log"
-        check_target_file "macOS release log" "validation/macos-release-*.log"
+        check_target_file_contains "macOS dev log" "validation/macos-dev-*.log" "[validated] macos developer build and headless smoke"
+        check_target_file_contains "macOS release log" "validation/macos-release-*.log" "[validated] macos release package and archive"
         check_target_file "macOS package manifest" "manifests/macos-PACKAGE_MANIFEST.txt"
         check_target_file "macOS release archive" "release-artifacts/splonks-${version}-macos-arm64.zip"
         check_target_file "macOS release checksum" "release-checksums/splonks-${version}-macos-arm64.zip.sha256"
         ;;
     windows)
-        check_target_file "Windows dev log" "validation/windows-dev-*.log"
-        check_target_file "Windows release log" "validation/windows-release-*.log"
+        check_target_file_contains "Windows dev log" "validation/windows-dev-*.log" "[validated] windows developer build and headless smoke"
+        check_target_file_contains "Windows release log" "validation/windows-release-*.log" "[validated] windows release package and archive"
         check_target_file "Windows package manifest" "manifests/windows-PACKAGE_MANIFEST.txt"
         check_target_file "Windows release archive" "release-artifacts/splonks-${version}-windows-x86_64.zip"
         check_target_file "Windows release checksum" "release-checksums/splonks-${version}-windows-x86_64.zip.sha256"
         ;;
     android-play)
-        check_target_file "Android release log" "validation/*-android-release-*.log"
-        check_target_file "Android Play upload log" "validation/*-android-play-upload-*.log"
+        check_target_file_contains "Android upload-key release log" "validation/*-android-release-*.log" "[validated] android signed release AAB with upload key"
+        check_target_file_contains "Android Play upload log" "validation/*-android-play-upload-*.log" "[play-upload] upload complete"
         check_target_file "Android manifest" "manifests/android-manifest.txt"
         check_target_file "Android release AAB" "release-artifacts/splonks-${version}-android-release.aab"
         ;;
     ios)
-        check_target_file "iOS simulator log" "validation/macos-ios-sim-*.log"
-        check_target_file "iOS release log" "validation/macos-ios-release-*.log"
+        check_target_file_contains "iOS simulator log" "validation/macos-ios-sim-*.log" "state fingerprint smoke ok"
+        check_target_file_contains "iOS release log" "validation/macos-ios-release-*.log" "[validated] ios signed archive/export"
+        check_target_file_contains "iOS device log" "validation/macos-ios-device-*.log" "[validated] ios device install and launch"
+        check_target_file_contains "iOS App Store/TestFlight upload log" "validation/macos-ios-upload-*.log" "[ios-upload] validate-upload complete"
         check_target_file "iOS manifest" "manifests/ios-manifest.txt"
         check_target_file "iOS IPA" "release-artifacts/splonks-${version}-ios.ipa"
         check_target_file "iOS IPA checksum" "release-checksums/splonks-${version}-ios.ipa.sha256"

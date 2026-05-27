@@ -838,6 +838,7 @@ check check_file_contains "Evidence bundle filters stale manifests" "${repo_root
 check check_file_contains "Evidence importer checks bundle release version" "${repo_root}/scripts/import_validation_evidence.sh" "Evidence bundle release_version="
 check check_file_contains "Evidence importer checks bundle revision" "${repo_root}/scripts/import_validation_evidence.sh" "Evidence bundle git_revision="
 check check_file_contains "Evidence importer supports target checks" "${repo_root}/scripts/import_validation_evidence.sh" "SPLONKS_IMPORT_EXPECT_TARGET"
+check check_file_contains "Evidence importer checks target proof lines" "${repo_root}/scripts/import_validation_evidence.sh" "require_bundle_file_contains"
 check check_file_contains "Generated handoffs import pinned target evidence" "${repo_root}/scripts/print_validation_handoff.sh" 'SPLONKS_IMPORT_EXPECT_TARGET=${import_target}'
 echo
 
