@@ -12,9 +12,11 @@
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "SPLONKS_MODE": "release",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
         "SPLONKS_STRICT": true,
-        "SPLONKS_WARN_AS_ERROR": true
+        "SPLONKS_WARN_AS_ERROR": true,
+        "SPLONKS_FETCH_DEPS": true
       }
     },
     {
@@ -23,9 +25,24 @@
       "binaryDir": "${sourceDir}/build-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "SPLONKS_MODE": "developer",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
         "SPLONKS_STRICT": true,
-        "SPLONKS_WARN_AS_ERROR": true
+        "SPLONKS_WARN_AS_ERROR": true,
+        "SPLONKS_FETCH_DEPS": true
+      }
+    },
+    {
+      "name": "package-linux",
+      "displayName": "Linux Package",
+      "binaryDir": "${sourceDir}/build-package-linux",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "SPLONKS_MODE": "release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "SPLONKS_STRICT": true,
+        "SPLONKS_WARN_AS_ERROR": true,
+        "SPLONKS_FETCH_DEPS": true
       }
     }
   ],
@@ -38,6 +55,11 @@
     {
       "name": "dev",
       "configurePreset": "dev",
+      "jobs": 0
+    },
+    {
+      "name": "package-linux",
+      "configurePreset": "package-linux",
       "jobs": 0
     }
   ]

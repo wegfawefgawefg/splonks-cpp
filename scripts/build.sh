@@ -5,6 +5,10 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 build_dir="${repo_root}/build"
 mode="${1:-build}"
 preset="${SPLONKS_PRESET:-release}"
+case "${preset}" in
+    dev) build_dir="${repo_root}/build-debug" ;;
+    package-linux) build_dir="${repo_root}/build-package-linux" ;;
+esac
 
 configure() {
     cmake --preset "${preset}"
