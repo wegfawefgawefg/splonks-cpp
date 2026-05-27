@@ -26,6 +26,19 @@ require_cmd() {
 require_cmd cmake
 require_cmd xcodebuild
 
+normalize_signing_style() {
+    local style_lower
+    style_lower="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+    case "${style_lower}" in
+        automatic) printf 'Automatic' ;;
+        manual) printf 'Manual' ;;
+        *)
+            echo "SPLONKS_IOS_SIGNING_STYLE must be automatic or manual, got: $1" >&2
+            exit 1
+            ;;
+    esac
+}
+
 if [[ -z "${SPLONKS_IOS_DEVELOPMENT_TEAM:-}" ]]; then
     echo "Missing SPLONKS_IOS_DEVELOPMENT_TEAM for device signing." >&2
     exit 1
@@ -34,7 +47,8 @@ fi
 export SPLONKS_IOS_CODE_SIGN_IDENTITY="${SPLONKS_IOS_CODE_SIGN_IDENTITY:-Apple Distribution}"
 export SPLONKS_IOS_EXPORT_METHOD="${SPLONKS_IOS_EXPORT_METHOD:-app-store-connect}"
 export SPLONKS_IOS_BUNDLE_ID="${SPLONKS_IOS_BUNDLE_ID:-dev.splonks.game}"
-export SPLONKS_IOS_SIGNING_STYLE="${SPLONKS_IOS_SIGNING_STYLE:-automatic}"
+export SPLONKS_IOS_SIGNING_STYLE="$(normalize_signing_style "${SPLONKS_IOS_SIGNING_STYLE:-automatic}")"
+SPLONKS_IOS_EXPORT_SIGNING_STYLE="$(printf '%s' "${SPLONKS_IOS_SIGNING_STYLE}" | tr '[:upper:]' '[:lower:]')"
 export SPLONKS_IOS_VERSION_CODE="${SPLONKS_IOS_VERSION_CODE:-1}"
 
 cd "${repo_root}"
@@ -69,7 +83,7 @@ cat > "${export_options}" <<EOF
   <key>teamID</key>
   <string>${SPLONKS_IOS_DEVELOPMENT_TEAM}</string>
   <key>signingStyle</key>
-  <string>${SPLONKS_IOS_SIGNING_STYLE}</string>
+  <string>${SPLONKS_IOS_EXPORT_SIGNING_STYLE}</string>
 EOF
 
 if [[ -n "${SPLONKS_IOS_PROVISIONING_PROFILE:-}" ]]; then
@@ -123,6 +137,7 @@ git_commit=${commit}
 bundle_id=${SPLONKS_IOS_BUNDLE_ID}
 export_method=${SPLONKS_IOS_EXPORT_METHOD}
 signing_style=${SPLONKS_IOS_SIGNING_STYLE}
+export_signing_style=${SPLONKS_IOS_EXPORT_SIGNING_STYLE}
 sha256=${sha256}
 EOF
 
