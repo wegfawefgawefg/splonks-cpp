@@ -52,6 +52,16 @@ logs, manifests, and checksums with:
 The bundle is written under `dist/validation-bundles/` and is the file to send
 back to the team for review.
 
+To inspect the current evidence state, run:
+
+```bash
+./scripts/validation_status.sh
+```
+
+Use `./scripts/validation_status.sh --strict` as the completion gate; it exits
+nonzero until every desktop, Android, iOS, handoff, and manual/tag CI evidence
+item has been recorded.
+
 Use [desktop_validation_handoff.md](desktop_validation_handoff.md) when sending
 macOS or Windows validation tasks to another developer.
 
