@@ -67,6 +67,7 @@ exec > >(tee "${log_path}") 2>&1
 
 echo "[play-upload] package_name=${package_name}"
 echo "release_version=${version_name}"
+echo "git_revision=$(git -C "${REPO_ROOT}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
 echo "[play-upload] track=${track}"
 echo "[play-upload] release_status=${release_status}"
 echo "[play-upload] validate_only=${SPLONKS_PLAY_VALIDATE_ONLY:-0}"
@@ -94,4 +95,5 @@ fi
 echo "[play-upload] ${cmd[*]}"
 "${cmd[@]}"
 
+echo "[play-upload] upload complete for ${aab_path}"
 echo "[play-upload] wrote ${log_path}"

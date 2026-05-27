@@ -138,6 +138,7 @@ exec > >(tee "${log_path}") 2>&1
 
 echo "[ios-upload] mode=${mode}"
 echo "release_version=${version}"
+echo "git_revision=$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
 echo "[ios-upload] ipa=${ipa_path}"
 
 "${repo_root}/scripts/ios/verify_release_ipa.sh"
