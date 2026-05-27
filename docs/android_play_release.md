@@ -95,6 +95,10 @@ validation-only API call, use:
 ./scripts/android/upload_play.sh --validate-only
 ```
 
+Validation-only logs are recorded as `[play-upload] validate-only complete` and
+do not satisfy the final Play upload gate. Release completion requires a
+non-validate-only log with `[play-upload] upload complete`.
+
 To make the release available to internal testers from the command line, set
 `SPLONKS_PLAY_RELEASE_STATUS=completed` intentionally before running the helper.
 

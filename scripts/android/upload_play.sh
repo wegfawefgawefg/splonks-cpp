@@ -95,5 +95,9 @@ fi
 echo "[play-upload] ${cmd[*]}"
 "${cmd[@]}"
 
-echo "[play-upload] upload complete for ${aab_path}"
+if [[ "${SPLONKS_PLAY_VALIDATE_ONLY:-0}" == "1" ]]; then
+    echo "[play-upload] validate-only complete for ${aab_path}"
+else
+    echo "[play-upload] upload complete for ${aab_path}"
+fi
 echo "[play-upload] wrote ${log_path}"
