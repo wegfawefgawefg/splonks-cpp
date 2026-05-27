@@ -248,6 +248,7 @@ Current release package entry points:
 ./scripts/archive_release.sh linux|macos|windows
 ./scripts/android/build_release_aab.sh
 ./scripts/ios/archive_release.sh
+./scripts/ios/verify_release_ipa.sh
 ```
 
 Release target state:
@@ -262,6 +263,6 @@ Release target state:
 - Android: debug APK build, x86_64 emulator smoke, and signed arm64 release
   AAB path are validated locally. Final store distribution still needs the real
   upload key and Play Console upload validation.
-- iOS: simulator build/launch scaffold and device archive/export script exist.
-  macOS/Xcode validation, real device signing, and TestFlight/App Store upload
-  validation remain.
+- iOS: simulator build/launch scaffold, device archive/export script, and IPA
+  verifier exist. macOS/Xcode validation, real device signing, and
+  TestFlight/App Store upload validation remain.

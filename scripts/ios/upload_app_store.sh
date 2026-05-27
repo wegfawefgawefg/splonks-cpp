@@ -130,6 +130,8 @@ if [[ ! -f "${ipa_path}" ]]; then
     exit 1
 fi
 
+"${repo_root}/scripts/ios/verify_release_ipa.sh"
+
 case "${mode}" in
     validate)
         run_altool --validate-app

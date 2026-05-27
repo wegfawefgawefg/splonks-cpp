@@ -279,6 +279,7 @@ export SPLONKS_IOS_BUNDLE_ID=dev.splonks.game
 export SPLONKS_IOS_CODE_SIGN_IDENTITY="Apple Distribution"
 export SPLONKS_IOS_EXPORT_METHOD=app-store-connect
 ./scripts/ios/archive_release.sh
+./scripts/ios/verify_release_ipa.sh
 ```
 
 Evidence helper:
@@ -319,9 +320,10 @@ dist/releases/splonks-0.1.0-ios.ipa.sha256
 
 Current status: simulator and device archive scaffolds exist, based on the
 working local `how-to-multi-backend-rendering` iOS shape. The upload helper
-exists for App Store Connect/TestFlight delivery. Needs macOS/Xcode validation,
-real signing/provisioning, device install validation, and TestFlight/App Store
-upload validation.
+exists for App Store Connect/TestFlight delivery, and the IPA verifier checks
+the exported IPA, checksum, manifest, and bundled content before upload. Needs
+macOS/Xcode validation, real signing/provisioning, device install validation,
+and TestFlight/App Store upload validation.
 
 ## Completion Criteria
 

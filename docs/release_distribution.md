@@ -191,6 +191,7 @@ export SPLONKS_IOS_BUNDLE_ID=dev.splonks.game
 export SPLONKS_IOS_CODE_SIGN_IDENTITY="Apple Distribution"
 export SPLONKS_IOS_EXPORT_METHOD=app-store-connect
 ./scripts/ios/archive_release.sh
+./scripts/ios/verify_release_ipa.sh
 ```
 
 App Store Connect/TestFlight upload path:
@@ -232,10 +233,11 @@ dist/releases/splonks-0.1.0-ios.ipa.sha256
 Current status: `ios-sim` and `ios-device` CMake/Xcode scaffolds exist and copy
 `assets/` and `data/` into the app bundle. The simulator build/install/launch
 script and archive/export script exist, and the archive path writes a manifest
-with bundle id, export method, commit, version, and SHA-256. The upload helper
-uses `xcrun altool` to validate and upload the exported IPA to App Store
-Connect/TestFlight. These paths still need macOS/Xcode validation with an Apple
-Developer team.
+with bundle id, export method, commit, version, and SHA-256. The IPA verifier
+checks the exported IPA, checksum, manifest, and bundled content before upload.
+The upload helper uses `xcrun altool` to validate and upload the exported IPA
+to App Store Connect/TestFlight. These paths still need macOS/Xcode validation
+with an Apple Developer team.
 
 - Final App Store distribution checklist.
 - Validation of upload through Xcode Organizer, Transporter, or
