@@ -5,8 +5,10 @@ that a developer can clone the repo, follow one platform section, build once,
 and launch the game locally without waiting on GitHub Actions.
 
 Gubsy is a library/tool dependency. Normal Splonks development should not
-require manually packaging Gubsy or understanding Gubsy internals. CMake uses
-the repository dependency path configured by Splonks.
+require manually packaging Gubsy or understanding Gubsy internals. The current
+Splonks desktop/mobile build does not require a separate Gubsy checkout; if
+future game tooling pulls Gubsy source in, that path should stay behind the
+documented Splonks build/setup scripts.
 
 Use the `dev` preset for normal contributor work. It builds into `build-debug`
 with `SPLONKS_MODE=developer` and fetches the pinned SDL3/imgui dependencies

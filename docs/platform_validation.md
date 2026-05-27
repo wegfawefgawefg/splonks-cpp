@@ -18,7 +18,7 @@ For developer mode, a platform is ready when a new contributor can:
 3. Run one documented verification command.
 4. Launch the game locally.
 
-Gubsy must stay hidden behind the Splonks dependency path for normal Splonks
+Gubsy must stay hidden behind the Splonks setup/build path for normal Splonks
 contributors. They should not need to package Gubsy or understand Gubsy
 internals to work on the game.
 

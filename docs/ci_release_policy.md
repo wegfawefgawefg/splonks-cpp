@@ -28,9 +28,9 @@ contributors:
 5. Add a quick dev environment verification script or checklist.
 6. Then finish Android and iOS as mobile development/release targets.
 
-Gubsy should appear in Splonks developer docs only as a dependency handled by
-the documented CMake/dependency path. Normal Splonks contributors should not
-need to understand or package Gubsy manually.
+Gubsy should appear in Splonks developer docs only as source/tooling handled by
+the documented Splonks setup path when it is actually needed. Normal Splonks
+contributors should not need to clone, understand, or package Gubsy manually.
 
 ## Release builds
 
@@ -69,5 +69,6 @@ need to understand or package Gubsy manually.
 ## Gubsy dependency
 
 Gubsy is a library/tool dependency. It should be validated locally during normal
-development and pulled into Splonks releases through the Splonks release
-pipeline.
+development. It should not produce automatic hosted package builds on ordinary
+pushes, and it should not be distributed as a separate player-facing artifact
+for a Splonks game release.

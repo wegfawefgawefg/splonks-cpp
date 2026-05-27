@@ -3,8 +3,10 @@
 Splonks release artifacts are manual or tag-driven. Normal branch pushes should
 not make developers wait on hosted package builds.
 
-Gubsy is included as source/tooling through the Splonks build path. Do not ship
-or package Gubsy separately for a Splonks game release.
+Gubsy is not a separate Splonks game release artifact. The current Splonks
+release path does not require a separate Gubsy checkout; if future game tooling
+uses Gubsy source, it should be pulled into the Splonks build path and never
+shipped or packaged as its own consumer dependency for players.
 
 Use [platform_validation.md](platform_validation.md) as the release proof
 checklist. A platform is not considered done until its artifact, checksum, and
