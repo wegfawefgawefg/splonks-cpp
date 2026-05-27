@@ -117,6 +117,8 @@ check_macos_notarized() {
     require_cmd xcrun
     require_cmd codesign
     require_cmd ditto
+    require_cmd spctl
+    require_cmd xattr
     require_env SPLONKS_MACOS_SIGN_IDENTITY
     if [[ -n "${SPLONKS_NOTARYTOOL_PROFILE:-}" ]]; then
         ok "SPLONKS_NOTARYTOOL_PROFILE is set"

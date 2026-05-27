@@ -23,6 +23,8 @@ require_cmd() {
 require_cmd xcrun
 require_cmd codesign
 require_cmd ditto
+require_cmd spctl
+require_cmd xattr
 
 if [[ ! -d "${app_dir}" ]]; then
     echo "Missing app bundle: ${app_dir}" >&2
@@ -36,6 +38,29 @@ if [[ -z "${SPLONKS_MACOS_SIGN_IDENTITY:-}" ]]; then
 fi
 
 mkdir -p "${release_dir}"
+
+verify_quarantined_archive() {
+    local temp_dir
+    local extracted_app
+    temp_dir="$(mktemp -d)"
+    ditto -x -k "${artifact_zip}" "${temp_dir}"
+    extracted_app="${temp_dir}/Splonks.app"
+    if [[ ! -d "${extracted_app}" ]]; then
+        echo "Notarized archive did not extract Splonks.app from ${artifact_zip}" >&2
+        rm -rf "${temp_dir}"
+        exit 1
+    fi
+
+    xattr -w com.apple.quarantine "0081;$(printf '%x' "$(date +%s)");Splonks;$(basename "${artifact_zip}")" "${extracted_app}"
+    spctl --assess --type execute --verbose=2 "${extracted_app}"
+    "${extracted_app}/Contents/MacOS/Splonks" \
+        --check-state-fingerprint-smoke \
+        --project-root "${extracted_app}/Contents/Resources" \
+        >"${temp_dir}/smoke.txt"
+    grep -q "state fingerprint smoke ok" "${temp_dir}/smoke.txt"
+    rm -rf "${temp_dir}"
+    echo "[notarize] quarantined extracted archive launch ok"
+}
 
 codesign --force --deep --options runtime --timestamp \
     --sign "${SPLONKS_MACOS_SIGN_IDENTITY}" \
@@ -78,6 +103,8 @@ ditto -c -k --keepParent "${app_dir}" "${artifact_zip}"
 if command -v shasum >/dev/null 2>&1; then
     (cd "${release_dir}" && shasum -a 256 "$(basename "${artifact_zip}")" > "$(basename "${artifact_zip}").sha256")
 fi
+
+verify_quarantined_archive
 
 echo "[notarize] ${artifact_zip}"
 echo "[notarize] ${artifact_zip}.sha256"

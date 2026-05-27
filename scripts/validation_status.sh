@@ -564,7 +564,7 @@ check print_log_version_contains_check \
 check print_log_version_contains_check \
     "macOS notarized validation" \
     "${repo_root}/dist/validation/macos-macos-notarized-*.log" \
-    "[validated] macos Developer ID signed, notarized, stapled release archive"
+    "[validated] macos Developer ID signed, notarized, stapled, quarantined release archive"
 check print_file_check "macOS release archive" "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip"
 check print_checksum_match_check \
     "macOS release checksum" \

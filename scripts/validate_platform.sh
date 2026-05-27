@@ -141,7 +141,7 @@ validate_macos_notarized() {
     run_step "${repo_root}/scripts/verify_package_macos.sh"
     run_step "${repo_root}/scripts/macos/notarize_app.sh"
     run_step env SPLONKS_RELEASE_VERSION="${version}" "${repo_root}/scripts/verify_release_archive.sh" macos
-    echo "[validated] macos Developer ID signed, notarized, stapled release archive"
+    echo "[validated] macos Developer ID signed, notarized, stapled, quarantined release archive"
 }
 
 validate_android_dev() {

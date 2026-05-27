@@ -227,6 +227,9 @@ including app launch from the packaged bundle, Developer ID signing,
 notarization, stapling, and launch after download/quarantine.
 Package metadata is wired through `SPLONKS_RELEASE_VERSION`,
 `SPLONKS_MACOS_BUNDLE_ID`, and `SPLONKS_MACOS_BUNDLE_NAME`.
+The `macos-notarized` validator now simulates the download/quarantine case by
+extracting the final zip, setting `com.apple.quarantine`, running `spctl`, and
+launching the app smoke from the quarantined extracted bundle.
 
 ## Windows
 

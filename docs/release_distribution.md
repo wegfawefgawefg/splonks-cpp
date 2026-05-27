@@ -96,7 +96,9 @@ dist/releases/splonks-0.1.0-macos-universal.zip.sha256
 
 `macos-notarized` builds the package, verifies the local app bundle, signs with
 the Developer ID identity, submits to notarytool, staples the ticket, writes the
-release zip/checksum, and verifies the release archive.
+release zip/checksum, extracts the zip, applies a quarantine attribute, runs
+Gatekeeper assessment, launches the quarantined extracted app smoke, and
+verifies the release archive.
 
 Optional macOS package metadata:
 

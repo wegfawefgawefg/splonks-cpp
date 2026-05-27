@@ -83,6 +83,10 @@ When Developer ID credentials are available, validate that path with:
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_platform.sh macos-notarized
 ```
 
+That validator signs, notarizes, staples, extracts the final zip, applies a
+quarantine attribute, runs Gatekeeper assessment, and launches the smoke from
+the quarantined extracted app.
+
 ## Windows Developer Validation
 
 Run in the MSYS2 UCRT64 terminal, not PowerShell or cmd.exe:
