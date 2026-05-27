@@ -21,6 +21,7 @@ required_files=(
     "${app_dir}/Contents/Resources/assets/graphics/annotations.yaml"
     "${app_dir}/Contents/Resources/assets/audio/annotations.yaml"
     "${app_dir}/Contents/Resources/data/settings.cfg"
+    "${dist_dir}/PACKAGE_MANIFEST.txt"
 )
 
 for path in "${required_files[@]}"; do
@@ -29,6 +30,10 @@ for path in "${required_files[@]}"; do
         exit 1
     fi
 done
+
+grep -q "^app=splonks$" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -q "^platform=macos$" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -q "^mode=release$" "${dist_dir}/PACKAGE_MANIFEST.txt"
 
 require_dylib() {
     local label="$1"

@@ -12,6 +12,7 @@ required_files=(
     "${dist_dir}/lib/libSDL3_image.so.0"
     "${dist_dir}/lib/libSDL3_mixer.so.0"
     "${dist_dir}/lib/libSDL3_ttf.so.0"
+    "${dist_dir}/PACKAGE_MANIFEST.txt"
     "${dist_dir}/run-splonks.sh"
     "${dist_dir}/assets/fonts/DejaVuSans.ttf"
     "${dist_dir}/assets/graphics/annotations.yaml"
@@ -25,6 +26,10 @@ for path in "${required_files[@]}"; do
         exit 1
     fi
 done
+
+grep -q "^app=splonks$" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -q "^platform=linux$" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -q "^mode=release$" "${dist_dir}/PACKAGE_MANIFEST.txt"
 
 ldd_output="$(LD_LIBRARY_PATH="${dist_dir}/lib" ldd "${dist_dir}/bin/splonks-cpp")"
 if grep -q "not found" <<<"${ldd_output}"; then

@@ -24,6 +24,7 @@ cp -a "${repo_root}/assets" "${dist_dir}/assets"
 cp -a "${repo_root}/data" "${dist_dir}/data"
 
 package_copy_runtime_libs_from_tree "${build_dir}" "${dist_dir}" ".dll"
+package_write_manifest "splonks" "windows" "release" "${repo_root}" "${dist_dir}"
 
 cat > "${dist_dir}/run-splonks.bat" <<'EOF'
 @echo off

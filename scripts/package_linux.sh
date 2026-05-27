@@ -24,6 +24,7 @@ copy_if_exists "${repo_root}/assets" "${dist_dir}/"
 copy_if_exists "${repo_root}/data" "${dist_dir}/"
 
 package_copy_linux_runtime_deps "${dist_dir}/bin/splonks-cpp" "${dist_dir}/lib"
+package_write_manifest "splonks" "linux" "release" "${repo_root}" "${dist_dir}"
 
 cat > "${dist_dir}/run-splonks.sh" <<'EOF'
 #!/usr/bin/env bash

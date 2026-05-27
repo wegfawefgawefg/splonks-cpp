@@ -56,3 +56,24 @@ package_copy_macos_runtime_deps() {
             package_copy_runtime_lib "${dep}" "${dst}"
         done
 }
+
+package_write_manifest() {
+    local app_name="$1"
+    local platform="$2"
+    local mode="$3"
+    local repo_root="$4"
+    local dist_dir="$5"
+    local generated_at
+    local git_revision
+
+    generated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    git_revision="$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || printf 'unknown')"
+
+    cat > "${dist_dir}/PACKAGE_MANIFEST.txt" <<EOF
+app=${app_name}
+platform=${platform}
+mode=${mode}
+git_revision=${git_revision}
+generated_at_utc=${generated_at}
+EOF
+}

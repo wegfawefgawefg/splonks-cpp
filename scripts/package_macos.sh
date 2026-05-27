@@ -59,6 +59,7 @@ EOF
 
 package_copy_macos_runtime_deps "${macos_dir}/splonks-bin" "${frameworks_dir}"
 package_copy_runtime_libs_from_tree "${build_dir}" "${frameworks_dir}" ".dylib"
+package_write_manifest "splonks" "macos" "release" "${repo_root}" "${dist_dir}"
 
 find "${frameworks_dir}" -type f -name "*.dylib" -exec chmod u+w {} +
 while IFS= read -r dylib; do

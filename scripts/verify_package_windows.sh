@@ -16,6 +16,7 @@ dist_dir="${repo_root}/dist/splonks-windows"
 
 required_files=(
     "${dist_dir}/splonks-cpp.exe"
+    "${dist_dir}/PACKAGE_MANIFEST.txt"
     "${dist_dir}/run-splonks.bat"
     "${dist_dir}/assets/fonts/DejaVuSans.ttf"
     "${dist_dir}/assets/graphics/annotations.yaml"
@@ -29,6 +30,10 @@ for path in "${required_files[@]}"; do
         exit 1
     fi
 done
+
+grep -q "^app=splonks$" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -q "^platform=windows$" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -q "^mode=release$" "${dist_dir}/PACKAGE_MANIFEST.txt"
 
 require_dll() {
     local label="$1"
