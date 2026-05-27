@@ -3,6 +3,9 @@ set -euo pipefail
 
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 target="${1:-all}"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+revision="$(git -C "${repo_root}" rev-parse HEAD 2>/dev/null || echo unknown)"
+branch="$(git -C "${repo_root}" branch --show-current 2>/dev/null || echo net-lockstep-experiment)"
 
 usage() {
     cat >&2 <<EOF
@@ -30,7 +33,16 @@ Return:
 Receiver import:
 
     ./scripts/import_validation_evidence.sh path/to/splonks-validation-${label}-*.tar.gz
-    SPLONKS_RELEASE_VERSION=${version} ./scripts/validation_status.sh
+    SPLONKS_RELEASE_VERSION=${version} SPLONKS_VALIDATION_REVISION=${revision:0:12} ./scripts/validation_status.sh
+EOF
+}
+
+checkout_commands() {
+    cat <<EOF
+    git clone git@github.com:wegfawefgawefg/splonks-cpp.git
+    cd splonks-cpp
+    git fetch origin ${branch}
+    git checkout ${revision}
 EOF
 }
 
@@ -40,9 +52,9 @@ print_macos() {
 Run on a real macOS machine with Xcode command line tools and Homebrew:
 
     xcode-select --install
-    git clone git@github.com:wegfawefgawefg/splonks-cpp.git
-    cd splonks-cpp
-    git checkout net-lockstep-experiment
+EOF
+    checkout_commands
+    cat <<EOF
     ./scripts/bootstrap_dev.sh --run
     ./scripts/validate_platform.sh dev
     SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_platform.sh release
@@ -70,9 +82,9 @@ Run in the MSYS2 UCRT64 terminal, not PowerShell or cmd.exe:
 
 If pacman asks to close the terminal, reopen MSYS2 UCRT64 and continue:
 
-    git clone git@github.com:wegfawefgawefg/splonks-cpp.git
-    cd splonks-cpp
-    git checkout net-lockstep-experiment
+EOF
+    checkout_commands
+    cat <<EOF
     ./scripts/bootstrap_dev.sh --run
     ./scripts/validate_platform.sh dev
     SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_platform.sh release
@@ -86,9 +98,9 @@ print_android_play() {
     cat <<EOF
 Run after the signed AAB has been built with the real upload key:
 
-    git clone git@github.com:wegfawefgawefg/splonks-cpp.git
-    cd splonks-cpp
-    git checkout net-lockstep-experiment
+EOF
+    checkout_commands
+    cat <<EOF
     export SPLONKS_ANDROID_KEYSTORE=/absolute/path/to/upload-keystore.jks
     export SPLONKS_ANDROID_KEYSTORE_PASSWORD=...
     export SPLONKS_ANDROID_KEYSTORE_TYPE=jks
@@ -118,9 +130,9 @@ print_ios() {
     cat <<EOF
 Run on a real macOS machine with Xcode and an Apple Developer team:
 
-    git clone git@github.com:wegfawefgawefg/splonks-cpp.git
-    cd splonks-cpp
-    git checkout net-lockstep-experiment
+EOF
+    checkout_commands
+    cat <<EOF
     export SPLONKS_RELEASE_VERSION=${version}
     export SPLONKS_IOS_BUNDLE_ID=dev.splonks.game
     ./scripts/validate_platform.sh ios-sim

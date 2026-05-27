@@ -4,6 +4,18 @@ Use this when handing Splonks to a macOS or Windows developer for real-machine
 validation. Linux has already been validated locally; macOS and Windows still
 need these logs from actual target machines.
 
+Generate the copy/paste instructions from the current commit:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh macos
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh windows
+```
+
+The generated handoff pins validators to the exact Git commit being audited.
+That matters because `validation_status.sh` rejects logs, manifests, and
+bundles from a different revision unless the receiver explicitly sets
+`SPLONKS_VALIDATION_REVISION`.
+
 The goal is to prove that a new developer can clone, run one setup/build path,
 and launch the game without understanding Gubsy internals or waiting on GitHub
 Actions.
@@ -16,6 +28,7 @@ Run on a real macOS machine:
 xcode-select --install
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
+git checkout <handoff-git-revision>
 ./scripts/bootstrap_dev.sh --run
 ./scripts/validate_platform.sh dev
 ```
@@ -55,7 +68,9 @@ Then bundle the validation evidence:
 
 Send back the generated `dist/validation-bundles/splonks-validation-macos-*.tar.gz`.
 On the receiving machine, import it with
-`./scripts/import_validation_evidence.sh path/to/splonks-validation-macos-*.tar.gz`.
+`./scripts/import_validation_evidence.sh path/to/splonks-validation-macos-*.tar.gz`,
+then run `validation_status.sh` with the same release version and handoff
+revision printed by `print_validation_handoff.sh`.
 
 Developer ID distribution still needs the signing/notarization path from
 [release_distribution.md](release_distribution.md).
@@ -73,6 +88,7 @@ Run in the MSYS2 UCRT64 terminal, not PowerShell or cmd.exe:
 pacman -Syu
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
+git checkout <handoff-git-revision>
 ./scripts/bootstrap_dev.sh --run
 ./scripts/validate_platform.sh dev
 ```
@@ -115,7 +131,9 @@ Then bundle the validation evidence:
 
 Send back the generated `dist/validation-bundles/splonks-validation-windows-*.tar.gz`.
 On the receiving machine, import it with
-`./scripts/import_validation_evidence.sh path/to/splonks-validation-windows-*.tar.gz`.
+`./scripts/import_validation_evidence.sh path/to/splonks-validation-windows-*.tar.gz`,
+then run `validation_status.sh` with the same release version and handoff
+revision printed by `print_validation_handoff.sh`.
 
 ## Passing Result
 
