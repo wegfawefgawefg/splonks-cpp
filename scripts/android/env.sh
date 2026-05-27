@@ -10,6 +10,8 @@ export ANDROID_API_LEVEL="${ANDROID_API_LEVEL:-34}"
 export ANDROID_BUILD_TOOLS="${ANDROID_BUILD_TOOLS:-34.0.0}"
 export ANDROID_SYSTEM_IMAGE="${ANDROID_SYSTEM_IMAGE:-system-images;android-${ANDROID_API_LEVEL};google_apis;x86_64}"
 export ANDROID_AVD_NAME="${ANDROID_AVD_NAME:-splonks-api${ANDROID_API_LEVEL}}"
+export SDL3_ANDROID_VERSION="${SDL3_ANDROID_VERSION:-3.4.0}"
+export SDL3_ANDROID_ZIP_SHA256="${SDL3_ANDROID_ZIP_SHA256:-ed8e9278b4a944fc0ad93ece64cfc6d46693eaa4d47a5f87d891a3c24c783c21}"
 
 export APP_ID="dev.splonks.game"
 export APP_ACTIVITY="dev.splonks.game.SplonksActivity"
@@ -33,7 +35,27 @@ require_cmd() {
 require_sdl3_aar() {
     if ! compgen -G "${ANDROID_DIR}/app/libs/SDL3*.aar" >/dev/null; then
         echo "Missing SDL3 Android AAR in ${ANDROID_DIR}/app/libs" >&2
-        echo "Download an official SDL3 Android archive and place it there before building." >&2
+        echo "Run scripts/android/fetch_sdl3_aar.sh before building." >&2
         exit 1
     fi
+}
+
+require_android_ndk() {
+    local toolchain="${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake"
+    if [[ ! -f "${toolchain}" ]]; then
+        echo "Missing Android NDK toolchain: ${toolchain}" >&2
+        echo "Run scripts/android/setup_sdk.sh or set ANDROID_NDK_HOME to an installed NDK." >&2
+        exit 1
+    fi
+}
+
+require_java() {
+    if [[ -n "${JAVA_HOME:-}" && -x "${JAVA_HOME}/bin/java" ]]; then
+        return 0
+    fi
+    if command -v java >/dev/null 2>&1; then
+        return 0
+    fi
+    echo "Missing Java runtime. Install JDK 17+ or set JAVA_HOME before running Android Gradle tasks." >&2
+    exit 1
 }

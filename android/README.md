@@ -1,7 +1,8 @@
 # Splonks Android Scaffold
 
-This project uses SDL3's Android AAR/Prefab direction. Put an official SDL3
-Android archive in `android/app/libs/`, for example `SDL3-3.4.0.aar`, before
+This project uses SDL3's Android AAR/Prefab direction. Run
+`scripts/android/fetch_sdl3_aar.sh` to download the pinned official SDL3
+Android archive and place `SDL3-3.4.0.aar` in `android/app/libs/` before
 building with Gradle.
 
 The Gradle app owns APK/AAB packaging. CMake builds the native game target and
@@ -13,6 +14,12 @@ Current status:
 - Android Gradle project exists.
 - `android-arm64` CMake preset exists for native builds.
 - Scripts under `scripts/android/` define the dev loop.
+- `scripts/android/fetch_sdl3_aar.sh` downloads the pinned SDL3 Android AAR
+  with checksum verification.
+- A Gradle wrapper is committed under `android/` so APK builds do not require a
+  global Gradle install.
+- Android setup still requires JDK 17+, Android command-line tools, and the
+  SDK/NDK packages installed by `scripts/android/setup_sdk.sh`.
 - The scaffold has not been validated on an Android SDK/NDK host in this repo.
 - Asset loading still needs a real Android runtime pass. Gradle packages repo
   `assets/` and `data/` under those same APK asset prefixes, while existing C++

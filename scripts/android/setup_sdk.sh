@@ -2,6 +2,7 @@
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 
+require_java
 require_cmd sdkmanager
 
 yes | sdkmanager --licenses >/dev/null

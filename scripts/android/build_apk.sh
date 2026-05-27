@@ -3,6 +3,8 @@ set -euo pipefail
 source "$(dirname "$0")/env.sh"
 
 require_sdl3_aar
+require_android_ndk
+require_java
 cd "${ANDROID_DIR}"
 if [[ -x ./gradlew ]]; then
     ./gradlew assembleDebug
