@@ -78,6 +78,42 @@ print_log_version_check() {
     return 1
 }
 
+print_log_version_check_any() {
+    local label="$1"
+    shift
+    local pattern
+    local latest=""
+    local latest_mtime=0
+    local candidate
+    local mtime
+    for pattern in "$@"; do
+        if has_glob "${pattern}"; then
+            while IFS= read -r candidate; do
+                mtime="$(stat -c '%Y' "${candidate}" 2>/dev/null || stat -f '%m' "${candidate}" 2>/dev/null || echo 0)"
+                if [[ -z "${latest}" || "${mtime}" -gt "${latest_mtime}" ]]; then
+                    latest="${candidate}"
+                    latest_mtime="${mtime}"
+                fi
+            done < <(ls -t ${pattern} 2>/dev/null)
+        fi
+    done
+    if [[ -z "${latest}" ]]; then
+        printf '[missing] %s:\n' "${label}"
+        for pattern in "$@"; do
+            printf '          %s\n' "${pattern#${repo_root}/}"
+        done
+        return 1
+    fi
+    if grep -Fxq "release_version=${version}" "${latest}"; then
+        printf '[ok]      %s: %s has release_version=%s\n' "${label}" "${latest#${repo_root}/}" "${version}"
+        return 0
+    fi
+    local actual
+    actual="$(awk -F= '$1 == "release_version" {print substr($0, length("release_version") + 2)}' "${latest}" | tail -n 1)"
+    printf '[missing] %s: %s has release_version=%s, expected %s\n' "${label}" "${latest#${repo_root}/}" "${actual:-<unset>}" "${version}"
+    return 1
+}
+
 print_file_check() {
     local label="$1"
     local path="$2"
@@ -142,7 +178,9 @@ check print_log_version_check "Android signed AAB validation" "${repo_root}/dist
 check print_file_check "Android release AAB" "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab"
 check print_file_check "Android release manifest" "${repo_root}/dist/splonks-android/manifest.txt"
 check print_manifest_value_check "Android manifest version" "${repo_root}/dist/splonks-android/manifest.txt" version_name "${version}"
-check print_log_version_check "Android Play upload validation" "${repo_root}/dist/validation/*-android-play-upload-*.log"
+check print_log_version_check_any "Android Play upload validation" \
+    "${repo_root}/dist/validation/*-android-play-upload-*.log" \
+    "${repo_root}/dist/validation/android-play-*.log"
 echo
 
 echo "[ios]"

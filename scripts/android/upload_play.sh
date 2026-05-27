@@ -66,6 +66,7 @@ mkdir -p "${validation_dir}"
 exec > >(tee "${log_path}") 2>&1
 
 echo "[play-upload] package_name=${package_name}"
+echo "release_version=${version_name}"
 echo "[play-upload] track=${track}"
 echo "[play-upload] release_status=${release_status}"
 echo "[play-upload] validate_only=${SPLONKS_PLAY_VALIDATE_ONLY:-0}"
