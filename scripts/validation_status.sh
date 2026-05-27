@@ -839,6 +839,12 @@ check check_file_contains "Evidence importer checks bundle release version" "${r
 check check_file_contains "Evidence importer checks bundle revision" "${repo_root}/scripts/import_validation_evidence.sh" "Evidence bundle git_revision="
 check check_file_contains "Evidence importer supports target checks" "${repo_root}/scripts/import_validation_evidence.sh" "SPLONKS_IMPORT_EXPECT_TARGET"
 check check_file_contains "Evidence importer checks target proof lines" "${repo_root}/scripts/import_validation_evidence.sh" "require_bundle_file_contains"
+check check_file_contains "Developer docs expose one-command bootstrap" "${repo_root}/docs/dev_setup.md" "./scripts/bootstrap_dev.sh --run"
+check check_file_contains "Developer docs keep Gubsy behind Splonks setup" "${repo_root}/docs/dev_setup.md" "Normal Splonks development should not"
+check check_file_contains "Bootstrap runs Linux setup path" "${repo_root}/scripts/bootstrap_dev.sh" "scripts/setup_linux.sh"
+check check_file_contains "Bootstrap runs macOS setup path" "${repo_root}/scripts/bootstrap_dev.sh" "scripts/setup_macos.sh"
+check check_file_contains "Bootstrap runs Windows setup path" "${repo_root}/scripts/bootstrap_dev.sh" "scripts/setup_windows_msys2.sh"
+check check_file_contains "Clean clone Linux onboarding proof uses bootstrap" "${repo_root}/scripts/verify_clean_clone_linux.sh" "./scripts/bootstrap_dev.sh --skip-setup"
 check check_file_contains "Generated handoffs import pinned target evidence" "${repo_root}/scripts/print_validation_handoff.sh" 'SPLONKS_IMPORT_EXPECT_TARGET=${import_target}'
 check check_file_contains "Generated handoffs use target-specific return notes" "${repo_root}/scripts/print_validation_handoff.sh" "Play validate/upload result"
 check check_file_contains "Android Play handoff builds upload-key AAB" "${repo_root}/scripts/print_validation_handoff.sh" "Run this to build and verify the signed AAB with the real upload key"
