@@ -5,6 +5,11 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
     echo "verify_package_macos.sh must run on macOS" >&2
     exit 1
 fi
+if [[ "$(uname -m)" != "arm64" ]]; then
+    echo "verify_package_macos.sh must run on an Apple Silicon Mac because the package is arm64-only." >&2
+    echo "Current architecture: $(uname -m)" >&2
+    exit 1
+fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 dist_dir="${repo_root}/dist/splonks-macos"

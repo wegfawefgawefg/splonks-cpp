@@ -53,7 +53,7 @@ and `run-splonks.sh`.
 
 ## macOS
 
-Build and verify on macOS:
+Build and verify on an Apple Silicon Mac:
 
 ```bash
 ./scripts/package_macos.sh
@@ -71,6 +71,7 @@ assets/data, bundles dylibs, rewrites local dylib references, builds the app
 binary as arm64-only for Apple Silicon Macs, verifies that slice set with
 `lipo`, and ad-hoc signs locally. Real outside-Mac-distribution still needs
 Developer ID signing, notarization, and stapling validation.
+Intel Macs are intentionally out of scope for release validation.
 
 Developer ID signing and notarization path:
 

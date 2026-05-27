@@ -110,10 +110,19 @@ require_macos_host() {
     fi
 }
 
+require_macos_arm64_host() {
+    require_macos_host
+    if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
+        ok "Apple Silicon arm64 host"
+    else
+        missing "Apple Silicon arm64 host required for arm64-only macOS release validation; current arch is $(uname -m)"
+    fi
+}
+
 check_macos_notarized() {
     echo
     echo "[macos-notarized]"
-    require_macos_host
+    require_macos_arm64_host
     require_cmd xcrun
     require_cmd codesign
     require_cmd ditto

@@ -22,7 +22,9 @@ Actions.
 
 ## macOS Developer Validation
 
-Run on a real macOS machine:
+Run on a real macOS machine. For release validation, use an Apple Silicon Mac;
+the packaged macOS release is arm64-only and is not expected to launch on Intel
+Macs.
 
 ```bash
 xcode-select --install
@@ -47,7 +49,7 @@ unusual setup.
 
 ## macOS Release Validation
 
-Run after developer validation:
+Run after developer validation on an Apple Silicon Mac:
 
 ```bash
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_platform.sh release

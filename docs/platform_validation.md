@@ -190,7 +190,7 @@ Evidence helper after setup:
 ./scripts/validate_platform.sh dev
 ```
 
-Release validation:
+Release validation on an Apple Silicon Mac:
 
 ```bash
 ./scripts/package_macos.sh
@@ -223,7 +223,7 @@ dist/releases/splonks-0.1.0-macos-arm64.zip
 dist/releases/splonks-0.1.0-macos-arm64.zip.sha256
 ```
 
-Current status: scripts exist. Needs validation on a real macOS machine,
+Current status: scripts exist. Needs validation on a real Apple Silicon macOS machine,
 including app launch from the packaged bundle, Developer ID signing,
 notarization, stapling, and launch after download/quarantine.
 Package metadata is wired through `SPLONKS_RELEASE_VERSION`,

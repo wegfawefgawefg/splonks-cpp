@@ -72,7 +72,9 @@ the headless smoke.
 
 ## macOS
 
-Supported path: Xcode command line tools plus Homebrew.
+Supported path: Xcode command line tools plus Homebrew. Apple Silicon Macs are
+the supported macOS release target; Intel Macs are not a release validation
+target for the arm64 package.
 
 ```bash
 xcode-select --install
