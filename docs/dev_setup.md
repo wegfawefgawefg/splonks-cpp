@@ -194,6 +194,7 @@ Current release package entry points:
 ./scripts/package_linux.sh
 ./scripts/package_macos.sh
 ./scripts/package_windows.sh
+./scripts/archive_release.sh linux|macos|windows
 ./scripts/android/build_release_aab.sh
 ```
 

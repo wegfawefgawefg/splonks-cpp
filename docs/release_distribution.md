@@ -8,17 +8,21 @@ or package Gubsy separately for a Splonks game release.
 
 ## Linux
 
-Build and verify:
+Build, verify, and archive:
 
 ```bash
 ./scripts/package_linux.sh
 ./scripts/verify_package_linux.sh
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/archive_release.sh linux
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/verify_release_archive.sh linux
 ```
 
 Output:
 
 ```text
 dist/splonks-linux/
+dist/releases/splonks-0.1.0-linux-x86_64.tar.gz
+dist/releases/splonks-0.1.0-linux-x86_64.tar.gz.sha256
 ```
 
 Current status: verified locally on Linux. The package includes the game
@@ -45,19 +49,50 @@ assets/data, bundles dylibs, rewrites local dylib references, and ad-hoc signs
 locally. Real outside-Mac-distribution still needs Developer ID signing,
 notarization, and stapling validation.
 
+Developer ID signing and notarization path:
+
+```bash
+export SPLONKS_RELEASE_VERSION=0.1.0
+export SPLONKS_MACOS_SIGN_IDENTITY="Developer ID Application: Name (TEAMID)"
+export SPLONKS_NOTARYTOOL_PROFILE=splonks-notary
+./scripts/package_macos.sh
+./scripts/verify_package_macos.sh
+./scripts/macos/notarize_app.sh
+./scripts/verify_release_archive.sh macos
+```
+
+Alternatively, use Apple ID credentials instead of a stored notarytool profile:
+
+```bash
+export APPLE_ID=dev@example.com
+export APPLE_TEAM_ID=TEAMID
+export APPLE_APP_SPECIFIC_PASSWORD=...
+```
+
+Output:
+
+```text
+dist/releases/splonks-0.1.0-macos-universal.zip
+dist/releases/splonks-0.1.0-macos-universal.zip.sha256
+```
+
 ## Windows
 
-Build and verify from MSYS2 UCRT64 on Windows:
+Build, verify, and archive from MSYS2 UCRT64 on Windows:
 
 ```bash
 ./scripts/package_windows.sh
 ./scripts/verify_package_windows.sh
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/archive_release.sh windows
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/verify_release_archive.sh windows
 ```
 
 Output:
 
 ```text
 dist/splonks-windows/
+dist/releases/splonks-0.1.0-windows-x86_64.zip
+dist/releases/splonks-0.1.0-windows-x86_64.zip.sha256
 ```
 
 Current status: package script exists. It copies the executable, assets/data,
