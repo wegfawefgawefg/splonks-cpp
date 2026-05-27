@@ -204,6 +204,12 @@ Evidence helper with an emulator or device already running:
 ./scripts/validate_platform.sh android-dev
 ```
 
+Evidence helper that creates/starts the default emulator:
+
+```bash
+./scripts/validate_platform.sh android-emulator
+```
+
 Signed release AAB validation:
 
 ```bash

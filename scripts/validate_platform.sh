@@ -9,7 +9,7 @@ validation_dir="${repo_root}/dist/validation"
 
 usage() {
     cat >&2 <<EOF
-Usage: $0 [dev|release|all|android-dev|android-release|ios-sim|ios-release]
+Usage: $0 [dev|release|all|android-dev|android-emulator|android-release|ios-sim|ios-release]
 
 Runs the platform validation commands and writes a timestamped evidence log.
 Run the platform setup script first when validating a fresh developer machine.
@@ -109,6 +109,17 @@ validate_android_dev() {
     echo "[validated] android debug APK install and runtime smoke"
 }
 
+validate_android_emulator() {
+    run_step "${repo_root}/scripts/android/setup_sdk.sh"
+    run_step "${repo_root}/scripts/android/fetch_sdl3_aar.sh"
+    run_step env SPLONKS_ANDROID_ABIS="${SPLONKS_ANDROID_ABIS:-x86_64}" "${repo_root}/scripts/android/build_apk.sh"
+    run_step "${repo_root}/scripts/android/create_avd.sh"
+    run_step "${repo_root}/scripts/android/start_emulator.sh"
+    run_step "${repo_root}/scripts/android/install_apk.sh"
+    run_step "${repo_root}/scripts/android/run_smoke.sh"
+    echo "[validated] android emulator debug APK install and runtime smoke"
+}
+
 validate_android_release() {
     run_step "${repo_root}/scripts/android/setup_sdk.sh"
     run_step "${repo_root}/scripts/android/fetch_sdl3_aar.sh"
@@ -132,7 +143,7 @@ validate_ios_release() {
 }
 
 case "${scope}" in
-    dev|release|all|android-dev|android-release|ios-sim|ios-release) ;;
+    dev|release|all|android-dev|android-emulator|android-release|ios-sim|ios-release) ;;
     -h|--help|help)
         usage
         exit 0
@@ -166,6 +177,9 @@ log_path="${validation_dir}/${platform}-${scope}-${timestamp}.log"
             ;;
         android-dev)
             validate_android_dev
+            ;;
+        android-emulator)
+            validate_android_emulator
             ;;
         android-release)
             validate_android_release

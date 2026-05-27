@@ -35,10 +35,12 @@ Current status:
   distribution when upload-key environment variables are present.
 - Android setup still requires JDK 17+, Android command-line tools, and the
   SDK/NDK packages installed by `scripts/android/setup_sdk.sh`.
-- Runtime smoke scripting exists, but has not been validated on an Android
-  emulator/device in this repo.
-- Asset extraction is implemented, but still needs a real Android runtime pass
-  on an emulator/device to prove launch, rendering, audio, and settings writes.
+- Runtime smoke has been validated locally on the default x86_64 emulator with
+  `scripts/android/run_smoke.sh`.
+- Signed arm64 release AAB generation has been validated locally with a
+  throwaway upload keystore.
+- Final Play Store distribution still needs the real upload key and Play
+  Console upload validation.
 
 ## Debug Build
 
@@ -56,6 +58,12 @@ scripts/android/run_app.sh
 scripts/android/run_smoke.sh
 ```
 
+Full emulator evidence path:
+
+```bash
+scripts/validate_platform.sh android-emulator
+```
+
 ## Signed Release AAB
 
 The release AAB path is intentionally manual/tag-driven. Do not commit
@@ -71,6 +79,12 @@ export SPLONKS_ANDROID_VERSION_NAME=0.1.0
 scripts/android/setup_sdk.sh
 scripts/android/fetch_sdl3_aar.sh
 scripts/android/build_release_aab.sh
+```
+
+Evidence path:
+
+```bash
+scripts/validate_platform.sh android-release
 ```
 
 The script writes:
