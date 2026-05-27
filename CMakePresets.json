@@ -61,6 +61,7 @@
     {
       "name": "package-windows",
       "displayName": "Windows Package",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-package-windows",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",

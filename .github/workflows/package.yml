@@ -40,6 +40,39 @@ jobs:
           ./scripts/build.sh
           ./scripts/verify_package_linux.sh
 
+  macos-package:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build dependencies
+        run: brew install cmake ninja pkg-config
+      - name: Build and verify macOS package
+        run: |
+          ./scripts/build.sh
+          ./scripts/verify_package_macos.sh
+
+  windows-package:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pkgconf
+      - name: Build and verify Windows package
+        run: |
+          ./scripts/build.sh
+          ./scripts/verify_package_windows.sh
+
   android-scaffold:
     runs-on: ubuntu-latest
     steps:
