@@ -26,6 +26,11 @@ common_return() {
 Return:
 - The generated dist/validation-bundles/splonks-validation-${label}-*.tar.gz
 - Notes on whether the interactive app launched and any warnings seen
+
+Receiver import:
+
+    ./scripts/import_validation_evidence.sh path/to/splonks-validation-${label}-*.tar.gz
+    SPLONKS_RELEASE_VERSION=${version} ./scripts/validation_status.sh
 EOF
 }
 
