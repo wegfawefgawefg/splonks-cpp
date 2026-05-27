@@ -15,6 +15,17 @@ assets, notes, and plans carried forward so we can move file-by-file without los
 
 ## Build
 
+For normal development, follow the platform setup guide first:
+
+```bash
+SPLONKS_PRESET=dev bash scripts/run.sh
+```
+
+See [docs/dev_setup.md](docs/dev_setup.md) for Linux, macOS, Windows, Android,
+and iOS setup/distribution status.
+
+The default release build path is:
+
 ```bash
 bash scripts/build.sh
 ```
