@@ -134,7 +134,7 @@ print_android_play() {
     generated_for
     cat <<EOF
 
-Run after the signed AAB has been built with the real upload key:
+Run this to build and verify the signed AAB with the real upload key:
 
 EOF
     checkout_commands
