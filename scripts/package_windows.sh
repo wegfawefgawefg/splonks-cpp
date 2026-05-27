@@ -12,6 +12,7 @@ esac
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 build_dir="${repo_root}/build-package-windows"
 dist_dir="${repo_root}/dist/splonks-windows"
+source "${repo_root}/scripts/package_runtime_libs.sh"
 
 SPLONKS_PRESET=package-windows "${repo_root}/scripts/build.sh"
 
@@ -22,12 +23,7 @@ cp "${build_dir}/splonks-cpp.exe" "${dist_dir}/"
 cp -a "${repo_root}/assets" "${dist_dir}/assets"
 cp -a "${repo_root}/data" "${dist_dir}/data"
 
-find "${build_dir}" -type f -name "*.dll" \
-    \( -iname "SDL3*.dll" -o -iname "libpng*.dll" -o -iname "freetype*.dll" \
-       -o -iname "harfbuzz*.dll" -o -iname "pluto*.dll" -o -iname "vorbis*.dll" \
-       -o -iname "ogg*.dll" -o -iname "zstd*.dll" -o -iname "brotli*.dll" \
-       -o -iname "bz2*.dll" -o -iname "jpeg*.dll" -o -iname "webp*.dll" \) \
-    -exec cp -f {} "${dist_dir}/" \;
+package_copy_runtime_libs_from_tree "${build_dir}" "${dist_dir}" ".dll"
 
 cat > "${dist_dir}/run-splonks.bat" <<'EOF'
 @echo off

@@ -9,6 +9,7 @@ fi
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 build_dir="${repo_root}/build-package-macos"
 dist_dir="${repo_root}/dist/splonks-macos"
+source "${repo_root}/scripts/package_runtime_libs.sh"
 app_dir="${dist_dir}/Splonks.app"
 contents_dir="${app_dir}/Contents"
 macos_dir="${contents_dir}/MacOS"
@@ -56,24 +57,8 @@ cat > "${contents_dir}/Info.plist" <<'EOF'
 </plist>
 EOF
 
-otool -L "${macos_dir}/splonks-bin" \
-    | awk 'NR > 1 {print $1}' \
-    | while read -r dep; do
-        case "${dep}" in
-            *SDL3*.dylib|*png*.dylib|*freetype*.dylib|*harfbuzz*.dylib|*pluto*.dylib|*vorbis*.dylib|*ogg*.dylib|*zstd*.dylib|*brotli*.dylib|*bz2*.dylib|*jpeg*.dylib|*webp*.dylib)
-                if [[ -f "${dep}" ]]; then
-                    cp -f "${dep}" "${frameworks_dir}/"
-                fi
-                ;;
-        esac
-    done
-
-find "${build_dir}" -type f -name "*.dylib" \
-    \( -iname "*SDL3*.dylib" -o -iname "*png*.dylib" -o -iname "*freetype*.dylib" \
-       -o -iname "*harfbuzz*.dylib" -o -iname "*pluto*.dylib" -o -iname "*vorbis*.dylib" \
-       -o -iname "*ogg*.dylib" -o -iname "*zstd*.dylib" -o -iname "*brotli*.dylib" \
-       -o -iname "*bz2*.dylib" -o -iname "*jpeg*.dylib" -o -iname "*webp*.dylib" \) \
-    -exec cp -f {} "${frameworks_dir}/" \;
+package_copy_macos_runtime_deps "${macos_dir}/splonks-bin" "${frameworks_dir}"
+package_copy_runtime_libs_from_tree "${build_dir}" "${frameworks_dir}" ".dylib"
 
 find "${frameworks_dir}" -type f -name "*.dylib" -exec chmod u+w {} +
 while IFS= read -r dylib; do

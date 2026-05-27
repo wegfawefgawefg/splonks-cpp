@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 build_dir="${repo_root}/build-package-linux"
 dist_dir="${repo_root}/dist/splonks-linux"
+source "${repo_root}/scripts/package_runtime_libs.sh"
 
 SPLONKS_PRESET=package-linux "${repo_root}/scripts/build.sh"
 
@@ -22,21 +23,7 @@ copy_if_exists "${build_dir}/splonks-cpp" "${dist_dir}/bin/"
 copy_if_exists "${repo_root}/assets" "${dist_dir}/"
 copy_if_exists "${repo_root}/data" "${dist_dir}/"
 
-copy_runtime_deps() {
-    local exe="$1"
-    ldd "${exe}" \
-        | awk '/=>/ {print $(NF - 1)}' \
-        | while read -r dep; do
-            [[ -f "${dep}" ]] || continue
-            case "$(basename "${dep}")" in
-                libSDL3*|libpng*|libfreetype*|libharfbuzz*|libpluto*|libvorbis*|libogg*|libzstd*|libbrotli*|libbz2*|libjpeg*|libwebp*)
-                    cp -u "${dep}" "${dist_dir}/lib/"
-                    ;;
-            esac
-        done
-}
-
-copy_runtime_deps "${dist_dir}/bin/splonks-cpp"
+package_copy_linux_runtime_deps "${dist_dir}/bin/splonks-cpp" "${dist_dir}/lib"
 
 cat > "${dist_dir}/run-splonks.sh" <<'EOF'
 #!/usr/bin/env bash
