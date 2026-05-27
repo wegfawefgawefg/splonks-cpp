@@ -834,6 +834,8 @@ echo
 
 echo "[handoff]"
 check print_verified_bundle_check "Validation evidence bundle" "${repo_root}/dist/validation-bundles/splonks-validation-*.tar.gz"
+check check_file_contains "Evidence importer checks bundle release version" "${repo_root}/scripts/import_validation_evidence.sh" "Evidence bundle release_version="
+check check_file_contains "Evidence importer checks bundle revision" "${repo_root}/scripts/import_validation_evidence.sh" "Evidence bundle git_revision="
 echo
 
 echo "[ci]"

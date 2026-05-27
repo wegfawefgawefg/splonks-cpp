@@ -5,6 +5,9 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 bundle_path="${1:-}"
 timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 import_root="${repo_root}/dist/validation-imports"
+version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
+expected_revision="${SPLONKS_VALIDATION_REVISION:-$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)}"
+allow_stale="${SPLONKS_IMPORT_ALLOW_STALE:-0}"
 
 usage() {
     cat >&2 <<EOF
@@ -14,6 +17,11 @@ Imports a validation evidence bundle produced by
 scripts/bundle_validation_evidence.sh. Logs, manifests, checksums, and included
 release artifacts are copied into the local dist tree so
 scripts/validation_status.sh can audit them.
+
+Environment:
+  SPLONKS_RELEASE_VERSION      Expected release version, default: ${version}
+  SPLONKS_VALIDATION_REVISION  Expected short git revision, default: ${expected_revision}
+  SPLONKS_IMPORT_ALLOW_STALE   Set to 1 to import a bundle for another revision/version
 EOF
 }
 
@@ -59,6 +67,26 @@ if [[ -f "${bundle_dir}/CHECKSUMS.sha256" ]]; then
         (cd "${bundle_dir}" && sha256sum -c CHECKSUMS.sha256)
     else
         (cd "${bundle_dir}" && shasum -a 256 -c CHECKSUMS.sha256)
+    fi
+fi
+
+manifest_value() {
+    local key="$1"
+    awk -F= -v key="${key}" '$1 == key {print substr($0, length(key) + 2)}' "${bundle_dir}/BUNDLE_MANIFEST.txt" | tail -n 1
+}
+
+bundle_version="$(manifest_value release_version)"
+bundle_revision="$(manifest_value git_revision)"
+if [[ "${allow_stale}" != "1" ]]; then
+    if [[ "${bundle_version}" != "${version}" ]]; then
+        echo "Evidence bundle release_version=${bundle_version:-<unset>}, expected ${version}." >&2
+        echo "Set SPLONKS_IMPORT_ALLOW_STALE=1 only for diagnostic imports." >&2
+        exit 1
+    fi
+    if [[ "${bundle_revision}" != "${expected_revision}" ]]; then
+        echo "Evidence bundle git_revision=${bundle_revision:-<unset>}, expected ${expected_revision}." >&2
+        echo "Set SPLONKS_IMPORT_ALLOW_STALE=1 only for diagnostic imports." >&2
+        exit 1
     fi
 fi
 
@@ -123,4 +151,5 @@ if [[ ! -e "${bundle_dst}" ]]; then
 fi
 
 echo "[import] imported $(basename "${bundle_path}")"
+echo "[import] release_version=${bundle_version:-<unset>} git_revision=${bundle_revision:-<unset>}"
 echo "[import] run: ./scripts/validation_status.sh"
