@@ -96,6 +96,30 @@ validation-only API call, use:
 To make the release available to internal testers from the command line, set
 `SPLONKS_PLAY_RELEASE_STATUS=completed` intentionally before running the helper.
 
+GitHub Actions upload path:
+
+- Manual dispatch: run `package`, set `release_version`, and enable
+  `upload_android_play`.
+- Tagged release: set repository variable `SPLONKS_UPLOAD_ANDROID_PLAY=true`
+  only for tag releases that should upload to Google Play.
+
+Required GitHub secrets/variables:
+
+```text
+SPLONKS_ANDROID_KEYSTORE_BASE64          secret
+SPLONKS_ANDROID_KEYSTORE_PASSWORD        secret
+SPLONKS_ANDROID_KEY_ALIAS                secret
+SPLONKS_ANDROID_KEY_PASSWORD             secret
+SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64 secret
+SPLONKS_ANDROID_PACKAGE_NAME             repository variable
+SPLONKS_PLAY_TRACK                       repository variable, default internal
+SPLONKS_PLAY_RELEASE_STATUS              repository variable, default draft
+```
+
+The workflow decodes the service account JSON into the runner temp directory,
+runs `release_credentials_preflight.sh android-play`, then uses the same
+`scripts/android/upload_play.sh` helper as the local path.
+
 Evidence helper:
 
 ```bash

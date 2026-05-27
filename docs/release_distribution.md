@@ -283,6 +283,10 @@ with a leading `v` stripped, so `v0.1.0` produces `0.1.0` artifacts.
 The signed iOS IPA job is opt-in: set `include_ios` on manual dispatch, or set
 the repository variable `SPLONKS_BUILD_IOS_RELEASE=true` for tagged release
 runs that should include iOS.
+Store delivery is also opt-in. Set `upload_android_play` or
+`upload_ios_app_store` on manual dispatch, or set the repository variables
+`SPLONKS_UPLOAD_ANDROID_PLAY=true` and `SPLONKS_UPLOAD_IOS_APP_STORE=true` for
+tagged release runs that should submit to the stores.
 
 Workflow artifacts:
 
@@ -292,9 +296,14 @@ Workflow artifacts:
 - Android: debug APK for remote sanity checks on every manual/tag run.
 - Android release: signed `splonks-<version>-android-release.aab` plus
   `manifest.txt` when Android signing secrets are configured.
+- Android Play: optional upload through `scripts/android/upload_play.sh` when
+  explicitly requested and Google Play credentials are configured.
 - iOS release: signed `splonks-<version>-ios.ipa`, `.sha256`, and
   `manifest.txt` when the opt-in iOS job and Apple signing secrets are
   configured.
+- iOS App Store/TestFlight: optional upload through
+  `scripts/ios/upload_app_store.sh validate-upload` when explicitly requested
+  and App Store Connect credentials are configured.
 
 Required Android release secrets:
 
@@ -303,9 +312,12 @@ SPLONKS_ANDROID_KEYSTORE_BASE64
 SPLONKS_ANDROID_KEYSTORE_PASSWORD
 SPLONKS_ANDROID_KEY_ALIAS
 SPLONKS_ANDROID_KEY_PASSWORD
+SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64
 ```
 
 `SPLONKS_ANDROID_KEYSTORE_BASE64` is the base64-encoded upload keystore file.
+`SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64` is the base64-encoded Google Play
+service account JSON key used only for the explicit Play upload path.
 Keep the real upload keystore outside the repo.
 
 Required iOS release variables/secrets:
@@ -313,13 +325,20 @@ Required iOS release variables/secrets:
 ```text
 SPLONKS_IOS_DEVELOPMENT_TEAM       repository variable
 SPLONKS_IOS_BUNDLE_ID              repository variable
+SPLONKS_APP_STORE_API_KEY          repository variable
+SPLONKS_APP_STORE_API_ISSUER       repository variable
 SPLONKS_IOS_CERTIFICATE_BASE64     secret
 SPLONKS_IOS_CERTIFICATE_PASSWORD   secret
 SPLONKS_IOS_PROVISIONING_PROFILE_BASE64
                                    secret
 SPLONKS_IOS_KEYCHAIN_PASSWORD      secret
+SPLONKS_APP_STORE_API_PRIVATE_KEY_BASE64
+                                   secret
 ```
 
 `SPLONKS_IOS_CERTIFICATE_BASE64` is the base64-encoded Apple Distribution
 `.p12`; `SPLONKS_IOS_PROVISIONING_PROFILE_BASE64` is the base64-encoded
 `.mobileprovision` for the final bundle ID.
+`SPLONKS_APP_STORE_API_PRIVATE_KEY_BASE64` is the base64-encoded
+`AuthKey_<key id>.p8` App Store Connect API private key used only for the
+explicit App Store/TestFlight upload path.

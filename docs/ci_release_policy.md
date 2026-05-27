@@ -42,10 +42,13 @@ need to understand or package Gubsy manually.
 - The package workflow uploads versioned Linux/macOS/Windows release archives
   with SHA-256 files. It also uploads an Android debug APK, and uploads a signed
   Android release AAB when Android signing secrets are configured.
+- Android Play and iOS App Store/TestFlight delivery are explicit release
+  actions. The package workflow only runs them when a manual input requests it
+  or when an intentional tag-release repository variable enables it.
 - iOS release work requires an explicit Xcode/signing/provisioning path. The
   package workflow has an opt-in signed IPA job for manual dispatch
-  (`include_ios`) or tagged releases with `SPLONKS_BUILD_IOS_RELEASE=true`; it
-  does not run on normal branch pushes.
+  (`include_ios` or `upload_ios_app_store`) or tagged releases with
+  `SPLONKS_BUILD_IOS_RELEASE=true`; it does not run on normal branch pushes.
 - Use `/home/vega/Coding/GameDev/how-to-multi-backend-rendering` as the local
   iOS scaffold reference. Its working `ios-sim` CMake preset uses the Xcode
   generator, `CMAKE_SYSTEM_NAME=iOS`, simulator sysroot, arm64 simulator arch,

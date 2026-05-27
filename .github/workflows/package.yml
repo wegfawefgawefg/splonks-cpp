@@ -12,6 +12,16 @@ on:
         required: false
         type: boolean
         default: false
+      upload_android_play:
+        description: 'Upload signed Android AAB to Google Play'
+        required: false
+        type: boolean
+        default: false
+      upload_ios_app_store:
+        description: 'Upload signed iOS IPA to App Store Connect/TestFlight'
+        required: false
+        type: boolean
+        default: false
   push:
     tags:
       - 'v*'
@@ -149,6 +159,10 @@ jobs:
       SPLONKS_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.SPLONKS_ANDROID_KEYSTORE_PASSWORD }}
       SPLONKS_ANDROID_KEY_ALIAS: ${{ secrets.SPLONKS_ANDROID_KEY_ALIAS }}
       SPLONKS_ANDROID_KEY_PASSWORD: ${{ secrets.SPLONKS_ANDROID_KEY_PASSWORD }}
+      SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64 }}
+      SPLONKS_ANDROID_PACKAGE_NAME: ${{ vars.SPLONKS_ANDROID_PACKAGE_NAME }}
+      SPLONKS_PLAY_TRACK: ${{ vars.SPLONKS_PLAY_TRACK }}
+      SPLONKS_PLAY_RELEASE_STATUS: ${{ vars.SPLONKS_PLAY_RELEASE_STATUS }}
     steps:
       - uses: actions/checkout@v4
       - name: Set release version
@@ -193,9 +207,24 @@ jobs:
           path: |
             dist/splonks-android/splonks-*-android-release.aab
             dist/splonks-android/manifest.txt
+      - name: Install Fastlane for Google Play upload
+        if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_android_play == 'true') || (github.event_name == 'push' && vars.SPLONKS_UPLOAD_ANDROID_PLAY == 'true') }}
+        run: sudo gem install fastlane --no-document
+      - name: Upload signed Android AAB to Google Play
+        if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_android_play == 'true') || (github.event_name == 'push' && vars.SPLONKS_UPLOAD_ANDROID_PLAY == 'true') }}
+        run: |
+          if [[ -z "${SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64}" ]]; then
+            echo "Missing SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64 secret." >&2
+            exit 1
+          fi
+          play_json="${RUNNER_TEMP}/splonks-play-service-account.json"
+          printf '%s' "${SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64}" | base64 --decode > "${play_json}"
+          export SPLONKS_PLAY_SERVICE_ACCOUNT_JSON="${play_json}"
+          ./scripts/release_credentials_preflight.sh android-play
+          ./scripts/android/upload_play.sh
 
   ios-release:
-    if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.include_ios == 'true') || (github.event_name == 'push' && vars.SPLONKS_BUILD_IOS_RELEASE == 'true') }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && (github.event.inputs.include_ios == 'true' || github.event.inputs.upload_ios_app_store == 'true')) || (github.event_name == 'push' && (vars.SPLONKS_BUILD_IOS_RELEASE == 'true' || vars.SPLONKS_UPLOAD_IOS_APP_STORE == 'true')) }}
     runs-on: macos-latest
     timeout-minutes: 60
     env:
@@ -209,6 +238,9 @@ jobs:
       SPLONKS_IOS_CODE_SIGN_IDENTITY: Apple Distribution
       SPLONKS_IOS_SIGNING_STYLE: manual
       SPLONKS_IOS_EXPORT_METHOD: app-store-connect
+      SPLONKS_APP_STORE_API_KEY: ${{ vars.SPLONKS_APP_STORE_API_KEY }}
+      SPLONKS_APP_STORE_API_ISSUER: ${{ vars.SPLONKS_APP_STORE_API_ISSUER }}
+      SPLONKS_APP_STORE_API_PRIVATE_KEY_BASE64: ${{ secrets.SPLONKS_APP_STORE_API_PRIVATE_KEY_BASE64 }}
     steps:
       - uses: actions/checkout@v4
       - name: Set release version
@@ -235,3 +267,19 @@ jobs:
             dist/releases/splonks-*-ios.ipa
             dist/releases/splonks-*-ios.ipa.sha256
             dist/splonks-ios/manifest.txt
+      - name: Import App Store Connect API key
+        if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_ios_app_store == 'true') || (github.event_name == 'push' && vars.SPLONKS_UPLOAD_IOS_APP_STORE == 'true') }}
+        run: |
+          if [[ -z "${SPLONKS_APP_STORE_API_KEY}" || -z "${SPLONKS_APP_STORE_API_ISSUER}" || -z "${SPLONKS_APP_STORE_API_PRIVATE_KEY_BASE64}" ]]; then
+            echo "Missing App Store Connect API key variable/secret." >&2
+            exit 1
+          fi
+          key_dir="${RUNNER_TEMP}/appstoreconnect/private_keys"
+          mkdir -p "${key_dir}"
+          printf '%s' "${SPLONKS_APP_STORE_API_PRIVATE_KEY_BASE64}" | base64 --decode > "${key_dir}/AuthKey_${SPLONKS_APP_STORE_API_KEY}.p8"
+          echo "SPLONKS_APP_STORE_API_PRIVATE_KEYS_DIR=${key_dir}" >> "${GITHUB_ENV}"
+      - name: Upload signed iOS IPA to App Store Connect
+        if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_ios_app_store == 'true') || (github.event_name == 'push' && vars.SPLONKS_UPLOAD_IOS_APP_STORE == 'true') }}
+        run: |
+          ./scripts/release_credentials_preflight.sh ios-upload
+          ./scripts/ios/upload_app_store.sh validate-upload
