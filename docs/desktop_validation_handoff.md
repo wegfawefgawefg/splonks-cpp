@@ -11,6 +11,14 @@ SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh macos
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh windows
 ```
 
+Or generate a timestamped Markdown packet under `dist/validation-handoffs/`
+that can be sent directly to a validator:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/write_validation_handoff.sh macos
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/write_validation_handoff.sh windows
+```
+
 The generated handoff pins validators to the exact Git commit being audited.
 That matters because `validation_status.sh` rejects logs, manifests, and
 bundles from a different revision unless the receiver explicitly sets

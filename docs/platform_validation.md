@@ -124,6 +124,18 @@ SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh android-play
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh ios
 ```
 
+To write a timestamped Markdown packet that can be sent as one file to an
+external validator, run:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/write_validation_handoff.sh macos
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/write_validation_handoff.sh windows
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/write_validation_handoff.sh android-play
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/write_validation_handoff.sh ios
+```
+
+The generated files are written under `dist/validation-handoffs/`.
+
 The handoff generator prints the exact release version, remote ref, and commit
 revision being audited. By default it uses the current branch and current HEAD.
 For a tagged release or an older commit, set both values explicitly:

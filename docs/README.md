@@ -8,6 +8,8 @@
   delivery paths for Linux, macOS, Windows, Android, and iOS.
 - `desktop_validation_handoff.md`: copy/paste validation instructions for real
   macOS and Windows machines.
+- `../scripts/write_validation_handoff.sh`: writes timestamped Markdown
+  validation packets under `dist/validation-handoffs/`.
 - `ci_release_policy.md`: policy for keeping GitHub Actions off the normal
   development feedback loop.
 - `android_play_release.md`: Google Play internal testing and production
