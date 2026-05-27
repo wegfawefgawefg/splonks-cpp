@@ -54,6 +54,13 @@ if [[ ! -f "${bundle_dir}/BUNDLE_MANIFEST.txt" ]]; then
     echo "Evidence bundle is missing BUNDLE_MANIFEST.txt" >&2
     exit 1
 fi
+if [[ -f "${bundle_dir}/CHECKSUMS.sha256" ]]; then
+    if command -v sha256sum >/dev/null 2>&1; then
+        (cd "${bundle_dir}" && sha256sum -c CHECKSUMS.sha256)
+    else
+        (cd "${bundle_dir}" && shasum -a 256 -c CHECKSUMS.sha256)
+    fi
+fi
 
 copy_all_if_exists() {
     local src_dir="$1"

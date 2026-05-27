@@ -57,6 +57,11 @@ For final release handoff, include distributable artifacts too:
 ./scripts/bundle_validation_evidence.sh --include-artifacts <platform-or-release-label>
 ```
 
+Evidence bundles include `BUNDLE_MANIFEST.txt` with the intended release
+version and `CHECKSUMS.sha256` for every included log, manifest, checksum file,
+and optional artifact. The import helper verifies `CHECKSUMS.sha256` before
+copying evidence into the local `dist/` tree.
+
 When receiving a bundle from another machine, import it with:
 
 ```bash
