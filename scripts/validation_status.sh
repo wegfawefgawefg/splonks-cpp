@@ -49,6 +49,10 @@ latest_glob() {
     fi
 }
 
+file_mtime() {
+    stat -c '%Y' "$1" 2>/dev/null || stat -f '%m' "$1" 2>/dev/null || echo 0
+}
+
 print_check() {
     local label="$1"
     local pattern="$2"
@@ -97,23 +101,26 @@ print_log_revision_contains_check() {
     local label="$1"
     local pattern="$2"
     local required_text="$3"
-    local latest
-    latest="$(latest_glob "${pattern}" || true)"
-    if [[ -z "${latest}" ]]; then
-        printf '[missing] %s: %s\n' "${label}" "${pattern#${repo_root}/}"
-        return 1
+    local latest=""
+    local newest=""
+    local newest_mtime=0
+    local candidate
+    local mtime
+    if has_glob "${pattern}"; then
+        while IFS= read -r candidate; do
+            mtime="$(file_mtime "${candidate}")"
+            if [[ -z "${newest}" || "${mtime}" -gt "${newest_mtime}" ]]; then
+                newest="${candidate}"
+                newest_mtime="${mtime}"
+            fi
+            if log_revision_matches "${candidate}" && grep -Fq "${required_text}" "${candidate}"; then
+                if [[ -z "${latest}" || "${mtime}" -gt "$(file_mtime "${latest}")" ]]; then
+                    latest="${candidate}"
+                fi
+            fi
+        done < <(ls -t ${pattern} 2>/dev/null)
     fi
-    if ! log_revision_matches "${latest}"; then
-        local actual_revision
-        actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${latest}" | tail -n 1)"
-        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
-            "${label}" \
-            "${latest#${repo_root}/}" \
-            "${actual_revision:-<unset>}" \
-            "${expected_revision}"
-        return 1
-    fi
-    if grep -Fq "${required_text}" "${latest}"; then
+    if [[ -n "${latest}" ]]; then
         printf '[ok]      %s: %s has git_revision=%s and "%s"\n' \
             "${label}" \
             "${latest#${repo_root}/}" \
@@ -121,9 +128,23 @@ print_log_revision_contains_check() {
             "${required_text}"
         return 0
     fi
+    if [[ -z "${newest}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${pattern#${repo_root}/}"
+        return 1
+    fi
+    if ! log_revision_matches "${newest}"; then
+        local actual_revision
+        actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${newest}" | tail -n 1)"
+        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
+            "${label}" \
+            "${newest#${repo_root}/}" \
+            "${actual_revision:-<unset>}" \
+            "${expected_revision}"
+        return 1
+    fi
     printf '[missing] %s: %s missing required text: %s\n' \
         "${label}" \
-        "${latest#${repo_root}/}" \
+        "${newest#${repo_root}/}" \
         "${required_text}"
     return 1
 }
@@ -165,33 +186,28 @@ print_log_version_contains_check() {
     local label="$1"
     local pattern="$2"
     local required_text="$3"
-    local latest
-    latest="$(latest_glob "${pattern}" || true)"
-    if [[ -z "${latest}" ]]; then
-        printf '[missing] %s: %s\n' "${label}" "${pattern#${repo_root}/}"
-        return 1
+    local latest=""
+    local newest=""
+    local newest_mtime=0
+    local candidate
+    local mtime
+    if has_glob "${pattern}"; then
+        while IFS= read -r candidate; do
+            mtime="$(file_mtime "${candidate}")"
+            if [[ -z "${newest}" || "${mtime}" -gt "${newest_mtime}" ]]; then
+                newest="${candidate}"
+                newest_mtime="${mtime}"
+            fi
+            if grep -Fxq "git_revision=${expected_revision}" "${candidate}" &&
+                grep -Fxq "release_version=${version}" "${candidate}" &&
+                grep -Fq "${required_text}" "${candidate}"; then
+                if [[ -z "${latest}" || "${mtime}" -gt "$(file_mtime "${latest}")" ]]; then
+                    latest="${candidate}"
+                fi
+            fi
+        done < <(ls -t ${pattern} 2>/dev/null)
     fi
-    local actual_revision
-    actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${latest}" | tail -n 1)"
-    if [[ "${actual_revision}" != "${expected_revision}" ]]; then
-        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
-            "${label}" \
-            "${latest#${repo_root}/}" \
-            "${actual_revision:-<unset>}" \
-            "${expected_revision}"
-        return 1
-    fi
-    if ! grep -Fxq "release_version=${version}" "${latest}"; then
-        local actual
-        actual="$(awk -F= '$1 == "release_version" {print substr($0, length("release_version") + 2)}' "${latest}" | tail -n 1)"
-        printf '[missing] %s: %s has release_version=%s, expected %s\n' \
-            "${label}" \
-            "${latest#${repo_root}/}" \
-            "${actual:-<unset>}" \
-            "${version}"
-        return 1
-    fi
-    if grep -Fq "${required_text}" "${latest}"; then
+    if [[ -n "${latest}" ]]; then
         printf '[ok]      %s: %s has release_version=%s git_revision=%s and "%s"\n' \
             "${label}" \
             "${latest#${repo_root}/}" \
@@ -200,9 +216,33 @@ print_log_version_contains_check() {
             "${required_text}"
         return 0
     fi
+    if [[ -z "${newest}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${pattern#${repo_root}/}"
+        return 1
+    fi
+    local actual_revision
+    actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${newest}" | tail -n 1)"
+    if [[ "${actual_revision}" != "${expected_revision}" ]]; then
+        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
+            "${label}" \
+            "${newest#${repo_root}/}" \
+            "${actual_revision:-<unset>}" \
+            "${expected_revision}"
+        return 1
+    fi
+    if ! grep -Fxq "release_version=${version}" "${newest}"; then
+        local actual
+        actual="$(awk -F= '$1 == "release_version" {print substr($0, length("release_version") + 2)}' "${newest}" | tail -n 1)"
+        printf '[missing] %s: %s has release_version=%s, expected %s\n' \
+            "${label}" \
+            "${newest#${repo_root}/}" \
+            "${actual:-<unset>}" \
+            "${version}"
+        return 1
+    fi
     printf '[missing] %s: %s missing required text: %s\n' \
         "${label}" \
-        "${latest#${repo_root}/}" \
+        "${newest#${repo_root}/}" \
         "${required_text}"
     return 1
 }
@@ -264,47 +304,30 @@ print_log_version_contains_check_any() {
     local pattern
     local latest=""
     local latest_mtime=0
+    local newest=""
+    local newest_mtime=0
     local candidate
     local mtime
     for pattern in "$@"; do
         if has_glob "${pattern}"; then
             while IFS= read -r candidate; do
-                mtime="$(stat -c '%Y' "${candidate}" 2>/dev/null || stat -f '%m' "${candidate}" 2>/dev/null || echo 0)"
-                if [[ -z "${latest}" || "${mtime}" -gt "${latest_mtime}" ]]; then
-                    latest="${candidate}"
-                    latest_mtime="${mtime}"
+                mtime="$(file_mtime "${candidate}")"
+                if [[ -z "${newest}" || "${mtime}" -gt "${newest_mtime}" ]]; then
+                    newest="${candidate}"
+                    newest_mtime="${mtime}"
+                fi
+                if grep -Fxq "git_revision=${expected_revision}" "${candidate}" &&
+                    grep -Fxq "release_version=${version}" "${candidate}" &&
+                    grep -Fq "${required_text}" "${candidate}"; then
+                    if [[ -z "${latest}" || "${mtime}" -gt "${latest_mtime}" ]]; then
+                        latest="${candidate}"
+                        latest_mtime="${mtime}"
+                    fi
                 fi
             done < <(ls -t ${pattern} 2>/dev/null)
         fi
     done
-    if [[ -z "${latest}" ]]; then
-        printf '[missing] %s:\n' "${label}"
-        for pattern in "$@"; do
-            printf '          %s\n' "${pattern#${repo_root}/}"
-        done
-        return 1
-    fi
-    local actual_revision
-    actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${latest}" | tail -n 1)"
-    if [[ "${actual_revision}" != "${expected_revision}" ]]; then
-        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
-            "${label}" \
-            "${latest#${repo_root}/}" \
-            "${actual_revision:-<unset>}" \
-            "${expected_revision}"
-        return 1
-    fi
-    if ! grep -Fxq "release_version=${version}" "${latest}"; then
-        local actual
-        actual="$(awk -F= '$1 == "release_version" {print substr($0, length("release_version") + 2)}' "${latest}" | tail -n 1)"
-        printf '[missing] %s: %s has release_version=%s, expected %s\n' \
-            "${label}" \
-            "${latest#${repo_root}/}" \
-            "${actual:-<unset>}" \
-            "${version}"
-        return 1
-    fi
-    if grep -Fq "${required_text}" "${latest}"; then
+    if [[ -n "${latest}" ]]; then
         printf '[ok]      %s: %s has release_version=%s git_revision=%s and "%s"\n' \
             "${label}" \
             "${latest#${repo_root}/}" \
@@ -313,9 +336,36 @@ print_log_version_contains_check_any() {
             "${required_text}"
         return 0
     fi
+    if [[ -z "${newest}" ]]; then
+        printf '[missing] %s:\n' "${label}"
+        for pattern in "$@"; do
+            printf '          %s\n' "${pattern#${repo_root}/}"
+        done
+        return 1
+    fi
+    local actual_revision
+    actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${newest}" | tail -n 1)"
+    if [[ "${actual_revision}" != "${expected_revision}" ]]; then
+        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
+            "${label}" \
+            "${newest#${repo_root}/}" \
+            "${actual_revision:-<unset>}" \
+            "${expected_revision}"
+        return 1
+    fi
+    if ! grep -Fxq "release_version=${version}" "${newest}"; then
+        local actual
+        actual="$(awk -F= '$1 == "release_version" {print substr($0, length("release_version") + 2)}' "${newest}" | tail -n 1)"
+        printf '[missing] %s: %s has release_version=%s, expected %s\n' \
+            "${label}" \
+            "${newest#${repo_root}/}" \
+            "${actual:-<unset>}" \
+            "${version}"
+        return 1
+    fi
     printf '[missing] %s: %s missing required text: %s\n' \
         "${label}" \
-        "${latest#${repo_root}/}" \
+        "${newest#${repo_root}/}" \
         "${required_text}"
     return 1
 }
