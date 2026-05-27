@@ -674,6 +674,38 @@ check_workflow_not_contains() {
     return 0
 }
 
+check_file_contains() {
+    local label="$1"
+    local path="$2"
+    local required="$3"
+    if [[ ! -f "${path}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${path#${repo_root}/}"
+        return 1
+    fi
+    if grep -Fq "${required}" "${path}"; then
+        printf '[ok]      %s: %s contains "%s"\n' "${label}" "${path#${repo_root}/}" "${required}"
+        return 0
+    fi
+    printf '[missing] %s: %s missing "%s"\n' "${label}" "${path#${repo_root}/}" "${required}"
+    return 1
+}
+
+check_file_not_contains() {
+    local label="$1"
+    local path="$2"
+    local denied="$3"
+    if [[ ! -f "${path}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${path#${repo_root}/}"
+        return 1
+    fi
+    if grep -Fq "${denied}" "${path}"; then
+        printf '[missing] %s: %s still contains "%s"\n' "${label}" "${path#${repo_root}/}" "${denied}"
+        return 1
+    fi
+    printf '[ok]      %s: %s does not contain "%s"\n' "${label}" "${path#${repo_root}/}" "${denied}"
+    return 0
+}
+
 cd "${repo_root}"
 if [[ -z "${expected_revision}" ]]; then
     expected_revision="$(git rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
@@ -819,6 +851,9 @@ else
 fi
 check check_workflow_not_contains "Package workflow avoids moving macOS latest label" "macos-latest"
 check check_workflow_contains "Package workflow uses explicit Apple Silicon macOS runner" "runs-on: macos-15"
+check check_file_contains "macOS package preset is arm64-only" "${repo_root}/CMakePresets.json" '"CMAKE_OSX_ARCHITECTURES": "arm64"'
+check check_file_contains "macOS verifier rejects Intel slices" "${repo_root}/scripts/verify_package_macos.sh" 'should be arm64-only but includes x86_64'
+check check_file_not_contains "macOS release docs avoid universal default" "${repo_root}/docs/release_distribution.md" 'ship universal by default'
 check check_workflow_contains "Package workflow uses Android Play handoff wrapper" "./scripts/android/validate_play_handoff.sh"
 check check_workflow_contains "Package workflow uses iOS handoff wrapper" "./scripts/validate_ios_handoff.sh"
 
