@@ -33,10 +33,10 @@ aab_dst="${dist_dir}/splonks-${version_name}-android-release.aab"
 
 cd "${ANDROID_DIR}"
 if [[ -x ./gradlew ]]; then
-    ./gradlew bundleRelease
+    ./gradlew --no-daemon bundleRelease
 else
     require_cmd gradle
-    gradle bundleRelease
+    gradle --no-daemon bundleRelease
 fi
 
 if [[ ! -f "${aab_src}" ]]; then
