@@ -5,7 +5,9 @@ source "$(dirname "$0")/env.sh"
 require_java
 require_cmd sdkmanager
 
+set +o pipefail
 yes | sdkmanager --licenses >/dev/null
+set -o pipefail
 sdkmanager \
   "platform-tools" \
   "platforms;android-${ANDROID_API_LEVEL}" \
