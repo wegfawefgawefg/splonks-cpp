@@ -123,6 +123,16 @@ check_ios_release() {
     require_cmd cmake
     require_cmd xcodebuild
     require_env SPLONKS_IOS_DEVELOPMENT_TEAM
+    if [[ "${GITHUB_ACTIONS:-}" == "true" ||
+        -n "${SPLONKS_IOS_CERTIFICATE_BASE64:-}" ||
+        -n "${SPLONKS_IOS_PROVISIONING_PROFILE_BASE64:-}" ]]; then
+        require_cmd security
+        require_cmd plutil
+        require_env SPLONKS_IOS_CERTIFICATE_BASE64
+        require_env SPLONKS_IOS_CERTIFICATE_PASSWORD
+        require_env SPLONKS_IOS_PROVISIONING_PROFILE_BASE64
+        require_env SPLONKS_IOS_KEYCHAIN_PASSWORD
+    fi
     echo "[info] bundle=${SPLONKS_IOS_BUNDLE_ID:-dev.splonks.game} identity=${SPLONKS_IOS_CODE_SIGN_IDENTITY:-Apple Distribution} export=${SPLONKS_IOS_EXPORT_METHOD:-app-store-connect}"
 }
 

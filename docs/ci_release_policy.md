@@ -42,15 +42,18 @@ need to understand or package Gubsy manually.
 - The package workflow uploads versioned Linux/macOS/Windows release archives
   with SHA-256 files. It also uploads an Android debug APK, and uploads a signed
   Android release AAB when Android signing secrets are configured.
-- iOS release work requires an explicit Xcode/signing/provisioning path and
-  should not be added as an automatic per-push build.
+- iOS release work requires an explicit Xcode/signing/provisioning path. The
+  package workflow has an opt-in signed IPA job for manual dispatch
+  (`include_ios`) or tagged releases with `SPLONKS_BUILD_IOS_RELEASE=true`; it
+  does not run on normal branch pushes.
 - Use `/home/vega/Coding/GameDev/how-to-multi-backend-rendering` as the local
   iOS scaffold reference. Its working `ios-sim` CMake preset uses the Xcode
   generator, `CMAKE_SYSTEM_NAME=iOS`, simulator sysroot, arm64 simulator arch,
   bundled SDL, and app bundle metadata.
 - Splonks now has `ios-sim` and `ios-device` CMake presets,
   `scripts/ios/build_sim.sh`, `scripts/ios/run_sim.sh`, and
-  `scripts/ios/archive_release.sh`. These paths must be validated on
+  `scripts/ios/archive_release.sh`. CI signing assets can be imported with
+  `scripts/ios/import_signing_assets.sh`. These paths must be validated on
   macOS/Xcode before iOS is treated as complete.
   Device distribution still needs real signing/provisioning and
   TestFlight/App Store upload validation.

@@ -262,6 +262,17 @@ SPLONKS_IOS_IPA_PATH=<explicit ipa path>
 API_PRIVATE_KEYS_DIR=<directory containing AuthKey_<key id>.p8>
 ```
 
+For non-interactive CI signing, store the certificate and provisioning profile
+outside the repo and import them before `archive_release.sh`:
+
+```bash
+export SPLONKS_IOS_CERTIFICATE_BASE64=<base64 p12>
+export SPLONKS_IOS_CERTIFICATE_PASSWORD=<p12 password>
+export SPLONKS_IOS_PROVISIONING_PROFILE_BASE64=<base64 mobileprovision>
+export SPLONKS_IOS_KEYCHAIN_PASSWORD=<temporary keychain password>
+./scripts/ios/import_signing_assets.sh
+```
+
 ## GitHub Actions
 
 The package workflow is intentionally limited to manual dispatch and `v*` tags.
@@ -269,6 +280,9 @@ Do not add package jobs back to normal branch pushes.
 
 Manual dispatch accepts a `release_version` input. Version tags use the tag name
 with a leading `v` stripped, so `v0.1.0` produces `0.1.0` artifacts.
+The signed iOS IPA job is opt-in: set `include_ios` on manual dispatch, or set
+the repository variable `SPLONKS_BUILD_IOS_RELEASE=true` for tagged release
+runs that should include iOS.
 
 Workflow artifacts:
 
@@ -278,6 +292,9 @@ Workflow artifacts:
 - Android: debug APK for remote sanity checks on every manual/tag run.
 - Android release: signed `splonks-<version>-android-release.aab` plus
   `manifest.txt` when Android signing secrets are configured.
+- iOS release: signed `splonks-<version>-ios.ipa`, `.sha256`, and
+  `manifest.txt` when the opt-in iOS job and Apple signing secrets are
+  configured.
 
 Required Android release secrets:
 
@@ -290,3 +307,19 @@ SPLONKS_ANDROID_KEY_PASSWORD
 
 `SPLONKS_ANDROID_KEYSTORE_BASE64` is the base64-encoded upload keystore file.
 Keep the real upload keystore outside the repo.
+
+Required iOS release variables/secrets:
+
+```text
+SPLONKS_IOS_DEVELOPMENT_TEAM       repository variable
+SPLONKS_IOS_BUNDLE_ID              repository variable
+SPLONKS_IOS_CERTIFICATE_BASE64     secret
+SPLONKS_IOS_CERTIFICATE_PASSWORD   secret
+SPLONKS_IOS_PROVISIONING_PROFILE_BASE64
+                                   secret
+SPLONKS_IOS_KEYCHAIN_PASSWORD      secret
+```
+
+`SPLONKS_IOS_CERTIFICATE_BASE64` is the base64-encoded Apple Distribution
+`.p12`; `SPLONKS_IOS_PROVISIONING_PROFILE_BASE64` is the base64-encoded
+`.mobileprovision` for the final bundle ID.

@@ -336,6 +336,16 @@ export SPLONKS_IOS_EXPORT_METHOD=app-store-connect
 ./scripts/ios/verify_release_ipa.sh
 ```
 
+For CI or any other non-interactive machine, import signing assets first:
+
+```bash
+export SPLONKS_IOS_CERTIFICATE_BASE64=<base64 p12>
+export SPLONKS_IOS_CERTIFICATE_PASSWORD=<p12 password>
+export SPLONKS_IOS_PROVISIONING_PROFILE_BASE64=<base64 mobileprovision>
+export SPLONKS_IOS_KEYCHAIN_PASSWORD=<temporary keychain password>
+./scripts/ios/import_signing_assets.sh
+```
+
 Evidence helper:
 
 ```bash
