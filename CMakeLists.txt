@@ -428,6 +428,9 @@ target_link_libraries(
         SDL3_image::SDL3_image
         SDL3_mixer::SDL3_mixer
 )
+if (WIN32)
+    target_link_libraries(splonks-cpp PRIVATE ws2_32)
+endif()
 
 if (MSVC)
     target_compile_options(splonks-cpp PRIVATE /W4 /permissive-)

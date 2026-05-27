@@ -26,4 +26,9 @@ if [ "${mode}" = "--configure-only" ]; then
     exit 0
 fi
 
-cmake --build --preset "${preset}" -j
+build_jobs="${SPLONKS_BUILD_JOBS:-${CMAKE_BUILD_PARALLEL_LEVEL:-}}"
+if [[ -n "${build_jobs}" ]]; then
+    cmake --build --preset "${preset}" --parallel "${build_jobs}"
+else
+    cmake --build --preset "${preset}" --parallel
+fi
