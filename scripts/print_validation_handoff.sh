@@ -71,6 +71,7 @@ Homebrew. The macOS release artifact is arm64-only and is not expected to
 launch on Intel Macs:
 
     xcode-select --install
+    brew --version >/dev/null 2>&1 || /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 EOF
     checkout_commands
     cat <<EOF

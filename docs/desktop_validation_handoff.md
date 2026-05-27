@@ -28,6 +28,7 @@ Macs.
 
 ```bash
 xcode-select --install
+brew --version >/dev/null 2>&1 || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 git clone https://github.com/wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
 git checkout <handoff-git-revision>

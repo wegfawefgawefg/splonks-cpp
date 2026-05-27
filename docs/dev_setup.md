@@ -85,6 +85,12 @@ cd splonks-cpp
 ./scripts/bootstrap_dev.sh --run
 ```
 
+Install Homebrew first if `brew --version` is not already available:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
 The bootstrap script runs `setup_macos.sh`, which installs:
 
 ```text
