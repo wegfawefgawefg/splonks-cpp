@@ -8,6 +8,8 @@ preset="${SPLONKS_PRESET:-release}"
 case "${preset}" in
     dev) build_dir="${repo_root}/build-debug" ;;
     package-linux) build_dir="${repo_root}/build-package-linux" ;;
+    package-macos) build_dir="${repo_root}/build-package-macos" ;;
+    package-windows) build_dir="${repo_root}/build-package-windows" ;;
 esac
 
 configure() {

@@ -44,6 +44,32 @@
         "SPLONKS_WARN_AS_ERROR": true,
         "SPLONKS_FETCH_DEPS": true
       }
+    },
+    {
+      "name": "package-macos",
+      "displayName": "macOS Package",
+      "binaryDir": "${sourceDir}/build-package-macos",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "SPLONKS_MODE": "release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "SPLONKS_STRICT": true,
+        "SPLONKS_WARN_AS_ERROR": true,
+        "SPLONKS_FETCH_DEPS": true
+      }
+    },
+    {
+      "name": "package-windows",
+      "displayName": "Windows Package",
+      "binaryDir": "${sourceDir}/build-package-windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "SPLONKS_MODE": "release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "SPLONKS_STRICT": true,
+        "SPLONKS_WARN_AS_ERROR": true,
+        "SPLONKS_FETCH_DEPS": true
+      }
     }
   ],
   "buildPresets": [
@@ -60,6 +86,16 @@
     {
       "name": "package-linux",
       "configurePreset": "package-linux",
+      "jobs": 0
+    },
+    {
+      "name": "package-macos",
+      "configurePreset": "package-macos",
+      "jobs": 0
+    },
+    {
+      "name": "package-windows",
+      "configurePreset": "package-windows",
       "jobs": 0
     }
   ]
