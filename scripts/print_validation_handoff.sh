@@ -161,6 +161,9 @@ print_ios() {
 
 Run on a real macOS machine with Xcode and an Apple Developer team:
 
+    xcode-select --install
+    brew --version >/dev/null 2>&1 || /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    brew install cmake
 EOF
     checkout_commands
     cat <<EOF

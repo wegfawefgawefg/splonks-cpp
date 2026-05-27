@@ -378,6 +378,9 @@ handoff and evidence to record.
 Simulator validation on macOS/Xcode:
 
 ```bash
+xcode-select --install
+brew --version >/dev/null 2>&1 || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install cmake
 ./scripts/release_credentials_preflight.sh ios-sim
 ./scripts/ios/build_sim.sh
 ./scripts/ios/run_sim.sh --check-state-fingerprint-smoke

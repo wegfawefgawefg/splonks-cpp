@@ -227,6 +227,15 @@ and Play Console upload validation.
 
 Supported direction: macOS and Xcode only.
 
+Install Xcode command line tools and CMake first if they are not already
+available:
+
+```bash
+xcode-select --install
+brew --version >/dev/null 2>&1 || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install cmake
+```
+
 The local reference repo `/home/vega/Coding/GameDev/how-to-multi-backend-rendering`
 has a verified iOS simulator scaffold. The relevant shape is:
 
