@@ -19,6 +19,8 @@ matching host platform.
 After validation, run `./scripts/bundle_validation_evidence.sh <label>` to
 collect logs, package manifests, and release checksums into a single archive
 under `dist/validation-bundles/`.
+Use `--include-artifacts` for release handoff bundles that should carry the
+actual distributable archives, Android AAB, or iOS IPA.
 
 ## Linux
 

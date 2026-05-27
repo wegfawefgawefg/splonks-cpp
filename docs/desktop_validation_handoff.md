@@ -51,10 +51,12 @@ Record:
 Then bundle the validation evidence:
 
 ```bash
-./scripts/bundle_validation_evidence.sh macos
+./scripts/bundle_validation_evidence.sh --include-artifacts macos
 ```
 
 Send back the generated `dist/validation-bundles/splonks-validation-macos-*.tar.gz`.
+On the receiving machine, import it with
+`./scripts/import_validation_evidence.sh path/to/splonks-validation-macos-*.tar.gz`.
 
 Developer ID distribution still needs the signing/notarization path from
 [release_distribution.md](release_distribution.md).
@@ -110,10 +112,12 @@ Record:
 Then bundle the validation evidence:
 
 ```bash
-./scripts/bundle_validation_evidence.sh windows
+./scripts/bundle_validation_evidence.sh --include-artifacts windows
 ```
 
 Send back the generated `dist/validation-bundles/splonks-validation-windows-*.tar.gz`.
+On the receiving machine, import it with
+`./scripts/import_validation_evidence.sh path/to/splonks-validation-windows-*.tar.gz`.
 
 ## Passing Result
 

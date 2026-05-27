@@ -2,30 +2,46 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
-label="${1:-}"
+label=""
 timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 validation_dir="${repo_root}/dist/validation"
 bundle_root="${repo_root}/dist/validation-bundles"
+include_artifacts=0
 
 usage() {
     cat >&2 <<EOF
-Usage: $0 [label]
+Usage: $0 [--include-artifacts] [label]
 
 Bundles validation logs, package manifests, and release checksums into a
 timestamped archive that can be sent back after platform validation.
+Use --include-artifacts for final release handoff bundles that should also
+carry the distributable archives or store bundles.
 
 Examples:
   $0 macos-dev-release
-  $0 windows-release
+  $0 --include-artifacts windows-release
 EOF
 }
 
-case "${label}" in
-    -h|--help|help)
-        usage
-        exit 0
-        ;;
-esac
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --include-artifacts)
+            include_artifacts=1
+            ;;
+        -h|--help|help)
+            usage
+            exit 0
+            ;;
+        *)
+            if [[ -n "${label}" ]]; then
+                usage
+                exit 1
+            fi
+            label="$1"
+            ;;
+    esac
+    shift
+done
 
 if [[ -z "${label}" ]]; then
     case "${OS:-}:$(uname -s)" in
@@ -79,6 +95,19 @@ if [[ -d "${repo_root}/dist/releases" ]]; then
     mkdir -p "${stage_dir}/release-checksums"
     find "${repo_root}/dist/releases" -maxdepth 1 -type f \( -name "*.sha256" -o -name "*.txt" \) \
         -exec cp {} "${stage_dir}/release-checksums/" \;
+    if [[ "${include_artifacts}" -eq 1 ]]; then
+        mkdir -p "${stage_dir}/release-artifacts"
+        find "${repo_root}/dist/releases" -maxdepth 1 -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.ipa" \) \
+            -exec cp {} "${stage_dir}/release-artifacts/" \;
+    fi
+fi
+
+if [[ "${include_artifacts}" -eq 1 ]]; then
+    if [[ -d "${repo_root}/dist/splonks-android" ]]; then
+        mkdir -p "${stage_dir}/release-artifacts"
+        find "${repo_root}/dist/splonks-android" -maxdepth 1 -type f -name "*.aab" \
+            -exec cp {} "${stage_dir}/release-artifacts/" \;
+    fi
 fi
 
 {
@@ -86,6 +115,7 @@ fi
     echo "timestamp_utc=${timestamp}"
     echo "git_revision=$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
     echo "git_branch=$(git -C "${repo_root}" branch --show-current 2>/dev/null || echo unknown)"
+    echo "include_artifacts=${include_artifacts}"
     echo "uname=$(uname -a)"
     echo
     echo "[included]"

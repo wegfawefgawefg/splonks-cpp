@@ -51,6 +51,19 @@ logs, manifests, and checksums with:
 
 The bundle is written under `dist/validation-bundles/` and is the file to send
 back to the team for review.
+For final release handoff, include distributable artifacts too:
+
+```bash
+./scripts/bundle_validation_evidence.sh --include-artifacts <platform-or-release-label>
+```
+
+When receiving a bundle from another machine, import it with:
+
+```bash
+./scripts/import_validation_evidence.sh path/to/splonks-validation-*.tar.gz
+```
+
+Then rerun `./scripts/validation_status.sh`.
 
 To inspect the current evidence state, run:
 
