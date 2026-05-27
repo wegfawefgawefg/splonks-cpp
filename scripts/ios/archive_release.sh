@@ -35,6 +35,7 @@ export SPLONKS_IOS_CODE_SIGN_IDENTITY="${SPLONKS_IOS_CODE_SIGN_IDENTITY:-Apple D
 export SPLONKS_IOS_EXPORT_METHOD="${SPLONKS_IOS_EXPORT_METHOD:-app-store-connect}"
 export SPLONKS_IOS_BUNDLE_ID="${SPLONKS_IOS_BUNDLE_ID:-dev.splonks.game}"
 export SPLONKS_IOS_SIGNING_STYLE="${SPLONKS_IOS_SIGNING_STYLE:-automatic}"
+export SPLONKS_IOS_VERSION_CODE="${SPLONKS_IOS_VERSION_CODE:-1}"
 
 cd "${repo_root}"
 cmake --preset ios-device
@@ -64,6 +65,19 @@ cat > "${export_options}" <<EOF
   <string>${SPLONKS_IOS_DEVELOPMENT_TEAM}</string>
   <key>signingStyle</key>
   <string>${SPLONKS_IOS_SIGNING_STYLE}</string>
+EOF
+
+if [[ -n "${SPLONKS_IOS_PROVISIONING_PROFILE:-}" ]]; then
+    cat >> "${export_options}" <<EOF
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>${SPLONKS_IOS_BUNDLE_ID}</key>
+    <string>${SPLONKS_IOS_PROVISIONING_PROFILE}</string>
+  </dict>
+EOF
+fi
+
+cat >> "${export_options}" <<EOF
   <key>destination</key>
   <string>export</string>
   <key>stripSwiftSymbols</key>
@@ -86,10 +100,28 @@ if [[ -z "${found_ipa}" ]]; then
 fi
 
 cp "${found_ipa}" "${ipa_path}"
+sha256=""
 if command -v shasum >/dev/null 2>&1; then
     (cd "${release_dir}" && shasum -a 256 "$(basename "${ipa_path}")" > "$(basename "${ipa_path}").sha256")
+    sha256="$(awk '{print $1}' "${ipa_path}.sha256")"
 fi
 
+commit="$(git -C "${repo_root}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+cat > "${archive_dir}/manifest.txt" <<EOF
+name=splonks
+platform=ios
+mode=release
+artifact=$(basename "${ipa_path}")
+version_code=${SPLONKS_IOS_VERSION_CODE}
+version_name=${version}
+git_commit=${commit}
+bundle_id=${SPLONKS_IOS_BUNDLE_ID}
+export_method=${SPLONKS_IOS_EXPORT_METHOD}
+signing_style=${SPLONKS_IOS_SIGNING_STYLE}
+sha256=${sha256}
+EOF
+
 echo "[ios] ${archive_path}"
+echo "[ios] ${archive_dir}/manifest.txt"
 echo "[ios] ${ipa_path}"
 echo "[ios] ${ipa_path}.sha256"

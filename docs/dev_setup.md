@@ -182,6 +182,16 @@ Simulator build path:
 ./scripts/ios/build_sim.sh
 ```
 
+Simulator install/launch path:
+
+```bash
+./scripts/ios/run_sim.sh
+```
+
+`run_sim.sh` builds the simulator app, installs it into a booted iPhone
+simulator when one exists, or boots the first available iPhone simulator. Set
+`SPLONKS_IOS_SIMULATOR_UDID` to target a specific simulator.
+
 The Splonks `ios-sim` preset uses the Xcode generator, `CMAKE_SYSTEM_NAME=iOS`,
 `iphonesimulator`, arm64 simulator architecture, SDL3 FetchContent, and an iOS
 `.app` bundle. CMake copies `assets/` and `data/` into the app bundle so startup
@@ -190,7 +200,7 @@ can use the bundle as its content root.
 Status: simulator scaffold exists. We still need:
 
 - macOS/Xcode validation of `./scripts/ios/build_sim.sh`.
-- Simulator launch validation.
+- macOS/Xcode validation of `./scripts/ios/run_sim.sh`.
 - macOS/Xcode validation of `./scripts/ios/archive_release.sh`.
 - TestFlight/App Store upload validation.
 
@@ -211,6 +221,7 @@ Current release package entry points:
 ./scripts/package_windows.sh
 ./scripts/archive_release.sh linux|macos|windows
 ./scripts/android/build_release_aab.sh
+./scripts/ios/archive_release.sh
 ```
 
 Release target state:
@@ -225,5 +236,6 @@ Release target state:
 - Android: debug APK build, x86_64 emulator smoke, and signed arm64 release
   AAB path are validated locally. Final store distribution still needs the real
   upload key and Play Console upload validation.
-- iOS: simulator scaffold exists. macOS/Xcode validation, device signing,
-  archive, and TestFlight/App Store path remain to be added.
+- iOS: simulator build/launch scaffold and device archive/export script exist.
+  macOS/Xcode validation, real device signing, and TestFlight/App Store upload
+  validation remain.

@@ -142,6 +142,7 @@ Simulator build on macOS/Xcode:
 
 ```bash
 ./scripts/ios/build_sim.sh
+./scripts/ios/run_sim.sh
 ```
 
 Device archive/export path on macOS/Xcode:
@@ -149,6 +150,7 @@ Device archive/export path on macOS/Xcode:
 ```bash
 export SPLONKS_RELEASE_VERSION=0.1.0
 export SPLONKS_IOS_DEVELOPMENT_TEAM=TEAMID
+export SPLONKS_IOS_BUNDLE_ID=dev.splonks.game
 export SPLONKS_IOS_CODE_SIGN_IDENTITY="Apple Distribution"
 export SPLONKS_IOS_EXPORT_METHOD=app-store-connect
 ./scripts/ios/archive_release.sh
@@ -159,17 +161,29 @@ Output:
 ```text
 dist/splonks-ios/Splonks.xcarchive
 dist/splonks-ios/export/
+dist/splonks-ios/manifest.txt
 dist/releases/splonks-0.1.0-ios.ipa
 dist/releases/splonks-0.1.0-ios.ipa.sha256
 ```
 
 Current status: `ios-sim` and `ios-device` CMake/Xcode scaffolds exist and copy
-`assets/` and `data/` into the app bundle. The archive/export script exists,
-but still needs macOS/Xcode validation with an Apple Developer team.
+`assets/` and `data/` into the app bundle. The simulator build/install/launch
+script and archive/export script exist, and the archive path writes a manifest
+with bundle id, export method, commit, version, and SHA-256. These paths still
+need macOS/Xcode validation with an Apple Developer team.
 
 - Final App Store distribution checklist.
 - Validation of upload through Xcode Organizer, Transporter, or `xcrun altool`.
 - Confirmation of provisioning profile and entitlements for the final bundle ID.
+
+Optional iOS archive/export settings:
+
+```text
+SPLONKS_IOS_SIGNING_STYLE=automatic|manual
+SPLONKS_IOS_PROVISIONING_PROFILE=<profile name>
+SPLONKS_IOS_VERSION_CODE=1
+SPLONKS_IOS_SIMULATOR_UDID=<simulator udid>
+```
 
 ## GitHub Actions
 

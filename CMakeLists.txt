@@ -20,6 +20,14 @@ option(SPLONKS_WARN_AS_ERROR "Treat warnings as errors." ON)
 option(SPLONKS_FETCH_DEPS "Fetch missing SDL/imgui dependencies with CMake FetchContent" ON)
 set(SPLONKS_IOS_DEVELOPMENT_TEAM "" CACHE STRING "Apple Developer Team ID for iOS device builds")
 set(SPLONKS_IOS_CODE_SIGN_IDENTITY "Apple Development" CACHE STRING "Code signing identity for iOS device builds")
+set(SPLONKS_IOS_BUNDLE_ID "dev.splonks.game" CACHE STRING "Bundle identifier for iOS builds")
+set(SPLONKS_IOS_CODE_SIGN_STYLE "Automatic" CACHE STRING "Code signing style for iOS device builds")
+if (NOT SPLONKS_IOS_BUNDLE_ID)
+    set(SPLONKS_IOS_BUNDLE_ID "dev.splonks.game")
+endif()
+if (NOT SPLONKS_IOS_CODE_SIGN_STYLE)
+    set(SPLONKS_IOS_CODE_SIGN_STYLE "Automatic")
+endif()
 
 find_package(SDL3 3.4.0 CONFIG QUIET)
 
@@ -493,13 +501,13 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
         XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "${SPLONKS_IOS_CODE_SIGNING_ALLOWED}"
-        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "dev.splonks.game"
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${SPLONKS_IOS_BUNDLE_ID}"
     )
     if (SPLONKS_IOS_DEVELOPMENT_TEAM)
         set_target_properties(splonks-cpp PROPERTIES
             XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${SPLONKS_IOS_DEVELOPMENT_TEAM}"
             XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${SPLONKS_IOS_CODE_SIGN_IDENTITY}"
-            XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+            XCODE_ATTRIBUTE_CODE_SIGN_STYLE "${SPLONKS_IOS_CODE_SIGN_STYLE}"
         )
     endif()
     add_custom_command(TARGET splonks-cpp POST_BUILD
