@@ -18,8 +18,8 @@ interactive game launch.
 
 `bootstrap_dev.sh` is the preferred desktop onboarding command. It runs the
 supported platform setup script, then runs `verify_dev_env.sh` with the `dev`
-preset. After it passes, launch the game with `SPLONKS_PRESET=dev
-./scripts/run.sh`.
+preset. Use `./scripts/bootstrap_dev.sh --run` when the onboarding command
+should launch the game immediately after the smoke passes.
 
 `validate_platform.sh` is the evidence collector for platform handoff. After
 running `bootstrap_dev.sh`, use `./scripts/validate_platform.sh dev` to produce
@@ -34,8 +34,7 @@ Supported path: Debian/Ubuntu through `apt`.
 ```bash
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
-./scripts/bootstrap_dev.sh
-SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/bootstrap_dev.sh --run
 ```
 
 The bootstrap script installs the native packages needed to compile SDL3 and its
@@ -54,8 +53,7 @@ pkg-config, X11, Wayland, audio, udev, DRM/GBM, and libdecor development
 packages, then run:
 
 ```bash
-./scripts/bootstrap_dev.sh --skip-setup
-SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/bootstrap_dev.sh --skip-setup --run
 ```
 
 Status: verified from a fresh Linux clone with no adjacent Gubsy checkout:
@@ -70,8 +68,7 @@ Supported path: Xcode command line tools plus Homebrew.
 xcode-select --install
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
-./scripts/bootstrap_dev.sh
-SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/bootstrap_dev.sh --run
 ```
 
 The bootstrap script runs `setup_macos.sh`, which installs:
@@ -100,8 +97,7 @@ If MSYS2 asks you to close the terminal, reopen **MSYS2 UCRT64** and continue:
 ```bash
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
-./scripts/bootstrap_dev.sh
-SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/bootstrap_dev.sh --run
 ```
 
 The bootstrap script runs `setup_windows_msys2.sh`, which installs:

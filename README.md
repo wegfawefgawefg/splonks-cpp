@@ -19,8 +19,7 @@ For normal desktop development, use the one-command bootstrap for Linux,
 macOS, or Windows/MSYS2 UCRT64:
 
 ```bash
-./scripts/bootstrap_dev.sh
-SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/bootstrap_dev.sh --run
 ```
 
 See [docs/dev_setup.md](docs/dev_setup.md) for Linux, macOS, Windows, Android,
