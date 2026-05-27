@@ -23,6 +23,7 @@ Use the real upload keystore, not the throwaway local validation key:
 export SPLONKS_ANDROID_KEYSTORE=/absolute/path/to/upload-keystore.jks
 export SPLONKS_ANDROID_KEYSTORE_PASSWORD=...
 export SPLONKS_ANDROID_KEYSTORE_TYPE=jks
+export SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload
 export SPLONKS_ANDROID_KEY_ALIAS=...
 export SPLONKS_ANDROID_KEY_PASSWORD=...
 export SPLONKS_ANDROID_VERSION_CODE=1
@@ -110,6 +111,7 @@ Required GitHub secrets/variables:
 SPLONKS_ANDROID_KEYSTORE_BASE64          secret
 SPLONKS_ANDROID_KEYSTORE_PASSWORD        secret
 SPLONKS_ANDROID_KEYSTORE_TYPE            repository variable, default jks
+SPLONKS_ANDROID_KEYSTORE_PURPOSE         repository variable, must be upload
 SPLONKS_ANDROID_KEY_ALIAS                secret
 SPLONKS_ANDROID_KEY_PASSWORD             secret
 SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64 secret

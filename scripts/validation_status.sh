@@ -594,6 +594,10 @@ check print_log_version_contains_check \
     "Android signed AAB validation" \
     "${repo_root}/dist/validation/*-android-release-*.log" \
     "[validated] android signed release AAB"
+check print_log_version_contains_check \
+    "Android upload-key AAB validation" \
+    "${repo_root}/dist/validation/*-android-release-*.log" \
+    "[validated] android signed release AAB with upload key"
 check print_file_check "Android release AAB" "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab"
 check print_file_check "Android release manifest" "${repo_root}/dist/splonks-android/manifest.txt"
 check print_manifest_value_check "Android manifest version" "${repo_root}/dist/splonks-android/manifest.txt" version_name "${version}"

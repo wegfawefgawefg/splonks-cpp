@@ -318,6 +318,7 @@ For real Play distribution, use the actual upload keystore instead:
 export SPLONKS_ANDROID_KEYSTORE=/absolute/path/to/upload-keystore.jks
 export SPLONKS_ANDROID_KEYSTORE_PASSWORD=...
 export SPLONKS_ANDROID_KEYSTORE_TYPE=jks
+export SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload
 export SPLONKS_ANDROID_KEY_ALIAS=...
 export SPLONKS_ANDROID_KEY_PASSWORD=...
 export SPLONKS_ANDROID_VERSION_CODE=1
@@ -353,8 +354,9 @@ dist/splonks-android/manifest.txt
 
 Current status: SDK setup, SDL3 AAR fetch, x86_64 debug APK build, emulator
 install/runtime smoke, signed arm64 release AAB, and AAB artifact verification
-have passed locally with a throwaway upload keystore. Final distribution still
-needs the real upload key and Play Console upload validation. See
+have passed locally with a throwaway validation keystore. Final distribution
+still needs `SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload` evidence from the real
+upload key and Play Console upload validation. See
 [android_play_release.md](android_play_release.md) for the exact Play Console
 handoff and evidence to record.
 

@@ -170,6 +170,9 @@ validate_android_release() {
     run_step "${repo_root}/scripts/android/build_release_aab.sh"
     run_step "${repo_root}/scripts/android/verify_release_aab.sh"
     echo "[validated] android signed release AAB"
+    if [[ "${SPLONKS_ANDROID_KEYSTORE_PURPOSE:-}" == "upload" ]]; then
+        echo "[validated] android signed release AAB with upload key"
+    fi
 }
 
 validate_android_play_upload() {

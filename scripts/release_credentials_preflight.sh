@@ -141,6 +141,11 @@ check_android_release() {
     require_file "SPLONKS_ANDROID_KEYSTORE" "${SPLONKS_ANDROID_KEYSTORE:-}"
     require_env SPLONKS_ANDROID_KEYSTORE_PASSWORD
     echo "[info] keystore_type=${SPLONKS_ANDROID_KEYSTORE_TYPE:-jks}"
+    if [[ "${SPLONKS_ANDROID_KEYSTORE_PURPOSE:-}" == "upload" ]]; then
+        ok "SPLONKS_ANDROID_KEYSTORE_PURPOSE=upload"
+    else
+        missing "SPLONKS_ANDROID_KEYSTORE_PURPOSE must be set to upload for Play-ready release evidence"
+    fi
     require_env SPLONKS_ANDROID_KEY_ALIAS
     require_env SPLONKS_ANDROID_KEY_PASSWORD
     if [[ -f "${android_ndk_home}/build/cmake/android.toolchain.cmake" ]]; then
