@@ -75,11 +75,8 @@ launch on Intel Macs:
 EOF
     checkout_commands
     cat <<EOF
-    ./scripts/bootstrap_dev.sh --run
-    ./scripts/validate_platform.sh dev
     test "\$(uname -m)" = arm64
-    SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_platform.sh release
-    ./scripts/bundle_validation_evidence.sh --include-artifacts macos
+    SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_desktop_handoff.sh
 
 If Developer ID credentials are available:
 
@@ -111,10 +108,7 @@ EOF
     checkout_commands
     cat <<EOF
     test "\${MSYSTEM:-}" = UCRT64
-    ./scripts/bootstrap_dev.sh --run
-    ./scripts/validate_platform.sh dev
-    SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_platform.sh release
-    ./scripts/bundle_validation_evidence.sh --include-artifacts windows
+    SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_desktop_handoff.sh
 EOF
     common_return "windows"
 }

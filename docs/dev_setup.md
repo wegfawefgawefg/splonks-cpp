@@ -28,6 +28,9 @@ should launch the game immediately after the smoke passes.
 `validate_platform.sh` is the evidence collector for platform handoff. After
 running `bootstrap_dev.sh`, use `./scripts/validate_platform.sh dev` to produce
 a timestamped `dist/validation/` log that can be shared back with the team.
+For real desktop handoff, `./scripts/validate_desktop_handoff.sh` runs
+bootstrap, interactive launch, dev validation, release validation, and evidence
+bundling in one command after clone/checkout.
 For macOS and Windows validator instructions, see
 [desktop_validation_handoff.md](desktop_validation_handoff.md).
 

@@ -102,6 +102,13 @@ specific older release commit.
 
 Use [desktop_validation_handoff.md](desktop_validation_handoff.md) when sending
 macOS or Windows validation tasks to another developer.
+After clone and checkout, the desktop validator can run the whole developer,
+release, and evidence bundle path with:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_desktop_handoff.sh
+```
+
 For Linux, the local clean-clone onboarding proof is:
 
 ```bash

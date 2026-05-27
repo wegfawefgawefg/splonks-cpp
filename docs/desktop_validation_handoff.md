@@ -20,6 +20,17 @@ The goal is to prove that a new developer can clone, run one setup/build path,
 and launch the game without understanding Gubsy internals or waiting on GitHub
 Actions.
 
+After clone/checkout, the one-command desktop handoff is:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_desktop_handoff.sh
+```
+
+That wrapper runs the supported setup script for the host, builds the dev
+preset, launches the game window, records dev and release validation logs,
+builds the release package/archive, and bundles the evidence. For headless
+local retesting only, set `SPLONKS_SKIP_INTERACTIVE_LAUNCH=1`.
+
 ## macOS Developer Validation
 
 Run on a real macOS machine. For release validation, use an Apple Silicon Mac;
@@ -32,8 +43,7 @@ brew --version >/dev/null 2>&1 || /bin/bash -c "$(curl -fsSL https://raw.githubu
 git clone https://github.com/wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
 git checkout <handoff-git-revision>
-./scripts/bootstrap_dev.sh --run
-./scripts/validate_platform.sh dev
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_desktop_handoff.sh
 ```
 
 Record:
@@ -50,7 +60,8 @@ unusual setup.
 
 ## macOS Release Validation
 
-Run after developer validation on an Apple Silicon Mac:
+The handoff wrapper already runs release validation on an Apple Silicon Mac.
+To rerun only the release validation:
 
 ```bash
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_platform.sh release
@@ -101,8 +112,7 @@ git clone https://github.com/wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
 git checkout <handoff-git-revision>
 test "${MSYSTEM:-}" = UCRT64
-./scripts/bootstrap_dev.sh --run
-./scripts/validate_platform.sh dev
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_desktop_handoff.sh
 ```
 
 If `pacman -Syu` asks to close the terminal, reopen MSYS2 UCRT64 before
@@ -123,7 +133,8 @@ setup.
 
 ## Windows Release Validation
 
-Run after developer validation in MSYS2 UCRT64:
+The handoff wrapper already runs release validation in MSYS2 UCRT64.
+To rerun only the release validation:
 
 ```bash
 test "${MSYSTEM:-}" = UCRT64
