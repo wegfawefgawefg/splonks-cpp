@@ -4,8 +4,11 @@ set -euo pipefail
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 target="${1:-all}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
-revision="$(git -C "${repo_root}" rev-parse HEAD 2>/dev/null || echo unknown)"
-branch="$(git -C "${repo_root}" branch --show-current 2>/dev/null || echo net-lockstep-experiment)"
+current_revision="$(git -C "${repo_root}" rev-parse HEAD 2>/dev/null || echo unknown)"
+current_branch="$(git -C "${repo_root}" branch --show-current 2>/dev/null || true)"
+revision="${SPLONKS_VALIDATION_REVISION:-${current_revision}}"
+short_revision="${revision:0:12}"
+validation_ref="${SPLONKS_VALIDATION_REF:-${current_branch:-net-lockstep-experiment}}"
 
 usage() {
     cat >&2 <<EOF
@@ -15,6 +18,9 @@ Prints a copy/paste validation handoff for external platform validators.
 
 Environment:
   SPLONKS_RELEASE_VERSION   Release version used in artifact names, default: ${version}
+  SPLONKS_VALIDATION_REF    Remote ref to fetch before checkout, default: ${validation_ref}
+  SPLONKS_VALIDATION_REVISION
+                            Commit to validate, default: current HEAD
 EOF
 }
 
@@ -33,7 +39,7 @@ Return:
 Receiver import:
 
     ./scripts/import_validation_evidence.sh path/to/splonks-validation-${label}-*.tar.gz
-    SPLONKS_RELEASE_VERSION=${version} SPLONKS_VALIDATION_REVISION=${revision:0:12} ./scripts/validation_status.sh
+    SPLONKS_RELEASE_VERSION=${version} SPLONKS_VALIDATION_REVISION=${short_revision} ./scripts/validation_status.sh
 EOF
 }
 
@@ -41,14 +47,25 @@ checkout_commands() {
     cat <<EOF
     git clone git@github.com:wegfawefgawefg/splonks-cpp.git
     cd splonks-cpp
-    git fetch origin ${branch}
+    git fetch --tags origin ${validation_ref}
     git checkout ${revision}
+EOF
+}
+
+generated_for() {
+    cat <<EOF
+Generated for:
+- release_version=${version}
+- validation_ref=${validation_ref}
+- validation_revision=${revision}
 EOF
 }
 
 print_macos() {
     header "macOS Developer And Release Validation"
+    generated_for
     cat <<EOF
+
 Run on a real macOS machine with Xcode command line tools and Homebrew:
 
     xcode-select --install
@@ -75,7 +92,9 @@ EOF
 
 print_windows() {
     header "Windows MSYS2/UCRT64 Developer And Release Validation"
+    generated_for
     cat <<EOF
+
 Run in the MSYS2 UCRT64 terminal, not PowerShell or cmd.exe:
 
     pacman -Syu
@@ -95,7 +114,9 @@ EOF
 
 print_android_play() {
     header "Android Play Internal Testing Upload Validation"
+    generated_for
     cat <<EOF
+
 Run after the signed AAB has been built with the real upload key:
 
 EOF
@@ -127,7 +148,9 @@ EOF
 
 print_ios() {
     header "iOS Simulator, Archive, And TestFlight Validation"
+    generated_for
     cat <<EOF
+
 Run on a real macOS machine with Xcode and an Apple Developer team:
 
 EOF

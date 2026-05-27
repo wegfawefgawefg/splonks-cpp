@@ -105,6 +105,17 @@ SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh android-play
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh ios
 ```
 
+The handoff generator prints the exact release version, remote ref, and commit
+revision being audited. By default it uses the current branch and current HEAD.
+For a tagged release or an older commit, set both values explicitly:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 \
+SPLONKS_VALIDATION_REF=v0.1.0 \
+SPLONKS_VALIDATION_REVISION=<release-commit> \
+./scripts/print_validation_handoff.sh all
+```
+
 For release credentials and upload prerequisites, validators can run the
 preflight helper before a long package/archive/upload command:
 
