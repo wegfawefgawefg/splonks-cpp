@@ -100,6 +100,7 @@ Evidence helper:
 
 ```bash
 ./scripts/validate_platform.sh android-play-upload
+./scripts/bundle_validation_evidence.sh android-play
 ```
 
 ## Production Upload

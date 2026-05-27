@@ -48,6 +48,14 @@ Record:
 - `dist/releases/splonks-0.1.0-macos-universal.zip.sha256`.
 - Whether the packaged `Splonks.app` launches locally.
 
+Then bundle the validation evidence:
+
+```bash
+./scripts/bundle_validation_evidence.sh macos
+```
+
+Send back the generated `dist/validation-bundles/splonks-validation-macos-*.tar.gz`.
+
 Developer ID distribution still needs the signing/notarization path from
 [release_distribution.md](release_distribution.md).
 When Developer ID credentials are available, validate that path with:
@@ -98,6 +106,14 @@ Record:
 - `dist/releases/splonks-0.1.0-windows-x86_64.zip`.
 - `dist/releases/splonks-0.1.0-windows-x86_64.zip.sha256`.
 - Whether `run-splonks.bat` launches from an extracted copy of the zip.
+
+Then bundle the validation evidence:
+
+```bash
+./scripts/bundle_validation_evidence.sh windows
+```
+
+Send back the generated `dist/validation-bundles/splonks-validation-windows-*.tar.gz`.
 
 ## Passing Result
 

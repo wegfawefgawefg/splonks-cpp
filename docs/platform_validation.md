@@ -42,6 +42,16 @@ For desktop releases, `./scripts/verify_release_archive.sh <platform>` also
 extracts the archive into a temporary directory and runs the packaged smoke path
 from that extracted copy on the matching host platform.
 
+After a platform validator has run the requested validation scopes, bundle the
+logs, manifests, and checksums with:
+
+```bash
+./scripts/bundle_validation_evidence.sh <platform-or-release-label>
+```
+
+The bundle is written under `dist/validation-bundles/` and is the file to send
+back to the team for review.
+
 Use [desktop_validation_handoff.md](desktop_validation_handoff.md) when sending
 macOS or Windows validation tasks to another developer.
 

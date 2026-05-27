@@ -16,6 +16,9 @@ The script writes a timestamped evidence log under `dist/validation/`.
 Desktop archive verification extracts the release artifact into a temporary
 directory and runs the packaged smoke path from that extracted copy on the
 matching host platform.
+After validation, run `./scripts/bundle_validation_evidence.sh <label>` to
+collect logs, package manifests, and release checksums into a single archive
+under `dist/validation-bundles/`.
 
 ## Linux
 
