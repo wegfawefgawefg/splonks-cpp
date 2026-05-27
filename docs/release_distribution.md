@@ -182,12 +182,17 @@ App Store Connect/TestFlight upload path:
 export SPLONKS_RELEASE_VERSION=0.1.0
 export SPLONKS_APP_STORE_API_KEY=ABC123DEFG
 export SPLONKS_APP_STORE_API_ISSUER=00000000-0000-0000-0000-000000000000
+export API_PRIVATE_KEYS_DIR=/absolute/path/to/appstoreconnect/private_keys
 ./scripts/ios/upload_app_store.sh validate-upload
 ```
 
 Apple's App Store Connect help documents Xcode, Transporter, and `xcrun
 altool` as supported upload paths:
 <https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds>.
+`altool` expects the API key file to be named
+`AuthKey_<SPLONKS_APP_STORE_API_KEY>.p8`; it searches `./private_keys`,
+`~/private_keys`, `~/.private_keys`, `~/.appstoreconnect/private_keys`, and
+`API_PRIVATE_KEYS_DIR`.
 
 Alternatively, use Apple ID credentials with an app-specific password:
 
@@ -228,6 +233,7 @@ SPLONKS_IOS_PROVISIONING_PROFILE=<profile name>
 SPLONKS_IOS_VERSION_CODE=1
 SPLONKS_IOS_SIMULATOR_UDID=<simulator udid>
 SPLONKS_IOS_IPA_PATH=<explicit ipa path>
+API_PRIVATE_KEYS_DIR=<directory containing AuthKey_<key id>.p8>
 ```
 
 ## GitHub Actions

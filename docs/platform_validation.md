@@ -286,10 +286,13 @@ App Store Connect/TestFlight upload validation:
 export SPLONKS_RELEASE_VERSION=0.1.0
 export SPLONKS_APP_STORE_API_KEY=ABC123DEFG
 export SPLONKS_APP_STORE_API_ISSUER=00000000-0000-0000-0000-000000000000
+export API_PRIVATE_KEYS_DIR=/absolute/path/to/appstoreconnect/private_keys
 ./scripts/ios/upload_app_store.sh validate-upload
 ```
 
 Reference: <https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds>.
+The private key file must be named
+`AuthKey_<SPLONKS_APP_STORE_API_KEY>.p8`.
 
 Evidence helper:
 

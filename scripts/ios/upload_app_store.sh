@@ -17,6 +17,9 @@ Run scripts/ios/archive_release.sh first.
 Authentication options:
   SPLONKS_APP_STORE_API_KEY       App Store Connect API key ID
   SPLONKS_APP_STORE_API_ISSUER    App Store Connect API issuer ID
+  API_PRIVATE_KEYS_DIR            Directory containing AuthKey_<key id>.p8
+  SPLONKS_APP_STORE_API_PRIVATE_KEYS_DIR
+                                  Optional project-specific alias for API_PRIVATE_KEYS_DIR
 
 or:
   APPLE_ID                        Apple account email
@@ -35,6 +38,42 @@ require_cmd() {
     fi
 }
 
+configure_api_private_key_dir() {
+    if [[ -n "${SPLONKS_APP_STORE_API_PRIVATE_KEYS_DIR:-}" ]]; then
+        export API_PRIVATE_KEYS_DIR="${SPLONKS_APP_STORE_API_PRIVATE_KEYS_DIR}"
+    fi
+}
+
+require_api_private_key() {
+    local key_id="$1"
+    local filename="AuthKey_${key_id}.p8"
+    local search_dirs=()
+    if [[ -n "${API_PRIVATE_KEYS_DIR:-}" ]]; then
+        search_dirs+=("${API_PRIVATE_KEYS_DIR}")
+    fi
+    search_dirs+=(
+        "./private_keys"
+        "${HOME}/private_keys"
+        "${HOME}/.private_keys"
+        "${HOME}/.appstoreconnect/private_keys"
+    )
+
+    local dir
+    for dir in "${search_dirs[@]}"; do
+        if [[ -f "${dir}/${filename}" ]]; then
+            return 0
+        fi
+    done
+
+    echo "Missing App Store Connect API private key: ${filename}" >&2
+    echo "Place it in one of altool's private key directories or set API_PRIVATE_KEYS_DIR." >&2
+    printf 'Searched:\n' >&2
+    for dir in "${search_dirs[@]}"; do
+        printf '  %s\n' "${dir}" >&2
+    done
+    exit 1
+}
+
 run_altool() {
     local action="$1"
     local args=(
@@ -45,6 +84,8 @@ run_altool() {
     )
 
     if [[ -n "${SPLONKS_APP_STORE_API_KEY:-}" && -n "${SPLONKS_APP_STORE_API_ISSUER:-}" ]]; then
+        configure_api_private_key_dir
+        require_api_private_key "${SPLONKS_APP_STORE_API_KEY}"
         args+=(
             --apiKey "${SPLONKS_APP_STORE_API_KEY}"
             --apiIssuer "${SPLONKS_APP_STORE_API_ISSUER}"
