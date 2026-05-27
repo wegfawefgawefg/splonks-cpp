@@ -79,6 +79,14 @@ other than `0.1.0`.
 
 Use [desktop_validation_handoff.md](desktop_validation_handoff.md) when sending
 macOS or Windows validation tasks to another developer.
+To print a copy/paste handoff for one external validator, run:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh macos
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh windows
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh android-play
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/print_validation_handoff.sh ios
+```
 
 ## Linux
 
