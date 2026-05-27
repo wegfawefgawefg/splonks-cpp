@@ -385,7 +385,8 @@ Workflow artifacts:
   `manifest.txt`, validation logs, and validation bundles when the opt-in iOS
   job and Apple signing secrets are configured.
 - iOS App Store/TestFlight: optional upload through
-  `scripts/validate_ios_handoff.sh` with `SPLONKS_IOS_UPLOAD=1` when explicitly
+  `scripts/validate_ios_handoff.sh` with
+  `SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1` when explicitly
   requested and App Store Connect credentials are configured.
 
 Required Android release secrets:

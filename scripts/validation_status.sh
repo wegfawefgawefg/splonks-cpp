@@ -873,6 +873,7 @@ check check_workflow_contains "Package workflow uses Android Play handoff wrappe
 check check_workflow_contains "Package workflow uses iOS handoff wrapper" "./scripts/validate_ios_handoff.sh"
 check check_file_contains "iOS handoff has complete evidence mode" "${repo_root}/scripts/validate_ios_handoff.sh" "SPLONKS_IOS_REQUIRE_COMPLETE"
 check check_file_contains "Generated iOS handoff requires complete final evidence" "${repo_root}/scripts/print_validation_handoff.sh" "SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1"
+check check_workflow_contains "Package workflow requires complete iOS upload evidence" "SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1"
 
 echo
 if [[ "${failures}" -eq 0 ]]; then
