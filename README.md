@@ -15,23 +15,26 @@ assets, notes, and plans carried forward so we can move file-by-file without los
 
 ## Build
 
-For normal development, follow the platform setup guide first:
+For normal desktop development, use the one-command bootstrap for Linux,
+macOS, or Windows/MSYS2 UCRT64:
 
 ```bash
-SPLONKS_PRESET=dev bash scripts/verify_dev_env.sh
-SPLONKS_PRESET=dev bash scripts/run.sh
+./scripts/bootstrap_dev.sh
+SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
 See [docs/dev_setup.md](docs/dev_setup.md) for Linux, macOS, Windows, Android,
 and iOS setup/distribution status. See
 [docs/platform_validation.md](docs/platform_validation.md) for the checklist
 that defines when onboarding and release distribution are actually proven.
+See [docs/release_distribution.md](docs/release_distribution.md) for the
+manual/tag-based release packaging and store-delivery paths.
 Android Play Console release handoff lives in
 [docs/android_play_release.md](docs/android_play_release.md).
 macOS/Windows validator handoff lives in
 [docs/desktop_validation_handoff.md](docs/desktop_validation_handoff.md).
 
-The default release build path is:
+The lower-level local release build path is:
 
 ```bash
 bash scripts/build.sh
