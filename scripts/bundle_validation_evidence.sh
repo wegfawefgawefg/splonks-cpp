@@ -8,6 +8,8 @@ validation_dir="${repo_root}/dist/validation"
 bundle_root="${repo_root}/dist/validation-bundles"
 include_artifacts=0
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
+expected_revision="$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+allow_stale="${SPLONKS_BUNDLE_ALLOW_STALE:-0}"
 
 usage() {
     cat >&2 <<EOF
@@ -24,6 +26,8 @@ Examples:
 
 Environment:
   SPLONKS_RELEASE_VERSION   Release version this evidence is for, default: ${version}
+  SPLONKS_BUNDLE_ALLOW_STALE
+                            Set to 1 to include logs from other revisions
 EOF
 }
 
@@ -93,12 +97,38 @@ write_bundle_checksums() {
     fi
 }
 
+log_matches_bundle() {
+    local path="$1"
+    if [[ "${allow_stale}" == "1" ]]; then
+        return 0
+    fi
+    if ! grep -Fxq "git_revision=${expected_revision}" "${path}"; then
+        return 1
+    fi
+    if grep -q '^release_version=' "${path}" && ! grep -Fxq "release_version=${version}" "${path}"; then
+        return 1
+    fi
+    return 0
+}
+
+copied_logs=0
 if [[ -d "${validation_dir}" ]] && find "${validation_dir}" -maxdepth 1 -type f -name "*.log" | grep -q .; then
     mkdir -p "${stage_dir}/validation"
-    find "${validation_dir}" -maxdepth 1 -type f -name "*.log" -exec cp {} "${stage_dir}/validation/" \;
+    while IFS= read -r log_path; do
+        if log_matches_bundle "${log_path}"; then
+            cp "${log_path}" "${stage_dir}/validation/"
+            copied_logs=$((copied_logs + 1))
+        fi
+    done < <(find "${validation_dir}" -maxdepth 1 -type f -name "*.log" | sort)
 else
     echo "No validation logs found under ${validation_dir}" >&2
     echo "Run ./scripts/validate_platform.sh <scope> before bundling evidence." >&2
+    exit 1
+fi
+
+if [[ "${copied_logs}" -eq 0 ]]; then
+    echo "No validation logs under ${validation_dir} matched git_revision=${expected_revision} release_version=${version}." >&2
+    echo "Run ./scripts/validate_platform.sh <scope> for this revision, or set SPLONKS_BUNDLE_ALLOW_STALE=1 for diagnostic bundles." >&2
     exit 1
 fi
 
@@ -132,9 +162,10 @@ fi
     echo "label=${label}"
     echo "timestamp_utc=${timestamp}"
     echo "release_version=${version}"
-    echo "git_revision=$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+    echo "git_revision=${expected_revision}"
     echo "git_branch=$(git -C "${repo_root}" branch --show-current 2>/dev/null || echo unknown)"
     echo "include_artifacts=${include_artifacts}"
+    echo "allow_stale=${allow_stale}"
     echo "uname=$(uname -a)"
     echo "checksum_summary=CHECKSUMS.sha256"
     echo

@@ -67,6 +67,9 @@ Then bundle the validation evidence:
 ```
 
 Send back the generated `dist/validation-bundles/splonks-validation-macos-*.tar.gz`.
+The bundle helper only includes validation logs for the handoff commit and
+release version, so rerun the `validate_platform.sh` commands after checking
+out the pinned revision if bundling reports no matching logs.
 On the receiving machine, import it with
 `./scripts/import_validation_evidence.sh path/to/splonks-validation-macos-*.tar.gz`,
 then run `validation_status.sh` with the same release version and handoff
@@ -130,6 +133,9 @@ Then bundle the validation evidence:
 ```
 
 Send back the generated `dist/validation-bundles/splonks-validation-windows-*.tar.gz`.
+The bundle helper only includes validation logs for the handoff commit and
+release version, so rerun the `validate_platform.sh` commands after checking
+out the pinned revision if bundling reports no matching logs.
 On the receiving machine, import it with
 `./scripts/import_validation_evidence.sh path/to/splonks-validation-windows-*.tar.gz`,
 then run `validation_status.sh` with the same release version and handoff
