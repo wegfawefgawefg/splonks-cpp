@@ -35,6 +35,10 @@ Required evidence for every platform:
 - SHA-256 checksums for distributable archives or bundles.
 - Launch, install, smoke, notarization, or store-upload result as applicable.
 
+Use `./scripts/validate_platform.sh <scope>` to collect a timestamped evidence
+log under `dist/validation/`. The setup scripts are still separate because they
+may install packages or require platform credentials.
+
 ## Linux
 
 Developer validation:
@@ -45,6 +49,12 @@ SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
+Evidence helper after setup:
+
+```bash
+./scripts/validate_platform.sh dev
+```
+
 Release validation:
 
 ```bash
@@ -52,6 +62,12 @@ Release validation:
 ./scripts/verify_package_linux.sh
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/archive_release.sh linux
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/verify_release_archive.sh linux
+```
+
+Evidence helper:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_platform.sh release
 ```
 
 Expected release artifacts:
@@ -77,6 +93,12 @@ SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
+Evidence helper after setup:
+
+```bash
+./scripts/validate_platform.sh dev
+```
+
 Release validation:
 
 ```bash
@@ -84,6 +106,12 @@ Release validation:
 ./scripts/verify_package_macos.sh
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/archive_release.sh macos
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/verify_release_archive.sh macos
+```
+
+Evidence helper:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_platform.sh release
 ```
 
 Developer ID signing and notarization validation:
@@ -123,6 +151,12 @@ SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
+Evidence helper after setup:
+
+```bash
+./scripts/validate_platform.sh dev
+```
+
 Release validation:
 
 ```bash
@@ -130,6 +164,12 @@ Release validation:
 ./scripts/verify_package_windows.sh
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/archive_release.sh windows
 SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/verify_release_archive.sh windows
+```
+
+Evidence helper:
+
+```bash
+SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_platform.sh release
 ```
 
 Expected release artifacts:
@@ -158,6 +198,12 @@ SPLONKS_ANDROID_ABIS=x86_64 ./scripts/android/build_apk.sh
 ./scripts/android/run_smoke.sh
 ```
 
+Evidence helper with an emulator or device already running:
+
+```bash
+./scripts/validate_platform.sh android-dev
+```
+
 Signed release AAB validation:
 
 ```bash
@@ -170,6 +216,12 @@ export SPLONKS_ANDROID_VERSION_NAME=0.1.0
 ./scripts/android/setup_sdk.sh
 ./scripts/android/fetch_sdl3_aar.sh
 ./scripts/android/build_release_aab.sh
+```
+
+Evidence helper:
+
+```bash
+./scripts/validate_platform.sh android-release
 ```
 
 Expected release artifacts:
@@ -193,6 +245,12 @@ Simulator validation on macOS/Xcode:
 ./scripts/ios/run_sim.sh
 ```
 
+Evidence helper:
+
+```bash
+./scripts/validate_platform.sh ios-sim
+```
+
 Device archive/export validation:
 
 ```bash
@@ -202,6 +260,12 @@ export SPLONKS_IOS_BUNDLE_ID=dev.splonks.game
 export SPLONKS_IOS_CODE_SIGN_IDENTITY="Apple Distribution"
 export SPLONKS_IOS_EXPORT_METHOD=app-store-connect
 ./scripts/ios/archive_release.sh
+```
+
+Evidence helper:
+
+```bash
+./scripts/validate_platform.sh ios-release
 ```
 
 Expected release artifacts:

@@ -10,6 +10,10 @@ Use [platform_validation.md](platform_validation.md) as the release proof
 checklist. A platform is not considered done until its artifact, checksum, and
 launch/install/signing/upload evidence are recorded there.
 
+For handoff validation on a real platform, run
+`SPLONKS_RELEASE_VERSION=<version> ./scripts/validate_platform.sh release`.
+The script writes a timestamped evidence log under `dist/validation/`.
+
 ## Linux
 
 Build, verify, and archive:

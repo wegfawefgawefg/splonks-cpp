@@ -16,6 +16,10 @@ when they are not already available.
 builds, and runs a headless smoke through the dev binary. `run.sh` is the
 interactive game launch.
 
+`validate_platform.sh` is the evidence collector for platform handoff. After
+running the setup script, use `./scripts/validate_platform.sh dev` to produce a
+timestamped `dist/validation/` log that can be shared back with the team.
+
 ## Linux
 
 Supported path: Debian/Ubuntu through `apt`.
