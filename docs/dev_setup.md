@@ -287,7 +287,10 @@ Status: simulator scaffold exists and has a runtime smoke validation command.
 External iOS validators should use `./scripts/validate_ios_handoff.sh` after
 clone/checkout; it runs simulator validation by default and adds signed archive,
 device, and upload validation when the corresponding signing/device/upload
-environment variables are set.
+environment variables are set. The default wrapper mode may produce partial
+evidence. Complete final iOS evidence must use
+`SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1` with signing, physical
+device, and App Store Connect inputs set.
 We still need:
 
 - macOS/Xcode validation of `./scripts/ios/build_sim.sh`.

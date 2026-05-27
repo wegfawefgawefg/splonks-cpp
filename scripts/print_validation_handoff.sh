@@ -195,7 +195,7 @@ Validate/upload to App Store Connect/TestFlight:
     export SPLONKS_APP_STORE_API_KEY=ABC123DEFG
     export SPLONKS_APP_STORE_API_ISSUER=00000000-0000-0000-0000-000000000000
     export API_PRIVATE_KEYS_DIR=/absolute/path/to/appstoreconnect/private_keys
-    SPLONKS_IOS_UPLOAD=1 ./scripts/validate_ios_handoff.sh
+    SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1 ./scripts/validate_ios_handoff.sh
 EOF
     common_return "ios" "ios"
 }

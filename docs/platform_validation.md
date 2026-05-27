@@ -421,6 +421,12 @@ that physical device. App Store Connect upload is intentionally opt-in; set
 `SPLONKS_IOS_UPLOAD=1` only for a release candidate that should be sent to
 TestFlight/App Store Connect.
 
+The default wrapper mode is allowed to return simulator-only or otherwise
+partial evidence. Final iOS release evidence must set
+`SPLONKS_IOS_REQUIRE_COMPLETE=1` with signing, physical device, and upload
+inputs so the handoff fails before bundling if it would not satisfy the
+complete `ios` evidence target.
+
 Simulator validation on macOS/Xcode:
 
 ```bash

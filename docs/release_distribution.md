@@ -235,6 +235,12 @@ signed archive/export when `SPLONKS_IOS_DEVELOPMENT_TEAM` is set, physical
 device install/launch when `SPLONKS_IOS_DEVICE_ID` is set, and App Store
 Connect/TestFlight upload only when `SPLONKS_IOS_UPLOAD=1` is set.
 
+Use the default wrapper mode for simulator-only or partial iOS validation. For
+final release evidence, run the handoff with
+`SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1` after setting the signing,
+device, and App Store Connect credentials; that mode fails before bundling if
+the returned evidence would not satisfy the complete `ios` target.
+
 Simulator build on macOS/Xcode:
 
 ```bash
