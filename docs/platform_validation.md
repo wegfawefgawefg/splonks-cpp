@@ -39,6 +39,9 @@ Use `./scripts/validate_platform.sh <scope>` to collect a timestamped evidence
 log under `dist/validation/`. The setup scripts are still separate because they
 may install packages or require platform credentials.
 
+Use [desktop_validation_handoff.md](desktop_validation_handoff.md) when sending
+macOS or Windows validation tasks to another developer.
+
 ## Linux
 
 Developer validation:

@@ -28,6 +28,8 @@ and iOS setup/distribution status. See
 that defines when onboarding and release distribution are actually proven.
 Android Play Console release handoff lives in
 [docs/android_play_release.md](docs/android_play_release.md).
+macOS/Windows validator handoff lives in
+[docs/desktop_validation_handoff.md](docs/desktop_validation_handoff.md).
 
 The default release build path is:
 

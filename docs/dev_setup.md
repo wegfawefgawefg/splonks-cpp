@@ -19,6 +19,8 @@ interactive game launch.
 `validate_platform.sh` is the evidence collector for platform handoff. After
 running the setup script, use `./scripts/validate_platform.sh dev` to produce a
 timestamped `dist/validation/` log that can be shared back with the team.
+For macOS and Windows validator instructions, see
+[desktop_validation_handoff.md](desktop_validation_handoff.md).
 
 ## Linux
 
@@ -104,6 +106,7 @@ The setup script installs:
 
 ```text
 git
+unzip
 mingw-w64-ucrt-x86_64-cmake
 mingw-w64-ucrt-x86_64-ninja
 mingw-w64-ucrt-x86_64-gcc

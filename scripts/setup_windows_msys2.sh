@@ -22,6 +22,7 @@ fi
 
 pacman -S --needed --noconfirm \
     git \
+    unzip \
     mingw-w64-ucrt-x86_64-cmake \
     mingw-w64-ucrt-x86_64-ninja \
     mingw-w64-ucrt-x86_64-gcc \
