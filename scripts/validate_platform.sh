@@ -191,6 +191,7 @@ validate_ios_release() {
     local platform="$1"
     require_host macos "${platform}"
     run_step "${repo_root}/scripts/ios/archive_release.sh"
+    run_step "${repo_root}/scripts/ios/verify_release_ipa.sh"
     echo "[validated] ios signed archive/export"
 }
 

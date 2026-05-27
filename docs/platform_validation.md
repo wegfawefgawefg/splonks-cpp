@@ -129,6 +129,7 @@ bundled release contents are present for the selected release version:
 ./scripts/release_credentials_preflight.sh macos-notarized
 ./scripts/release_credentials_preflight.sh android-release
 ./scripts/release_credentials_preflight.sh android-play
+./scripts/release_credentials_preflight.sh ios-sim
 ./scripts/release_credentials_preflight.sh ios-release
 ./scripts/release_credentials_preflight.sh ios-device
 ./scripts/release_credentials_preflight.sh ios-upload
@@ -366,6 +367,7 @@ handoff and evidence to record.
 Simulator validation on macOS/Xcode:
 
 ```bash
+./scripts/release_credentials_preflight.sh ios-sim
 ./scripts/ios/build_sim.sh
 ./scripts/ios/run_sim.sh --check-state-fingerprint-smoke
 ```
@@ -373,6 +375,7 @@ Simulator validation on macOS/Xcode:
 Evidence helper:
 
 ```bash
+./scripts/release_credentials_preflight.sh ios-sim
 ./scripts/validate_platform.sh ios-sim
 ```
 
@@ -445,9 +448,11 @@ dist/releases/splonks-0.1.0-ios.ipa.sha256
 Current status: simulator and device archive scaffolds exist, based on the
 working local `how-to-multi-backend-rendering` iOS shape. The simulator
 validation path now installs, launches, and requires the state-fingerprint
-runtime smoke line. The upload helper exists for App Store Connect/TestFlight
-delivery, and the IPA verifier checks the exported IPA, checksum, manifest, and
-bundled content before upload. Needs macOS/Xcode validation, real
+runtime smoke line, and the simulator preflight checks required macOS/Xcode
+tools before a full build. The upload helper exists for App Store
+Connect/TestFlight delivery, and the IPA verifier checks the exported IPA,
+checksum, manifest, and bundled content before upload. Needs macOS/Xcode
+validation, real
 signing/provisioning, physical device install/launch validation through
 `scripts/ios/install_device.sh`, and TestFlight/App Store upload validation.
 

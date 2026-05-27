@@ -11,6 +11,15 @@ if ! xcode-select -p >/dev/null 2>&1; then
     exit 1
 fi
 
+require_cmd() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "Missing command: $1" >&2
+        exit 1
+    fi
+}
+
+require_cmd cmake
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 bundle_id="${SPLONKS_IOS_BUNDLE_ID:-dev.splonks.game}"

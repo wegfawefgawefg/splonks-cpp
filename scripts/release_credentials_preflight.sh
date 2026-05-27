@@ -7,7 +7,7 @@ version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 
 usage() {
     cat >&2 <<EOF
-Usage: $0 [macos-notarized|android-release|android-play|ios-release|ios-device|ios-upload|all]
+Usage: $0 [macos-notarized|android-release|android-play|ios-sim|ios-release|ios-device|ios-upload|all]
 
 Checks release credential/tool prerequisites without building, notarizing, or
 uploading. This is a preflight for external validators before they run the full
@@ -191,12 +191,24 @@ check_android_play() {
     echo "[info] package=${SPLONKS_ANDROID_PACKAGE_NAME:-${app_id}} track=${SPLONKS_PLAY_TRACK:-internal} status=${SPLONKS_PLAY_RELEASE_STATUS:-draft}"
 }
 
+check_ios_sim() {
+    echo
+    echo "[ios-sim]"
+    require_macos_host
+    require_cmd cmake
+    require_cmd xcodebuild
+    require_cmd xcrun
+    echo "[info] bundle=${SPLONKS_IOS_BUNDLE_ID:-dev.splonks.game} simulator=${SPLONKS_IOS_SIMULATOR_UDID:-first available iPhone simulator}"
+}
+
 check_ios_release() {
     echo
     echo "[ios-release]"
     require_macos_host
     require_cmd cmake
     require_cmd xcodebuild
+    require_cmd xcrun
+    require_cmd unzip
     require_env SPLONKS_IOS_DEVELOPMENT_TEAM
     if [[ "${GITHUB_ACTIONS:-}" == "true" ||
         -n "${SPLONKS_IOS_CERTIFICATE_BASE64:-}" ||
@@ -268,6 +280,9 @@ case "${target}" in
     android-play)
         check_android_play
         ;;
+    ios-sim)
+        check_ios_sim
+        ;;
     ios-release)
         check_ios_release
         ;;
@@ -281,6 +296,7 @@ case "${target}" in
         check_macos_notarized
         check_android_release
         check_android_play
+        check_ios_sim
         check_ios_release
         check_ios_device
         check_ios_upload

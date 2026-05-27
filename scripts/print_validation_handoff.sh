@@ -165,6 +165,7 @@ EOF
     cat <<EOF
     export SPLONKS_RELEASE_VERSION=${version}
     export SPLONKS_IOS_BUNDLE_ID=dev.splonks.game
+    ./scripts/release_credentials_preflight.sh ios-sim
     ./scripts/validate_platform.sh ios-sim
 
 Archive/export with signing:
