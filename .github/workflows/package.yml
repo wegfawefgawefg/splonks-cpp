@@ -71,17 +71,19 @@ jobs:
             libdrm-dev \
             libgbm-dev \
             libudev-dev
-      - name: Build and verify Linux package
+      - name: Validate Linux release package
         run: |
-          ./scripts/verify_package_linux.sh
-          ./scripts/archive_release.sh linux
-          ./scripts/verify_release_archive.sh linux
+          ./scripts/validate_platform.sh release
+          ./scripts/bundle_validation_evidence.sh --include-artifacts linux
       - uses: actions/upload-artifact@v4
         with:
           name: splonks-linux-release
           path: |
             dist/releases/splonks-*-linux-x86_64.tar.gz
             dist/releases/splonks-*-linux-x86_64.tar.gz.sha256
+            dist/splonks-linux/PACKAGE_MANIFEST.txt
+            dist/validation/*.log
+            dist/validation-bundles/*.tar.gz
 
   macos-package:
     runs-on: macos-15
@@ -99,17 +101,19 @@ jobs:
           echo "SPLONKS_RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
       - name: Install native build dependencies
         run: brew install cmake ninja pkg-config
-      - name: Build and verify macOS package
+      - name: Validate macOS release package
         run: |
-          ./scripts/verify_package_macos.sh
-          ./scripts/archive_release.sh macos
-          ./scripts/verify_release_archive.sh macos
+          ./scripts/validate_platform.sh release
+          ./scripts/bundle_validation_evidence.sh --include-artifacts macos
       - uses: actions/upload-artifact@v4
         with:
           name: splonks-macos-release
           path: |
             dist/releases/splonks-*-macos-arm64.zip
             dist/releases/splonks-*-macos-arm64.zip.sha256
+            dist/splonks-macos/PACKAGE_MANIFEST.txt
+            dist/validation/*.log
+            dist/validation-bundles/*.tar.gz
 
   windows-package:
     runs-on: windows-latest
@@ -139,17 +143,19 @@ jobs:
             mingw-w64-ucrt-x86_64-ninja
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-pkgconf
-      - name: Build and verify Windows package
+      - name: Validate Windows release package
         run: |
-          ./scripts/verify_package_windows.sh
-          ./scripts/archive_release.sh windows
-          ./scripts/verify_release_archive.sh windows
+          ./scripts/validate_platform.sh release
+          ./scripts/bundle_validation_evidence.sh --include-artifacts windows
       - uses: actions/upload-artifact@v4
         with:
           name: splonks-windows-release
           path: |
             dist/releases/splonks-*-windows-x86_64.zip
             dist/releases/splonks-*-windows-x86_64.zip.sha256
+            dist/splonks-windows/PACKAGE_MANIFEST.txt
+            dist/validation/*.log
+            dist/validation-bundles/*.tar.gz
 
   android-release:
     runs-on: ubuntu-latest

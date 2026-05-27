@@ -358,9 +358,15 @@ tagged release runs that should submit to the stores.
 
 Workflow artifacts:
 
-- Linux: `splonks-<version>-linux-x86_64.tar.gz` plus `.sha256`.
-- macOS: `splonks-<version>-macos-arm64.zip` plus `.sha256`.
-- Windows: `splonks-<version>-windows-x86_64.zip` plus `.sha256`.
+- Linux: `splonks-<version>-linux-x86_64.tar.gz` plus `.sha256`,
+  `dist/splonks-linux/PACKAGE_MANIFEST.txt`, validation logs, and an importable
+  evidence bundle.
+- macOS: `splonks-<version>-macos-arm64.zip` plus `.sha256`,
+  `dist/splonks-macos/PACKAGE_MANIFEST.txt`, validation logs, and an importable
+  evidence bundle.
+- Windows: `splonks-<version>-windows-x86_64.zip` plus `.sha256`,
+  `dist/splonks-windows/PACKAGE_MANIFEST.txt`, validation logs, and an
+  importable evidence bundle.
 - Android: debug APK for remote sanity checks on every manual/tag run.
 - Android release: signed `splonks-<version>-android-release.aab` plus
   `manifest.txt`, validation logs, and validation bundles when Android signing

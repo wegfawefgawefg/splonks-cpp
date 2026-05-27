@@ -859,6 +859,8 @@ check check_workflow_contains "Package workflow uses explicit Apple Silicon macO
 check check_file_contains "macOS package preset is arm64-only" "${repo_root}/CMakePresets.json" '"CMAKE_OSX_ARCHITECTURES": "arm64"'
 check check_file_contains "macOS verifier rejects Intel slices" "${repo_root}/scripts/verify_package_macos.sh" 'should be arm64-only but includes x86_64'
 check check_file_not_contains "macOS release docs avoid universal default" "${repo_root}/docs/release_distribution.md" 'ship universal by default'
+check check_workflow_contains "Package workflow records desktop release evidence" "./scripts/validate_platform.sh release"
+check check_workflow_contains "Package workflow bundles desktop release evidence" "./scripts/bundle_validation_evidence.sh --include-artifacts"
 check check_workflow_contains "Package workflow uses Android Play handoff wrapper" "./scripts/android/validate_play_handoff.sh"
 check check_workflow_contains "Package workflow uses iOS handoff wrapper" "./scripts/validate_ios_handoff.sh"
 

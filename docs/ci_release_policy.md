@@ -44,10 +44,13 @@ contributors should not need to clone, understand, or package Gubsy manually.
   keeps bundled native code smaller and removes Intel Macs from the normal
   release matrix. Hosted macOS release jobs should use an explicit Apple Silicon
   runner label such as `macos-15`, not a moving x64/universal assumption.
-- The package workflow uploads versioned Linux/macOS/Windows release archives
-  with SHA-256 files. It also uploads an Android debug APK, and uploads a signed
-  Android release AAB plus validation evidence when Android signing secrets are
-  configured. Android release and Play upload jobs must go through
+- The package workflow runs `validate_platform.sh release` for
+  Linux/macOS/Windows, bundles the resulting evidence with
+  `bundle_validation_evidence.sh --include-artifacts`, and uploads the archive,
+  checksum, package manifest, validation logs, and evidence bundle. It also
+  uploads an Android debug APK, and uploads a signed Android release AAB plus
+  validation evidence when Android signing secrets are configured. Android
+  release and Play upload jobs must go through
   `scripts/android/validate_play_handoff.sh` so upload-key evidence is recorded
   before any Play upload.
 - Android Play and iOS App Store/TestFlight delivery are explicit release
