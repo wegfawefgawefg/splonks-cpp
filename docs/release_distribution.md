@@ -223,6 +223,13 @@ export SPLONKS_IOS_EXPORT_METHOD=app-store-connect
 ./scripts/ios/verify_release_ipa.sh
 ```
 
+Physical device install/launch validation after archive/export:
+
+```bash
+export SPLONKS_IOS_DEVICE_ID=<device-id-from-xcrun-devicectl-list-devices>
+./scripts/ios/install_device.sh
+```
+
 App Store Connect/TestFlight upload path:
 
 ```bash
@@ -265,9 +272,11 @@ script now has a runtime smoke mode that requires the state-fingerprint success
 line. The archive/export script exists, and the archive path writes a manifest
 with bundle id, export method, commit, version, and SHA-256. The IPA verifier
 checks the exported IPA, checksum, manifest, and bundled content before upload.
-The upload helper uses `xcrun altool` to validate and upload the exported IPA
-to App Store Connect/TestFlight. These paths still need macOS/Xcode validation
-with an Apple Developer team.
+The device install helper uses `xcrun devicectl` to install and launch the
+signed archive app on a connected provisioned device. The upload helper uses
+`xcrun altool` to validate and upload the exported IPA to App Store
+Connect/TestFlight. These paths still need macOS/Xcode validation with an Apple
+Developer team.
 
 - Final App Store distribution checklist.
 - Validation of upload through Xcode Organizer, Transporter, or

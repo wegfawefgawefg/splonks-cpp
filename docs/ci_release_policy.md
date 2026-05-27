@@ -56,9 +56,10 @@ contributors should not need to clone, understand, or package Gubsy manually.
 - Splonks now has `ios-sim` and `ios-device` CMake presets,
   `scripts/ios/build_sim.sh`, a simulator runtime smoke path through
   `scripts/ios/run_sim.sh --check-state-fingerprint-smoke`, and
-  `scripts/ios/archive_release.sh`. CI signing assets can be imported with
-  `scripts/ios/import_signing_assets.sh`. These paths must be validated on
-  macOS/Xcode before iOS is treated as complete.
+  `scripts/ios/archive_release.sh`. Physical device validation runs through
+  `scripts/ios/install_device.sh` after archive/export. CI signing assets can
+  be imported with `scripts/ios/import_signing_assets.sh`. These paths must be
+  validated on macOS/Xcode before iOS is treated as complete.
   Device distribution still needs real signing/provisioning and
   TestFlight/App Store upload validation.
 - Use the full matrix when we are making or validating a real release build.

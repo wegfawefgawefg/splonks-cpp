@@ -253,6 +253,7 @@ We still need:
 - macOS/Xcode validation of `./scripts/ios/build_sim.sh`.
 - macOS/Xcode validation of `./scripts/ios/run_sim.sh --check-state-fingerprint-smoke`.
 - macOS/Xcode validation of `./scripts/ios/archive_release.sh`.
+- macOS/Xcode/device validation of `./scripts/ios/install_device.sh`.
 - TestFlight/App Store upload validation.
 
 ## Release Distribution

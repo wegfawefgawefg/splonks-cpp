@@ -171,6 +171,12 @@ Archive/export with signing:
     ./scripts/release_credentials_preflight.sh ios-release
     ./scripts/validate_platform.sh ios-release
 
+Install and launch on a provisioned physical device:
+
+    export SPLONKS_IOS_DEVICE_ID=<device-id-from-xcrun-devicectl-list-devices>
+    ./scripts/release_credentials_preflight.sh ios-device
+    ./scripts/validate_platform.sh ios-device
+
 Validate/upload to App Store Connect/TestFlight:
 
     export SPLONKS_APP_STORE_API_KEY=ABC123DEFG

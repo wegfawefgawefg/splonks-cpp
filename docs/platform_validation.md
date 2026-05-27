@@ -130,6 +130,7 @@ are present for the selected release version:
 ./scripts/release_credentials_preflight.sh android-release
 ./scripts/release_credentials_preflight.sh android-play
 ./scripts/release_credentials_preflight.sh ios-release
+./scripts/release_credentials_preflight.sh ios-device
 ./scripts/release_credentials_preflight.sh ios-upload
 ```
 
@@ -403,6 +404,14 @@ Evidence helper:
 ./scripts/validate_platform.sh ios-release
 ```
 
+Physical device install/launch validation after archive/export:
+
+```bash
+export SPLONKS_IOS_DEVICE_ID=<device-id-from-xcrun-devicectl-list-devices>
+./scripts/release_credentials_preflight.sh ios-device
+./scripts/validate_platform.sh ios-device
+```
+
 App Store Connect/TestFlight upload validation:
 
 ```bash
@@ -439,8 +448,8 @@ validation path now installs, launches, and requires the state-fingerprint
 runtime smoke line. The upload helper exists for App Store Connect/TestFlight
 delivery, and the IPA verifier checks the exported IPA, checksum, manifest, and
 bundled content before upload. Needs macOS/Xcode validation, real
-signing/provisioning, device install validation, and TestFlight/App Store
-upload validation.
+signing/provisioning, physical device install/launch validation through
+`scripts/ios/install_device.sh`, and TestFlight/App Store upload validation.
 
 ## Completion Criteria
 

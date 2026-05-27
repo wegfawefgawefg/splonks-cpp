@@ -622,6 +622,10 @@ check print_log_version_contains_check \
     "iOS release archive validation" \
     "${repo_root}/dist/validation/macos-ios-release-*.log" \
     "[validated] ios signed archive/export"
+check print_log_version_contains_check \
+    "iOS device install validation" \
+    "${repo_root}/dist/validation/macos-ios-device-*.log" \
+    "[validated] ios device install and launch"
 check print_file_check "iOS IPA" "${repo_root}/dist/releases/splonks-${version}-ios.ipa"
 check print_checksum_match_check \
     "iOS IPA checksum" \

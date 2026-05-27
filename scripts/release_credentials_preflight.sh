@@ -7,7 +7,7 @@ version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 
 usage() {
     cat >&2 <<EOF
-Usage: $0 [macos-notarized|android-release|android-play|ios-release|ios-upload|all]
+Usage: $0 [macos-notarized|android-release|android-play|ios-release|ios-device|ios-upload|all]
 
 Checks release credential/tool prerequisites without building, notarizing, or
 uploading. This is a preflight for external validators before they run the full
@@ -195,6 +195,22 @@ check_ios_release() {
     echo "[info] bundle=${SPLONKS_IOS_BUNDLE_ID:-dev.splonks.game} identity=${SPLONKS_IOS_CODE_SIGN_IDENTITY:-Apple Distribution} export=${SPLONKS_IOS_EXPORT_METHOD:-app-store-connect}"
 }
 
+check_ios_device() {
+    echo
+    echo "[ios-device]"
+    local archive_path="${SPLONKS_IOS_ARCHIVE_PATH:-${repo_root}/dist/splonks-ios/Splonks.xcarchive}"
+    local app_path="${SPLONKS_IOS_DEVICE_APP_PATH:-${archive_path}/Products/Applications/Splonks.app}"
+    require_macos_host
+    require_cmd xcrun
+    require_env SPLONKS_IOS_DEVICE_ID
+    if [[ -d "${app_path}" ]]; then
+        ok "iOS device app: ${app_path}"
+    else
+        missing "iOS device app: ${app_path}"
+    fi
+    echo "[info] bundle=${SPLONKS_IOS_BUNDLE_ID:-dev.splonks.game}"
+}
+
 check_ios_upload() {
     echo
     echo "[ios-upload]"
@@ -231,6 +247,9 @@ case "${target}" in
     ios-release)
         check_ios_release
         ;;
+    ios-device)
+        check_ios_device
+        ;;
     ios-upload)
         check_ios_upload
         ;;
@@ -239,6 +258,7 @@ case "${target}" in
         check_android_release
         check_android_play
         check_ios_release
+        check_ios_device
         check_ios_upload
         ;;
     -h|--help|help)
