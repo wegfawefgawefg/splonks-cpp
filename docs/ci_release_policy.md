@@ -15,6 +15,23 @@ packaging, not as the normal development feedback loop.
   their normal mobile toolchains: JDK/Android SDK/NDK for Android, and
   macOS/Xcode/signing prerequisites for iOS.
 
+## Onboarding Deliverables
+
+The immediate priority is desktop developer onboarding for the two pending
+contributors:
+
+1. Add `docs/dev_setup.md` with exact Linux, macOS, and Windows commands.
+2. Add setup scripts for Linux, macOS, and the documented Windows toolchain.
+3. Confirm `./scripts/build.sh` works from a clean clone on Linux.
+4. Make macOS and Windows docs match the actual supported package-manager and
+   compiler paths.
+5. Add a quick dev environment verification script or checklist.
+6. Then finish Android and iOS as mobile development/release targets.
+
+Gubsy should appear in Splonks developer docs only as a dependency handled by
+the documented CMake/dependency path. Normal Splonks contributors should not
+need to understand or package Gubsy manually.
+
 ## Release builds
 
 - The package workflow runs only when manually dispatched or when a version tag
