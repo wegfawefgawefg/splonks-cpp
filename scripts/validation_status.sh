@@ -522,6 +522,54 @@ print_manifest_revision_check() {
     return 1
 }
 
+print_package_manifest_check() {
+    local label="$1"
+    local path="$2"
+    local platform="$3"
+    local app
+    local actual_platform
+    local mode
+    local actual_version
+    local actual_revision
+    if [[ ! -f "${path}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${path#${repo_root}/}"
+        return 1
+    fi
+
+    app="$(awk -F= '$1 == "app" {print substr($0, length("app") + 2)}' "${path}" | tail -n 1)"
+    actual_platform="$(awk -F= '$1 == "platform" {print substr($0, length("platform") + 2)}' "${path}" | tail -n 1)"
+    mode="$(awk -F= '$1 == "mode" {print substr($0, length("mode") + 2)}' "${path}" | tail -n 1)"
+    actual_version="$(awk -F= '$1 == "release_version" {print substr($0, length("release_version") + 2)}' "${path}" | tail -n 1)"
+    actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${path}" | tail -n 1)"
+
+    if [[ "${app}" == "splonks" &&
+        "${actual_platform}" == "${platform}" &&
+        "${mode}" == "release" &&
+        "${actual_version}" == "${version}" &&
+        "${actual_revision}" == "${expected_revision}" ]]; then
+        printf '[ok]      %s: %s platform=%s release_version=%s git_revision=%s\n' \
+            "${label}" \
+            "${path#${repo_root}/}" \
+            "${platform}" \
+            "${version}" \
+            "${expected_revision}"
+        return 0
+    fi
+
+    printf '[missing] %s: %s has app=%s platform=%s mode=%s release_version=%s git_revision=%s, expected app=splonks platform=%s mode=release release_version=%s git_revision=%s\n' \
+        "${label}" \
+        "${path#${repo_root}/}" \
+        "${app:-<unset>}" \
+        "${actual_platform:-<unset>}" \
+        "${mode:-<unset>}" \
+        "${actual_version:-<unset>}" \
+        "${actual_revision:-<unset>}" \
+        "${platform}" \
+        "${version}" \
+        "${expected_revision}"
+    return 1
+}
+
 failures=0
 check() {
     "$@" || failures=$((failures + 1))
@@ -552,7 +600,7 @@ check print_checksum_match_check \
     "Linux release checksum" \
     "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz" \
     "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz.sha256"
-check print_manifest_revision_check "Linux package revision" "${repo_root}/dist/splonks-linux/PACKAGE_MANIFEST.txt" git_revision
+check print_package_manifest_check "Linux package manifest" "${repo_root}/dist/splonks-linux/PACKAGE_MANIFEST.txt" linux
 check print_log_revision_contains_check \
     "macOS dev validation" \
     "${repo_root}/dist/validation/macos-dev-*.log" \
@@ -570,6 +618,7 @@ check print_checksum_match_check \
     "macOS release checksum" \
     "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip" \
     "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip.sha256"
+check print_package_manifest_check "macOS package manifest" "${repo_root}/dist/splonks-macos/PACKAGE_MANIFEST.txt" macos
 check print_log_revision_contains_check \
     "Windows dev validation" \
     "${repo_root}/dist/validation/windows-dev-*.log" \
@@ -583,6 +632,7 @@ check print_checksum_match_check \
     "Windows release checksum" \
     "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip" \
     "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip.sha256"
+check print_package_manifest_check "Windows package manifest" "${repo_root}/dist/splonks-windows/PACKAGE_MANIFEST.txt" windows
 echo
 
 echo "[android]"
