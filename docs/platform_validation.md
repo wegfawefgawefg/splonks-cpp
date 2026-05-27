@@ -60,7 +60,9 @@ For final release handoff, include distributable artifacts too:
 Evidence bundles include `BUNDLE_MANIFEST.txt` with the intended release
 version and `CHECKSUMS.sha256` for every included log, manifest, checksum file,
 and optional artifact. The import helper verifies `CHECKSUMS.sha256` before
-copying evidence into the local `dist/` tree.
+copying evidence into the local `dist/` tree. The status helper also verifies
+the latest evidence bundle has the expected release version and valid
+`CHECKSUMS.sha256`.
 
 When receiving a bundle from another machine, import it with:
 

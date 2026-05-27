@@ -195,6 +195,69 @@ print_manifest_sha256_check() {
     return 1
 }
 
+print_verified_bundle_check() {
+    local label="$1"
+    local pattern="$2"
+    local latest
+    latest="$(latest_glob "${pattern}" || true)"
+    if [[ -z "${latest}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${pattern#${repo_root}/}"
+        return 1
+    fi
+
+    local work_dir
+    local bundle_dir
+    work_dir="$(mktemp -d)"
+    if ! tar -C "${work_dir}" -xzf "${latest}" >/dev/null 2>&1; then
+        rm -rf "${work_dir}"
+        printf '[missing] %s: %s could not be extracted\n' "${label}" "${latest#${repo_root}/}"
+        return 1
+    fi
+    bundle_dir="$(find "${work_dir}" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+    if [[ -z "${bundle_dir}" ||
+        ! -f "${bundle_dir}/BUNDLE_MANIFEST.txt" ||
+        ! -f "${bundle_dir}/CHECKSUMS.sha256" ]]; then
+        rm -rf "${work_dir}"
+        printf '[missing] %s: %s missing BUNDLE_MANIFEST.txt or CHECKSUMS.sha256\n' \
+            "${label}" \
+            "${latest#${repo_root}/}"
+        return 1
+    fi
+    if ! grep -Fxq "release_version=${version}" "${bundle_dir}/BUNDLE_MANIFEST.txt"; then
+        local actual
+        actual="$(awk -F= '$1 == "release_version" {print substr($0, length("release_version") + 2)}' "${bundle_dir}/BUNDLE_MANIFEST.txt" | tail -n 1)"
+        rm -rf "${work_dir}"
+        printf '[missing] %s: %s has release_version=%s, expected %s\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${actual:-<unset>}" \
+            "${version}"
+        return 1
+    fi
+    if command -v sha256sum >/dev/null 2>&1; then
+        if ! (cd "${bundle_dir}" && sha256sum -c CHECKSUMS.sha256 >/dev/null); then
+            rm -rf "${work_dir}"
+            printf '[missing] %s: %s failed CHECKSUMS.sha256 verification\n' \
+                "${label}" \
+                "${latest#${repo_root}/}"
+            return 1
+        fi
+    else
+        if ! (cd "${bundle_dir}" && shasum -a 256 -c CHECKSUMS.sha256 >/dev/null); then
+            rm -rf "${work_dir}"
+            printf '[missing] %s: %s failed CHECKSUMS.sha256 verification\n' \
+                "${label}" \
+                "${latest#${repo_root}/}"
+            return 1
+        fi
+    fi
+    rm -rf "${work_dir}"
+    printf '[ok]      %s: %s release_version=%s and checksums verified\n' \
+        "${label}" \
+        "${latest#${repo_root}/}" \
+        "${version}"
+}
+
 print_manifest_value_check() {
     local label="$1"
     local path="$2"
@@ -286,7 +349,7 @@ check print_log_version_check_any "iOS App Store/TestFlight upload validation" \
 echo
 
 echo "[handoff]"
-check print_check "Validation evidence bundle" "${repo_root}/dist/validation-bundles/splonks-validation-*.tar.gz"
+check print_verified_bundle_check "Validation evidence bundle" "${repo_root}/dist/validation-bundles/splonks-validation-*.tar.gz"
 echo
 
 echo "[ci]"
