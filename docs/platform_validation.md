@@ -50,8 +50,7 @@ macOS or Windows validation tasks to another developer.
 Developer validation:
 
 ```bash
-./scripts/setup_linux.sh
-SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
+./scripts/bootstrap_dev.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
@@ -94,8 +93,7 @@ Developer validation:
 
 ```bash
 xcode-select --install
-./scripts/setup_macos.sh
-SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
+./scripts/bootstrap_dev.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
@@ -152,8 +150,7 @@ Package metadata is wired through `SPLONKS_RELEASE_VERSION`,
 Developer validation from the MSYS2 UCRT64 terminal:
 
 ```bash
-./scripts/setup_windows_msys2.sh
-SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
+./scripts/bootstrap_dev.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 

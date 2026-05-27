@@ -16,9 +16,9 @@ Run on a real macOS machine:
 xcode-select --install
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
-./scripts/setup_macos.sh
-./scripts/validate_platform.sh dev
+./scripts/bootstrap_dev.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/validate_platform.sh dev
 ```
 
 Record:
@@ -59,9 +59,9 @@ Run in the MSYS2 UCRT64 terminal, not PowerShell or cmd.exe:
 pacman -Syu
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
-./scripts/setup_windows_msys2.sh
-./scripts/validate_platform.sh dev
+./scripts/bootstrap_dev.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
+./scripts/validate_platform.sh dev
 ```
 
 If `pacman -Syu` asks to close the terminal, reopen MSYS2 UCRT64 and continue

@@ -16,9 +16,14 @@ when they are not already available.
 builds, and runs a headless smoke through the dev binary. `run.sh` is the
 interactive game launch.
 
+`bootstrap_dev.sh` is the preferred desktop onboarding command. It runs the
+supported platform setup script, then runs `verify_dev_env.sh` with the `dev`
+preset. After it passes, launch the game with `SPLONKS_PRESET=dev
+./scripts/run.sh`.
+
 `validate_platform.sh` is the evidence collector for platform handoff. After
-running the setup script, use `./scripts/validate_platform.sh dev` to produce a
-timestamped `dist/validation/` log that can be shared back with the team.
+running `bootstrap_dev.sh`, use `./scripts/validate_platform.sh dev` to produce
+a timestamped `dist/validation/` log that can be shared back with the team.
 For macOS and Windows validator instructions, see
 [desktop_validation_handoff.md](desktop_validation_handoff.md).
 
@@ -29,12 +34,11 @@ Supported path: Debian/Ubuntu through `apt`.
 ```bash
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
-./scripts/setup_linux.sh
-SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
+./scripts/bootstrap_dev.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
-The setup script installs the native packages needed to compile SDL3 and its
+The bootstrap script installs the native packages needed to compile SDL3 and its
 Linux backends:
 
 ```text
@@ -50,7 +54,7 @@ pkg-config, X11, Wayland, audio, udev, DRM/GBM, and libdecor development
 packages, then run:
 
 ```bash
-SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
+./scripts/bootstrap_dev.sh --skip-setup
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
@@ -66,12 +70,11 @@ Supported path: Xcode command line tools plus Homebrew.
 xcode-select --install
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
-./scripts/setup_macos.sh
-SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
+./scripts/bootstrap_dev.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
-The setup script installs:
+The bootstrap script runs `setup_macos.sh`, which installs:
 
 ```text
 cmake ninja pkg-config
@@ -97,12 +100,11 @@ If MSYS2 asks you to close the terminal, reopen **MSYS2 UCRT64** and continue:
 ```bash
 git clone git@github.com:wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
-./scripts/setup_windows_msys2.sh
-SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
+./scripts/bootstrap_dev.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
-The setup script installs:
+The bootstrap script runs `setup_windows_msys2.sh`, which installs:
 
 ```text
 git
@@ -119,7 +121,7 @@ after we validate a separate preset and package flow.
 For a faster configure-only prerequisite check on any desktop platform:
 
 ```bash
-SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh --configure-only
+./scripts/bootstrap_dev.sh --configure-only
 ```
 
 ## Android
