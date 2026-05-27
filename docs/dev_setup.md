@@ -12,7 +12,9 @@ documented Splonks build/setup scripts.
 
 Use the `dev` preset for normal contributor work. It builds into `build-debug`
 with `SPLONKS_MODE=developer` and fetches the pinned SDL3/imgui dependencies
-when they are not already available.
+when they are not already available. Desktop presets use the Ninja generator on
+Linux, macOS, and Windows so the documented setup scripts install one shared
+build backend instead of relying on each machine's CMake default.
 
 `verify_dev_env.sh` is the non-interactive onboarding check: it configures,
 builds, and runs a headless smoke through the dev binary. `run.sh` is the

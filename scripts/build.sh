@@ -32,6 +32,8 @@ configure() {
 if ! configure; then
     rm -f "${build_dir}/CMakeCache.txt"
     rm -rf "${build_dir}/CMakeFiles"
+    find "${build_dir}/_deps" -mindepth 1 -maxdepth 1 -type d -name "*-subbuild" \
+        -exec rm -rf {} + 2>/dev/null || true
     configure
 fi
 

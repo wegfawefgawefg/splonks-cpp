@@ -16,12 +16,14 @@ require_cmd git
 case "$(uname -s)" in
     Linux)
         require_cmd pkg-config
+        require_cmd ninja
         ;;
     Darwin)
         if ! xcode-select -p >/dev/null 2>&1; then
             echo "Missing Xcode command line tools. Run: xcode-select --install" >&2
             exit 1
         fi
+        require_cmd ninja
         ;;
     MINGW*|MSYS*|CYGWIN*)
         if [[ "${MSYSTEM:-}" != "UCRT64" ]]; then
