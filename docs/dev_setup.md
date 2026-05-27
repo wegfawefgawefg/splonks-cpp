@@ -48,6 +48,10 @@ SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh
 SPLONKS_PRESET=dev ./scripts/run.sh
 ```
 
+Status: verified from a fresh Linux clone with no adjacent Gubsy checkout:
+`SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh` configures, builds, and passes
+the headless smoke.
+
 ## macOS
 
 Supported path: Xcode command line tools plus Homebrew.
