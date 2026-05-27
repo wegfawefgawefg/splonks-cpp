@@ -652,6 +652,28 @@ check() {
     "$@" || failures=$((failures + 1))
 }
 
+check_workflow_contains() {
+    local label="$1"
+    local required="$2"
+    if grep -Fq "${required}" "${repo_root}/.github/workflows/package.yml"; then
+        printf '[ok]      %s: package workflow contains "%s"\n' "${label}" "${required}"
+        return 0
+    fi
+    printf '[missing] %s: package workflow missing "%s"\n' "${label}" "${required}"
+    return 1
+}
+
+check_workflow_not_contains() {
+    local label="$1"
+    local denied="$2"
+    if grep -Fq "${denied}" "${repo_root}/.github/workflows/package.yml"; then
+        printf '[missing] %s: package workflow still contains "%s"\n' "${label}" "${denied}"
+        return 1
+    fi
+    printf '[ok]      %s: package workflow does not contain "%s"\n' "${label}" "${denied}"
+    return 0
+}
+
 cd "${repo_root}"
 if [[ -z "${expected_revision}" ]]; then
     expected_revision="$(git rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
@@ -795,6 +817,10 @@ else
     echo "[missing] Package workflow manual/tag trigger evidence"
     failures=$((failures + 1))
 fi
+check check_workflow_not_contains "Package workflow avoids moving macOS latest label" "macos-latest"
+check check_workflow_contains "Package workflow uses explicit Apple Silicon macOS runner" "runs-on: macos-15"
+check check_workflow_contains "Package workflow uses Android Play handoff wrapper" "./scripts/android/validate_play_handoff.sh"
+check check_workflow_contains "Package workflow uses iOS handoff wrapper" "./scripts/validate_ios_handoff.sh"
 
 echo
 if [[ "${failures}" -eq 0 ]]; then
