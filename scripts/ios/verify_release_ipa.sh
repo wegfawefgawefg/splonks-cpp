@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
+expected_revision="${SPLONKS_VALIDATION_REVISION:-$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)}"
 release_dir="${repo_root}/dist/releases"
 archive_dir="${repo_root}/dist/splonks-ios"
 manifest_path="${archive_dir}/manifest.txt"
@@ -120,6 +121,7 @@ require_manifest_value platform ios
 require_manifest_value mode release
 require_manifest_value artifact "$(basename "${ipa_path}")"
 require_manifest_value version_name "${version}"
+require_manifest_value git_commit "${expected_revision}"
 
 expected_sha="$(manifest_value sha256)"
 if [[ -z "${expected_sha}" ]]; then

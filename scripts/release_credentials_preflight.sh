@@ -268,6 +268,7 @@ check_ios_upload() {
     require_cmd plutil
     require_checksum_file "iOS IPA" "${ipa_path}" "${ipa_path}.sha256"
     require_manifest_value "iOS release manifest" "${manifest_path}" version_name "${version}"
+    require_manifest_value "iOS release manifest" "${manifest_path}" git_commit "$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
     if env \
         SPLONKS_RELEASE_VERSION="${version}" \
         SPLONKS_IOS_IPA_PATH="${ipa_path}" \

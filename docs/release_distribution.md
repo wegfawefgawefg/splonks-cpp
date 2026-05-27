@@ -278,9 +278,9 @@ Current status: `ios-sim` and `ios-device` CMake/Xcode scaffolds exist and copy
 script now has a runtime smoke mode that requires the state-fingerprint success
 line. The archive/export script exists, and the archive path writes a manifest
 with bundle id, export method, commit, version, and SHA-256. The IPA verifier
-checks the exported IPA, release version, checksum, manifest, bundled content,
-and macOS `Info.plist` version fields before upload. The device install helper
-uses `xcrun devicectl` to
+checks the exported IPA, release version, current git revision, checksum,
+manifest, bundled content, and macOS `Info.plist` version fields before upload.
+The device install helper uses `xcrun devicectl` to
 install and launch the signed archive app on a connected provisioned device.
 The upload helper uses `xcrun altool` to validate and upload the exported IPA
 to App Store Connect/TestFlight. These paths still need macOS/Xcode validation
