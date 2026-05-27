@@ -277,6 +277,18 @@ Evidence helper that creates/starts the default emulator:
 Signed release AAB validation:
 
 ```bash
+eval "$(./scripts/android/create_validation_keystore.sh)"
+export SPLONKS_ANDROID_VERSION_CODE=1
+export SPLONKS_ANDROID_VERSION_NAME=0.1.0
+./scripts/android/setup_sdk.sh
+./scripts/android/fetch_sdl3_aar.sh
+./scripts/android/build_release_aab.sh
+./scripts/android/verify_release_aab.sh
+```
+
+For real Play distribution, use the actual upload keystore instead:
+
+```bash
 export SPLONKS_ANDROID_KEYSTORE=/absolute/path/to/upload-keystore.jks
 export SPLONKS_ANDROID_KEYSTORE_PASSWORD=...
 export SPLONKS_ANDROID_KEYSTORE_TYPE=jks

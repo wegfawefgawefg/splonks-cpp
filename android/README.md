@@ -39,6 +39,8 @@ Current status:
   `scripts/android/run_smoke.sh`.
 - Signed arm64 release AAB generation has been validated locally with a
   throwaway upload keystore.
+- `scripts/android/create_validation_keystore.sh` creates an ignored throwaway
+  JKS upload keystore for local validation.
 - `scripts/android/verify_release_aab.sh` verifies the release AAB manifest,
   SHA-256, expected native libraries/assets, and Java signature.
 - Final Play Store distribution still needs the real upload key and Play
@@ -71,11 +73,33 @@ scripts/validate_platform.sh android-emulator
 The release AAB path is intentionally manual/tag-driven. Do not commit
 keystores or passwords.
 
+For local validation, generate a throwaway upload keystore under ignored
+`dist/local/` and load the printed signing environment:
+
+```bash
+eval "$(scripts/android/create_validation_keystore.sh)"
+```
+
+For real Play distribution, use the actual upload keystore instead:
+
 ```bash
 export SPLONKS_ANDROID_KEYSTORE=/absolute/path/to/upload-keystore.jks
 export SPLONKS_ANDROID_KEYSTORE_PASSWORD=...
+export SPLONKS_ANDROID_KEYSTORE_TYPE=jks
 export SPLONKS_ANDROID_KEY_ALIAS=...
 export SPLONKS_ANDROID_KEY_PASSWORD=...
+export SPLONKS_ANDROID_VERSION_CODE=1
+export SPLONKS_ANDROID_VERSION_NAME=0.1.0
+scripts/android/setup_sdk.sh
+scripts/android/fetch_sdl3_aar.sh
+scripts/android/build_release_aab.sh
+scripts/android/verify_release_aab.sh
+```
+
+Full local validation path:
+
+```bash
+eval "$(scripts/android/create_validation_keystore.sh)"
 export SPLONKS_ANDROID_VERSION_CODE=1
 export SPLONKS_ANDROID_VERSION_NAME=0.1.0
 scripts/android/setup_sdk.sh
