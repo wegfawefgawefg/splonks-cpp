@@ -86,6 +86,9 @@ nonzero until every desktop, Android, iOS, handoff, and manual/tag CI evidence
 item has been recorded.
 Set `SPLONKS_RELEASE_VERSION=<version>` when auditing evidence for a version
 other than `0.1.0`.
+By default, status evidence must also match the current Git revision. Set
+`SPLONKS_VALIDATION_REVISION=<short commit>` only when intentionally auditing a
+specific older release commit.
 
 Use [desktop_validation_handoff.md](desktop_validation_handoff.md) when sending
 macOS or Windows validation tasks to another developer.

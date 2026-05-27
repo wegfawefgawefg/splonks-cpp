@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 strict=0
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
+expected_revision="${SPLONKS_VALIDATION_REVISION:-}"
 
 usage() {
     cat >&2 <<EOF
@@ -15,6 +16,8 @@ has recorded evidence.
 
 Environment:
   SPLONKS_RELEASE_VERSION   Release version in artifact names, default: ${version}
+  SPLONKS_VALIDATION_REVISION
+                            Git revision evidence must match, default: current HEAD
 EOF
 }
 
@@ -59,6 +62,37 @@ print_check() {
     return 1
 }
 
+log_revision_matches() {
+    local path="$1"
+    grep -Fxq "git_revision=${expected_revision}" "${path}"
+}
+
+print_log_revision_check() {
+    local label="$1"
+    local pattern="$2"
+    local latest
+    latest="$(latest_glob "${pattern}" || true)"
+    if [[ -z "${latest}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${pattern#${repo_root}/}"
+        return 1
+    fi
+    if log_revision_matches "${latest}"; then
+        printf '[ok]      %s: %s has git_revision=%s\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${expected_revision}"
+        return 0
+    fi
+    local actual
+    actual="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${latest}" | tail -n 1)"
+    printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
+        "${label}" \
+        "${latest#${repo_root}/}" \
+        "${actual:-<unset>}" \
+        "${expected_revision}"
+    return 1
+}
+
 print_log_version_check() {
     local label="$1"
     local pattern="$2"
@@ -68,8 +102,22 @@ print_log_version_check() {
         printf '[missing] %s: %s\n' "${label}" "${pattern#${repo_root}/}"
         return 1
     fi
+    local actual_revision
+    actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${latest}" | tail -n 1)"
+    if [[ "${actual_revision}" != "${expected_revision}" ]]; then
+        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${actual_revision:-<unset>}" \
+            "${expected_revision}"
+        return 1
+    fi
     if grep -Fxq "release_version=${version}" "${latest}"; then
-        printf '[ok]      %s: %s has release_version=%s\n' "${label}" "${latest#${repo_root}/}" "${version}"
+        printf '[ok]      %s: %s has release_version=%s git_revision=%s\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${version}" \
+            "${expected_revision}"
         return 0
     fi
     local actual
@@ -104,8 +152,22 @@ print_log_version_check_any() {
         done
         return 1
     fi
+    local actual_revision
+    actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${latest}" | tail -n 1)"
+    if [[ "${actual_revision}" != "${expected_revision}" ]]; then
+        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${actual_revision:-<unset>}" \
+            "${expected_revision}"
+        return 1
+    fi
     if grep -Fxq "release_version=${version}" "${latest}"; then
-        printf '[ok]      %s: %s has release_version=%s\n' "${label}" "${latest#${repo_root}/}" "${version}"
+        printf '[ok]      %s: %s has release_version=%s git_revision=%s\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${version}" \
+            "${expected_revision}"
         return 0
     fi
     local actual
@@ -234,6 +296,17 @@ print_verified_bundle_check() {
             "${version}"
         return 1
     fi
+    if ! grep -Fxq "git_revision=${expected_revision}" "${bundle_dir}/BUNDLE_MANIFEST.txt"; then
+        local actual_revision
+        actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${bundle_dir}/BUNDLE_MANIFEST.txt" | tail -n 1)"
+        rm -rf "${work_dir}"
+        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${actual_revision:-<unset>}" \
+            "${expected_revision}"
+        return 1
+    fi
     if command -v sha256sum >/dev/null 2>&1; then
         if ! (cd "${bundle_dir}" && sha256sum -c CHECKSUMS.sha256 >/dev/null); then
             rm -rf "${work_dir}"
@@ -252,10 +325,11 @@ print_verified_bundle_check() {
         fi
     fi
     rm -rf "${work_dir}"
-    printf '[ok]      %s: %s release_version=%s and checksums verified\n' \
+    printf '[ok]      %s: %s release_version=%s git_revision=%s and checksums verified\n' \
         "${label}" \
         "${latest#${repo_root}/}" \
-        "${version}"
+        "${version}" \
+        "${expected_revision}"
 }
 
 print_manifest_value_check() {
@@ -277,27 +351,59 @@ print_manifest_value_check() {
     return 1
 }
 
+print_manifest_revision_check() {
+    local label="$1"
+    local path="$2"
+    local key="$3"
+    local actual
+    if [[ ! -f "${path}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${path#${repo_root}/}"
+        return 1
+    fi
+    actual="$(awk -F= -v key="${key}" '$1 == key {print substr($0, length(key) + 2)}' "${path}" | tail -n 1)"
+    if [[ "${actual}" == "${expected_revision}" ]]; then
+        printf '[ok]      %s: %s has %s=%s\n' \
+            "${label}" \
+            "${path#${repo_root}/}" \
+            "${key}" \
+            "${expected_revision}"
+        return 0
+    fi
+    printf '[missing] %s: %s has %s=%s, expected %s\n' \
+        "${label}" \
+        "${path#${repo_root}/}" \
+        "${key}" \
+        "${actual:-<unset>}" \
+        "${expected_revision}"
+    return 1
+}
+
 failures=0
 check() {
     "$@" || failures=$((failures + 1))
 }
 
 cd "${repo_root}"
+if [[ -z "${expected_revision}" ]]; then
+    expected_revision="$(git rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+fi
 
 echo "Splonks validation status"
 echo "git_revision=$(git rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
 echo "release_version=${version}"
+echo "validation_revision=${expected_revision}"
 echo
 
 echo "[desktop]"
-check print_check "Linux dev validation" "${repo_root}/dist/validation/linux-dev-*.log"
+check print_log_revision_check "Linux dev validation" "${repo_root}/dist/validation/linux-dev-*.log"
 check print_log_version_check "Linux release validation" "${repo_root}/dist/validation/linux-release-*.log"
 check print_file_check "Linux release archive" "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz"
 check print_checksum_match_check \
     "Linux release checksum" \
     "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz" \
     "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz.sha256"
-check print_check "macOS dev validation" "${repo_root}/dist/validation/macos-dev-*.log"
+check print_manifest_revision_check "Linux package revision" "${repo_root}/dist/splonks-linux/PACKAGE_MANIFEST.txt" git_revision
+check print_log_revision_check "macOS dev validation" "${repo_root}/dist/validation/macos-dev-*.log"
 check print_log_version_check "macOS release validation" "${repo_root}/dist/validation/macos-release-*.log"
 check print_log_version_check "macOS notarized validation" "${repo_root}/dist/validation/macos-macos-notarized-*.log"
 check print_file_check "macOS release archive" "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip"
@@ -305,7 +411,7 @@ check print_checksum_match_check \
     "macOS release checksum" \
     "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip" \
     "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip.sha256"
-check print_check "Windows dev validation" "${repo_root}/dist/validation/windows-dev-*.log"
+check print_log_revision_check "Windows dev validation" "${repo_root}/dist/validation/windows-dev-*.log"
 check print_log_version_check "Windows release validation" "${repo_root}/dist/validation/windows-release-*.log"
 check print_file_check "Windows release archive" "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip"
 check print_checksum_match_check \
@@ -315,11 +421,12 @@ check print_checksum_match_check \
 echo
 
 echo "[android]"
-check print_check "Android emulator/dev validation" "${repo_root}/dist/validation/*-android-emulator-*.log"
+check print_log_revision_check "Android emulator/dev validation" "${repo_root}/dist/validation/*-android-emulator-*.log"
 check print_log_version_check "Android signed AAB validation" "${repo_root}/dist/validation/*-android-release-*.log"
 check print_file_check "Android release AAB" "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab"
 check print_file_check "Android release manifest" "${repo_root}/dist/splonks-android/manifest.txt"
 check print_manifest_value_check "Android manifest version" "${repo_root}/dist/splonks-android/manifest.txt" version_name "${version}"
+check print_manifest_revision_check "Android manifest revision" "${repo_root}/dist/splonks-android/manifest.txt" git_commit
 check print_manifest_sha256_check \
     "Android AAB checksum" \
     "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab" \
@@ -330,7 +437,7 @@ check print_log_version_check_any "Android Play upload validation" \
 echo
 
 echo "[ios]"
-check print_check "iOS simulator validation" "${repo_root}/dist/validation/macos-ios-sim-*.log"
+check print_log_revision_check "iOS simulator validation" "${repo_root}/dist/validation/macos-ios-sim-*.log"
 check print_log_version_check "iOS release archive validation" "${repo_root}/dist/validation/macos-ios-release-*.log"
 check print_file_check "iOS IPA" "${repo_root}/dist/releases/splonks-${version}-ios.ipa"
 check print_checksum_match_check \
@@ -339,6 +446,7 @@ check print_checksum_match_check \
     "${repo_root}/dist/releases/splonks-${version}-ios.ipa.sha256"
 check print_file_check "iOS release manifest" "${repo_root}/dist/splonks-ios/manifest.txt"
 check print_manifest_value_check "iOS manifest version" "${repo_root}/dist/splonks-ios/manifest.txt" version_name "${version}"
+check print_manifest_revision_check "iOS manifest revision" "${repo_root}/dist/splonks-ios/manifest.txt" git_commit
 check print_manifest_sha256_check \
     "iOS manifest checksum" \
     "${repo_root}/dist/releases/splonks-${version}-ios.ipa" \
