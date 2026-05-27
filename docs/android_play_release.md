@@ -88,19 +88,19 @@ export SPLONKS_PLAY_SERVICE_ACCOUNT_JSON=/absolute/path/to/google-play-service-a
 export SPLONKS_ANDROID_PACKAGE_NAME=dev.splonks.game
 export SPLONKS_PLAY_TRACK=internal
 export SPLONKS_PLAY_RELEASE_STATUS=draft
-./scripts/android/upload_play.sh
+SPLONKS_PLAY_UPLOAD=1 ./scripts/android/validate_play_handoff.sh
 ```
 
-The upload helper verifies the exact AAB first, then runs `fastlane supply` and
-writes a timestamped `dist/validation/android-play-*.log`. It requires current
-`android-release` evidence with `[validated] android signed release AAB with
-upload key`, so run the build-and-verify step above through
-`./scripts/validate_platform.sh android-release` before uploading. It defaults
-to `draft` so an upload can be reviewed in Play Console before rollout. For a
-validation-only API call, use:
+The Play handoff wrapper first builds/verifies the exact AAB with the real
+upload key and records `android-release` evidence with `[validated] android
+signed release AAB with upload key`. With `SPLONKS_PLAY_UPLOAD=1`, it then runs
+`fastlane supply` through `scripts/android/upload_play.sh` and writes a
+timestamped `dist/validation/android-play-*.log`. It defaults to `draft` so an
+upload can be reviewed in Play Console before rollout. For a validation-only API
+call, use:
 
 ```bash
-./scripts/android/upload_play.sh --validate-only
+SPLONKS_PLAY_UPLOAD=1 SPLONKS_PLAY_VALIDATE_ONLY=1 ./scripts/android/validate_play_handoff.sh
 ```
 
 Validation-only logs are recorded as `[play-upload] validate-only complete` and

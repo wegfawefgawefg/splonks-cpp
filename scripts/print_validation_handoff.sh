@@ -131,8 +131,7 @@ EOF
     export SPLONKS_ANDROID_KEY_PASSWORD=...
     export SPLONKS_RELEASE_VERSION=${version}
     export SPLONKS_ANDROID_VERSION_CODE=1
-    ./scripts/release_credentials_preflight.sh android-release
-    ./scripts/validate_platform.sh android-release
+    ./scripts/android/validate_play_handoff.sh
 
 Then validate or upload to the internal Play track:
 
@@ -141,9 +140,7 @@ Then validate or upload to the internal Play track:
     export SPLONKS_ANDROID_PACKAGE_NAME=dev.splonks.game
     export SPLONKS_PLAY_TRACK=internal
     export SPLONKS_PLAY_RELEASE_STATUS=draft
-    ./scripts/release_credentials_preflight.sh android-play
-    ./scripts/validate_platform.sh android-play-upload
-    ./scripts/bundle_validation_evidence.sh --include-artifacts android-play
+    SPLONKS_PLAY_UPLOAD=1 ./scripts/android/validate_play_handoff.sh
 EOF
     common_return "android-play"
 }

@@ -344,13 +344,13 @@ export SPLONKS_ANDROID_KEY_ALIAS=...
 export SPLONKS_ANDROID_KEY_PASSWORD=...
 export SPLONKS_RELEASE_VERSION=0.1.0
 export SPLONKS_ANDROID_VERSION_CODE=1
-./scripts/android/setup_sdk.sh
-./scripts/android/fetch_sdl3_aar.sh
-./scripts/android/build_release_aab.sh
-./scripts/android/verify_release_aab.sh
+./scripts/android/validate_play_handoff.sh
 ```
 
-Evidence helper:
+That wrapper records upload-key AAB evidence and bundles the release evidence.
+It does not upload to Google Play unless `SPLONKS_PLAY_UPLOAD=1` is set.
+
+Evidence helper for rerunning only the AAB validation:
 
 ```bash
 ./scripts/validate_platform.sh android-release
@@ -363,11 +363,12 @@ export SPLONKS_PLAY_SERVICE_ACCOUNT_JSON=/absolute/path/to/google-play-service-a
 export SPLONKS_ANDROID_PACKAGE_NAME=dev.splonks.game
 export SPLONKS_PLAY_TRACK=internal
 export SPLONKS_PLAY_RELEASE_STATUS=draft
-./scripts/validate_platform.sh android-play-upload
+SPLONKS_PLAY_UPLOAD=1 ./scripts/android/validate_play_handoff.sh
 ```
 
 This upload validation requires current `android-release` evidence from the real
-upload key before it runs Fastlane.
+upload key before it runs Fastlane. The handoff wrapper creates that evidence
+first, then runs the upload helper when `SPLONKS_PLAY_UPLOAD=1` is set.
 
 Expected release artifacts:
 
