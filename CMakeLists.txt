@@ -461,3 +461,10 @@ endif()
 set_target_properties(splonks-cpp PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
+
+if (ANDROID)
+    set_target_properties(splonks-cpp PROPERTIES
+        OUTPUT_NAME main
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+endif()
