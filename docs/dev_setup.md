@@ -227,6 +227,8 @@ scripts.
 
 See [release_distribution.md](release_distribution.md) for the current
 per-platform release matrix, commands, and validation status.
+See [platform_validation.md](platform_validation.md) for the proof checklist
+that decides when a platform is actually ready for developers or release.
 
 Current release package entry points:
 

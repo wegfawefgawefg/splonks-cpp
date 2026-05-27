@@ -55,6 +55,9 @@ need to understand or package Gubsy manually.
   Device distribution still needs real signing/provisioning and
   TestFlight/App Store upload validation.
 - Use the full matrix when we are making or validating a real release build.
+- Track platform readiness in `docs/platform_validation.md`. That checklist is
+  the source of truth for whether developer onboarding and real distribution
+  are proven on each target.
 
 ## Gubsy dependency
 

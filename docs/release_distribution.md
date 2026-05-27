@@ -6,6 +6,10 @@ not make developers wait on hosted package builds.
 Gubsy is included as source/tooling through the Splonks build path. Do not ship
 or package Gubsy separately for a Splonks game release.
 
+Use [platform_validation.md](platform_validation.md) as the release proof
+checklist. A platform is not considered done until its artifact, checksum, and
+launch/install/signing/upload evidence are recorded there.
+
 ## Linux
 
 Build, verify, and archive:
