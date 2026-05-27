@@ -54,6 +54,39 @@ require_listing_match() {
     fi
 }
 
+verify_info_plist_if_possible() {
+    if ! command -v plutil >/dev/null 2>&1; then
+        echo "[verify-ipa] skipped Info.plist value check; plutil not found"
+        return
+    fi
+
+    local temp_dir
+    local info_path
+    local short_version
+    local bundle_version
+    temp_dir="$(mktemp -d)"
+    unzip -q "${ipa_path}" "Payload/*.app/Info.plist" -d "${temp_dir}"
+    info_path="$(find "${temp_dir}/Payload" -type f -path "*.app/Info.plist" | head -n 1)"
+    if [[ -z "${info_path}" ]]; then
+        rm -rf "${temp_dir}"
+        echo "Unable to extract IPA Info.plist" >&2
+        exit 1
+    fi
+
+    short_version="$(plutil -extract CFBundleShortVersionString raw -o - "${info_path}")"
+    bundle_version="$(plutil -extract CFBundleVersion raw -o - "${info_path}")"
+    rm -rf "${temp_dir}"
+
+    if [[ "${short_version}" != "${version}" ]]; then
+        echo "Info.plist CFBundleShortVersionString mismatch: expected '${version}', got '${short_version}'" >&2
+        exit 1
+    fi
+    if [[ "${bundle_version}" != "$(manifest_value version_code)" ]]; then
+        echo "Info.plist CFBundleVersion mismatch: expected '$(manifest_value version_code)', got '${bundle_version}'" >&2
+        exit 1
+    fi
+}
+
 case "${1:-}" in
     "")
         ;;
@@ -120,6 +153,7 @@ require_listing_match "bundled font asset" '^Payload/[^/]+\.app/(.*/)?assets/fon
 require_listing_match "bundled graphics annotations" '^Payload/[^/]+\.app/(.*/)?assets/graphics/annotations\.yaml$'
 require_listing_match "bundled audio annotations" '^Payload/[^/]+\.app/(.*/)?assets/audio/annotations\.yaml$'
 require_listing_match "bundled settings data" '^Payload/[^/]+\.app/(.*/)?data/settings\.cfg$'
+verify_info_plist_if_possible
 
 echo "[verify-ipa] ${ipa_path} ok"
 echo "[verify-ipa] sha256=${actual_sha}"

@@ -278,8 +278,9 @@ Current status: `ios-sim` and `ios-device` CMake/Xcode scaffolds exist and copy
 script now has a runtime smoke mode that requires the state-fingerprint success
 line. The archive/export script exists, and the archive path writes a manifest
 with bundle id, export method, commit, version, and SHA-256. The IPA verifier
-checks the exported IPA, release version, checksum, manifest, and bundled
-content before upload. The device install helper uses `xcrun devicectl` to
+checks the exported IPA, release version, checksum, manifest, bundled content,
+and macOS `Info.plist` version fields before upload. The device install helper
+uses `xcrun devicectl` to
 install and launch the signed archive app on a connected provisioned device.
 The upload helper uses `xcrun altool` to validate and upload the exported IPA
 to App Store Connect/TestFlight. These paths still need macOS/Xcode validation
@@ -295,7 +296,7 @@ Optional iOS archive/export settings:
 ```text
 SPLONKS_IOS_SIGNING_STYLE=automatic|manual
 SPLONKS_IOS_PROVISIONING_PROFILE=<profile name>
-SPLONKS_IOS_VERSION_CODE=1
+SPLONKS_IOS_VERSION_CODE=1   # maps to CFBundleVersion
 SPLONKS_IOS_SIMULATOR_UDID=<simulator udid>
 SPLONKS_IOS_IPA_PATH=<explicit ipa path>
 API_PRIVATE_KEYS_DIR=<directory containing AuthKey_<key id>.p8>

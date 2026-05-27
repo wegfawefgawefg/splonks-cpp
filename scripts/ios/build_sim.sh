@@ -22,11 +22,13 @@ require_cmd cmake
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
+version_code="${SPLONKS_IOS_VERSION_CODE:-1}"
 bundle_id="${SPLONKS_IOS_BUNDLE_ID:-dev.splonks.game}"
 cd "${repo_root}"
 
 cmake --preset ios-sim \
     -DSPLONKS_BUNDLE_VERSION="${version}" \
+    -DSPLONKS_IOS_VERSION_CODE="${version_code}" \
     -DSPLONKS_IOS_BUNDLE_ID="${bundle_id}"
 cmake --build --preset ios-sim
 

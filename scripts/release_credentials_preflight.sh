@@ -227,6 +227,7 @@ check_ios_release() {
     require_cmd xcodebuild
     require_cmd xcrun
     require_cmd unzip
+    require_cmd plutil
     require_env SPLONKS_IOS_DEVELOPMENT_TEAM
     if [[ "${GITHUB_ACTIONS:-}" == "true" ||
         -n "${SPLONKS_IOS_CERTIFICATE_BASE64:-}" ||
@@ -264,6 +265,7 @@ check_ios_upload() {
     local manifest_path="${repo_root}/dist/splonks-ios/manifest.txt"
     require_macos_host
     require_cmd xcrun
+    require_cmd plutil
     require_checksum_file "iOS IPA" "${ipa_path}" "${ipa_path}.sha256"
     require_manifest_value "iOS release manifest" "${manifest_path}" version_name "${version}"
     if env \

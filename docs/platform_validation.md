@@ -454,8 +454,8 @@ validation path now installs, launches, and requires the state-fingerprint
 runtime smoke line, and the simulator preflight checks required macOS/Xcode
 tools before a full build. The upload helper exists for App Store
 Connect/TestFlight delivery, and the IPA verifier checks the exported IPA,
-checksum, manifest, and bundled content before upload. Needs macOS/Xcode
-validation, real
+checksum, manifest, bundled content, and macOS `Info.plist` version fields
+before upload. Needs macOS/Xcode validation, real
 signing/provisioning, physical device install/launch validation through
 `scripts/ios/install_device.sh`, and TestFlight/App Store upload validation.
 
