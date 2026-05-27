@@ -17,6 +17,10 @@ packaging, not as the normal development feedback loop.
   Windows, Android, and iOS.
 - iOS release work requires an explicit Xcode/signing/provisioning path and
   should not be added as an automatic per-push build.
+- Use `/home/vega/Coding/GameDev/how-to-multi-backend-rendering` as the local
+  iOS scaffold reference. Its working `ios-sim` CMake preset uses the Xcode
+  generator, `CMAKE_SYSTEM_NAME=iOS`, simulator sysroot, arm64 simulator arch,
+  bundled SDL, and app bundle metadata.
 - Use the full matrix when we are making or validating a real release build.
 
 ## Gubsy dependency
