@@ -39,6 +39,9 @@ need to understand or package Gubsy manually.
 - Release builds are responsible for platform packages, including Linux, macOS,
   Windows, Android, and iOS. Android signing uses environment-provided upload
   key settings; iOS signing uses the Xcode/provisioning path.
+- The package workflow uploads versioned Linux/macOS/Windows release archives
+  with SHA-256 files. It also uploads an Android debug APK, and uploads a signed
+  Android release AAB when Android signing secrets are configured.
 - iOS release work requires an explicit Xcode/signing/provisioning path and
   should not be added as an automatic per-push build.
 - Use `/home/vega/Coding/GameDev/how-to-multi-backend-rendering` as the local

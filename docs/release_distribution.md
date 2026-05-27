@@ -175,3 +175,27 @@ but still needs macOS/Xcode validation with an Apple Developer team.
 
 The package workflow is intentionally limited to manual dispatch and `v*` tags.
 Do not add package jobs back to normal branch pushes.
+
+Manual dispatch accepts a `release_version` input. Version tags use the tag name
+with a leading `v` stripped, so `v0.1.0` produces `0.1.0` artifacts.
+
+Workflow artifacts:
+
+- Linux: `splonks-<version>-linux-x86_64.tar.gz` plus `.sha256`.
+- macOS: `splonks-<version>-macos-universal.zip` plus `.sha256`.
+- Windows: `splonks-<version>-windows-x86_64.zip` plus `.sha256`.
+- Android: debug APK for remote sanity checks on every manual/tag run.
+- Android release: signed `splonks-<version>-android-release.aab` plus
+  `manifest.txt` when Android signing secrets are configured.
+
+Required Android release secrets:
+
+```text
+SPLONKS_ANDROID_KEYSTORE_BASE64
+SPLONKS_ANDROID_KEYSTORE_PASSWORD
+SPLONKS_ANDROID_KEY_ALIAS
+SPLONKS_ANDROID_KEY_PASSWORD
+```
+
+`SPLONKS_ANDROID_KEYSTORE_BASE64` is the base64-encoded upload keystore file.
+Keep the real upload keystore outside the repo.

@@ -2,6 +2,11 @@ name: package
 
 on:
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version used in artifact names, for example 0.1.0'
+        required: false
+        default: '0.1.0'
   push:
     tags:
       - 'v*'
@@ -18,6 +23,13 @@ jobs:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
     steps:
       - uses: actions/checkout@v4
+      - name: Set release version
+        run: |
+          version="${{ github.event.inputs.release_version }}"
+          if [[ -z "${version}" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "SPLONKS_RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
       - name: Install native build dependencies
         run: |
           sudo apt-get update
@@ -46,12 +58,15 @@ jobs:
             libudev-dev
       - name: Build and verify Linux package
         run: |
-          ./scripts/build.sh
           ./scripts/verify_package_linux.sh
+          ./scripts/archive_release.sh linux
+          ./scripts/verify_release_archive.sh linux
       - uses: actions/upload-artifact@v4
         with:
-          name: splonks-linux
-          path: dist/splonks-linux
+          name: splonks-linux-release
+          path: |
+            dist/releases/splonks-*-linux-x86_64.tar.gz
+            dist/releases/splonks-*-linux-x86_64.tar.gz.sha256
 
   macos-package:
     runs-on: macos-latest
@@ -60,16 +75,26 @@ jobs:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
     steps:
       - uses: actions/checkout@v4
+      - name: Set release version
+        run: |
+          version="${{ github.event.inputs.release_version }}"
+          if [[ -z "${version}" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "SPLONKS_RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
       - name: Install native build dependencies
         run: brew install cmake ninja pkg-config
       - name: Build and verify macOS package
         run: |
-          ./scripts/build.sh
           ./scripts/verify_package_macos.sh
+          ./scripts/archive_release.sh macos
+          ./scripts/verify_release_archive.sh macos
       - uses: actions/upload-artifact@v4
         with:
-          name: splonks-macos
-          path: dist/splonks-macos
+          name: splonks-macos-release
+          path: |
+            dist/releases/splonks-*-macos-universal.zip
+            dist/releases/splonks-*-macos-universal.zip.sha256
 
   windows-package:
     runs-on: windows-latest
@@ -81,6 +106,13 @@ jobs:
         shell: msys2 {0}
     steps:
       - uses: actions/checkout@v4
+      - name: Set release version
+        run: |
+          version="${{ github.event.inputs.release_version }}"
+          if [[ -z "${version}" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "SPLONKS_RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
       - uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
@@ -93,20 +125,35 @@ jobs:
             mingw-w64-ucrt-x86_64-pkgconf
       - name: Build and verify Windows package
         run: |
-          ./scripts/build.sh
           ./scripts/verify_package_windows.sh
+          ./scripts/archive_release.sh windows
+          ./scripts/verify_release_archive.sh windows
       - uses: actions/upload-artifact@v4
         with:
-          name: splonks-windows
-          path: dist/splonks-windows
+          name: splonks-windows-release
+          path: |
+            dist/releases/splonks-*-windows-x86_64.zip
+            dist/releases/splonks-*-windows-x86_64.zip.sha256
 
-  android-scaffold:
+  android-release:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
+      SPLONKS_ANDROID_KEYSTORE_BASE64: ${{ secrets.SPLONKS_ANDROID_KEYSTORE_BASE64 }}
+      SPLONKS_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.SPLONKS_ANDROID_KEYSTORE_PASSWORD }}
+      SPLONKS_ANDROID_KEY_ALIAS: ${{ secrets.SPLONKS_ANDROID_KEY_ALIAS }}
+      SPLONKS_ANDROID_KEY_PASSWORD: ${{ secrets.SPLONKS_ANDROID_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+      - name: Set release version
+        run: |
+          version="${{ github.event.inputs.release_version }}"
+          if [[ -z "${version}" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "SPLONKS_RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
+          echo "SPLONKS_ANDROID_VERSION_NAME=${version}" >> "${GITHUB_ENV}"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -121,9 +168,23 @@ jobs:
         run: |
           ./scripts/android/fetch_sdl3_aar.sh
           test -f android/app/libs/SDL3-3.4.0.aar
-      - name: Build Android debug APK
-        run: ./scripts/android/build_apk.sh
+      - name: Build Android emulator APK
+        run: SPLONKS_ANDROID_ABIS=x86_64 ./scripts/android/build_apk.sh
       - uses: actions/upload-artifact@v4
         with:
           name: splonks-android-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Build signed Android release AAB
+        if: ${{ env.SPLONKS_ANDROID_KEYSTORE_BASE64 != '' && env.SPLONKS_ANDROID_KEYSTORE_PASSWORD != '' && env.SPLONKS_ANDROID_KEY_ALIAS != '' && env.SPLONKS_ANDROID_KEY_PASSWORD != '' }}
+        run: |
+          keystore_path="${RUNNER_TEMP}/splonks-upload.jks"
+          printf '%s' "${SPLONKS_ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${keystore_path}"
+          export SPLONKS_ANDROID_KEYSTORE="${keystore_path}"
+          ./scripts/android/build_release_aab.sh
+      - uses: actions/upload-artifact@v4
+        if: ${{ env.SPLONKS_ANDROID_KEYSTORE_BASE64 != '' && env.SPLONKS_ANDROID_KEYSTORE_PASSWORD != '' && env.SPLONKS_ANDROID_KEY_ALIAS != '' && env.SPLONKS_ANDROID_KEY_PASSWORD != '' }}
+        with:
+          name: splonks-android-release-aab
+          path: |
+            dist/splonks-android/splonks-*-android-release.aab
+            dist/splonks-android/manifest.txt
