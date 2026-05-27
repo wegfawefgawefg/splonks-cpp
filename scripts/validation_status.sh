@@ -93,6 +93,41 @@ print_log_revision_check() {
     return 1
 }
 
+print_log_revision_contains_check() {
+    local label="$1"
+    local pattern="$2"
+    local required_text="$3"
+    local latest
+    latest="$(latest_glob "${pattern}" || true)"
+    if [[ -z "${latest}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${pattern#${repo_root}/}"
+        return 1
+    fi
+    if ! log_revision_matches "${latest}"; then
+        local actual_revision
+        actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${latest}" | tail -n 1)"
+        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${actual_revision:-<unset>}" \
+            "${expected_revision}"
+        return 1
+    fi
+    if grep -Fq "${required_text}" "${latest}"; then
+        printf '[ok]      %s: %s has git_revision=%s and "%s"\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${expected_revision}" \
+            "${required_text}"
+        return 0
+    fi
+    printf '[missing] %s: %s missing required text: %s\n' \
+        "${label}" \
+        "${latest#${repo_root}/}" \
+        "${required_text}"
+    return 1
+}
+
 print_log_version_check() {
     local label="$1"
     local pattern="$2"
@@ -421,7 +456,10 @@ check print_checksum_match_check \
 echo
 
 echo "[android]"
-check print_log_revision_check "Android emulator/dev validation" "${repo_root}/dist/validation/*-android-emulator-*.log"
+check print_log_revision_contains_check \
+    "Android emulator/dev validation" \
+    "${repo_root}/dist/validation/*-android-emulator-*.log" \
+    "state fingerprint smoke ok"
 check print_log_version_check "Android signed AAB validation" "${repo_root}/dist/validation/*-android-release-*.log"
 check print_file_check "Android release AAB" "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab"
 check print_file_check "Android release manifest" "${repo_root}/dist/splonks-android/manifest.txt"
@@ -437,7 +475,10 @@ check print_log_version_check_any "Android Play upload validation" \
 echo
 
 echo "[ios]"
-check print_log_revision_check "iOS simulator validation" "${repo_root}/dist/validation/macos-ios-sim-*.log"
+check print_log_revision_contains_check \
+    "iOS simulator validation" \
+    "${repo_root}/dist/validation/macos-ios-sim-*.log" \
+    "state fingerprint smoke ok"
 check print_log_version_check "iOS release archive validation" "${repo_root}/dist/validation/macos-ios-release-*.log"
 check print_file_check "iOS IPA" "${repo_root}/dist/releases/splonks-${version}-ios.ipa"
 check print_checksum_match_check \
