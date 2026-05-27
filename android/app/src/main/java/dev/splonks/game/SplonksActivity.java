@@ -7,6 +7,7 @@ import android.util.Log;
 import org.libsdl.app.SDLActivity;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,7 +50,9 @@ public class SplonksActivity extends SDLActivity {
         }
         args.add("--project-root");
         args.add(projectRoot.getAbsolutePath());
-        return args.toArray(new String[0]);
+        final String[] nativeArgs = args.toArray(new String[0]);
+        Log.i(TAG, "Native arguments: " + Arrays.toString(nativeArgs));
+        return nativeArgs;
     }
 
     private void extractProjectTree() throws IOException {

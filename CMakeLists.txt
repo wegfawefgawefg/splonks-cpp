@@ -135,7 +135,7 @@ else()
     message(FATAL_ERROR "imgui dependency is currently only available through SPLONKS_FETCH_DEPS.")
 endif()
 
-add_executable(splonks-cpp
+set(SPLONKS_SOURCES
     src/audio.cpp
     src/audio_asset.cpp
     src/audio_acoustics.cpp
@@ -403,6 +403,12 @@ add_executable(splonks-cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
 )
+
+if (ANDROID)
+    add_library(splonks-cpp SHARED ${SPLONKS_SOURCES})
+else()
+    add_executable(splonks-cpp ${SPLONKS_SOURCES})
+endif()
 
 set(SPLONKS_IMGUI_SOURCES
     ${imgui_SOURCE_DIR}/imgui.cpp

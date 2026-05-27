@@ -193,7 +193,7 @@ void RebaseCwdToRepoRoot() {
 
 } // namespace
 
-int main(int argc, char** argv) {
+int SplonksMain(int argc, char** argv) {
     if (!RebaseCwdToExplicitProjectRoot(argc, argv)) {
         RebaseCwdToRepoRoot();
     }
@@ -570,4 +570,14 @@ int main(int argc, char** argv) {
         std::cerr << "  ./build-debug/splonks-cpp --check-tile-source-data\n\n";
         return 1;
     }
+}
+
+#ifdef __ANDROID__
+extern "C" int SDL_main(int argc, char** argv) {
+    return SplonksMain(argc, argv);
+}
+#endif
+
+int main(int argc, char** argv) {
+    return SplonksMain(argc, argv);
 }

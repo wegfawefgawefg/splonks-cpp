@@ -5,6 +5,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ANDROID_DIR="${REPO_ROOT}/android"
 
 export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}"
+export ANDROID_HOME="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
 export ANDROID_NDK_HOME="${ANDROID_NDK_HOME:-$ANDROID_SDK_ROOT/ndk/26.3.11579264}"
 export ANDROID_API_LEVEL="${ANDROID_API_LEVEL:-34}"
 export ANDROID_BUILD_TOOLS="${ANDROID_BUILD_TOOLS:-34.0.0}"
@@ -15,6 +16,11 @@ export SDL3_ANDROID_ZIP_SHA256="${SDL3_ANDROID_ZIP_SHA256:-ed8e9278b4a944fc0ad93
 
 export APP_ID="dev.splonks.game"
 export APP_ACTIVITY="dev.splonks.game.SplonksActivity"
+
+if [[ -z "${JAVA_HOME:-}" ]] && command -v javac >/dev/null 2>&1; then
+    javac_path="$(readlink -f "$(command -v javac)" 2>/dev/null || command -v javac)"
+    export JAVA_HOME="$(cd "$(dirname "${javac_path}")/.." && pwd)"
+fi
 
 for dir in \
     "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin" \
@@ -51,11 +57,15 @@ require_android_ndk() {
 
 require_java() {
     if [[ -n "${JAVA_HOME:-}" && -x "${JAVA_HOME}/bin/java" ]]; then
+        if [[ ! -x "${JAVA_HOME}/bin/javac" || ! -x "${JAVA_HOME}/bin/jlink" ]]; then
+            echo "JAVA_HOME must point to a full JDK with javac and jlink: ${JAVA_HOME}" >&2
+            exit 1
+        fi
         return 0
     fi
-    if command -v java >/dev/null 2>&1; then
+    if command -v java >/dev/null 2>&1 && command -v javac >/dev/null 2>&1 && command -v jlink >/dev/null 2>&1; then
         return 0
     fi
-    echo "Missing Java runtime. Install JDK 17+ or set JAVA_HOME before running Android Gradle tasks." >&2
+    echo "Missing Java JDK. Install JDK 17+ or set JAVA_HOME before running Android Gradle tasks." >&2
     exit 1
 }

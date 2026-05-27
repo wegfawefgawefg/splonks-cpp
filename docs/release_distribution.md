@@ -130,9 +130,11 @@ dist/splonks-android/splonks-<version>-android-release.aab
 dist/splonks-android/manifest.txt
 ```
 
-Current status: signed AAB path is scripted. This Linux host is missing Java and
-the Android NDK, so the AAB build and emulator/device runtime smoke still need
-validation in an Android-ready environment.
+Current status: debug APK build, x86_64 emulator runtime smoke, and signed
+arm64 release AAB build are validated locally. The release AAB includes
+`libmain.so`, SDL3 runtime libraries, `assets/`, and `data/`, and writes a
+manifest with version, commit, and SHA-256. Final distribution still needs the
+real upload key and Play Console upload validation.
 
 ## iOS
 

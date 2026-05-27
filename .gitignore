@@ -1,6 +1,9 @@
 build/
 build-*/
 dist/
+android/.gradle/
+android/app/.cxx/
+android/app/build/
 cmake-build-*/
 compile_commands.json
 CMakeUserPresets.json

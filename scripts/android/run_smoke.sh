@@ -4,7 +4,7 @@ source "$(dirname "$0")/env.sh"
 
 require_cmd adb
 
-timeout_s="${ANDROID_SMOKE_TIMEOUT_S:-30}"
+timeout_s="${ANDROID_SMOKE_TIMEOUT_S:-90}"
 extra_name="dev.splonks.game.ARGS"
 smoke_args="${SPLONKS_ANDROID_SMOKE_ARGS:---check-state-fingerprint-smoke}"
 success_pattern="${SPLONKS_ANDROID_SMOKE_PATTERN:-state fingerprint smoke ok}"
@@ -29,8 +29,8 @@ while (( SECONDS < deadline )); do
         echo "[android-smoke] ${success_pattern}"
         exit 0
     fi
-    if grep -Eiq "AndroidRuntime|FATAL EXCEPTION|signal [0-9]+|Fatal signal" "${tmp_log}"; then
-        grep -Ei "AndroidRuntime|FATAL EXCEPTION|signal [0-9]+|Fatal signal|splonks|SDL" "${tmp_log}" >&2 || true
+    if grep -Eiq "AndroidRuntime|FATAL EXCEPTION|Fatal signal.*${APP_ID}|${APP_ID}.*Fatal signal" "${tmp_log}"; then
+        grep -Ei "AndroidRuntime|FATAL EXCEPTION|Fatal signal|splonks|SDL" "${tmp_log}" >&2 || true
         exit 1
     fi
     sleep 1

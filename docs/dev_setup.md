@@ -118,6 +118,16 @@ Current debug/dev path:
 ./scripts/android/build_apk.sh
 ```
 
+For the default x86_64 emulator smoke path:
+
+```bash
+SPLONKS_ANDROID_ABIS=x86_64 ./scripts/android/build_apk.sh
+./scripts/android/create_avd.sh
+./scripts/android/start_emulator.sh
+./scripts/android/install_apk.sh
+./scripts/android/run_smoke.sh
+```
+
 With an emulator or device connected:
 
 ```bash
@@ -126,8 +136,9 @@ With an emulator or device connected:
 ./scripts/android/run_smoke.sh
 ```
 
-Status: scaffold and scripts exist. Runtime smoke still needs a real
-emulator/device validation pass in this repo.
+Status: debug APK build and x86_64 emulator smoke are validated locally through
+the commands above. The default APK/AAB release ABI is `arm64-v8a`; use
+`SPLONKS_ANDROID_ABIS=x86_64` for the emulator smoke path.
 
 Signed release AAB path:
 
@@ -145,6 +156,10 @@ export SPLONKS_ANDROID_VERSION_NAME=0.1.0
 
 The release script writes the signed app bundle and manifest under
 `dist/splonks-android/`. Keep keystores and passwords outside the repo.
+
+Status: signed arm64 release AAB build is validated locally with a throwaway
+upload keystore. Final store distribution still needs the real upload key and
+Play Console upload validation.
 
 ## iOS
 
