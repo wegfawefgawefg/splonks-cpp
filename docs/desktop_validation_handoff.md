@@ -24,11 +24,14 @@ SPLONKS_PRESET=dev ./scripts/run.sh
 Record:
 
 - macOS version.
-- Xcode or command line tools version.
-- Homebrew version.
 - The generated `dist/validation/macos-dev-*.log`.
 - Whether the interactive game window opened.
 - Any SDL, audio, controller, or file permission warnings.
+
+The generated validation log records the Homebrew, Git, CMake, Ninja,
+compiler, Xcode, and command line tools details when those tools are present.
+Only record them separately if the log is missing a field or the machine has an
+unusual setup.
 
 ## macOS Release Validation
 
@@ -67,11 +70,14 @@ from `./scripts/setup_windows_msys2.sh`.
 Record:
 
 - Windows version.
-- MSYS2 environment, including `MSYSTEM`.
-- GCC, CMake, Ninja, and Git versions.
 - The generated `dist/validation/windows-dev-*.log`.
 - Whether the interactive game window opened.
 - Any SDL, audio, controller, or file permission warnings.
+
+The generated validation log records `MSYSTEM`, Git, CMake, Ninja, pkg-config,
+GCC/Clang, pacman, and `PATH` details when those tools are present. Only record
+them separately if the log is missing a field or the machine has an unusual
+setup.
 
 ## Windows Release Validation
 
