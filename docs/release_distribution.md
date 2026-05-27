@@ -222,6 +222,19 @@ to internal testers.
 
 ## iOS
 
+External iOS validators should use the handoff wrapper after clone/checkout:
+
+```bash
+export SPLONKS_RELEASE_VERSION=0.1.0
+export SPLONKS_IOS_BUNDLE_ID=dev.splonks.game
+./scripts/validate_ios_handoff.sh
+```
+
+The wrapper always validates the simulator path and bundles evidence. It runs
+signed archive/export when `SPLONKS_IOS_DEVELOPMENT_TEAM` is set, physical
+device install/launch when `SPLONKS_IOS_DEVICE_ID` is set, and App Store
+Connect/TestFlight upload only when `SPLONKS_IOS_UPLOAD=1` is set.
+
 Simulator build on macOS/Xcode:
 
 ```bash

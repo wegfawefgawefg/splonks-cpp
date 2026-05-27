@@ -388,6 +388,21 @@ handoff and evidence to record.
 
 ## iOS
 
+One-command external handoff on macOS/Xcode:
+
+```bash
+export SPLONKS_RELEASE_VERSION=0.1.0
+export SPLONKS_IOS_BUNDLE_ID=dev.splonks.game
+./scripts/validate_ios_handoff.sh
+```
+
+That always runs simulator validation and bundles evidence. If
+`SPLONKS_IOS_DEVELOPMENT_TEAM` is set, it also runs signed archive/export
+validation. If `SPLONKS_IOS_DEVICE_ID` is set, it also installs and launches on
+that physical device. App Store Connect upload is intentionally opt-in; set
+`SPLONKS_IOS_UPLOAD=1` only for a release candidate that should be sent to
+TestFlight/App Store Connect.
+
 Simulator validation on macOS/Xcode:
 
 ```bash

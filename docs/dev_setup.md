@@ -280,6 +280,10 @@ The Splonks `ios-sim` preset uses the Xcode generator, `CMAKE_SYSTEM_NAME=iOS`,
 can use the bundle as its content root.
 
 Status: simulator scaffold exists and has a runtime smoke validation command.
+External iOS validators should use `./scripts/validate_ios_handoff.sh` after
+clone/checkout; it runs simulator validation by default and adds signed archive,
+device, and upload validation when the corresponding signing/device/upload
+environment variables are set.
 We still need:
 
 - macOS/Xcode validation of `./scripts/ios/build_sim.sh`.

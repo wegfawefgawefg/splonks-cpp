@@ -163,31 +163,26 @@ EOF
     cat <<EOF
     export SPLONKS_RELEASE_VERSION=${version}
     export SPLONKS_IOS_BUNDLE_ID=dev.splonks.game
-    ./scripts/release_credentials_preflight.sh ios-sim
-    ./scripts/validate_platform.sh ios-sim
+    ./scripts/validate_ios_handoff.sh
 
 Archive/export with signing:
 
     export SPLONKS_IOS_DEVELOPMENT_TEAM=TEAMID
     export SPLONKS_IOS_CODE_SIGN_IDENTITY="Apple Distribution"
     export SPLONKS_IOS_EXPORT_METHOD=app-store-connect
-    ./scripts/release_credentials_preflight.sh ios-release
-    ./scripts/validate_platform.sh ios-release
+    ./scripts/validate_ios_handoff.sh
 
 Install and launch on a provisioned physical device:
 
     export SPLONKS_IOS_DEVICE_ID=<device-id-from-xcrun-devicectl-list-devices>
-    ./scripts/release_credentials_preflight.sh ios-device
-    ./scripts/validate_platform.sh ios-device
+    ./scripts/validate_ios_handoff.sh
 
 Validate/upload to App Store Connect/TestFlight:
 
     export SPLONKS_APP_STORE_API_KEY=ABC123DEFG
     export SPLONKS_APP_STORE_API_ISSUER=00000000-0000-0000-0000-000000000000
     export API_PRIVATE_KEYS_DIR=/absolute/path/to/appstoreconnect/private_keys
-    ./scripts/release_credentials_preflight.sh ios-upload
-    ./scripts/validate_platform.sh ios-upload
-    ./scripts/bundle_validation_evidence.sh --include-artifacts ios
+    SPLONKS_IOS_UPLOAD=1 ./scripts/validate_ios_handoff.sh
 EOF
     common_return "ios"
 }
