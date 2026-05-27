@@ -53,16 +53,16 @@ contributors should not need to clone, understand, or package Gubsy manually.
   release and Play upload jobs must go through
   `scripts/android/validate_play_handoff.sh` so upload-key evidence is recorded
   before any Play upload.
-- Android Play and iOS App Store/TestFlight delivery are explicit release
-  actions. The package workflow only runs them when a manual input requests it
-  or when an intentional tag-release repository variable enables it.
+- Android Play delivery is an explicit release action. The package workflow
+  only runs it when a manual input requests it or when an intentional
+  tag-release repository variable enables it.
 - iOS release work requires an explicit Xcode/signing/provisioning path. The
   package workflow has an opt-in signed IPA job for manual dispatch
-  (`include_ios` or `upload_ios_app_store`) or tagged releases with
-  `SPLONKS_BUILD_IOS_RELEASE=true`; it does not run on normal branch pushes.
-  The workflow uses `scripts/validate_ios_handoff.sh` so simulator, signed
-  archive/export, optional upload, and evidence bundling follow the same path
-  as external macOS validators.
+  (`include_ios`) or tagged releases with `SPLONKS_BUILD_IOS_RELEASE=true`;
+  it does not run on normal branch pushes. The GitHub-hosted job stops at the
+  signed IPA artifact because complete iOS release evidence also requires a
+  provisioned physical device. Use the external Mac+device handoff for final
+  TestFlight/App Store validation/upload.
 - Use `/home/vega/Coding/GameDev/how-to-multi-backend-rendering` as the local
   iOS scaffold reference. Its working `ios-sim` CMake preset uses the Xcode
   generator, `CMAKE_SYSTEM_NAME=iOS`, simulator sysroot, arm64 simulator arch,

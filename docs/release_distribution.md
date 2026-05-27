@@ -359,10 +359,12 @@ with a leading `v` stripped, so `v0.1.0` produces `0.1.0` artifacts.
 The signed iOS IPA job is opt-in: set `include_ios` on manual dispatch, or set
 the repository variable `SPLONKS_BUILD_IOS_RELEASE=true` for tagged release
 runs that should include iOS.
-Store delivery is also opt-in. Set `upload_android_play` or
-`upload_ios_app_store` on manual dispatch, or set the repository variables
-`SPLONKS_UPLOAD_ANDROID_PLAY=true` and `SPLONKS_UPLOAD_IOS_APP_STORE=true` for
-tagged release runs that should submit to the stores.
+Android Play delivery is also opt-in. Set `upload_android_play` on manual
+dispatch, or set the repository variable `SPLONKS_UPLOAD_ANDROID_PLAY=true` for
+tagged release runs that should submit to Google Play. iOS App
+Store/TestFlight delivery is not run from the GitHub-hosted macOS job because
+complete iOS release evidence requires a provisioned physical device; use the
+external Mac+device handoff for that final step.
 
 Workflow artifacts:
 
@@ -384,10 +386,10 @@ Workflow artifacts:
 - iOS release: signed `splonks-<version>-ios.ipa`, `.sha256`, and
   `manifest.txt`, validation logs, and validation bundles when the opt-in iOS
   job and Apple signing secrets are configured.
-- iOS App Store/TestFlight: optional upload through
+- iOS App Store/TestFlight: external Mac+device validation/upload through
   `scripts/validate_ios_handoff.sh` with
-  `SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1` when explicitly
-  requested and App Store Connect credentials are configured.
+  `SPLONKS_IOS_REQUIRE_COMPLETE=1 SPLONKS_IOS_UPLOAD=1` after signing,
+  physical device, and App Store Connect credentials are configured.
 
 Required Android release secrets:
 
