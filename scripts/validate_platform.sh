@@ -9,7 +9,7 @@ validation_dir="${repo_root}/dist/validation"
 
 usage() {
     cat >&2 <<EOF
-Usage: $0 [dev|release|all|android-dev|android-emulator|android-release|ios-sim|ios-release]
+Usage: $0 [dev|release|all|android-dev|android-emulator|android-release|ios-sim|ios-release|ios-upload]
 
 Runs the platform validation commands and writes a timestamped evidence log.
 Run the platform setup script first when validating a fresh developer machine.
@@ -142,8 +142,16 @@ validate_ios_release() {
     echo "[validated] ios signed archive/export"
 }
 
+validate_ios_upload() {
+    local platform="$1"
+    require_host macos "${platform}"
+    run_step "${repo_root}/scripts/ios/archive_release.sh"
+    run_step "${repo_root}/scripts/ios/upload_app_store.sh" validate-upload
+    echo "[validated] ios App Store Connect upload"
+}
+
 case "${scope}" in
-    dev|release|all|android-dev|android-emulator|android-release|ios-sim|ios-release) ;;
+    dev|release|all|android-dev|android-emulator|android-release|ios-sim|ios-release|ios-upload) ;;
     -h|--help|help)
         usage
         exit 0
@@ -189,6 +197,9 @@ log_path="${validation_dir}/${platform}-${scope}-${timestamp}.log"
             ;;
         ios-release)
             validate_ios_release "${platform}"
+            ;;
+        ios-upload)
+            validate_ios_upload "${platform}"
             ;;
     esac
     echo

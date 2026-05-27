@@ -173,6 +173,27 @@ export SPLONKS_IOS_EXPORT_METHOD=app-store-connect
 ./scripts/ios/archive_release.sh
 ```
 
+App Store Connect/TestFlight upload path:
+
+```bash
+export SPLONKS_RELEASE_VERSION=0.1.0
+export SPLONKS_APP_STORE_API_KEY=ABC123DEFG
+export SPLONKS_APP_STORE_API_ISSUER=00000000-0000-0000-0000-000000000000
+./scripts/ios/upload_app_store.sh validate-upload
+```
+
+Apple's App Store Connect help documents Xcode, Transporter, and `xcrun
+altool` as supported upload paths:
+<https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds>.
+
+Alternatively, use Apple ID credentials with an app-specific password:
+
+```bash
+export APPLE_ID=dev@example.com
+export APPLE_APP_SPECIFIC_PASSWORD=...
+./scripts/ios/upload_app_store.sh validate-upload
+```
+
 Output:
 
 ```text
@@ -186,11 +207,14 @@ dist/releases/splonks-0.1.0-ios.ipa.sha256
 Current status: `ios-sim` and `ios-device` CMake/Xcode scaffolds exist and copy
 `assets/` and `data/` into the app bundle. The simulator build/install/launch
 script and archive/export script exist, and the archive path writes a manifest
-with bundle id, export method, commit, version, and SHA-256. These paths still
-need macOS/Xcode validation with an Apple Developer team.
+with bundle id, export method, commit, version, and SHA-256. The upload helper
+uses `xcrun altool` to validate and upload the exported IPA to App Store
+Connect/TestFlight. These paths still need macOS/Xcode validation with an Apple
+Developer team.
 
 - Final App Store distribution checklist.
-- Validation of upload through Xcode Organizer, Transporter, or `xcrun altool`.
+- Validation of upload through Xcode Organizer, Transporter, or
+  `scripts/ios/upload_app_store.sh`.
 - Confirmation of provisioning profile and entitlements for the final bundle ID.
 
 Optional iOS archive/export settings:
@@ -200,6 +224,7 @@ SPLONKS_IOS_SIGNING_STYLE=automatic|manual
 SPLONKS_IOS_PROVISIONING_PROFILE=<profile name>
 SPLONKS_IOS_VERSION_CODE=1
 SPLONKS_IOS_SIMULATOR_UDID=<simulator udid>
+SPLONKS_IOS_IPA_PATH=<explicit ipa path>
 ```
 
 ## GitHub Actions

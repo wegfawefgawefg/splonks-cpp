@@ -274,6 +274,23 @@ Evidence helper:
 ./scripts/validate_platform.sh ios-release
 ```
 
+App Store Connect/TestFlight upload validation:
+
+```bash
+export SPLONKS_RELEASE_VERSION=0.1.0
+export SPLONKS_APP_STORE_API_KEY=ABC123DEFG
+export SPLONKS_APP_STORE_API_ISSUER=00000000-0000-0000-0000-000000000000
+./scripts/ios/upload_app_store.sh validate-upload
+```
+
+Reference: <https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds>.
+
+Evidence helper:
+
+```bash
+./scripts/validate_platform.sh ios-upload
+```
+
 Expected release artifacts:
 
 ```text
@@ -285,9 +302,10 @@ dist/releases/splonks-0.1.0-ios.ipa.sha256
 ```
 
 Current status: simulator and device archive scaffolds exist, based on the
-working local `how-to-multi-backend-rendering` iOS shape. Needs macOS/Xcode
-validation, real signing/provisioning, device install validation, and
-TestFlight/App Store upload validation.
+working local `how-to-multi-backend-rendering` iOS shape. The upload helper
+exists for App Store Connect/TestFlight delivery. Needs macOS/Xcode validation,
+real signing/provisioning, device install validation, and TestFlight/App Store
+upload validation.
 
 ## Completion Criteria
 
