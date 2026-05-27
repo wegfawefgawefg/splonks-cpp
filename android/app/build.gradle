@@ -11,6 +11,7 @@ def releaseKeystore = System.getenv('SPLONKS_ANDROID_KEYSTORE')
 def releaseKeystorePassword = System.getenv('SPLONKS_ANDROID_KEYSTORE_PASSWORD')
 def releaseKeyAlias = System.getenv('SPLONKS_ANDROID_KEY_ALIAS')
 def releaseKeyPassword = System.getenv('SPLONKS_ANDROID_KEY_PASSWORD')
+def releaseKeystoreType = envOrDefault('SPLONKS_ANDROID_KEYSTORE_TYPE', 'jks')
 def hasReleaseSigning = releaseKeystore != null && !releaseKeystore.isBlank() &&
                         releaseKeystorePassword != null && !releaseKeystorePassword.isBlank() &&
                         releaseKeyAlias != null && !releaseKeyAlias.isBlank() &&
@@ -56,6 +57,7 @@ android {
             if (hasReleaseSigning) {
                 storeFile file(releaseKeystore)
                 storePassword releaseKeystorePassword
+                storeType releaseKeystoreType
                 keyAlias releaseKeyAlias
                 keyPassword releaseKeyPassword
             }

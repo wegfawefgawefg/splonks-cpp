@@ -93,6 +93,7 @@ check_android_release() {
     require_cmd unzip
     require_file "SPLONKS_ANDROID_KEYSTORE" "${SPLONKS_ANDROID_KEYSTORE:-}"
     require_env SPLONKS_ANDROID_KEYSTORE_PASSWORD
+    echo "[info] keystore_type=${SPLONKS_ANDROID_KEYSTORE_TYPE:-jks}"
     require_env SPLONKS_ANDROID_KEY_ALIAS
     require_env SPLONKS_ANDROID_KEY_PASSWORD
     if [[ -f "${android_ndk_home}/build/cmake/android.toolchain.cmake" ]]; then
