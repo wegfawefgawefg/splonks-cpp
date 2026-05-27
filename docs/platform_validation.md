@@ -61,6 +61,8 @@ To inspect the current evidence state, run:
 Use `./scripts/validation_status.sh --strict` as the completion gate; it exits
 nonzero until every desktop, Android, iOS, handoff, and manual/tag CI evidence
 item has been recorded.
+Set `SPLONKS_RELEASE_VERSION=<version>` when auditing evidence for a version
+other than `0.1.0`.
 
 Use [desktop_validation_handoff.md](desktop_validation_handoff.md) when sending
 macOS or Windows validation tasks to another developer.
