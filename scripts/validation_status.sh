@@ -844,8 +844,11 @@ check check_file_contains "Developer docs keep Gubsy behind Splonks setup" "${re
 check check_file_contains "Bootstrap runs Linux setup path" "${repo_root}/scripts/bootstrap_dev.sh" "scripts/setup_linux.sh"
 check check_file_contains "Bootstrap runs macOS setup path" "${repo_root}/scripts/bootstrap_dev.sh" "scripts/setup_macos.sh"
 check check_file_contains "Bootstrap runs Windows setup path" "${repo_root}/scripts/bootstrap_dev.sh" "scripts/setup_windows_msys2.sh"
+check check_file_contains "Bootstrap tells validators to close launched game" "${repo_root}/scripts/bootstrap_dev.sh" "close the game window after it opens"
 check check_file_contains "Clean clone Linux onboarding proof uses bootstrap" "${repo_root}/scripts/verify_clean_clone_linux.sh" "./scripts/bootstrap_dev.sh --skip-setup"
 check check_file_contains "Generated handoffs import pinned target evidence" "${repo_root}/scripts/print_validation_handoff.sh" 'SPLONKS_IMPORT_EXPECT_TARGET=${import_target}'
+check check_file_contains "Generated desktop handoffs explain interactive close" "${repo_root}/scripts/print_validation_handoff.sh" "close the window so the handoff can continue"
+check check_file_contains "Desktop handoff docs explain interactive close" "${repo_root}/docs/desktop_validation_handoff.md" "close the window so the wrapper can continue"
 check check_file_contains "Generated handoffs use target-specific return notes" "${repo_root}/scripts/print_validation_handoff.sh" "Play validate/upload result"
 check check_file_contains "Generated handoffs list expected status items" "${repo_root}/scripts/print_validation_handoff.sh" "Expected receiver status items after import"
 check check_file_contains "macOS handoff names notarized evidence expectation" "${repo_root}/scripts/print_validation_handoff.sh" "macOS notarized validation"

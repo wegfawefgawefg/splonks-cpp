@@ -142,6 +142,10 @@ EOF
     test "\$(uname -m)" = arm64
     SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_desktop_handoff.sh
 
+When the dev game window opens, confirm it launched, note any warnings, then
+close the window so the handoff can continue into release packaging and
+evidence bundling.
+
 If Developer ID credentials are available:
 
     export SPLONKS_RELEASE_VERSION=${version}
@@ -174,6 +178,10 @@ EOF
     cat <<EOF
     test "\${MSYSTEM:-}" = UCRT64
     SPLONKS_RELEASE_VERSION=${version} ./scripts/validate_desktop_handoff.sh
+
+When the dev game window opens, confirm it launched, note any warnings, then
+close the window so the handoff can continue into release packaging and
+evidence bundling.
 EOF
     common_return "windows" "windows"
 }

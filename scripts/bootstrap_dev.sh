@@ -92,6 +92,7 @@ env SPLONKS_PRESET="${SPLONKS_PRESET:-dev}" \
 echo "[bootstrap] ${platform} developer path is ready"
 if [[ "${launch_game}" -eq 1 ]]; then
     echo "[bootstrap] launching Splonks"
+    echo "[bootstrap] close the game window after it opens to continue any validation wrapper"
     env SPLONKS_PRESET="${SPLONKS_PRESET:-dev}" "${repo_root}/scripts/run.sh"
 else
     echo "[bootstrap] launch with: SPLONKS_PRESET=${SPLONKS_PRESET:-dev} ./scripts/run.sh"

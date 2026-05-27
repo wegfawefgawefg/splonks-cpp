@@ -39,6 +39,11 @@ preset, launches the game window, records dev and release validation logs,
 builds the release package/archive, and bundles the evidence. For headless
 local retesting only, set `SPLONKS_SKIP_INTERACTIVE_LAUNCH=1`.
 
+During real desktop validation, the wrapper intentionally waits while the dev
+game window is open. Confirm that the window launches, note any warnings, then
+close the window so the wrapper can continue into release packaging and
+evidence bundling.
+
 ## macOS Developer Validation
 
 Run on a real macOS machine. For release validation, use an Apple Silicon Mac;
@@ -58,7 +63,7 @@ Record:
 
 - macOS version.
 - The generated `dist/validation/macos-dev-*.log`.
-- Whether the interactive game window opened.
+- Whether the interactive game window opened and closed cleanly.
 - Any SDL, audio, controller, or file permission warnings.
 
 The generated validation log records the Homebrew, Git, CMake, Ninja,
@@ -133,7 +138,7 @@ Record:
 
 - Windows version.
 - The generated `dist/validation/windows-dev-*.log`.
-- Whether the interactive game window opened.
+- Whether the interactive game window opened and closed cleanly.
 - Any SDL, audio, controller, or file permission warnings.
 
 The generated validation log records `MSYSTEM`, Git, CMake, Ninja, pkg-config,
