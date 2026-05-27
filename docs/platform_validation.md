@@ -231,6 +231,10 @@ including app launch from the packaged bundle, Developer ID signing,
 notarization, stapling, and launch after download/quarantine.
 Package metadata is wired through `SPLONKS_RELEASE_VERSION`,
 `SPLONKS_MACOS_BUNDLE_ID`, and `SPLONKS_MACOS_BUNDLE_NAME`.
+The release artifact is Apple Silicon only: `package-macos` builds `arm64`,
+`verify_package_macos.sh` rejects `x86_64` slices, and the archive is named
+`splonks-<version>-macos-arm64.zip`. Intel Mac validation is intentionally not
+part of the release readiness gate.
 The `macos-notarized` validator now simulates the download/quarantine case by
 extracting the final zip, setting `com.apple.quarantine`, running `spctl`, and
 launching the app smoke from the quarantined extracted bundle.

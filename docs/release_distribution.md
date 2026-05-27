@@ -72,7 +72,14 @@ assets/data, bundles dylibs, rewrites local dylib references, builds the app
 binary as arm64-only for Apple Silicon Macs, verifies that slice set with
 `lipo`, and ad-hoc signs locally. Real outside-Mac-distribution still needs
 Developer ID signing, notarization, and stapling validation.
-Intel Macs are intentionally out of scope for release validation.
+
+macOS release policy: ship Apple Silicon only. The release preset sets
+`CMAKE_OSX_ARCHITECTURES=arm64`, the package verifier rejects `x86_64` slices,
+and the distributable archive is named `splonks-<version>-macos-arm64.zip`.
+This avoids producing a universal binary, keeps bundled native code smaller,
+and removes Intel Macs from the release validation matrix. Intel Macs are
+intentionally out of scope for Splonks release support unless we later see a
+real user need to add a separate compatibility target.
 
 Developer ID signing and notarization path:
 

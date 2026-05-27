@@ -39,6 +39,10 @@ contributors should not need to clone, understand, or package Gubsy manually.
 - Release builds are responsible for platform packages, including Linux, macOS,
   Windows, Android, and iOS. Android signing uses environment-provided upload
   key settings; iOS signing uses the Xcode/provisioning path.
+- macOS release builds are Apple Silicon only. Do not produce or validate a
+  universal macOS app by default; the release target is `macos-arm64`, which
+  keeps bundled native code smaller and removes Intel Macs from the normal
+  release matrix.
 - The package workflow uploads versioned Linux/macOS/Windows release archives
   with SHA-256 files. It also uploads an Android debug APK, and uploads a signed
   Android release AAB when Android signing secrets are configured.
