@@ -59,6 +59,25 @@ print_check() {
     return 1
 }
 
+print_log_version_check() {
+    local label="$1"
+    local pattern="$2"
+    local latest
+    latest="$(latest_glob "${pattern}" || true)"
+    if [[ -z "${latest}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${pattern#${repo_root}/}"
+        return 1
+    fi
+    if grep -Fxq "release_version=${version}" "${latest}"; then
+        printf '[ok]      %s: %s has release_version=%s\n' "${label}" "${latest#${repo_root}/}" "${version}"
+        return 0
+    fi
+    local actual
+    actual="$(awk -F= '$1 == "release_version" {print substr($0, length("release_version") + 2)}' "${latest}" | tail -n 1)"
+    printf '[missing] %s: %s has release_version=%s, expected %s\n' "${label}" "${latest#${repo_root}/}" "${actual:-<unset>}" "${version}"
+    return 1
+}
+
 print_file_check() {
     local label="$1"
     local path="$2"
@@ -103,33 +122,33 @@ echo
 
 echo "[desktop]"
 check print_check "Linux dev validation" "${repo_root}/dist/validation/linux-dev-*.log"
-check print_check "Linux release validation" "${repo_root}/dist/validation/linux-release-*.log"
+check print_log_version_check "Linux release validation" "${repo_root}/dist/validation/linux-release-*.log"
 check print_file_check "Linux release archive" "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz"
 check print_file_check "Linux release checksum" "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz.sha256"
 check print_check "macOS dev validation" "${repo_root}/dist/validation/macos-dev-*.log"
-check print_check "macOS release validation" "${repo_root}/dist/validation/macos-release-*.log"
-check print_check "macOS notarized validation" "${repo_root}/dist/validation/macos-macos-notarized-*.log"
+check print_log_version_check "macOS release validation" "${repo_root}/dist/validation/macos-release-*.log"
+check print_log_version_check "macOS notarized validation" "${repo_root}/dist/validation/macos-macos-notarized-*.log"
 check print_check "Windows dev validation" "${repo_root}/dist/validation/windows-dev-*.log"
-check print_check "Windows release validation" "${repo_root}/dist/validation/windows-release-*.log"
+check print_log_version_check "Windows release validation" "${repo_root}/dist/validation/windows-release-*.log"
 echo
 
 echo "[android]"
 check print_check "Android emulator/dev validation" "${repo_root}/dist/validation/*-android-emulator-*.log"
-check print_check "Android signed AAB validation" "${repo_root}/dist/validation/*-android-release-*.log"
+check print_log_version_check "Android signed AAB validation" "${repo_root}/dist/validation/*-android-release-*.log"
 check print_file_check "Android release AAB" "${repo_root}/dist/splonks-android/splonks-${version}-android-release.aab"
 check print_file_check "Android release manifest" "${repo_root}/dist/splonks-android/manifest.txt"
 check print_manifest_value_check "Android manifest version" "${repo_root}/dist/splonks-android/manifest.txt" version_name "${version}"
-check print_check "Android Play upload validation" "${repo_root}/dist/validation/*-android-play-upload-*.log"
+check print_log_version_check "Android Play upload validation" "${repo_root}/dist/validation/*-android-play-upload-*.log"
 echo
 
 echo "[ios]"
 check print_check "iOS simulator validation" "${repo_root}/dist/validation/macos-ios-sim-*.log"
-check print_check "iOS release archive validation" "${repo_root}/dist/validation/macos-ios-release-*.log"
+check print_log_version_check "iOS release archive validation" "${repo_root}/dist/validation/macos-ios-release-*.log"
 check print_file_check "iOS IPA" "${repo_root}/dist/releases/splonks-${version}-ios.ipa"
 check print_file_check "iOS IPA checksum" "${repo_root}/dist/releases/splonks-${version}-ios.ipa.sha256"
 check print_file_check "iOS release manifest" "${repo_root}/dist/splonks-ios/manifest.txt"
 check print_manifest_value_check "iOS manifest version" "${repo_root}/dist/splonks-ios/manifest.txt" version_name "${version}"
-check print_check "iOS App Store/TestFlight upload validation" "${repo_root}/dist/validation/macos-ios-upload-*.log"
+check print_log_version_check "iOS App Store/TestFlight upload validation" "${repo_root}/dist/validation/macos-ios-upload-*.log"
 echo
 
 echo "[handoff]"
