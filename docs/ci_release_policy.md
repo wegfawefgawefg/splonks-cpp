@@ -8,6 +8,12 @@ packaging, not as the normal development feedback loop.
 - Build and test locally before committing.
 - Pushes to normal branches should not automatically run package builds.
 - Do not wait on GitHub-hosted runners for everyday commits.
+- A new developer on Linux, macOS, or Windows should be able to clone Splonks,
+  follow one platform-specific setup section, run one build command, and launch
+  the game locally.
+- Android and iOS need equivalent documented setup paths, but they can require
+  their normal mobile toolchains: JDK/Android SDK/NDK for Android, and
+  macOS/Xcode/signing prerequisites for iOS.
 
 ## Release builds
 
