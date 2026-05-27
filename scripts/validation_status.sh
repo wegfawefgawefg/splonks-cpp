@@ -161,6 +161,52 @@ print_log_version_check() {
     return 1
 }
 
+print_log_version_contains_check() {
+    local label="$1"
+    local pattern="$2"
+    local required_text="$3"
+    local latest
+    latest="$(latest_glob "${pattern}" || true)"
+    if [[ -z "${latest}" ]]; then
+        printf '[missing] %s: %s\n' "${label}" "${pattern#${repo_root}/}"
+        return 1
+    fi
+    local actual_revision
+    actual_revision="$(awk -F= '$1 == "git_revision" {print substr($0, length("git_revision") + 2)}' "${latest}" | tail -n 1)"
+    if [[ "${actual_revision}" != "${expected_revision}" ]]; then
+        printf '[missing] %s: %s has git_revision=%s, expected %s\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${actual_revision:-<unset>}" \
+            "${expected_revision}"
+        return 1
+    fi
+    if ! grep -Fxq "release_version=${version}" "${latest}"; then
+        local actual
+        actual="$(awk -F= '$1 == "release_version" {print substr($0, length("release_version") + 2)}' "${latest}" | tail -n 1)"
+        printf '[missing] %s: %s has release_version=%s, expected %s\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${actual:-<unset>}" \
+            "${version}"
+        return 1
+    fi
+    if grep -Fq "${required_text}" "${latest}"; then
+        printf '[ok]      %s: %s has release_version=%s git_revision=%s and "%s"\n' \
+            "${label}" \
+            "${latest#${repo_root}/}" \
+            "${version}" \
+            "${expected_revision}" \
+            "${required_text}"
+        return 0
+    fi
+    printf '[missing] %s: %s missing required text: %s\n' \
+        "${label}" \
+        "${latest#${repo_root}/}" \
+        "${required_text}"
+    return 1
+}
+
 print_log_version_check_any() {
     local label="$1"
     shift
@@ -430,24 +476,45 @@ echo "validation_revision=${expected_revision}"
 echo
 
 echo "[desktop]"
-check print_log_revision_check "Linux dev validation" "${repo_root}/dist/validation/linux-dev-*.log"
-check print_log_version_check "Linux release validation" "${repo_root}/dist/validation/linux-release-*.log"
+check print_log_revision_contains_check \
+    "Linux dev validation" \
+    "${repo_root}/dist/validation/linux-dev-*.log" \
+    "[validated] linux developer build and headless smoke"
+check print_log_version_contains_check \
+    "Linux release validation" \
+    "${repo_root}/dist/validation/linux-release-*.log" \
+    "[validated] linux release package and archive"
 check print_file_check "Linux release archive" "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz"
 check print_checksum_match_check \
     "Linux release checksum" \
     "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz" \
     "${repo_root}/dist/releases/splonks-${version}-linux-x86_64.tar.gz.sha256"
 check print_manifest_revision_check "Linux package revision" "${repo_root}/dist/splonks-linux/PACKAGE_MANIFEST.txt" git_revision
-check print_log_revision_check "macOS dev validation" "${repo_root}/dist/validation/macos-dev-*.log"
-check print_log_version_check "macOS release validation" "${repo_root}/dist/validation/macos-release-*.log"
-check print_log_version_check "macOS notarized validation" "${repo_root}/dist/validation/macos-macos-notarized-*.log"
+check print_log_revision_contains_check \
+    "macOS dev validation" \
+    "${repo_root}/dist/validation/macos-dev-*.log" \
+    "[validated] macos developer build and headless smoke"
+check print_log_version_contains_check \
+    "macOS release validation" \
+    "${repo_root}/dist/validation/macos-release-*.log" \
+    "[validated] macos release package and archive"
+check print_log_version_contains_check \
+    "macOS notarized validation" \
+    "${repo_root}/dist/validation/macos-macos-notarized-*.log" \
+    "[validated] macos Developer ID signed, notarized, stapled release archive"
 check print_file_check "macOS release archive" "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip"
 check print_checksum_match_check \
     "macOS release checksum" \
     "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip" \
     "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip.sha256"
-check print_log_revision_check "Windows dev validation" "${repo_root}/dist/validation/windows-dev-*.log"
-check print_log_version_check "Windows release validation" "${repo_root}/dist/validation/windows-release-*.log"
+check print_log_revision_contains_check \
+    "Windows dev validation" \
+    "${repo_root}/dist/validation/windows-dev-*.log" \
+    "[validated] windows developer build and headless smoke"
+check print_log_version_contains_check \
+    "Windows release validation" \
+    "${repo_root}/dist/validation/windows-release-*.log" \
+    "[validated] windows release package and archive"
 check print_file_check "Windows release archive" "${repo_root}/dist/releases/splonks-${version}-windows-x86_64.zip"
 check print_checksum_match_check \
     "Windows release checksum" \
