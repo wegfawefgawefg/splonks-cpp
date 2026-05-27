@@ -42,7 +42,7 @@ case "${platform}" in
         )
         ;;
     macos)
-        archive_name="splonks-${version}-macos-universal.zip"
+        archive_name="splonks-${version}-macos-arm64.zip"
         required_entries=(
             "splonks-macos/Splonks.app/Contents/MacOS/Splonks"
             "splonks-macos/Splonks.app/Contents/MacOS/splonks-bin"

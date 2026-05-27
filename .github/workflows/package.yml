@@ -108,8 +108,8 @@ jobs:
         with:
           name: splonks-macos-release
           path: |
-            dist/releases/splonks-*-macos-universal.zip
-            dist/releases/splonks-*-macos-universal.zip.sha256
+            dist/releases/splonks-*-macos-arm64.zip
+            dist/releases/splonks-*-macos-arm64.zip.sha256
 
   windows-package:
     runs-on: windows-latest

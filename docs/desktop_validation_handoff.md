@@ -56,8 +56,8 @@ SPLONKS_RELEASE_VERSION=0.1.0 ./scripts/validate_platform.sh release
 Record:
 
 - `dist/validation/macos-release-*.log`.
-- `dist/releases/splonks-0.1.0-macos-universal.zip`.
-- `dist/releases/splonks-0.1.0-macos-universal.zip.sha256`.
+- `dist/releases/splonks-0.1.0-macos-arm64.zip`.
+- `dist/releases/splonks-0.1.0-macos-arm64.zip.sha256`.
 - Whether the packaged `Splonks.app` launches locally.
 
 Then bundle the validation evidence:

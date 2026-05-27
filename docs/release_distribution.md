@@ -68,7 +68,7 @@ dist/splonks-macos/Splonks.app
 
 Current status: package script exists. It creates an app bundle, copies
 assets/data, bundles dylibs, rewrites local dylib references, builds the app
-binary as universal `arm64;x86_64`, verifies that universal slice set with
+binary as arm64-only for Apple Silicon Macs, verifies that slice set with
 `lipo`, and ad-hoc signs locally. Real outside-Mac-distribution still needs
 Developer ID signing, notarization, and stapling validation.
 
@@ -93,8 +93,8 @@ export APPLE_APP_SPECIFIC_PASSWORD=...
 Output:
 
 ```text
-dist/releases/splonks-0.1.0-macos-universal.zip
-dist/releases/splonks-0.1.0-macos-universal.zip.sha256
+dist/releases/splonks-0.1.0-macos-arm64.zip
+dist/releases/splonks-0.1.0-macos-arm64.zip.sha256
 ```
 
 `macos-notarized` builds the package, verifies the local app bundle, signs with
@@ -324,7 +324,7 @@ tagged release runs that should submit to the stores.
 Workflow artifacts:
 
 - Linux: `splonks-<version>-linux-x86_64.tar.gz` plus `.sha256`.
-- macOS: `splonks-<version>-macos-universal.zip` plus `.sha256`.
+- macOS: `splonks-<version>-macos-arm64.zip` plus `.sha256`.
 - Windows: `splonks-<version>-windows-x86_64.zip` plus `.sha256`.
 - Android: debug APK for remote sanity checks on every manual/tag run.
 - Android release: signed `splonks-<version>-android-release.aab` plus

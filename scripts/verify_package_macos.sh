@@ -55,8 +55,12 @@ require_dylib "SDL3_mixer" "*SDL3_mixer*.dylib"
 require_dylib "SDL3_ttf" "*SDL3_ttf*.dylib"
 
 archs="$(lipo -archs "${app_dir}/Contents/MacOS/splonks-bin")"
-if [[ " ${archs} " != *" arm64 "* || " ${archs} " != *" x86_64 "* ]]; then
-    echo "[verify-package] splonks-bin is not universal arm64+x86_64; archs=${archs}" >&2
+if [[ " ${archs} " != *" arm64 "* ]]; then
+    echo "[verify-package] splonks-bin is missing arm64 slice; archs=${archs}" >&2
+    exit 1
+fi
+if [[ " ${archs} " == *" x86_64 "* ]]; then
+    echo "[verify-package] splonks-bin should be arm64-only but includes x86_64; archs=${archs}" >&2
     exit 1
 fi
 

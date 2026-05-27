@@ -613,11 +613,11 @@ check print_log_version_contains_check \
     "macOS notarized validation" \
     "${repo_root}/dist/validation/macos-macos-notarized-*.log" \
     "[validated] macos Developer ID signed, notarized, stapled, quarantined release archive"
-check print_file_check "macOS release archive" "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip"
+check print_file_check "macOS release archive" "${repo_root}/dist/releases/splonks-${version}-macos-arm64.zip"
 check print_checksum_match_check \
     "macOS release checksum" \
-    "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip" \
-    "${repo_root}/dist/releases/splonks-${version}-macos-universal.zip.sha256"
+    "${repo_root}/dist/releases/splonks-${version}-macos-arm64.zip" \
+    "${repo_root}/dist/releases/splonks-${version}-macos-arm64.zip.sha256"
 check print_package_manifest_check "macOS package manifest" "${repo_root}/dist/splonks-macos/PACKAGE_MANIFEST.txt" macos
 check print_log_revision_contains_check \
     "Windows dev validation" \

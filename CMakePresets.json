@@ -53,7 +53,7 @@
         "CMAKE_BUILD_TYPE": "Release",
         "SPLONKS_MODE": "release",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
-        "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
         "SPLONKS_STRICT": true,
         "SPLONKS_WARN_AS_ERROR": true,
         "SPLONKS_FETCH_DEPS": true

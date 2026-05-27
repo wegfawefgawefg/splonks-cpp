@@ -11,7 +11,7 @@ app_dir="${repo_root}/dist/splonks-macos/Splonks.app"
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 release_dir="${repo_root}/dist/releases"
 signed_zip="${release_dir}/splonks-${version}-macos-notarization.zip"
-artifact_zip="${release_dir}/splonks-${version}-macos-universal.zip"
+artifact_zip="${release_dir}/splonks-${version}-macos-arm64.zip"
 
 require_cmd() {
     if ! command -v "$1" >/dev/null 2>&1; then

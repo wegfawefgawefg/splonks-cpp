@@ -219,8 +219,8 @@ Expected release artifacts:
 
 ```text
 dist/splonks-macos/Splonks.app
-dist/releases/splonks-0.1.0-macos-universal.zip
-dist/releases/splonks-0.1.0-macos-universal.zip.sha256
+dist/releases/splonks-0.1.0-macos-arm64.zip
+dist/releases/splonks-0.1.0-macos-arm64.zip.sha256
 ```
 
 Current status: scripts exist. Needs validation on a real macOS machine,

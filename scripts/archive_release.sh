@@ -31,7 +31,7 @@ case "${platform}" in
         ;;
     macos)
         package_dir="${repo_root}/dist/splonks-macos"
-        archive_name="splonks-${version}-macos-universal.zip"
+        archive_name="splonks-${version}-macos-arm64.zip"
         archive_path="${release_dir}/${archive_name}"
         ;;
     windows)
