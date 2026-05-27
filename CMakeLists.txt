@@ -27,8 +27,8 @@ if (NOT SDL3_FOUND)
         FetchContent_Declare(
             SDL3
             GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-            GIT_TAG release-3.4.0
-            GIT_SHALLOW TRUE
+            # release-3.4.0
+            GIT_TAG a962f40bbba175e9716557a25d5d7965f134a3d3
         )
         FetchContent_MakeAvailable(SDL3)
     else()
@@ -45,8 +45,8 @@ if (NOT SDL3_ttf_FOUND AND SPLONKS_FETCH_DEPS)
     FetchContent_Declare(
         SDL3_ttf
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_ttf.git
-        GIT_TAG release-3.2.2
-        GIT_SHALLOW TRUE
+        # release-3.2.2
+        GIT_TAG a1ce3670aec736ecbf0936c43f2f0cc53aa61e5b
     )
     set(SDLTTF_SAMPLES OFF CACHE BOOL "" FORCE)
     set(SDLTTF_VENDORED ON CACHE BOOL "" FORCE)
@@ -64,8 +64,8 @@ if (NOT SDL3_image_FOUND AND SPLONKS_FETCH_DEPS)
     FetchContent_Declare(
         SDL3_image
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
-        GIT_TAG release-3.2.0
-        GIT_SHALLOW TRUE
+        # release-3.2.0
+        GIT_TAG 4a762bdfb7b43dae7a8a818567847881e49bdab4
     )
     set(SDLIMAGE_SAMPLES OFF CACHE BOOL "" FORCE)
     set(SDLIMAGE_TESTS OFF CACHE BOOL "" FORCE)
@@ -99,8 +99,8 @@ if (NOT SDL3_mixer_FOUND AND SPLONKS_FETCH_DEPS)
     FetchContent_Declare(
         SDL3_mixer
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
-        GIT_TAG release-3.2.0
-        GIT_SHALLOW TRUE
+        # release-3.2.0
+        GIT_TAG cedfeef30e93db35eee6b25759117da63f8e5a4f
     )
     set(SDLMIXER_VENDORED ON CACHE BOOL "" FORCE)
     set(SDLMIXER_WERROR OFF CACHE BOOL "" FORCE)
@@ -125,8 +125,8 @@ if (SPLONKS_FETCH_DEPS)
     FetchContent_Declare(
         imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG v1.92.7
-        GIT_SHALLOW TRUE
+        # v1.92.7
+        GIT_TAG dac07199cfd761113d966eb8ad739254e10df2fe
     )
     FetchContent_MakeAvailable(imgui)
 else()
