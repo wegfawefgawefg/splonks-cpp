@@ -26,7 +26,7 @@ Run on a real macOS machine:
 
 ```bash
 xcode-select --install
-git clone git@github.com:wegfawefgawefg/splonks-cpp.git
+git clone https://github.com/wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
 git checkout <handoff-git-revision>
 ./scripts/bootstrap_dev.sh --run
@@ -93,15 +93,17 @@ Run in the MSYS2 UCRT64 terminal, not PowerShell or cmd.exe:
 
 ```bash
 pacman -Syu
-git clone git@github.com:wegfawefgawefg/splonks-cpp.git
+pacman -S --needed --noconfirm git
+git clone https://github.com/wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
 git checkout <handoff-git-revision>
 ./scripts/bootstrap_dev.sh --run
 ./scripts/validate_platform.sh dev
 ```
 
-If `pacman -Syu` asks to close the terminal, reopen MSYS2 UCRT64 and continue
-from `./scripts/setup_windows_msys2.sh`.
+If `pacman -Syu` asks to close the terminal, reopen MSYS2 UCRT64 before
+installing `git` and cloning. The repo setup script installs the rest of the
+UCRT64 compiler/build packages after cloning.
 
 Record:
 

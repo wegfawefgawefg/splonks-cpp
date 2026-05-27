@@ -45,7 +45,7 @@ EOF
 
 checkout_commands() {
     cat <<EOF
-    git clone git@github.com:wegfawefgawefg/splonks-cpp.git
+    git clone https://github.com/wegfawefgawefg/splonks-cpp.git
     cd splonks-cpp
     git fetch --tags origin ${validation_ref}
     git checkout ${revision}
@@ -99,8 +99,10 @@ Run in the MSYS2 UCRT64 terminal, not PowerShell or cmd.exe:
 
     pacman -Syu
 
-If pacman asks to close the terminal, reopen MSYS2 UCRT64 and continue:
+If pacman asks to close the terminal, reopen MSYS2 UCRT64 first.
+Then install the pre-clone tool and continue:
 
+    pacman -S --needed --noconfirm git
 EOF
     checkout_commands
     cat <<EOF

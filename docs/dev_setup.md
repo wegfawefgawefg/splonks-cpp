@@ -32,9 +32,17 @@ For macOS and Windows validator instructions, see
 Supported path: Debian/Ubuntu through `apt`.
 
 ```bash
-git clone git@github.com:wegfawefgawefg/splonks-cpp.git
+git clone https://github.com/wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
 ./scripts/bootstrap_dev.sh --run
+```
+
+If `git` is missing on a fresh Debian/Ubuntu machine, install it before
+cloning:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y git
 ```
 
 The bootstrap script installs the native packages needed to compile SDL3 and its
@@ -66,7 +74,7 @@ Supported path: Xcode command line tools plus Homebrew.
 
 ```bash
 xcode-select --install
-git clone git@github.com:wegfawefgawefg/splonks-cpp.git
+git clone https://github.com/wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
 ./scripts/bootstrap_dev.sh --run
 ```
@@ -92,13 +100,17 @@ the base system:
 pacman -Syu
 ```
 
-If MSYS2 asks you to close the terminal, reopen **MSYS2 UCRT64** and continue:
+If MSYS2 asks you to close the terminal, reopen **MSYS2 UCRT64**. Install the
+pre-clone tools before cloning:
 
 ```bash
-git clone git@github.com:wegfawefgawefg/splonks-cpp.git
+pacman -S --needed --noconfirm git
+git clone https://github.com/wegfawefgawefg/splonks-cpp.git
 cd splonks-cpp
 ./scripts/bootstrap_dev.sh --run
 ```
+
+Use an SSH clone only after your MSYS2 Git/SSH credentials are configured.
 
 The bootstrap script runs `setup_windows_msys2.sh`, which installs:
 
