@@ -31,11 +31,26 @@ header() {
 common_return() {
     local label="$1"
     local import_target="${2:-${label}}"
+    local return_notes
+    case "${import_target}" in
+        macos|windows)
+            return_notes="Notes on whether the interactive app launched and any SDL/audio/controller/file permission warnings seen"
+            ;;
+        android-play)
+            return_notes="Notes on upload-key AAB validation, Play validate/upload result, track, release status, and any Play Console warnings"
+            ;;
+        ios)
+            return_notes="Notes on simulator smoke, signing/export, physical device install, TestFlight/App Store validation/upload, and any Xcode/App Store Connect warnings"
+            ;;
+        *)
+            return_notes="Notes on target validation results and any warnings seen"
+            ;;
+    esac
     cat <<EOF
 
 Return:
 - The generated dist/validation-bundles/splonks-validation-${label}-*.tar.gz
-- Notes on whether the interactive app launched and any warnings seen
+- ${return_notes}
 
 Receiver import:
 
