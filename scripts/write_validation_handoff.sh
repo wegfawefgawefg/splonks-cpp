@@ -5,8 +5,11 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 target="${1:-all}"
 version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
-revision="$(git -C "${repo_root}" rev-parse HEAD 2>/dev/null || echo unknown)"
-short_revision="${revision:0:12}"
+current_revision="$(git -C "${repo_root}" rev-parse HEAD 2>/dev/null || echo unknown)"
+current_branch="$(git -C "${repo_root}" branch --show-current 2>/dev/null || true)"
+validation_revision="${SPLONKS_VALIDATION_REVISION:-${current_revision}}"
+validation_ref="${SPLONKS_VALIDATION_REF:-${current_branch:-net-lockstep-experiment}}"
+short_revision="${validation_revision:0:12}"
 out_dir="${SPLONKS_HANDOFF_DIR:-${repo_root}/dist/validation-handoffs}"
 
 usage() {
@@ -48,14 +51,16 @@ out_path="${out_dir}/splonks-validation-handoff-${safe_target}-${short_revision}
     echo
     echo "- target: ${target}"
     echo "- release_version: ${version}"
-    echo "- validation_revision: ${SPLONKS_VALIDATION_REVISION:-${revision}}"
+    echo "- validation_ref: ${validation_ref}"
+    echo "- validation_revision: ${validation_revision}"
     echo "- generated_utc: ${timestamp}"
     echo
     echo "Import returned evidence with the receiver commands printed in each target section."
     echo
     env \
         SPLONKS_RELEASE_VERSION="${version}" \
-        SPLONKS_VALIDATION_REVISION="${SPLONKS_VALIDATION_REVISION:-${revision}}" \
+        SPLONKS_VALIDATION_REF="${validation_ref}" \
+        SPLONKS_VALIDATION_REVISION="${validation_revision}" \
         "${repo_root}/scripts/print_validation_handoff.sh" "${target}"
 } > "${out_path}"
 

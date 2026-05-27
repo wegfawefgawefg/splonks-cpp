@@ -841,6 +841,7 @@ check check_file_contains "Evidence importer supports target checks" "${repo_roo
 check check_file_contains "Evidence importer checks target proof lines" "${repo_root}/scripts/import_validation_evidence.sh" "require_bundle_file_contains"
 check check_file_contains "Generated handoffs import pinned target evidence" "${repo_root}/scripts/print_validation_handoff.sh" 'SPLONKS_IMPORT_EXPECT_TARGET=${import_target}'
 check check_file_contains "Handoff packet writer pins validation revision" "${repo_root}/scripts/write_validation_handoff.sh" "SPLONKS_VALIDATION_REVISION"
+check check_file_contains "Handoff packet filenames use requested validation revision" "${repo_root}/scripts/write_validation_handoff.sh" 'short_revision="${validation_revision:0:12}"'
 echo
 
 echo "[ci]"
