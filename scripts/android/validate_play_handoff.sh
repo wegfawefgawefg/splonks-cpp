@@ -4,6 +4,8 @@ source "$(dirname "$0")/env.sh"
 
 version="${SPLONKS_RELEASE_VERSION:-${SPLONKS_ANDROID_VERSION_NAME:-0.1.0}}"
 run_upload="${SPLONKS_PLAY_UPLOAD:-0}"
+validate_only="${SPLONKS_PLAY_VALIDATE_ONLY:-0}"
+bundle_label="android-play-partial"
 
 usage() {
     cat >&2 <<EOF
@@ -58,10 +60,13 @@ SPLONKS_RELEASE_VERSION="${version}" ./scripts/validate_platform.sh android-rele
 if [[ "${run_upload}" == "1" ]]; then
     SPLONKS_RELEASE_VERSION="${version}" ./scripts/release_credentials_preflight.sh android-play
     SPLONKS_RELEASE_VERSION="${version}" ./scripts/validate_platform.sh android-play-upload
+    if [[ "${validate_only}" != "1" ]]; then
+        bundle_label="android-play"
+    fi
 else
     echo "[android-play-handoff] skipped Google Play upload; set SPLONKS_PLAY_UPLOAD=1 for Play upload validation"
 fi
 
-./scripts/bundle_validation_evidence.sh --include-artifacts android-play
+./scripts/bundle_validation_evidence.sh --include-artifacts "${bundle_label}"
 
 echo "[android-play-handoff] Android Play handoff complete"

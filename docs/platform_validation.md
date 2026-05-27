@@ -386,6 +386,10 @@ SPLONKS_PLAY_UPLOAD=1 ./scripts/android/validate_play_handoff.sh
 This upload validation requires current `android-release` evidence from the real
 upload key before it runs Fastlane. The handoff wrapper creates that evidence
 first, then runs the upload helper when `SPLONKS_PLAY_UPLOAD=1` is set.
+Upload-key AAB validation without an actual Play upload writes an
+`android-play-partial` bundle. A final Android Play evidence bundle is named
+`android-play` only after a non-validate-only Play upload log with
+`[play-upload] upload complete` exists.
 
 Expected release artifacts:
 

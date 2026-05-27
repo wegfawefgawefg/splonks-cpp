@@ -106,6 +106,10 @@ SPLONKS_PLAY_UPLOAD=1 SPLONKS_PLAY_VALIDATE_ONLY=1 ./scripts/android/validate_pl
 Validation-only logs are recorded as `[play-upload] validate-only complete` and
 do not satisfy the final Play upload gate. Release completion requires a
 non-validate-only log with `[play-upload] upload complete`.
+The handoff wrapper uses the same distinction in bundle names:
+upload-key-only and validate-only runs write
+`splonks-validation-android-play-partial-*.tar.gz`, while a non-validate-only
+Play upload writes the final `splonks-validation-android-play-*.tar.gz` bundle.
 
 To make the release available to internal testers from the command line, set
 `SPLONKS_PLAY_RELEASE_STATUS=completed` intentionally before running the helper.

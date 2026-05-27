@@ -217,6 +217,10 @@ SPLONKS_PLAY_UPLOAD=1 ./scripts/android/validate_play_handoff.sh
 The handoff wrapper creates current `android-release` validation evidence from
 the real upload key, then runs the Play upload helper when
 `SPLONKS_PLAY_UPLOAD=1` is set.
+Default upload-key AAB validation writes
+`splonks-validation-android-play-partial-*.tar.gz`; only a non-validate-only
+Play upload writes the final `splonks-validation-android-play-*.tar.gz` bundle
+that should be imported with `SPLONKS_IMPORT_EXPECT_TARGET=android-play`.
 Set `SPLONKS_PLAY_RELEASE_STATUS=completed` only when intentionally rolling out
 to internal testers.
 
