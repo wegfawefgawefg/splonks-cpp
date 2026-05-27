@@ -70,7 +70,11 @@ packages, then run:
 
 Status: verified from a fresh Linux clone with no adjacent Gubsy checkout:
 `SPLONKS_PRESET=dev ./scripts/verify_dev_env.sh` configures, builds, and passes
-the headless smoke.
+the headless smoke. To repeat that proof from the current checkout, run:
+
+```bash
+./scripts/verify_clean_clone_linux.sh
+```
 
 ## macOS
 

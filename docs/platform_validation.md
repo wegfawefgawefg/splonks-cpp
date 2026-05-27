@@ -102,6 +102,12 @@ specific older release commit.
 
 Use [desktop_validation_handoff.md](desktop_validation_handoff.md) when sending
 macOS or Windows validation tasks to another developer.
+For Linux, the local clean-clone onboarding proof is:
+
+```bash
+./scripts/verify_clean_clone_linux.sh
+```
+
 To print a copy/paste handoff for one external validator, run:
 
 ```bash
