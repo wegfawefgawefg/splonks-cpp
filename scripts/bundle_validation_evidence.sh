@@ -84,6 +84,11 @@ copy_file_if_exists() {
     fi
 }
 
+has_validation_logs() {
+    [[ -d "${validation_dir}" ]] || return 1
+    [[ -n "$(find "${validation_dir}" -maxdepth 1 -type f -name "*.log" -print -quit)" ]]
+}
+
 write_bundle_checksums() {
     local summary_path="${stage_dir}/CHECKSUMS.sha256"
     if command -v sha256sum >/dev/null 2>&1; then
@@ -112,7 +117,7 @@ log_matches_bundle() {
 }
 
 copied_logs=0
-if [[ -d "${validation_dir}" ]] && find "${validation_dir}" -maxdepth 1 -type f -name "*.log" | grep -q .; then
+if has_validation_logs; then
     mkdir -p "${stage_dir}/validation"
     while IFS= read -r log_path; do
         if log_matches_bundle "${log_path}"; then
