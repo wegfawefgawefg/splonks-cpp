@@ -18,10 +18,14 @@ endif()
 option(SPLONKS_STRICT "Enable stricter warning sets." ON)
 option(SPLONKS_WARN_AS_ERROR "Treat warnings as errors." ON)
 option(SPLONKS_FETCH_DEPS "Fetch missing SDL/imgui dependencies with CMake FetchContent" ON)
+set(SPLONKS_BUNDLE_VERSION "${PROJECT_VERSION}" CACHE STRING "Version string used for app bundle metadata")
 set(SPLONKS_IOS_DEVELOPMENT_TEAM "" CACHE STRING "Apple Developer Team ID for iOS device builds")
 set(SPLONKS_IOS_CODE_SIGN_IDENTITY "Apple Development" CACHE STRING "Code signing identity for iOS device builds")
 set(SPLONKS_IOS_BUNDLE_ID "dev.splonks.game" CACHE STRING "Bundle identifier for iOS builds")
 set(SPLONKS_IOS_CODE_SIGN_STYLE "Automatic" CACHE STRING "Code signing style for iOS device builds")
+if (NOT SPLONKS_BUNDLE_VERSION)
+    set(SPLONKS_BUNDLE_VERSION "${PROJECT_VERSION}")
+endif()
 if (NOT SPLONKS_IOS_BUNDLE_ID)
     set(SPLONKS_IOS_BUNDLE_ID "dev.splonks.game")
 endif()
@@ -495,10 +499,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     set_target_properties(splonks-cpp PROPERTIES
         MACOSX_BUNDLE TRUE
-        MACOSX_BUNDLE_GUI_IDENTIFIER "dev.splonks.game"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${SPLONKS_IOS_BUNDLE_ID}"
         MACOSX_BUNDLE_BUNDLE_NAME "Splonks"
-        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${SPLONKS_BUNDLE_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${SPLONKS_BUNDLE_VERSION}"
         XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "${SPLONKS_IOS_CODE_SIGNING_ALLOWED}"
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${SPLONKS_IOS_BUNDLE_ID}"
     )

@@ -38,7 +38,12 @@ export SPLONKS_IOS_SIGNING_STYLE="${SPLONKS_IOS_SIGNING_STYLE:-automatic}"
 export SPLONKS_IOS_VERSION_CODE="${SPLONKS_IOS_VERSION_CODE:-1}"
 
 cd "${repo_root}"
-cmake --preset ios-device
+cmake --preset ios-device \
+    -DSPLONKS_BUNDLE_VERSION="${version}" \
+    -DSPLONKS_IOS_BUNDLE_ID="${SPLONKS_IOS_BUNDLE_ID}" \
+    -DSPLONKS_IOS_DEVELOPMENT_TEAM="${SPLONKS_IOS_DEVELOPMENT_TEAM}" \
+    -DSPLONKS_IOS_CODE_SIGN_IDENTITY="${SPLONKS_IOS_CODE_SIGN_IDENTITY}" \
+    -DSPLONKS_IOS_CODE_SIGN_STYLE="${SPLONKS_IOS_SIGNING_STYLE}"
 
 rm -rf "${archive_path}" "${export_path}"
 mkdir -p "${archive_dir}" "${release_dir}"

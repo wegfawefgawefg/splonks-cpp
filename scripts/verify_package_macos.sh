@@ -10,6 +10,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 dist_dir="${repo_root}/dist/splonks-macos"
 app_dir="${dist_dir}/Splonks.app"
 frameworks_dir="${app_dir}/Contents/Frameworks"
+version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
+bundle_id="${SPLONKS_MACOS_BUNDLE_ID:-dev.splonks.game}"
 
 "${repo_root}/scripts/package_macos.sh"
 
@@ -31,9 +33,12 @@ for path in "${required_files[@]}"; do
     fi
 done
 
-grep -q "^app=splonks$" "${dist_dir}/PACKAGE_MANIFEST.txt"
-grep -q "^platform=macos$" "${dist_dir}/PACKAGE_MANIFEST.txt"
-grep -q "^mode=release$" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -Fxq "app=splonks" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -Fxq "platform=macos" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -Fxq "mode=release" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -Fxq "release_version=${version}" "${dist_dir}/PACKAGE_MANIFEST.txt"
+grep -Fq "<string>${bundle_id}</string>" "${app_dir}/Contents/Info.plist"
+grep -Fq "<string>${version}</string>" "${app_dir}/Contents/Info.plist"
 
 require_dylib() {
     local label="$1"

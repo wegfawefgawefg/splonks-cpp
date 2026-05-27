@@ -10,13 +10,17 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 build_dir="${repo_root}/build-package-macos"
 dist_dir="${repo_root}/dist/splonks-macos"
 source "${repo_root}/scripts/package_runtime_libs.sh"
+version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
+bundle_id="${SPLONKS_MACOS_BUNDLE_ID:-dev.splonks.game}"
+bundle_name="${SPLONKS_MACOS_BUNDLE_NAME:-Splonks}"
 app_dir="${dist_dir}/Splonks.app"
 contents_dir="${app_dir}/Contents"
 macos_dir="${contents_dir}/MacOS"
 resources_dir="${contents_dir}/Resources"
 frameworks_dir="${contents_dir}/Frameworks"
 
-SPLONKS_PRESET=package-macos "${repo_root}/scripts/build.sh"
+SPLONKS_PRESET=package-macos "${repo_root}/scripts/build.sh" \
+    -DSPLONKS_BUNDLE_VERSION="${version}"
 
 rm -rf "${dist_dir}"
 mkdir -p "${macos_dir}" "${resources_dir}" "${frameworks_dir}"
@@ -35,7 +39,16 @@ exec "${root}/MacOS/splonks-bin" "$@"
 EOF
 chmod +x "${macos_dir}/Splonks"
 
-cat > "${contents_dir}/Info.plist" <<'EOF'
+xml_escape() {
+    printf '%s' "$1" \
+        | sed -e 's/&/\&amp;/g' \
+              -e 's/</\&lt;/g' \
+              -e 's/>/\&gt;/g' \
+              -e 's/"/\&quot;/g' \
+              -e "s/'/\&apos;/g"
+}
+
+cat > "${contents_dir}/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -44,15 +57,15 @@ cat > "${contents_dir}/Info.plist" <<'EOF'
   <key>CFBundleExecutable</key>
   <string>Splonks</string>
   <key>CFBundleIdentifier</key>
-  <string>dev.splonks.game</string>
+  <string>$(xml_escape "${bundle_id}")</string>
   <key>CFBundleName</key>
-  <string>Splonks</string>
+  <string>$(xml_escape "${bundle_name}")</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleVersion</key>
-  <string>0.1.0</string>
+  <string>$(xml_escape "${version}")</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>$(xml_escape "${version}")</string>
 </dict>
 </plist>
 EOF

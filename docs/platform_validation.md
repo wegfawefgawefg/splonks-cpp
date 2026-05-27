@@ -90,6 +90,7 @@ Developer ID signing and notarization validation:
 
 ```bash
 export SPLONKS_RELEASE_VERSION=0.1.0
+export SPLONKS_MACOS_BUNDLE_ID=dev.splonks.game
 export SPLONKS_MACOS_SIGN_IDENTITY="Developer ID Application: Name (TEAMID)"
 export SPLONKS_NOTARYTOOL_PROFILE=splonks-notary
 ./scripts/package_macos.sh
@@ -109,6 +110,8 @@ dist/releases/splonks-0.1.0-macos-universal.zip.sha256
 Current status: scripts exist. Needs validation on a real macOS machine,
 including app launch from the packaged bundle, Developer ID signing,
 notarization, stapling, and launch after download/quarantine.
+Package metadata is wired through `SPLONKS_RELEASE_VERSION`,
+`SPLONKS_MACOS_BUNDLE_ID`, and `SPLONKS_MACOS_BUNDLE_NAME`.
 
 ## Windows
 

@@ -57,6 +57,7 @@ Developer ID signing and notarization path:
 
 ```bash
 export SPLONKS_RELEASE_VERSION=0.1.0
+export SPLONKS_MACOS_BUNDLE_ID=dev.splonks.game
 export SPLONKS_MACOS_SIGN_IDENTITY="Developer ID Application: Name (TEAMID)"
 export SPLONKS_NOTARYTOOL_PROFILE=splonks-notary
 ./scripts/package_macos.sh
@@ -78,6 +79,14 @@ Output:
 ```text
 dist/releases/splonks-0.1.0-macos-universal.zip
 dist/releases/splonks-0.1.0-macos-universal.zip.sha256
+```
+
+Optional macOS package metadata:
+
+```text
+SPLONKS_MACOS_BUNDLE_ID=dev.splonks.game
+SPLONKS_MACOS_BUNDLE_NAME=Splonks
+SPLONKS_RELEASE_VERSION=0.1.0
 ```
 
 ## Windows

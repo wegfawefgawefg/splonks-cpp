@@ -3,8 +3,21 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 build_dir="${repo_root}/build"
-mode="${1:-build}"
+mode="build"
 preset="${SPLONKS_PRESET:-release}"
+configure_args=()
+
+for arg in "$@"; do
+    case "${arg}" in
+        --configure-only)
+            mode="--configure-only"
+            ;;
+        *)
+            configure_args+=("${arg}")
+            ;;
+    esac
+done
+
 case "${preset}" in
     dev) build_dir="${repo_root}/build-debug" ;;
     package-linux) build_dir="${repo_root}/build-package-linux" ;;
@@ -13,7 +26,7 @@ case "${preset}" in
 esac
 
 configure() {
-    cmake --preset "${preset}"
+    cmake --preset "${preset}" "${configure_args[@]}"
 }
 
 if ! configure; then

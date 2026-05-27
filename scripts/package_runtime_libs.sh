@@ -65,14 +65,17 @@ package_write_manifest() {
     local dist_dir="$5"
     local generated_at
     local git_revision
+    local release_version
 
     generated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     git_revision="$(git -C "${repo_root}" rev-parse --short=12 HEAD 2>/dev/null || printf 'unknown')"
+    release_version="${SPLONKS_RELEASE_VERSION:-0.1.0}"
 
     cat > "${dist_dir}/PACKAGE_MANIFEST.txt" <<EOF
 app=${app_name}
 platform=${platform}
 mode=${mode}
+release_version=${release_version}
 git_revision=${git_revision}
 generated_at_utc=${generated_at}
 EOF
