@@ -77,9 +77,57 @@ Generated for:
 EOF
 }
 
+expected_status_items() {
+    local target="$1"
+    case "${target}" in
+        macos)
+            cat <<EOF
+
+Expected receiver status items after import:
+- macOS dev validation
+- macOS release validation
+- macOS notarized validation, when Developer ID credentials are available
+- macOS release archive/checksum
+- macOS package manifest
+EOF
+            ;;
+        windows)
+            cat <<EOF
+
+Expected receiver status items after import:
+- Windows dev validation
+- Windows release validation
+- Windows release archive/checksum
+- Windows package manifest
+EOF
+            ;;
+        android-play)
+            cat <<EOF
+
+Expected receiver status items after import:
+- Android upload-key AAB validation
+- Android Play upload validation
+- Android release AAB and manifest
+EOF
+            ;;
+        ios)
+            cat <<EOF
+
+Expected receiver status items after import:
+- iOS simulator validation
+- iOS release archive validation
+- iOS device install validation
+- iOS IPA/checksum/manifest
+- iOS App Store/TestFlight upload validation
+EOF
+            ;;
+    esac
+}
+
 print_macos() {
     header "macOS Developer And Release Validation"
     generated_for
+    expected_status_items macos
     cat <<EOF
 
 Run on a real Apple Silicon macOS machine with Xcode command line tools and
@@ -110,6 +158,7 @@ EOF
 print_windows() {
     header "Windows MSYS2/UCRT64 Developer And Release Validation"
     generated_for
+    expected_status_items windows
     cat <<EOF
 
 Run in the MSYS2 UCRT64 terminal, not PowerShell or cmd.exe:
@@ -132,6 +181,7 @@ EOF
 print_android_play() {
     header "Android Play Internal Testing Upload Validation"
     generated_for
+    expected_status_items android-play
     cat <<EOF
 
 Run this to build and verify the signed AAB with the real upload key:
@@ -164,6 +214,7 @@ EOF
 print_ios() {
     header "iOS Simulator, Archive, And TestFlight Validation"
     generated_for
+    expected_status_items ios
     cat <<EOF
 
 Run on a real macOS machine with Xcode and an Apple Developer team:

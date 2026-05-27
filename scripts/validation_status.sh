@@ -847,7 +847,12 @@ check check_file_contains "Bootstrap runs Windows setup path" "${repo_root}/scri
 check check_file_contains "Clean clone Linux onboarding proof uses bootstrap" "${repo_root}/scripts/verify_clean_clone_linux.sh" "./scripts/bootstrap_dev.sh --skip-setup"
 check check_file_contains "Generated handoffs import pinned target evidence" "${repo_root}/scripts/print_validation_handoff.sh" 'SPLONKS_IMPORT_EXPECT_TARGET=${import_target}'
 check check_file_contains "Generated handoffs use target-specific return notes" "${repo_root}/scripts/print_validation_handoff.sh" "Play validate/upload result"
+check check_file_contains "Generated handoffs list expected status items" "${repo_root}/scripts/print_validation_handoff.sh" "Expected receiver status items after import"
+check check_file_contains "macOS handoff names notarized evidence expectation" "${repo_root}/scripts/print_validation_handoff.sh" "macOS notarized validation"
+check check_file_contains "Windows handoff names package manifest expectation" "${repo_root}/scripts/print_validation_handoff.sh" "Windows package manifest"
 check check_file_contains "Android Play handoff builds upload-key AAB" "${repo_root}/scripts/print_validation_handoff.sh" "Run this to build and verify the signed AAB with the real upload key"
+check check_file_contains "Android Play handoff names upload validation expectation" "${repo_root}/scripts/print_validation_handoff.sh" "Android Play upload validation"
+check check_file_contains "iOS handoff names device install expectation" "${repo_root}/scripts/print_validation_handoff.sh" "iOS device install validation"
 check check_file_contains "Partial Android Play handoff uses non-final bundle label" "${repo_root}/scripts/android/validate_play_handoff.sh" 'bundle_label="android-play-partial"'
 check check_file_contains "Uploaded Android Play handoff uses final bundle label" "${repo_root}/scripts/android/validate_play_handoff.sh" 'bundle_label="android-play"'
 check check_file_contains "Handoff packet writer pins validation revision" "${repo_root}/scripts/write_validation_handoff.sh" "SPLONKS_VALIDATION_REVISION"
