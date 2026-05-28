@@ -161,8 +161,8 @@ Status:
 Define exact semantics:
 
 - `Public`: published to the room browser and visible in public room lists.
-- `Private`: publish/update metadata to the backend only if needed for direct
-  joins or invites, but do not show in public listings.
+- `Private`: direct-IP only for now. Do not create a room-service record until
+  we add a real invite/code feature that needs non-public backend metadata.
 
 If the selected action is `Publish To Browser`, default visibility should
 probably be `Public`.
@@ -178,14 +178,18 @@ Status:
   "published to browser but private".
 - `Host Direct` now means direct/private hosting and does not create a
   browser-visible room.
+- Current private semantics are direct-IP only with no `gubsy-roomd` backend
+  record. That keeps private hosting unlisted and avoids a misleading hidden
+  backend lifecycle before invite codes exist.
 - The Gubsy `Host Public` menu command now forces `Public` before creating the
   room, matching `gubsy-roomd`'s public-list rule that only rooms with
   `privacy > 0` appear in `/rooms`.
 - `lobby_online_smoke` now verifies a public hosted room is visible through the
   room list with `privacy > 0`.
-- Follow-up remains: decide and implement exact behavior for private backend
-  records/invites, since the current UI only exposes direct private hosting and
-  public room publishing.
+- `lobby_online_smoke` verifies a direct/private host has no room code and does
+  not create a public room listing.
+- Follow-up remains: if we add invite codes later, decide whether those invites
+  need non-public backend records separate from direct-IP hosting.
 
 ### Host Update Behavior
 
@@ -489,7 +493,7 @@ dashboard says no public games are active.
 Checklist:
 
 - Confirm the host sends `public` visibility when publishing to browser.
-- Confirm `Private` rooms are intentionally hidden from `/rooms`.
+- Confirm private/direct sessions do not create `/rooms` records.
 - Confirm the dashboard lists the same room collection used by game clients.
 - Confirm room TTL/heartbeat does not expire active hosts too aggressively.
 - Confirm host update token enforcement is not rejecting updates silently.
@@ -524,8 +528,6 @@ Checklist:
 
 - Should in-progress public games remain joinable, visible but disabled, or
   hidden?
-- Should `Private` rooms exist in `gubsy-roomd` at all, or should private mean
-  direct-IP only with no backend record?
 - Do we want invite codes separate from public browser visibility?
 - What persistent identity should a client have for kick/ban?
 - Should remote player management be available only to the host, or also to
