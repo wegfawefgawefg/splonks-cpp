@@ -501,7 +501,7 @@ bool CheckInGameQuitCommand() {
 
     state.SetMode(Mode::Playing);
     std::string status;
-    if (!network::StartHostSession(state, 0, &status)) {
+    if (!gubsy_host_lobby_direct(shell.runtime, 0, status)) {
         std::cerr << "Gubsy shell smoke failed: host session for quit failed: " << status << '\n';
         gubsy_shell::Shutdown(shell);
         return false;
@@ -519,7 +519,8 @@ bool CheckInGameQuitCommand() {
     PressSelect(shell, state);
 
     if (gubsy_shell::InGameMenuOpen(shell) || state.mode != Mode::Title ||
-        state.net_session.role != network::NetRole::Offline || state.pause) {
+        state.net_session.role != network::NetRole::Offline ||
+        gubsy_get_lobby_state(shell.runtime).online || state.pause) {
         std::cerr << "Gubsy shell smoke failed: quit command did not return to title offline\n";
         gubsy_shell::Shutdown(shell);
         return false;

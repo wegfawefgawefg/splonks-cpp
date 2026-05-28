@@ -355,6 +355,11 @@ void QuitRunToMainMenuFromGubsy(void* user_data, std::int32_t) {
     if (shell == nullptr || shell->state == nullptr)
         return;
     std::string status;
+    if (gubsy_get_lobby_state(shell->runtime).online) {
+        (void)gubsy_leave_lobby_room(shell->runtime, status);
+        if (!status.empty())
+            std::cerr << status << '\n';
+    }
     network::DisconnectSession(*shell->state, &status);
     if (!status.empty())
         std::cerr << status << '\n';
