@@ -423,8 +423,12 @@ Status:
   order.
 - Remote member details now include the current session state (`State Lobby` or
   `State In Game`) alongside backend, room, endpoint, and client context.
+- Remote member details now include last-seen freshness. `gubsy-roomd` exposes
+  `last_seen_seconds_ago` for room-service members, and app-fed direct members
+  default to `0s ago` unless the game supplies a fresher value.
 - `lobby_online_smoke` verifies direct remote sorting by client label and
-  verifies remote player details include lobby state.
+  verifies remote player details include lobby state and last-seen freshness.
+- `room_smoke` verifies room-service member JSON includes last-seen freshness.
 - Follow-up remains: public-room kick enforcement is heartbeat-driven rather
   than an immediate host-to-client transport command; ban/block persistence,
   richer local/remote/client tabs, and fuller ban/block controls are still
