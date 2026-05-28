@@ -6,6 +6,7 @@
 #include "network/net_transport.hpp"
 #include "state.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <chrono>
 #include <cmath>
@@ -20,6 +21,7 @@ constexpr std::uint32_t kJoinRetryFrames = 30;
 constexpr std::uint32_t kJoinPendingRefreshFrames = 180;
 constexpr std::uint64_t kPingIntervalMs = 500;
 constexpr int kPacketsPerPump = 256;
+constexpr std::uint32_t kInputRecordFlagCanonical = 1U << 31U;
 
 std::uint64_t NowMilliseconds() {
     using Clock = std::chrono::steady_clock;
@@ -117,6 +119,35 @@ void HandlePong(State& state, const NetEndpoint& endpoint, const PongPacket& pon
     UpdatePeerPing(state, endpoint, static_cast<float>(now_ms - pong.echoed_sent_time_ms));
 }
 
+bool InputFrameRecordsBelongToEndpoint(
+    const NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const InputFrameRecordsPacket& packet
+) {
+    const NetRemoteEndpoint* sender = nullptr;
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        if (EndpointsEqual(remote.endpoint, endpoint)) {
+            sender = &remote;
+            break;
+        }
+    }
+    if (sender == nullptr) {
+        return false;
+    }
+
+    for (std::uint32_t i = 0; i < packet.record_count; ++i) {
+        const InputFrameRecordEntry& record = packet.records[i];
+        if ((record.input_flags & kInputRecordFlagCanonical) != 0U) {
+            continue;
+        }
+        if (std::find(sender->player_ids.begin(), sender->player_ids.end(), record.player_id) ==
+            sender->player_ids.end()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace
 
 void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
@@ -162,6 +193,9 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
 
         if (const std::optional<InputFrameRecordsPacket> input_frames =
                 TryDecodeInputFrameRecords(packet->bytes.data(), packet->size)) {
+            if (!InputFrameRecordsBelongToEndpoint(transport, packet->endpoint, *input_frames)) {
+                continue;
+            }
             HandleInputFrameRecords(state, *input_frames);
             continue;
         }

@@ -1270,6 +1270,34 @@ bool RunSmokeStageTransition(
            peer1.stage.quest_stage_id == "classic_mines_2";
 }
 
+bool RunNetworkFreshQuestReloadSmoke(
+    State& peer0,
+    State& peer1,
+    Audio& peer0_audio,
+    Audio& peer1_audio,
+    Graphics& peer0_graphics,
+    Graphics& peer1_graphics,
+    std::uint32_t seed
+) {
+    const StageTransitionTarget transition{
+        .destination = StageLoadTarget::ForQuestStage("classic", "classic_mines_1"),
+        .preserve_player_state = false,
+        .seed = seed,
+    };
+    QueueStageTransition(peer0, transition);
+    QueueStageTransition(peer1, transition);
+    peer0.SetMode(Mode::StageTransition);
+    peer1.SetMode(Mode::StageTransition);
+    peer0.scene_frame = 0;
+    peer1.scene_frame = 0;
+    for (std::uint32_t i = 0; i < 70; ++i) {
+        StepSingleTick(peer0, peer0_audio, peer0_graphics);
+        StepSingleTick(peer1, peer1_audio, peer1_graphics);
+    }
+    return peer0.stage.quest_stage_id == "classic_mines_1" &&
+           peer1.stage.quest_stage_id == "classic_mines_1";
+}
+
 void ApplyLockstepInputsToState(
     State& state,
     const std::vector<PlayerId>& player_ids,
@@ -3784,6 +3812,58 @@ bool CheckDetReplaySmoke() {
     }
 }
 
+bool CheckNetworkFreshReloadOwnershipSmoke() {
+    try {
+        Graphics host_graphics;
+        Graphics peer_graphics;
+        InitCliSmokeRuntimeTables(host_graphics);
+        InitCliSmokeRuntimeTables(peer_graphics);
+        Audio host_audio;
+        Audio peer_audio;
+        FakeLockstepPeer host;
+        FakeLockstepPeer peer;
+        host.owned_players = {1};
+        peer.owned_players = {2};
+
+        const char* failed_step = nullptr;
+        if (!PrepareLockstepSmokeState(host.state, host_graphics, host.owned_players, failed_step) ||
+            !PrepareLockstepSmokeState(peer.state, peer_graphics, peer.owned_players, failed_step)) {
+            std::cerr << "network fresh reload ownership smoke failed during setup: "
+                      << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+            return false;
+        }
+        ConfigureSmokeNetworkRoles(host.state, peer.state);
+        if (!RunNetworkFreshQuestReloadSmoke(
+                host.state,
+                peer.state,
+                host_audio,
+                peer_audio,
+                host_graphics,
+                peer_graphics,
+                87654U
+            ) ||
+            !SmokePlayerIsAlive(host.state, 1) ||
+            !SmokePlayerIsAlive(host.state, 2) ||
+            !SmokePlayerIsAlive(peer.state, 1) ||
+            !SmokePlayerIsAlive(peer.state, 2) ||
+            !SmokePlayerOwnershipMatches(host.state, 1, PlayerConnectionKind::Local, true) ||
+            !SmokePlayerOwnershipMatches(host.state, 2, PlayerConnectionKind::Remote, false) ||
+            !SmokePlayerOwnershipMatches(peer.state, 1, PlayerConnectionKind::Remote, false) ||
+            !SmokePlayerOwnershipMatches(peer.state, 2, PlayerConnectionKind::Local, true)) {
+            std::cerr << "network fresh reload ownership smoke failed\n"
+                      << "  host ownership:" << DescribeSmokePlayerOwnership(host.state) << '\n'
+                      << "  peer ownership:" << DescribeSmokePlayerOwnership(peer.state) << '\n';
+            return false;
+        }
+
+        std::cout << "network fresh reload ownership smoke ok\n";
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "network fresh reload ownership smoke failed: " << e.what() << '\n';
+        return false;
+    }
+}
+
 bool CheckInputLockstepSmoke() {
     try {
         Graphics peer0_graphics;
@@ -4485,6 +4565,30 @@ bool CheckInputLockstepSmoke() {
                 !SmokePlayerOwnershipMatches(peer1.state, 1, PlayerConnectionKind::Remote, false) ||
                 !SmokePlayerOwnershipMatches(peer1.state, 2, PlayerConnectionKind::Local, true)) {
                 std::cerr << "input lockstep respawn-policy smoke failed: missing-body restart changed slot ownership\n"
+                          << "  peer0 ownership:" << DescribeSmokePlayerOwnership(peer0.state) << '\n'
+                          << "  peer1 ownership:" << DescribeSmokePlayerOwnership(peer1.state) << '\n';
+                return false;
+            }
+
+            if (!prepare_pair(peer0, peer1, MultiplayerRespawnMode::GenerousNextLevel) ||
+                !RunNetworkFreshQuestReloadSmoke(
+                    peer0.state,
+                    peer1.state,
+                    peer0_audio,
+                    peer1_audio,
+                    peer0_graphics,
+                    peer1_graphics,
+                    87654U
+                ) ||
+                !SmokePlayerIsAlive(peer0.state, 1) ||
+                !SmokePlayerIsAlive(peer0.state, 2) ||
+                !SmokePlayerIsAlive(peer1.state, 1) ||
+                !SmokePlayerIsAlive(peer1.state, 2) ||
+                !SmokePlayerOwnershipMatches(peer0.state, 1, PlayerConnectionKind::Local, true) ||
+                !SmokePlayerOwnershipMatches(peer0.state, 2, PlayerConnectionKind::Remote, false) ||
+                !SmokePlayerOwnershipMatches(peer1.state, 1, PlayerConnectionKind::Remote, false) ||
+                !SmokePlayerOwnershipMatches(peer1.state, 2, PlayerConnectionKind::Local, true)) {
+                std::cerr << "input lockstep respawn-policy smoke failed: network fresh reload changed ownership\n"
                           << "  peer0 ownership:" << DescribeSmokePlayerOwnership(peer0.state) << '\n'
                           << "  peer1 ownership:" << DescribeSmokePlayerOwnership(peer1.state) << '\n';
                 return false;

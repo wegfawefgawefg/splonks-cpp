@@ -97,7 +97,26 @@ void ApplyPendingStageTransitionNow(State& state, Graphics& graphics) {
             MakeNetworkTransitionSeed(state, *state.pending_stage_transition);
     }
 
-    ApplyPendingStageTransition(state);
+    bool applied_network_fresh_quest_reload = false;
+    if (state.net_session.role != network::NetRole::Offline &&
+        state.pending_stage_transition.has_value() &&
+        state.pending_stage_transition->destination.kind == StageLoadTargetKind::QuestStage &&
+        !state.pending_stage_transition->preserve_player_state) {
+        const StageTransitionTarget target = *state.pending_stage_transition;
+        state.pending_stage_transition.reset();
+        state.net_session.quest_id = std::string(FixedStringView(target.destination.quest_id));
+        state.net_session.quest_stage_id =
+            std::string(FixedStringView(target.destination.quest_stage_id));
+        state.net_session.stage_seed = target.seed.value_or(MakeNetworkTransitionSeed(state, target));
+        applied_network_fresh_quest_reload =
+            network::ReloadSyncedQuestStage(state, graphics, nullptr);
+        if (!applied_network_fresh_quest_reload) {
+            state.pending_stage_transition = target;
+        }
+    }
+    if (!applied_network_fresh_quest_reload) {
+        ApplyPendingStageTransition(state);
+    }
     graphics.ResetTileVariations();
     InvalidateStageLighting(state);
     InvalidateStageAcoustics(state);

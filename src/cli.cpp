@@ -504,6 +504,10 @@ bool RunCliCommand(int argc, char** argv) {
         std::exit(CheckDetReplaySmoke() ? 0 : 1);
     }
 
+    if (command == "--check-network-fresh-reload-ownership-smoke") {
+        std::exit(CheckNetworkFreshReloadOwnershipSmoke() ? 0 : 1);
+    }
+
     if (command == "--check-input-lockstep-smoke") {
         std::exit(CheckInputLockstepSmoke() ? 0 : 1);
     }
