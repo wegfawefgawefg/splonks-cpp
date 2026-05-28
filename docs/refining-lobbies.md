@@ -250,10 +250,11 @@ Status:
   data is available.
 - `lobby_online_smoke` verifies room-service player counts are cached and
   refreshed on host, join, leave, rejoin, and kick.
-- Follow-up remains: refine the top-level copy hierarchy. `Players` should be
-  the primary/card title for the players entry, while hosting/backend text such
-  as `Currently Public Hosting via gubsy-roomd` belongs in the lobby status
-  area, not as confusing title text on the players card.
+- The top-level lobby status now separates session/backend heading text from
+  detail text. Hosting/backend state such as `Currently Public Hosting via
+  gubsy-roomd` stays in the status area, while the players card keeps `Players`
+  as its primary title.
+- `lobby_online_smoke` verifies the shell-lobby widget copy hierarchy directly.
 
 ## Players Menu
 
@@ -475,9 +476,7 @@ Checklist:
 11. Fix client-side start-game behavior and waiting-for-host messaging.
 12. Fix the joined-client movement and host-triggered restart ownership
     regressions.
-13. Refine top-level lobby copy so `Players` is the players card title and
-    session/backend state stays in the status area.
-14. Add smoke coverage for browser-published host/join and joined-client
+13. Add smoke coverage for browser-published host/join and joined-client
     movement after game start.
 
 ## Open Questions
