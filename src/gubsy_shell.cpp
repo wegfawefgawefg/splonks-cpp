@@ -424,6 +424,8 @@ void SyncDirectJoinStatus(Shell& shell) {
     if (DirectJoinAccepted(*shell.state)) {
         std::string message = "Joined direct " + shell.direct_join_endpoint;
         gubsy_confirm_lobby_direct_join(shell.runtime, message);
+        if (gubsy_get_lobby_state(shell.runtime).online)
+            (void)gubsy_show_lobby_menu(shell.runtime);
         shell.direct_join_pending = false;
         shell.direct_join_endpoint.clear();
         shell.direct_join_started_ms = 0;
