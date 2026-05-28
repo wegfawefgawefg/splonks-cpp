@@ -457,12 +457,15 @@ bool RegisterShellMenu(Shell& shell, State& state) {
     gubsy_set_main_menu_commands(shell.runtime, commands);
 
     GubsyInGameMenuCommands in_game_commands{};
-    in_game_commands.resume =
+    shell.in_game_resume_command =
         gubsy_register_menu_command(shell.runtime, ResumeSplonksFromGubsy, &shell);
-    in_game_commands.restart_run =
+    shell.in_game_restart_run_command =
         gubsy_register_menu_command(shell.runtime, RestartSplonksFromGubsy, &shell);
-    in_game_commands.quit_to_main_menu =
+    shell.in_game_quit_to_main_menu_command =
         gubsy_register_menu_command(shell.runtime, QuitRunToMainMenuFromGubsy, &shell);
+    in_game_commands.resume = shell.in_game_resume_command;
+    in_game_commands.restart_run = shell.in_game_restart_run_command;
+    in_game_commands.quit_to_main_menu = shell.in_game_quit_to_main_menu_command;
     gubsy_set_in_game_menu_commands(shell.runtime, in_game_commands);
 
     GubsyLobbyConfigProvider config_provider{};
@@ -485,6 +488,18 @@ bool RegisterShellMenu(Shell& shell, State& state) {
     lobby_commands.leave_user_data = &state;
     gubsy_set_lobby_commands(shell.runtime, lobby_commands);
     return gubsy_show_main_menu(shell.runtime);
+}
+
+void SyncInGameMenuCommands(Shell& shell) {
+    if (shell.state == nullptr)
+        return;
+    GubsyInGameMenuCommands commands{};
+    commands.resume = shell.in_game_resume_command;
+    commands.restart_run = shell.state->net_session.role == network::NetRole::Peer
+        ? kMenuIdInvalid
+        : shell.in_game_restart_run_command;
+    commands.quit_to_main_menu = shell.in_game_quit_to_main_menu_command;
+    gubsy_set_in_game_menu_commands(shell.runtime, commands);
 }
 
 } // namespace
@@ -552,6 +567,7 @@ void BeginDebugFrame(Shell& shell, float dt) {
 bool OpenInGameMenu(Shell& shell) {
     if (shell.state == nullptr)
         return false;
+    SyncInGameMenuCommands(shell);
     if (!gubsy_open_in_game_menu(shell.runtime))
         return false;
     shell.block_next_menu_input = true;

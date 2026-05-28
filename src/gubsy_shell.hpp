@@ -19,6 +19,9 @@ struct Shell {
     GubsyRuntime runtime;
     State* state = nullptr;
     LobbyConfig lobby_config;
+    MenuCommandId in_game_resume_command = kMenuIdInvalid;
+    MenuCommandId in_game_restart_run_command = kMenuIdInvalid;
+    MenuCommandId in_game_quit_to_main_menu_command = kMenuIdInvalid;
     bool block_next_menu_input = false;
     bool block_menu_input_until_release = false;
 };

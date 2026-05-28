@@ -113,11 +113,18 @@ StartupNetworkConfig ParseStartupNetworkConfig(int argc, char** argv) {
 std::uint16_t ParseDebugControlPort(int argc, char** argv) {
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i] != nullptr ? argv[i] : "";
+        if (arg == "--no-debug-control" || arg == "--no-ctl") {
+            return 0;
+        }
         if ((arg == "--debug-control-port" || arg == "--ctl-port") && i + 1 < argc) {
             return ParsePortArg(argv[++i], 0);
         }
     }
+#if SPLONKS_DEFAULT_DEBUG_CONTROL
+    return 41000;
+#else
     return 0;
+#endif
 }
 
 bool HasStartupFlag(int argc, char** argv, const std::string& flag) {
@@ -171,6 +178,26 @@ void RebaseCwdToRepoRoot() {
             probe = probe.parent_path();
         }
     }
+}
+
+bool StartDebugControlServer(
+    splonks::debug::DebugControlServer& server,
+    std::uint16_t base_port
+) {
+    if (base_port == 0) {
+        return false;
+    }
+    for (std::uint16_t port = base_port; port < base_port + 16; ++port) {
+        std::string error;
+        if (server.Start(port, &error)) {
+            std::cerr << "Debug control server listening on 127.0.0.1:" << port << '\n';
+            return true;
+        }
+        if (port == base_port + 15) {
+            std::cerr << "Debug control server failed: " << error << '\n';
+        }
+    }
+    return false;
 }
 
 } // namespace
@@ -340,15 +367,7 @@ int main(int argc, char** argv) {
                 std::cerr << "Startup multiplayer mode failed; continuing offline.\n";
             }
         }
-        if (debug_control_port != 0) {
-            std::string debug_control_error;
-            if (debug_control_server.Start(debug_control_port, &debug_control_error)) {
-                std::cerr << "Debug control server listening on 127.0.0.1:" << debug_control_port
-                          << '\n';
-            } else {
-                std::cerr << "Debug control server failed: " << debug_control_error << '\n';
-            }
-        }
+        (void)StartDebugControlServer(debug_control_server, debug_control_port);
 
         std::uint64_t last_ticks = SDL_GetTicks();
         const double perf_frequency = static_cast<double>(SDL_GetPerformanceFrequency());

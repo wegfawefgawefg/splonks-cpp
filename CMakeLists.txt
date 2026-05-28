@@ -19,6 +19,7 @@ endif()
 option(SPLONKS_STRICT "Enable stricter warning sets." ON)
 option(SPLONKS_WARN_AS_ERROR "Treat warnings as errors." ON)
 option(SPLONKS_FETCH_DEPS "Fetch missing SDL/imgui dependencies with CMake FetchContent" ON)
+option(SPLONKS_DEBUG_CONTROL_DEFAULT "Start the localhost debug-control server by default." ON)
 set(SPLONKS_BUNDLE_VERSION "${PROJECT_VERSION}" CACHE STRING "Version string used for app bundle metadata")
 set(SPLONKS_IOS_DEVELOPMENT_TEAM "" CACHE STRING "Apple Developer Team ID for iOS device builds")
 set(SPLONKS_IOS_CODE_SIGN_IDENTITY "Apple Development" CACHE STRING "Code signing identity for iOS device builds")
@@ -467,6 +468,9 @@ target_include_directories(
         "${imgui_SOURCE_DIR}/backends"
 )
 target_compile_features(splonks-cpp PRIVATE cxx_std_20)
+target_compile_definitions(splonks-cpp PRIVATE
+    SPLONKS_DEFAULT_DEBUG_CONTROL=$<IF:$<BOOL:${SPLONKS_DEBUG_CONTROL_DEFAULT}>,1,0>
+)
 target_link_libraries(
     splonks-cpp
     PRIVATE
