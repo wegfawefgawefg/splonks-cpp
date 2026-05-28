@@ -1,6 +1,7 @@
 #include "gubsy_shell_smoke.hpp"
 
 #include "gubsy_shell.hpp"
+#include "graphics.hpp"
 #include "network/net_lobby.hpp"
 
 #include <cstdint>
@@ -113,6 +114,26 @@ bool GubsyAlertContains(const EngineState& engine, std::string_view needle) {
     return std::any_of(engine.alerts.begin(), engine.alerts.end(), [&](const Alert& alert) {
         return alert.text.find(needle) != std::string::npos;
     });
+}
+
+void PumpTitleNetwork(gubsy_shell::Shell& shell, State& state, Graphics& graphics) {
+    gubsy_shell::UpdateTitleMenu(shell, state, graphics, 0.016F, 1280, 720);
+}
+
+template <typename Done>
+bool PumpJoinUntilConfirmed(gubsy_shell::Shell& host_shell,
+                            State& host_state,
+                            gubsy_shell::Shell& guest_shell,
+                            State& guest_state,
+                            Done done) {
+    Graphics graphics;
+    for (int i = 0; i < 360; ++i) {
+        PumpTitleNetwork(host_shell, host_state, graphics);
+        PumpTitleNetwork(guest_shell, guest_state, graphics);
+        if (done())
+            return true;
+    }
+    return false;
 }
 
 const MenuWidget* GubsyWidgetBySlot(const EngineState& engine, UILayoutObjectId slot) {
@@ -490,6 +511,18 @@ bool CheckHostJoin() {
         gubsy_shell::Shutdown(host_shell);
         return false;
     }
+    if (!PumpJoinUntilConfirmed(host_shell, host_state, guest_shell, guest_state, [&]() {
+            const GubsyLobbyState& guest_lobby = gubsy_get_lobby_state(guest_shell.runtime);
+            return matchmaking.join_called && guest_lobby.online &&
+                   guest_lobby.room_code == matchmaking.room.room_code;
+        })) {
+        const GubsyLobbyState& guest_lobby = gubsy_get_lobby_state(guest_shell.runtime);
+        std::cerr << "Gubsy shell smoke failed: public join was not confirmed: "
+                  << guest_lobby.status_message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
     if (!matchmaking.join_called || guest_state.net_session.role != network::NetRole::Peer) {
         std::cerr << "Gubsy shell smoke failed: join callback/backend was not used\n";
         gubsy_shell::Shutdown(guest_shell);
@@ -528,8 +561,7 @@ bool CheckDirectHostJoinViaMenu() {
     PressDown(host_shell, host_state);
     PressDown(host_shell, host_state);
     PressDown(host_shell, host_state);
-    PressDown(host_shell, host_state);
-    PressDown(host_shell, host_state);
+    PressRight(host_shell, host_state);
     PressRight(host_shell, host_state);
     PressSelect(host_shell, host_state);
     if (host_state.net_session.role != network::NetRole::Host) {
