@@ -205,6 +205,31 @@ bool CheckInGameMenuShell() {
     return true;
 }
 
+bool CheckPeerInputMapping() {
+    State state = State::New();
+    gubsy_shell::Shell shell;
+    if (!gubsy_shell::InitHeadless(shell, state)) {
+        std::cerr << "Gubsy shell smoke failed: InitHeadless for peer input mapping failed\n";
+        return false;
+    }
+
+    state.net_session.role = network::NetRole::Peer;
+    state.net_session.input_lockstep_enabled = true;
+    state.net_session.local_player_id = 2;
+    state.players.EnsureLocalPlayer(2, "Player 2", true);
+
+    gubsy_shell::ApplyLobbyGameplayInput(shell);
+    if (!state.use_external_local_input_frames ||
+        state.external_local_input_frames.size() < 2) {
+        std::cerr << "Gubsy shell smoke failed: peer input did not map to assigned player id\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    gubsy_shell::Shutdown(shell);
+    return true;
+}
+
 bool CheckInGameRestartCommand() {
     State state = State::New();
     gubsy_shell::Shell shell;
@@ -449,7 +474,8 @@ bool CheckDirectHostJoinViaMenu() {
 bool CheckGubsyShellSmoke() {
     try {
         return CheckOfflineStart() && CheckInGameMenuShell() && CheckInGameRestartCommand() &&
-               CheckInGameQuitCommand() && CheckHostJoin() && CheckDirectHostJoinViaMenu();
+               CheckPeerInputMapping() && CheckInGameQuitCommand() && CheckHostJoin() &&
+               CheckDirectHostJoinViaMenu();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';
         return false;
