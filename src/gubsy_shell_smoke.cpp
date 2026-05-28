@@ -9,6 +9,9 @@
 #include <iostream>
 #include <SDL3/SDL_scancode.h>
 #include <src/gubsy_runtime_internal.hpp>
+#include <src/menu/menu_system_state.hpp>
+#include <src/menu_layout_ids.hpp>
+#include <algorithm>
 #include <string>
 #include <string_view>
 
@@ -103,6 +106,19 @@ struct SmokeMatchmaking final : IMatchmaking {
 void StepMenu(gubsy_shell::Shell& shell, State& state, const MenuInputs& inputs = MenuInputs{}) {
     state.menu_inputs = inputs;
     gubsy_shell::UpdateMenu(shell, state, 0.016F, 1280, 720);
+}
+
+bool GubsyAlertContains(const EngineState& engine, std::string_view needle) {
+    return std::any_of(engine.alerts.begin(), engine.alerts.end(), [&](const Alert& alert) {
+        return alert.text.find(needle) != std::string::npos;
+    });
+}
+
+const MenuWidget* GubsyWidgetBySlot(const EngineState& engine, UILayoutObjectId slot) {
+    const auto& menu = menu_system_internal::runtime_state(engine);
+    auto it = std::find_if(menu.cache.widgets.begin(), menu.cache.widgets.end(),
+                           [&](const MenuWidget& widget) { return widget.slot == slot; });
+    return it == menu.cache.widgets.end() ? nullptr : &*it;
 }
 
 void PressDown(gubsy_shell::Shell& shell, State& state) {
@@ -557,6 +573,82 @@ bool CheckDirectHostJoinViaMenu() {
     return true;
 }
 
+bool CheckDirectRemoteMemberSync() {
+    std::string message;
+    State state = State::New();
+    gubsy_shell::Shell shell;
+    if (!gubsy_shell::InitHeadless(shell, state)) {
+        std::cerr << "Gubsy shell smoke failed: direct member sync InitHeadless failed\n";
+        return false;
+    }
+    if (!gubsy_host_lobby_direct(shell.runtime, 0, message)) {
+        std::cerr << "Gubsy shell smoke failed: direct member sync host failed: " << message
+                  << '\n';
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    state.players.EnsureRemotePlayer(2, "Remote Friend");
+    network::NetPeerState peer;
+    peer.player_id = 2;
+    peer.display_name = "Remote Friend";
+    peer.endpoint_address = "192.0.2.55";
+    peer.endpoint_port = 45454;
+    peer.connected = true;
+    state.net_session.peers.push_back(peer);
+
+    StepMenu(shell, state);
+    const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
+    EngineState& engine = gubsy_runtime_engine(shell.runtime);
+    if (lobby.members.size() != 1 || lobby.members.front().display_name != "Remote Friend" ||
+        lobby.members.front().member_id.find("192.0.2.55:45454") == std::string::npos) {
+        std::cerr << "Gubsy shell smoke failed: direct remote member was not synced into Gubsy\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    if (!GubsyAlertContains(engine, "Remote Friend joined")) {
+        std::cerr << "Gubsy shell smoke failed: direct remote join alert missing\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    gubsy_clear_menu_stack(shell.runtime);
+    if (!gubsy_push_menu_screen(shell.runtime, MenuScreenID::SHELL_LOBBY)) {
+        std::cerr << "Gubsy shell smoke failed: shell lobby missing for direct member sync\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    StepMenu(shell, state);
+    const MenuWidget* status = GubsyWidgetBySlot(engine, SettingsObjectID::STATUS);
+    const MenuWidget* players = GubsyWidgetBySlot(engine, SettingsObjectID::CARD0);
+    if (status == nullptr || status->secondary == nullptr ||
+        std::string(status->secondary).find("1 remote client") == std::string::npos ||
+        players == nullptr || players->secondary == nullptr ||
+        std::string(players->secondary).find("1 remote client") == std::string::npos) {
+        std::cerr << "Gubsy shell smoke failed: direct remote count missing from lobby UI\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    state.players.Remove(2);
+    state.net_session.peers.clear();
+    StepMenu(shell, state);
+    if (!gubsy_get_lobby_state(shell.runtime).members.empty()) {
+        std::cerr << "Gubsy shell smoke failed: direct remote member was not removed from Gubsy\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    if (!GubsyAlertContains(engine, "Remote Friend left")) {
+        std::cerr << "Gubsy shell smoke failed: direct remote leave alert missing\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    (void)gubsy_leave_lobby_room(shell.runtime, message);
+    gubsy_shell::Shutdown(shell);
+    return true;
+}
+
 } // namespace
 
 bool CheckGubsyShellSmoke() {
@@ -564,7 +656,7 @@ bool CheckGubsyShellSmoke() {
         return CheckOfflineStart() && CheckInGameMenuShell() && CheckInGameRestartCommand() &&
                CheckNetworkRestartCommandDoesNotDesync() && CheckPeerInputMapping() &&
                CheckPeerGameplayInputAfterStart() && CheckInGameQuitCommand() && CheckHostJoin() &&
-               CheckDirectHostJoinViaMenu();
+               CheckDirectHostJoinViaMenu() && CheckDirectRemoteMemberSync();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';
         return false;

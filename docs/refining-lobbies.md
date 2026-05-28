@@ -391,9 +391,13 @@ Status:
 - `lobby_online_smoke` verifies the built `Players` screen exposes that remote
   backend/room/endpoint context and that selecting a remote row opens an
   explicit remote-player action screen with `Kick Player`.
+- Direct sessions now use the same remote-member surface for display purposes:
+  Splonks feeds connected direct network player slots into Gubsy, and Gubsy
+  shows them in the unified `Players` screen with direct-session context.
 - Follow-up remains: kick enforcement is heartbeat-driven rather than an
-  immediate host-to-client transport command; ban/block persistence, richer
-  local/remote/client tabs, and fuller ban/block controls are still pending.
+  immediate host-to-client transport command; direct-session kick, ban/block
+  persistence, richer local/remote/client tabs, and fuller ban/block controls
+  are still pending.
 
 ## Join And Leave Alerts
 
@@ -421,9 +425,18 @@ Status:
   member IDs as fallback.
 - `lobby_online_smoke` verifies the host sees membership grow when a guest joins
   and shrink when the guest leaves, and verifies joined/left alerts are emitted.
-- Follow-up remains: direct-IP sessions do not have room-service membership
-  records yet, and alerts still use room-member/client-level identities rather
-  than per-player names.
+- Direct-IP sessions can now publish app-fed direct members into Gubsy without
+  creating room-service records. Gubsy emits joined/left alerts for those direct
+  members and uses them for lobby/player counts.
+- Splonks feeds connected direct network remote player slots into Gubsy every
+  frame, so direct host/client changes can appear in the lobby status and
+  `Players` menu.
+- `lobby_online_smoke` verifies direct-member joined/left alerts and direct
+  member counts inside Gubsy. `--check-gubsy-shell-smoke` verifies Splonks
+  direct network members sync into Gubsy, surface in the shell lobby, and emit
+  joined/left alerts.
+- Follow-up remains: direct alerts still use remote player/client-level
+  identities rather than a richer per-player profile identity.
 
 ## Client Experience
 

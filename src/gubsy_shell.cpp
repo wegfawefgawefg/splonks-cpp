@@ -502,6 +502,56 @@ void SyncInGameMenuCommands(Shell& shell) {
     gubsy_set_in_game_menu_commands(shell.runtime, commands);
 }
 
+const network::NetPeerState* FindPeerStateForPlayer(const State& state, PlayerId player_id) {
+    for (const network::NetPeerState& peer : state.net_session.peers) {
+        if (peer.player_id == player_id) {
+            return &peer;
+        }
+    }
+    return nullptr;
+}
+
+void SyncDirectNetworkMembers(Shell& shell) {
+    if (shell.state == nullptr) {
+        return;
+    }
+
+    const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
+    if (!lobby.online || !lobby.room_code.empty()) {
+        return;
+    }
+
+    const State& state = *shell.state;
+    if (state.net_session.role == network::NetRole::Offline) {
+        gubsy_set_lobby_direct_members(shell.runtime, {});
+        return;
+    }
+
+    std::vector<MatchmakingMember> members;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || slot.connection_kind != PlayerConnectionKind::Remote ||
+            slot.player_id == kInvalidPlayerId) {
+            continue;
+        }
+
+        const network::NetPeerState* peer = FindPeerStateForPlayer(state, slot.player_id);
+        MatchmakingMember member;
+        member.display_name = !slot.display_name.empty()
+            ? slot.display_name
+            : "Remote " + std::to_string(slot.player_id);
+        member.is_host = slot.player_id == state.net_session.host_player_id;
+        if (peer != nullptr && !peer->endpoint_address.empty() && peer->endpoint_port != 0) {
+            member.member_id = "direct:" + peer->endpoint_address + ":" +
+                               std::to_string(peer->endpoint_port);
+        } else {
+            member.member_id = "direct:player:" + std::to_string(slot.player_id);
+        }
+        members.push_back(std::move(member));
+    }
+
+    gubsy_set_lobby_direct_members(shell.runtime, members);
+}
+
 } // namespace
 
 bool Init(Shell& shell, State& state, SDL_Window* window, SDL_Renderer* renderer,
@@ -561,6 +611,7 @@ int ConfiguredFrameCapFps(Shell& shell) {
 }
 
 void BeginDebugFrame(Shell& shell, float dt) {
+    SyncDirectNetworkMembers(shell);
     gubsy_begin_debug_frame(shell.runtime, dt);
 }
 
@@ -591,6 +642,7 @@ bool InGameMenuOpen(Shell& shell) {
 }
 
 void UpdateMenu(Shell& shell, const State& state, float dt, int screen_width, int screen_height) {
+    SyncDirectNetworkMembers(shell);
     gubsy_set_menu_input(shell.runtime, BuildFrameMenuInput(shell, state));
     gubsy_update_menu(shell.runtime, dt, screen_width, screen_height);
 }
