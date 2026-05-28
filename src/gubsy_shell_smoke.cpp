@@ -482,7 +482,7 @@ bool CheckDirectHostJoinViaMenu() {
         return false;
     }
 
-    if (!gubsy_push_menu_screen(guest_shell.runtime, MenuScreenID::LOBBY_SERVER_BROWSER)) {
+    if (!gubsy_push_menu_screen(guest_shell.runtime, MenuScreenID::LOBBY_JOIN_BY_IP)) {
         std::cerr << "Gubsy shell smoke failed: direct join menu screen missing\n";
         gubsy_shell::Shutdown(guest_shell);
         gubsy_shell::Shutdown(host_shell);
