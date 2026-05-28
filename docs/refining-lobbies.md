@@ -347,7 +347,9 @@ Status:
   below them, with host/client labels and member identifiers as early remote
   client context.
 - Public room hosts can now select a non-host remote member in `Players` to
-  kick them from the room-service member list.
+  open a remote management screen instead of kicking immediately.
+- The remote management screen exposes `Kick Player` as an explicit host-only
+  action that removes the member from the room-service member list.
 - `lobby_online_smoke` verifies host kick removes the member from the host's
   visible member list and emits a kick alert.
 - Kicked public-room clients now detect that their room-service membership was
@@ -358,7 +360,8 @@ Status:
 - Remote public-room rows now include backend, room code, and realtime endpoint
   context in their detail text.
 - `lobby_online_smoke` verifies the built `Players` screen exposes that remote
-  backend/room/endpoint context.
+  backend/room/endpoint context and that selecting a remote row opens an
+  explicit remote-player action screen with `Kick Player`.
 - Follow-up remains: kick enforcement is heartbeat-driven rather than an
   immediate host-to-client transport command; ban/block persistence, richer
   local/remote/client tabs, and fuller ban/block controls are still pending.
