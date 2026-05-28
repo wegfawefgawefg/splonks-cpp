@@ -580,13 +580,14 @@ GubsyLobbyKickResult KickDirectSplonksMemberFromGubsy(void* user_data,
 }
 
 MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs, bool text_edit_active) {
+    (void)text_edit_active;
     MenuInputState result{};
     result.up = inputs.up.down;
     result.down = inputs.down.down;
     result.left = inputs.left.down;
     result.right = inputs.right.down;
     result.select = inputs.confirm.down;
-    result.back = !text_edit_active && inputs.back.down;
+    result.back = inputs.back.down;
     result.page_prev = inputs.page_prev.down;
     result.page_next = inputs.page_next.down;
     return result;

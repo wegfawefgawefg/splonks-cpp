@@ -128,8 +128,7 @@ void SetMenuInputSnapshot(State& state) {
                       GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_DOWN);
     new_inputs.confirm = keys[SDL_SCANCODE_RETURN] || keys[SDL_SCANCODE_SPACE] ||
                          GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH);
-    new_inputs.back = keys[SDL_SCANCODE_ESCAPE] || keys[SDL_SCANCODE_BACKSPACE] ||
-                      GamepadButtonDown(SDL_GAMEPAD_BUTTON_EAST);
+    new_inputs.back = keys[SDL_SCANCODE_ESCAPE] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_EAST);
     new_inputs.page_prev = GamepadButtonDown(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER) ||
                            GamepadAxisPressed(SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
     new_inputs.page_next = GamepadButtonDown(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER) ||
