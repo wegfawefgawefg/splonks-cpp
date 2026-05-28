@@ -119,6 +119,52 @@ Open implementation question:
   preference is a clear green `Play` button because it makes the state machine
   visible while we are still debugging.
 
+### Local Start Versus Online Start
+
+The main lobby start action should be explicit about whether it is starting a
+local-only game or starting/entering an online session.
+
+Expected behavior:
+
+- If the runtime is not connected to a remote session through `Host Game` or
+  `Join Game`, the primary start action should say `Start Local Game`.
+- `Start Local Game` should launch local play without implying public/direct
+  hosting or a joined room.
+- If the runtime is hosting, the host action should say `Start Game` or
+  `Start Hosted Game` and should notify connected clients.
+- If the runtime is joined as a client and the host has not started, the action
+  should be a disabled/waiting state such as `Waiting For Host`.
+- If the runtime is joined as a client and the host state is playable, the
+  action should become `Play` or equivalent and enter the synced game.
+
+This distinction matters because the lobby is now used for local play, direct
+hosting, public hosting through `gubsy-roomd`, and browser/direct joining. The
+button text should describe the actual mode rather than always using generic
+`Start Game` copy.
+
+### Browse Servers Search And Refresh
+
+The `Browse Servers` view should reserve the top input area for filtering
+visible servers by room name. A room browser can plausibly have dozens or
+hundreds of rooms, so name search should be a first-class control.
+
+Required behavior:
+
+- Add a text search box at the top of the server browser.
+- Search/filter by server or room name as the user types.
+- Keep filtering local to the currently fetched server list unless we later add
+  backend-side search.
+- Keep the visible list stable and navigable after filtering.
+- Empty search text should show all currently visible public rooms.
+
+Refresh placement:
+
+- Move `Refresh` out of the top search area.
+- Put `Refresh` in the bottom action row, near the center and next to `Back`.
+- Keep bottom actions consistent with the other lobby screens.
+- Continue showing refresh/load/failure state clearly, preferably with alerts
+  for errors and a small status line for current results.
+
 ### Leave Session Placement
 
 `Leave Session` currently appears in a card row over the top list area, making
@@ -240,6 +286,10 @@ Implementation notes:
   unavailable as normal main-list actions while already in an online session.
 - Add smoke/render coverage proving alerts stack, expire, and render with
   severity color.
+- Add rendered/widget smoke coverage for `Start Local Game` copy when offline
+  and online/joined start-state copy when hosted or joined.
+- Add rendered/widget smoke coverage for server-browser name search and bottom
+  refresh placement.
 
 ## Done When
 
@@ -252,8 +302,12 @@ Implementation notes:
   actions.
 - Browser-joined clients can enter play after the host starts or otherwise
   reaches a playable join-in-progress state.
+- Offline lobby start action says `Start Local Game`; hosted/joined states use
+  mode-accurate start/play/waiting copy.
 - Timed stacked alerts render from the top of the screen and are used for
   join/leave/disconnect/joining-game/error events.
+- Browse Servers has a top room-name search box, and `Refresh` is a bottom
+  action near `Back`.
 - `Leave Session` / `Stop Hosting` are bottom actions and do not overlap list
   rows.
 - `Host Public` is grouped with bottom host actions.
