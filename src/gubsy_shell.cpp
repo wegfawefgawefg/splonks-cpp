@@ -16,6 +16,8 @@ namespace splonks::gubsy_shell {
 
 namespace {
 
+constexpr std::uint64_t kDirectJoinTimeoutMs = 3500;
+
 struct CharacterOption {
     const char* id;
     const char* label;
@@ -364,6 +366,9 @@ GubsyLobbyHostResult HostSplonksFromGubsy(void* user_data, const GubsyLobbyState
     auto* shell = static_cast<Shell*>(user_data);
     if (shell == nullptr || shell->state == nullptr)
         return result;
+    shell->direct_join_pending = false;
+    shell->direct_join_endpoint.clear();
+    shell->direct_join_started_ms = 0;
     ApplyLobbyConfigToSplonks(*shell, lobby, true);
     result.ok = network::StartHostSession(*shell->state, port, &result.status);
     if (result.ok) {
@@ -384,6 +389,12 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
         return result;
     ApplyLobbyConfigToSplonks(*shell, lobby, true);
     result.ok = network::JoinHostSession(*shell->state, host, port, &result.status);
+    if (result.ok) {
+        result.pending = true;
+        shell->direct_join_pending = true;
+        shell->direct_join_endpoint = std::string(host) + ":" + std::to_string(port);
+        shell->direct_join_started_ms = SDL_GetTicks();
+    }
     std::cerr << result.status << '\n';
     return result;
 }
@@ -398,6 +409,38 @@ GubsyLobbyLeaveResult LeaveSplonksFromGubsy(void* user_data, const GubsyLobbySta
     if (!result.status.empty())
         std::cerr << result.status << '\n';
     return result;
+}
+
+bool DirectJoinAccepted(const State& state) {
+    return state.net_session.role == network::NetRole::Peer &&
+           state.net_transport &&
+           !state.net_transport->join_request_pending;
+}
+
+void SyncDirectJoinStatus(Shell& shell) {
+    if (!shell.direct_join_pending || shell.state == nullptr)
+        return;
+
+    if (DirectJoinAccepted(*shell.state)) {
+        std::string message = "Joined direct " + shell.direct_join_endpoint;
+        gubsy_confirm_lobby_direct_join(shell.runtime, message);
+        shell.direct_join_pending = false;
+        shell.direct_join_endpoint.clear();
+        shell.direct_join_started_ms = 0;
+        return;
+    }
+
+    const std::uint64_t now_ms = SDL_GetTicks();
+    if (now_ms - shell.direct_join_started_ms < kDirectJoinTimeoutMs)
+        return;
+
+    std::string status;
+    network::DisconnectSession(*shell.state, &status);
+    std::string message = "No server found at " + shell.direct_join_endpoint;
+    gubsy_fail_lobby_direct_join(shell.runtime, message);
+    shell.direct_join_pending = false;
+    shell.direct_join_endpoint.clear();
+    shell.direct_join_started_ms = 0;
 }
 
 bool ParseDirectMemberEndpoint(const std::string& member_id, std::string& address,
@@ -726,8 +769,12 @@ void RenderMenu(Shell& shell, SDL_Renderer* renderer, int screen_width, int scre
     gubsy_render_menu(shell.runtime, renderer, screen_width, screen_height);
 }
 
-void UpdateTitleMenu(Shell& shell, const State& state, float dt, int screen_width,
+void UpdateTitleMenu(Shell& shell, State& state, Graphics& graphics, float dt, int screen_width,
                      int screen_height) {
+    if (shell.direct_join_pending) {
+        network::StepNetworkLobby(state, graphics);
+        SyncDirectJoinStatus(shell);
+    }
     UpdateMenu(shell, state, dt, screen_width, screen_height);
 }
 

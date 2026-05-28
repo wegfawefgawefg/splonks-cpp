@@ -459,7 +459,7 @@ int SplonksMain(int argc, char** argv) {
             splonks::RunSimulationWithDebugControls(window, renderer, state, audio, graphics, debug,
                                                     dt);
             if (state.mode == splonks::Mode::Title) {
-                splonks::gubsy_shell::UpdateTitleMenu(gubsy_shell, state, dt,
+                splonks::gubsy_shell::UpdateTitleMenu(gubsy_shell, state, graphics, dt,
                                                       static_cast<int>(graphics.window_dims.x),
                                                       static_cast<int>(graphics.window_dims.y));
             } else if (splonks::gubsy_shell::InGameMenuOpen(gubsy_shell)) {
