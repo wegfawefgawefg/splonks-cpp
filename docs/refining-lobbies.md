@@ -331,15 +331,15 @@ Status:
   gubsy-roomd` stays in the status area, while the players card keeps `Players`
   as its primary title.
 - `lobby_online_smoke` verifies the shell-lobby widget copy hierarchy directly.
-- Follow-up remains: verify the final visual layout does not make `Players`
-  appear as grey helper text while session/backend state appears as the row
-  title. The `Players` command should read as the command, with local/remote
-  counts as supporting detail only.
 - The `Players` row should never mix command text and session state hierarchy.
   `Players` must be the primary/title text on that row. Session state such as
   `Currently Public Hosting via gubsy-roomd` belongs in the hosted-lobby status
   area, and row secondary text should only summarize player counts or the action
   the row opens.
+- `lobby_online_smoke` now explicitly verifies the `Players` row hierarchy for
+  public-host, direct-host, and joined-public lobby states: the row title stays
+  `Players`, row summary text excludes session/backend status, and session
+  status remains in the status heading/detail area.
 
 ## Players Menu
 
