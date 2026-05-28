@@ -99,6 +99,9 @@ the only join path.
   appear in the server browser for awareness, but it must be visibly disabled
   and unjoinable. Treat it like an unavailable row, ideally with a red or muted
   `YOUR ROOM`/`HOSTING` state instead of a normal join action.
+- Own hosted rooms should not look selectable. They should be greyed out,
+  red/error-badged, and skipped by the join command even if the row can receive
+  focus for inspection.
 - If a host chooses to join another server from any join path, the current
   hosted session should be stopped/left first so the host does not keep a stale
   public room or live direct host while becoming somebody else's client.
@@ -120,6 +123,9 @@ Status:
   apply config, or call join transport.
 - The browser now detects the current host's own public room, badges it as
   `YOUR ROOM`, marks it unavailable, and does not attach a join action.
+- Follow-up remains: make the own-room unavailable state visually stronger in
+  the final UI pass, with clear greyed-out/red treatment and no ambiguous join
+  affordance.
 - `lobby_online_smoke` verifies a host cannot join its own public room and that
   the rejection does not leave the hosted session.
 
@@ -190,7 +196,9 @@ If the same running host application presses `Host` again:
 - Rehosting should cleanly close/reopen the old socket or reuse it deliberately;
   whichever behavior we choose should be documented in code and UI behavior.
 - The host should have an obvious `Stop Hosting`/`Leave Session` control from
-  the lobby without needing to re-enter the host setup screen.
+  the lobby without needing to re-enter the host setup screen. Prefer a stable
+  bottom-lobby button placement so it is reachable from the main hosted-lobby
+  state.
 - Joining another game while hosting should first stop/leave the current hosted
   session.
 
@@ -217,7 +225,9 @@ Status:
 - `lobby_online_smoke` verifies two separate public host processes list as two
   separate public rooms before one host joins the other.
 - Follow-up remains: expose this behavior more clearly in UI copy if further
-  playtesting shows the current labels are not clear enough.
+  playtesting shows the current labels are not clear enough, and confirm the
+  control lands in the intended bottom-lobby position once the full layout pass
+  is done.
 
 ### Hosted-Lobby Status
 
@@ -256,6 +266,10 @@ Status:
   gubsy-roomd` stays in the status area, while the players card keeps `Players`
   as its primary title.
 - `lobby_online_smoke` verifies the shell-lobby widget copy hierarchy directly.
+- Follow-up remains: verify the final visual layout does not make `Players`
+  appear as grey helper text while session/backend state appears as the row
+  title. The `Players` command should read as the command, with local/remote
+  counts as supporting detail only.
 
 ## Players Menu
 
@@ -268,6 +282,9 @@ The top-level `Players` row can summarize:
 - `N remote`
 - Supporting text such as: `Manage profiles, devices, binds, and connected
   players.`
+- The primary/title text on the row should remain `Players`. Hosting/session
+  state such as `Currently Public Hosting via gubsy-roomd` belongs in the lobby
+  status area, not in the `Players` row title or secondary copy.
 
 Inside the `Players` screen:
 
@@ -484,7 +501,10 @@ Checklist:
 11. Fix client-side start-game behavior and waiting-for-host messaging.
 12. Fix the joined-client movement and host-triggered restart ownership
     regressions.
-13. Add smoke coverage for browser-published host/join and joined-client
+13. Polish hosted-session leave controls, own-room disabled styling in the
+    browser, and `Players` row/status text hierarchy after the next live UI
+    pass.
+14. Add smoke coverage for browser-published host/join and joined-client
     movement after game start.
 
 ## Open Questions
