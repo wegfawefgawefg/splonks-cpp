@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+case "${OS:-}:$(uname -s)" in
+    Windows_NT:*|*:MINGW*|*:MSYS*|*:CYGWIN*) ;;
+    *)
+        echo "package_windows.sh must run in the MSYS2 UCRT64 terminal on Windows" >&2
+        exit 1
+        ;;
+esac
+
+if [[ "${MSYSTEM:-}" != "UCRT64" ]]; then
+    echo "package_windows.sh must run in the MSYS2 UCRT64 terminal. Current MSYSTEM=${MSYSTEM:-unset}" >&2
+    exit 1
+fi
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+build_dir="${repo_root}/build-package-windows"
+dist_dir="${repo_root}/dist/splonks-windows"
+source "${repo_root}/scripts/package_runtime_libs.sh"
+
+SPLONKS_PRESET=package-windows "${repo_root}/scripts/build.sh"
+
+rm -rf "${dist_dir}"
+mkdir -p "${dist_dir}"
+
+cp "${build_dir}/splonks-cpp.exe" "${dist_dir}/"
+cp -a "${repo_root}/assets" "${dist_dir}/assets"
+cp -a "${repo_root}/data" "${dist_dir}/data"
+
+package_copy_runtime_libs_from_tree "${build_dir}" "${dist_dir}" ".dll"
+package_write_manifest "splonks" "windows" "release" "${repo_root}" "${dist_dir}"
+
+cat > "${dist_dir}/run-splonks.bat" <<'EOF'
+@echo off
+cd /d "%~dp0"
+"%~dp0splonks-cpp.exe" %*
+EOF
+
+echo "[package] ${dist_dir}"

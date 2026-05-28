@@ -49,7 +49,11 @@ public:
     std::optional<UdpPacket> Receive(std::string* error_out);
 
 private:
+#ifdef _WIN32
+    std::uintptr_t fd_ = ~std::uintptr_t{0};
+#else
     int fd_ = -1;
+#endif
     std::uint16_t bound_port_ = 0;
 };
 

@@ -3,22 +3,37 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 build_dir="${repo_root}/build"
-mode="${1:-build}"
+mode="build"
 preset="${SPLONKS_PRESET:-release}"
-jobs="${SPLONKS_BUILD_JOBS:-2}"
+configure_args=()
 
-if ! [[ "${jobs}" =~ ^[0-9]+$ ]] || [ "${jobs}" -lt 1 ]; then
-    echo "SPLONKS_BUILD_JOBS must be a positive integer; got '${jobs}'." >&2
-    exit 2
-fi
+for arg in "$@"; do
+    case "${arg}" in
+        --configure-only)
+            mode="--configure-only"
+            ;;
+        *)
+            configure_args+=("${arg}")
+            ;;
+    esac
+done
+
+case "${preset}" in
+    dev) build_dir="${repo_root}/build-debug" ;;
+    package-linux) build_dir="${repo_root}/build-package-linux" ;;
+    package-macos) build_dir="${repo_root}/build-package-macos" ;;
+    package-windows) build_dir="${repo_root}/build-package-windows" ;;
+esac
 
 configure() {
-    cmake --preset "${preset}"
+    cmake --preset "${preset}" "${configure_args[@]}"
 }
 
 if ! configure; then
     rm -f "${build_dir}/CMakeCache.txt"
     rm -rf "${build_dir}/CMakeFiles"
+    find "${build_dir}/_deps" -mindepth 1 -maxdepth 1 -type d -name "*-subbuild" \
+        -exec rm -rf {} + 2>/dev/null || true
     configure
 fi
 
@@ -26,4 +41,9 @@ if [ "${mode}" = "--configure-only" ]; then
     exit 0
 fi
 
-cmake --build --preset "${preset}" -j "${jobs}"
+build_jobs="${SPLONKS_BUILD_JOBS:-${CMAKE_BUILD_PARALLEL_LEVEL:-}}"
+if [[ -n "${build_jobs}" ]]; then
+    cmake --build --preset "${preset}" --parallel "${build_jobs}"
+else
+    cmake --build --preset "${preset}" --parallel
+fi

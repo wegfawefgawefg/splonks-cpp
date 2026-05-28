@@ -1,5 +1,9 @@
 build/
 build-*/
+dist/
+android/.gradle/
+android/app/.cxx/
+android/app/build/
 cmake-build-*/
 compile_commands.json
 CMakeUserPresets.json
@@ -45,8 +49,3 @@ logs/lockstep_playtest_audit.json
 logs/lockstep_playtest_verdict.json
 logs/lockstep_churn/
 .codex
-data/gubsy/
-!data/gubsy/
-data/gubsy/*
-!data/gubsy/ui_layouts/
-!data/gubsy/ui_layouts/layouts.lisp

@@ -1,0 +1,271 @@
+name: package
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version used in artifact names, for example 0.1.0'
+        required: false
+        default: '0.1.0'
+      include_ios:
+        description: 'Build signed iOS IPA when signing secrets are configured'
+        required: false
+        type: boolean
+        default: false
+      upload_android_play:
+        description: 'Upload signed Android AAB to Google Play'
+        required: false
+        type: boolean
+        default: false
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set release version
+        run: |
+          version="${{ github.event.inputs.release_version }}"
+          if [[ -z "${version}" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "SPLONKS_RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            pkg-config \
+            wayland-protocols \
+            libwayland-dev \
+            libxkbcommon-dev \
+            libx11-dev \
+            libxext-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxfixes-dev \
+            libxrandr-dev \
+            libxrender-dev \
+            libxss-dev \
+            libasound2-dev \
+            libpulse-dev \
+            libpipewire-0.3-dev \
+            libdecor-0-dev \
+            libdrm-dev \
+            libgbm-dev \
+            libudev-dev
+      - name: Validate Linux release package
+        run: |
+          ./scripts/validate_platform.sh release
+          ./scripts/bundle_validation_evidence.sh --include-artifacts linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: splonks-linux-release
+          path: |
+            dist/releases/splonks-*-linux-x86_64.tar.gz
+            dist/releases/splonks-*-linux-x86_64.tar.gz.sha256
+            dist/splonks-linux/PACKAGE_MANIFEST.txt
+            dist/validation/*.log
+            dist/validation-bundles/*.tar.gz
+
+  macos-package:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set release version
+        run: |
+          version="${{ github.event.inputs.release_version }}"
+          if [[ -z "${version}" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "SPLONKS_RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
+      - name: Install native build dependencies
+        run: brew install cmake ninja pkg-config
+      - name: Validate macOS release package
+        run: |
+          ./scripts/validate_platform.sh release
+          ./scripts/bundle_validation_evidence.sh --include-artifacts macos
+      - uses: actions/upload-artifact@v4
+        with:
+          name: splonks-macos-release
+          path: |
+            dist/releases/splonks-*-macos-arm64.zip
+            dist/releases/splonks-*-macos-arm64.zip.sha256
+            dist/splonks-macos/PACKAGE_MANIFEST.txt
+            dist/validation/*.log
+            dist/validation-bundles/*.tar.gz
+
+  windows-package:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set release version
+        run: |
+          version="${{ github.event.inputs.release_version }}"
+          if [[ -z "${version}" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "SPLONKS_RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            unzip
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pkgconf
+      - name: Validate Windows release package
+        run: |
+          ./scripts/validate_platform.sh release
+          ./scripts/bundle_validation_evidence.sh --include-artifacts windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: splonks-windows-release
+          path: |
+            dist/releases/splonks-*-windows-x86_64.zip
+            dist/releases/splonks-*-windows-x86_64.zip.sha256
+            dist/splonks-windows/PACKAGE_MANIFEST.txt
+            dist/validation/*.log
+            dist/validation-bundles/*.tar.gz
+
+  android-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+      SPLONKS_ANDROID_KEYSTORE_BASE64: ${{ secrets.SPLONKS_ANDROID_KEYSTORE_BASE64 }}
+      SPLONKS_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.SPLONKS_ANDROID_KEYSTORE_PASSWORD }}
+      SPLONKS_ANDROID_KEYSTORE_TYPE: ${{ vars.SPLONKS_ANDROID_KEYSTORE_TYPE }}
+      SPLONKS_ANDROID_KEYSTORE_PURPOSE: upload
+      SPLONKS_ANDROID_KEY_ALIAS: ${{ secrets.SPLONKS_ANDROID_KEY_ALIAS }}
+      SPLONKS_ANDROID_KEY_PASSWORD: ${{ secrets.SPLONKS_ANDROID_KEY_PASSWORD }}
+      SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64 }}
+      SPLONKS_ANDROID_PACKAGE_NAME: ${{ vars.SPLONKS_ANDROID_PACKAGE_NAME }}
+      SPLONKS_PLAY_TRACK: ${{ vars.SPLONKS_PLAY_TRACK }}
+      SPLONKS_PLAY_RELEASE_STATUS: ${{ vars.SPLONKS_PLAY_RELEASE_STATUS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set release version
+        run: |
+          version="${{ github.event.inputs.release_version }}"
+          if [[ -z "${version}" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "SPLONKS_RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
+          echo "SPLONKS_ANDROID_VERSION_NAME=${version}" >> "${GITHUB_ENV}"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Verify Android scripts
+        run: |
+          bash -n scripts/android/*.sh
+      - name: Install Android SDK packages
+        run: ./scripts/android/setup_sdk.sh
+      - name: Fetch pinned SDL3 Android AAR
+        run: |
+          ./scripts/android/fetch_sdl3_aar.sh
+          test -f android/app/libs/SDL3-3.4.0.aar
+      - name: Build Android emulator APK
+        run: SPLONKS_ANDROID_ABIS=x86_64 ./scripts/android/build_apk.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: splonks-android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Decode Android upload keystore
+        if: ${{ env.SPLONKS_ANDROID_KEYSTORE_BASE64 != '' && env.SPLONKS_ANDROID_KEYSTORE_PASSWORD != '' && env.SPLONKS_ANDROID_KEY_ALIAS != '' && env.SPLONKS_ANDROID_KEY_PASSWORD != '' }}
+        run: |
+          keystore_path="${RUNNER_TEMP}/splonks-upload.jks"
+          printf '%s' "${SPLONKS_ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${keystore_path}"
+          echo "SPLONKS_ANDROID_KEYSTORE=${keystore_path}" >> "${GITHUB_ENV}"
+      - name: Build signed Android release AAB
+        if: ${{ env.SPLONKS_ANDROID_KEYSTORE_BASE64 != '' && env.SPLONKS_ANDROID_KEYSTORE_PASSWORD != '' && env.SPLONKS_ANDROID_KEY_ALIAS != '' && env.SPLONKS_ANDROID_KEY_PASSWORD != '' }}
+        run: ./scripts/android/validate_play_handoff.sh
+      - uses: actions/upload-artifact@v4
+        if: ${{ env.SPLONKS_ANDROID_KEYSTORE_BASE64 != '' && env.SPLONKS_ANDROID_KEYSTORE_PASSWORD != '' && env.SPLONKS_ANDROID_KEY_ALIAS != '' && env.SPLONKS_ANDROID_KEY_PASSWORD != '' }}
+        with:
+          name: splonks-android-release-aab
+          path: |
+            dist/splonks-android/splonks-*-android-release.aab
+            dist/splonks-android/manifest.txt
+            dist/validation/*.log
+            dist/validation-bundles/*.tar.gz
+      - name: Install Fastlane for Google Play upload
+        if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_android_play == 'true') || (github.event_name == 'push' && vars.SPLONKS_UPLOAD_ANDROID_PLAY == 'true') }}
+        run: sudo gem install fastlane --no-document
+      - name: Upload signed Android AAB to Google Play
+        if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_android_play == 'true') || (github.event_name == 'push' && vars.SPLONKS_UPLOAD_ANDROID_PLAY == 'true') }}
+        run: |
+          if [[ -z "${SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64}" ]]; then
+            echo "Missing SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64 secret." >&2
+            exit 1
+          fi
+          play_json="${RUNNER_TEMP}/splonks-play-service-account.json"
+          printf '%s' "${SPLONKS_PLAY_SERVICE_ACCOUNT_JSON_BASE64}" | base64 --decode > "${play_json}"
+          export SPLONKS_PLAY_SERVICE_ACCOUNT_JSON="${play_json}"
+          SPLONKS_PLAY_UPLOAD=1 ./scripts/android/validate_play_handoff.sh
+
+  ios-release:
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.include_ios == 'true') || (github.event_name == 'push' && vars.SPLONKS_BUILD_IOS_RELEASE == 'true') }}
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+      SPLONKS_IOS_CERTIFICATE_BASE64: ${{ secrets.SPLONKS_IOS_CERTIFICATE_BASE64 }}
+      SPLONKS_IOS_CERTIFICATE_PASSWORD: ${{ secrets.SPLONKS_IOS_CERTIFICATE_PASSWORD }}
+      SPLONKS_IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.SPLONKS_IOS_PROVISIONING_PROFILE_BASE64 }}
+      SPLONKS_IOS_KEYCHAIN_PASSWORD: ${{ secrets.SPLONKS_IOS_KEYCHAIN_PASSWORD }}
+      SPLONKS_IOS_DEVELOPMENT_TEAM: ${{ vars.SPLONKS_IOS_DEVELOPMENT_TEAM }}
+      SPLONKS_IOS_BUNDLE_ID: ${{ vars.SPLONKS_IOS_BUNDLE_ID }}
+      SPLONKS_IOS_CODE_SIGN_IDENTITY: Apple Distribution
+      SPLONKS_IOS_SIGNING_STYLE: manual
+      SPLONKS_IOS_EXPORT_METHOD: app-store-connect
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set release version
+        run: |
+          version="${{ github.event.inputs.release_version }}"
+          if [[ -z "${version}" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "SPLONKS_RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
+      - name: Install native build dependencies
+        run: brew install cmake ninja pkg-config
+      - name: Import iOS signing assets
+        run: ./scripts/ios/import_signing_assets.sh
+      - name: Build and verify signed iOS IPA
+        run: ./scripts/validate_ios_handoff.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: splonks-ios-release-ipa
+          path: |
+            dist/releases/splonks-*-ios.ipa
+            dist/releases/splonks-*-ios.ipa.sha256
+            dist/splonks-ios/manifest.txt
+            dist/validation/*.log
+            dist/validation-bundles/*.tar.gz

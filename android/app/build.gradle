@@ -1,0 +1,109 @@
+plugins {
+    id 'com.android.application'
+}
+
+def envOrDefault = { name, fallback ->
+    def value = System.getenv(name)
+    return value == null || value.isBlank() ? fallback : value
+}
+
+def releaseKeystore = System.getenv('SPLONKS_ANDROID_KEYSTORE')
+def releaseKeystorePassword = System.getenv('SPLONKS_ANDROID_KEYSTORE_PASSWORD')
+def releaseKeyAlias = System.getenv('SPLONKS_ANDROID_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('SPLONKS_ANDROID_KEY_PASSWORD')
+def releaseKeystoreType = envOrDefault('SPLONKS_ANDROID_KEYSTORE_TYPE', 'jks')
+def androidVersionName = envOrDefault('SPLONKS_ANDROID_VERSION_NAME',
+                                      envOrDefault('SPLONKS_RELEASE_VERSION', '0.1.0'))
+def hasReleaseSigning = releaseKeystore != null && !releaseKeystore.isBlank() &&
+                        releaseKeystorePassword != null && !releaseKeystorePassword.isBlank() &&
+                        releaseKeyAlias != null && !releaseKeyAlias.isBlank() &&
+                        releaseKeyPassword != null && !releaseKeyPassword.isBlank()
+def androidAbis = envOrDefault('SPLONKS_ANDROID_ABIS', 'arm64-v8a')
+        .split(',')
+        .collect { it.trim() }
+        .findAll { !it.isEmpty() }
+
+android {
+    namespace 'dev.splonks.game'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'dev.splonks.game'
+        minSdk 24
+        targetSdk 34
+        versionCode envOrDefault('SPLONKS_ANDROID_VERSION_CODE', '1').toInteger()
+        versionName androidVersionName
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_shared',
+                          '-DSPLONKS_MODE=release',
+                          '-DSPLONKS_FETCH_DEPS=ON',
+                          '-DSPLONKS_STRICT=ON',
+                          '-DSPLONKS_WARN_AS_ERROR=ON'
+                targets 'splonks-cpp'
+            }
+        }
+
+        ndk {
+            abiFilters(*androidAbis)
+        }
+    }
+
+    buildFeatures {
+        prefab true
+    }
+
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile file(releaseKeystore)
+                storePassword releaseKeystorePassword
+                storeType releaseKeystoreType
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path '../../CMakeLists.txt'
+            version '3.22.1'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+def generatedAssetsDir = layout.buildDirectory.dir('generated/splonksAssets')
+
+tasks.register('syncSplonksAssets', Copy) {
+    into generatedAssetsDir
+    from('../../assets') {
+        into 'assets'
+    }
+    from('../../data') {
+        into 'data'
+    }
+}
+
+android.sourceSets.main.assets.srcDir(generatedAssetsDir)
+preBuild.dependsOn syncSplonksAssets
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['SDL3*.aar'])
+}

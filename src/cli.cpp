@@ -25,6 +25,8 @@
 #include "utils.hpp"
 #include "world_ops.hpp"
 
+#include <SDL3/SDL_log.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <exception>
@@ -489,7 +491,9 @@ bool RunCliCommand(int argc, char** argv) {
     }
 
     if (command == "--check-state-fingerprint-smoke") {
-        std::exit(CheckStateFingerprintSmoke() ? 0 : 1);
+        const bool ok = CheckStateFingerprintSmoke();
+        SDL_Log("%s", ok ? "state fingerprint smoke ok" : "state fingerprint smoke failed");
+        std::exit(ok ? 0 : 1);
     }
 
     if (command == "--check-state-equality-smoke") {

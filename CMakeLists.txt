@@ -10,60 +10,91 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(SPLONKS_MODE "developer" CACHE STRING "Splonks build mode: developer or release")
+set_property(CACHE SPLONKS_MODE PROPERTY STRINGS developer release)
+if (NOT SPLONKS_MODE MATCHES "^(developer|release)$")
+    message(FATAL_ERROR "SPLONKS_MODE must be one of: developer, release")
+endif()
+
 option(SPLONKS_STRICT "Enable stricter warning sets." ON)
 option(SPLONKS_WARN_AS_ERROR "Treat warnings as errors." ON)
+option(SPLONKS_FETCH_DEPS "Fetch missing SDL/imgui dependencies with CMake FetchContent" ON)
+set(SPLONKS_BUNDLE_VERSION "${PROJECT_VERSION}" CACHE STRING "Version string used for app bundle metadata")
+set(SPLONKS_IOS_DEVELOPMENT_TEAM "" CACHE STRING "Apple Developer Team ID for iOS device builds")
+set(SPLONKS_IOS_CODE_SIGN_IDENTITY "Apple Development" CACHE STRING "Code signing identity for iOS device builds")
+set(SPLONKS_IOS_BUNDLE_ID "dev.splonks.game" CACHE STRING "Bundle identifier for iOS builds")
+set(SPLONKS_IOS_CODE_SIGN_STYLE "Automatic" CACHE STRING "Code signing style for iOS device builds")
+set(SPLONKS_IOS_VERSION_CODE "1" CACHE STRING "iOS CFBundleVersion build number")
+if (NOT SPLONKS_BUNDLE_VERSION)
+    set(SPLONKS_BUNDLE_VERSION "${PROJECT_VERSION}")
+endif()
+if (NOT SPLONKS_IOS_BUNDLE_ID)
+    set(SPLONKS_IOS_BUNDLE_ID "dev.splonks.game")
+endif()
+if (NOT SPLONKS_IOS_VERSION_CODE)
+    set(SPLONKS_IOS_VERSION_CODE "1")
+endif()
+if (NOT SPLONKS_IOS_CODE_SIGN_STYLE)
+    set(SPLONKS_IOS_CODE_SIGN_STYLE "Automatic")
+endif()
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    string(TOLOWER "${SPLONKS_IOS_CODE_SIGN_STYLE}" SPLONKS_IOS_CODE_SIGN_STYLE_LOWER)
+    if (SPLONKS_IOS_CODE_SIGN_STYLE_LOWER STREQUAL "manual")
+        set(SPLONKS_IOS_CODE_SIGN_STYLE "Manual")
+    elseif (SPLONKS_IOS_CODE_SIGN_STYLE_LOWER STREQUAL "automatic")
+        set(SPLONKS_IOS_CODE_SIGN_STYLE "Automatic")
+    else()
+        message(FATAL_ERROR "SPLONKS_IOS_CODE_SIGN_STYLE must be automatic or manual")
+    endif()
+endif()
 
 find_package(SDL3 3.4.0 CONFIG QUIET)
 
 if (NOT SDL3_FOUND)
-    set(SPLONKS_LOCAL_SDL3_CONFIG
-        "/home/vega/Coding/Graphics/hardware-renderer-cpp/build/debug/_deps/sdl3-build"
-    )
-    if (EXISTS "${SPLONKS_LOCAL_SDL3_CONFIG}/SDL3Config.cmake")
-        list(PREPEND CMAKE_PREFIX_PATH "${SPLONKS_LOCAL_SDL3_CONFIG}")
-        find_package(SDL3 3.4.0 CONFIG QUIET)
+    if (SPLONKS_FETCH_DEPS)
+        set(SDL_X11_XTEST OFF CACHE BOOL "" FORCE)
+        FetchContent_Declare(
+            SDL3
+            GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+            # release-3.4.0
+            GIT_TAG a962f40bbba175e9716557a25d5d7965f134a3d3
+        )
+        FetchContent_MakeAvailable(SDL3)
+    else()
+        message(FATAL_ERROR "SDL3 not found. Install/provide SDL3 or enable SPLONKS_FETCH_DEPS.")
     endif()
-endif()
-
-if (NOT SDL3_FOUND)
-    set(SDL_X11_XTEST OFF CACHE BOOL "" FORCE)
-    FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG release-3.4.0
-        GIT_SHALLOW TRUE
-    )
-    FetchContent_MakeAvailable(SDL3)
 endif()
 
 find_package(SDL3_ttf CONFIG QUIET)
 
-if (NOT SDL3_ttf_FOUND)
+if (NOT SDL3_ttf_FOUND AND SPLONKS_FETCH_DEPS)
     if (DEFINED sdl3_BINARY_DIR AND EXISTS "${sdl3_BINARY_DIR}/SDL3Config.cmake")
         set(SDL3_DIR "${sdl3_BINARY_DIR}" CACHE PATH "" FORCE)
     endif()
     FetchContent_Declare(
         SDL3_ttf
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_ttf.git
-        GIT_TAG release-3.2.2
-        GIT_SHALLOW TRUE
+        # release-3.2.2
+        GIT_TAG a1ce3670aec736ecbf0936c43f2f0cc53aa61e5b
     )
     set(SDLTTF_SAMPLES OFF CACHE BOOL "" FORCE)
     set(SDLTTF_VENDORED ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(SDL3_ttf)
+elseif (NOT SDL3_ttf_FOUND)
+    message(FATAL_ERROR "SDL3_ttf not found. Install/provide SDL3_ttf or enable SPLONKS_FETCH_DEPS.")
 endif()
 
 find_package(SDL3_image CONFIG QUIET)
 
-if (NOT SDL3_image_FOUND)
+if (NOT SDL3_image_FOUND AND SPLONKS_FETCH_DEPS)
     if (DEFINED sdl3_BINARY_DIR AND EXISTS "${sdl3_BINARY_DIR}/SDL3Config.cmake")
         set(SDL3_DIR "${sdl3_BINARY_DIR}" CACHE PATH "" FORCE)
     endif()
     FetchContent_Declare(
         SDL3_image
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
-        GIT_TAG release-3.2.0
-        GIT_SHALLOW TRUE
+        # release-3.2.0
+        GIT_TAG 4a762bdfb7b43dae7a8a818567847881e49bdab4
     )
     set(SDLIMAGE_SAMPLES OFF CACHE BOOL "" FORCE)
     set(SDLIMAGE_TESTS OFF CACHE BOOL "" FORCE)
@@ -84,19 +115,21 @@ if (NOT SDL3_image_FOUND)
     set(SDLIMAGE_XPM OFF CACHE BOOL "" FORCE)
     set(SDLIMAGE_XV OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(SDL3_image)
+elseif (NOT SDL3_image_FOUND)
+    message(FATAL_ERROR "SDL3_image not found. Install/provide SDL3_image or enable SPLONKS_FETCH_DEPS.")
 endif()
 
 find_package(SDL3_mixer CONFIG QUIET)
 
-if (NOT SDL3_mixer_FOUND)
+if (NOT SDL3_mixer_FOUND AND SPLONKS_FETCH_DEPS)
     if (DEFINED sdl3_BINARY_DIR AND EXISTS "${sdl3_BINARY_DIR}/SDL3Config.cmake")
         set(SDL3_DIR "${sdl3_BINARY_DIR}" CACHE PATH "" FORCE)
     endif()
     FetchContent_Declare(
         SDL3_mixer
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
-        GIT_TAG release-3.2.0
-        GIT_SHALLOW TRUE
+        # release-3.2.0
+        GIT_TAG cedfeef30e93db35eee6b25759117da63f8e5a4f
     )
     set(SDLMIXER_VENDORED ON CACHE BOOL "" FORCE)
     set(SDLMIXER_WERROR OFF CACHE BOOL "" FORCE)
@@ -113,15 +146,21 @@ if (NOT SDL3_mixer_FOUND)
     set(SDLMIXER_VORBIS_VORBISFILE OFF CACHE BOOL "" FORCE)
     set(SDLMIXER_VORBIS_TREMOR OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(SDL3_mixer)
+elseif (NOT SDL3_mixer_FOUND)
+    message(FATAL_ERROR "SDL3_mixer not found. Install/provide SDL3_mixer or enable SPLONKS_FETCH_DEPS.")
 endif()
 
-FetchContent_Declare(
-    imgui
-    GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.92.7
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(imgui)
+if (SPLONKS_FETCH_DEPS)
+    FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        # v1.92.7
+        GIT_TAG dac07199cfd761113d966eb8ad739254e10df2fe
+    )
+    FetchContent_MakeAvailable(imgui)
+else()
+    message(FATAL_ERROR "imgui dependency is currently only available through SPLONKS_FETCH_DEPS.")
+endif()
 
 set(GUB_BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
 set(GUB_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
@@ -129,7 +168,7 @@ set(GUB_COMPILE_IMGUI_SOURCES OFF CACHE BOOL "" FORCE)
 set(GUB_ENABLE_LUA_MOD_HOST OFF CACHE BOOL "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../gubsy" gubsy)
 
-add_executable(splonks-cpp
+set(SPLONKS_SOURCES
     src/audio.cpp
     src/audio_asset.cpp
     src/audio_acoustics.cpp
@@ -403,6 +442,12 @@ add_executable(splonks-cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
 )
 
+if (ANDROID)
+    add_library(splonks-cpp SHARED ${SPLONKS_SOURCES})
+else()
+    add_executable(splonks-cpp ${SPLONKS_SOURCES})
+endif()
+
 set(SPLONKS_IMGUI_SOURCES
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -430,6 +475,9 @@ target_link_libraries(
         SDL3_mixer::SDL3_mixer
         gubsy::engine
 )
+if (WIN32)
+    target_link_libraries(splonks-cpp PRIVATE ws2_32)
+endif()
 
 if (MSVC)
     target_compile_options(splonks-cpp PRIVATE /W4 /permissive-)
@@ -464,6 +512,49 @@ set_target_properties(splonks-cpp PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
+if (ANDROID)
+    set_target_properties(splonks-cpp PROPERTIES
+        OUTPUT_NAME main
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+endif()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(SPLONKS_IOS_CODE_SIGNING_ALLOWED "NO")
+    if (CMAKE_OSX_SYSROOT STREQUAL "iphoneos")
+        set(SPLONKS_IOS_CODE_SIGNING_ALLOWED "YES")
+    endif()
+
+    set_target_properties(splonks-cpp PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${SPLONKS_IOS_BUNDLE_ID}"
+        MACOSX_BUNDLE_BUNDLE_NAME "Splonks"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${SPLONKS_IOS_VERSION_CODE}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${SPLONKS_BUNDLE_VERSION}"
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "${SPLONKS_IOS_CODE_SIGNING_ALLOWED}"
+        XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION "${SPLONKS_IOS_VERSION_CODE}"
+        XCODE_ATTRIBUTE_MARKETING_VERSION "${SPLONKS_BUNDLE_VERSION}"
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${SPLONKS_IOS_BUNDLE_ID}"
+    )
+    if (SPLONKS_IOS_DEVELOPMENT_TEAM)
+        set_target_properties(splonks-cpp PROPERTIES
+            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${SPLONKS_IOS_DEVELOPMENT_TEAM}"
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${SPLONKS_IOS_CODE_SIGN_IDENTITY}"
+            XCODE_ATTRIBUTE_CODE_SIGN_STYLE "${SPLONKS_IOS_CODE_SIGN_STYLE}"
+        )
+    endif()
+    add_custom_command(TARGET splonks-cpp POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+            "$<TARGET_BUNDLE_DIR:splonks-cpp>/assets"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/data"
+            "$<TARGET_BUNDLE_DIR:splonks-cpp>/data"
+        COMMENT "Copying Splonks content into iOS app bundle"
+    )
+endif()
+
+if (NOT ANDROID AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
 add_executable(
     gubsy_import_smoke
     tools/gubsy_import_smoke.cpp
@@ -505,4 +596,5 @@ if (BUILD_TESTING)
     add_test(NAME gubsy_import_smoke COMMAND gubsy_import_smoke)
     add_test(NAME gubsy_binds_smoke COMMAND gubsy_binds_smoke)
     add_test(NAME gubsy_shell_smoke COMMAND splonks-cpp --check-gubsy-shell-smoke)
+endif()
 endif()
