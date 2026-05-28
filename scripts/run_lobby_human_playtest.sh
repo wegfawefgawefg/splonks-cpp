@@ -24,7 +24,7 @@ esac
 
 usage() {
     printf '%s\n' \
-        "Usage: scripts/run_lobby_human_playtest.sh [--no-build] [--no-roomd] [--init-verdict]" \
+        "Usage: scripts/run_lobby_human_playtest.sh [--no-build] [--no-roomd] [--init-verdict] [--fill-verdict]" \
         "" \
         "Starts local gubsy-roomd plus two Splonks windows for the lobby" \
         "human playtest checklist." \
@@ -37,6 +37,10 @@ usage() {
         "  SPLONKS_I3_OUTPUT      Optional i3 output for the workspace." \
         "  SDL_VIDEODRIVER        Defaults to x11 when DISPLAY is set." \
         "" \
+        "Options:" \
+        "  --init-verdict         Create logs/lobby_human_playtest_verdict.json if missing." \
+        "  --fill-verdict         Prompt for the verdict after both windows close, then audit it." \
+        "" \
         "Checklist: docs/lobby_human_playtest_checklist.md" \
         "Verdict: logs/lobby_human_playtest_verdict.json"
 }
@@ -44,6 +48,7 @@ usage() {
 build=1
 start_roomd=1
 init_verdict=0
+fill_verdict=0
 while (($#)); do
     case "$1" in
         --no-build)
@@ -55,6 +60,11 @@ while (($#)); do
             shift
             ;;
         --init-verdict)
+            init_verdict=1
+            shift
+            ;;
+        --fill-verdict)
+            fill_verdict=1
             init_verdict=1
             shift
             ;;
@@ -70,7 +80,7 @@ while (($#)); do
     esac
 done
 
-if ((init_verdict != 0)); then
+init_verdict_file() {
     mkdir -p "${repo_root}/logs"
     verdict_path="${repo_root}/logs/lobby_human_playtest_verdict.json"
     if [[ -e "${verdict_path}" ]]; then
@@ -79,7 +89,19 @@ if ((init_verdict != 0)); then
         cp "${repo_root}/docs/lobby_human_playtest_verdict_template.json" "${verdict_path}"
         printf 'Initialized verdict JSON: %s\n' "${verdict_path}"
     fi
+}
+
+if ((init_verdict != 0)); then
+    init_verdict_file
 fi
+
+finish_verdict() {
+    if ((fill_verdict == 0)); then
+        return 0
+    fi
+    "${script_dir}/fill_lobby_human_playtest_verdict.py"
+    "${script_dir}/summarize_lobby_human_playtest.py"
+}
 
 if [ -n "${DISPLAY:-}" ] && [ -z "${SDL_VIDEODRIVER:-}" ]; then
     export SDL_VIDEODRIVER=x11
@@ -103,6 +125,7 @@ fi
 
 mkdir -p "${repo_root}/logs"
 roomd_pid=""
+# shellcheck disable=SC2317 # Called by the EXIT trap.
 cleanup() {
     if [[ -n "${roomd_pid}" ]]; then
         kill "${roomd_pid}" >/dev/null 2>&1 || true
@@ -153,8 +176,10 @@ if ! command -v i3-msg >/dev/null 2>&1; then
     launch_child "host-window" 41210
     sleep 0.4
     launch_child "client-window" 41211
-    wait
-    exit 0
+    playtest_status=0
+    wait || playtest_status=$?
+    finish_verdict
+    exit "${playtest_status}"
 fi
 
 workspace="${SPLONKS_I3_WORKSPACE:-2}"
@@ -175,4 +200,7 @@ i3-msg "[title=\"${window_title}\"] floating disable" >/dev/null || true
 i3-msg "[title=\"${window_title}\"] focus" >/dev/null || true
 i3-msg "layout splitv" >/dev/null
 
-wait
+playtest_status=0
+wait || playtest_status=$?
+finish_verdict
+exit "${playtest_status}"

@@ -10,7 +10,7 @@ Splonks instances.
 Run:
 
 ```sh
-scripts/run_lobby_human_playtest.sh --init-verdict
+scripts/run_lobby_human_playtest.sh --fill-verdict
 ```
 
 The launcher builds Splonks if needed, starts a local `gubsy-roomd`, sets
@@ -18,8 +18,10 @@ The launcher builds Splonks if needed, starts a local `gubsy-roomd`, sets
 Use one as host and one as client.
 
 It also initializes `logs/lobby_human_playtest_verdict.json` from
-`docs/lobby_human_playtest_verdict_template.json` when `--init-verdict` is set.
-After the playtest, fill and verify that verdict with:
+`docs/lobby_human_playtest_verdict_template.json` when `--init-verdict` or
+`--fill-verdict` is set. With `--fill-verdict`, it prompts for the verdict and
+runs the audit after both game windows close. You can also run those steps
+manually:
 
 ```sh
 scripts/fill_lobby_human_playtest_verdict.py
