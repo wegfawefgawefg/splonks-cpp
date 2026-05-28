@@ -118,8 +118,10 @@ Status:
 - Gubsy also rejects full/in-progress room joins before opening realtime
   transport. `lobby_config_smoke` verifies those cases do not validate config,
   apply config, or call join transport.
-- Follow-up remains: detect the current host's own public room in `Browse
-  Servers`, mark it unavailable/host-owned, and verify it cannot be selected.
+- The browser now detects the current host's own public room, badges it as
+  `YOUR ROOM`, marks it unavailable, and does not attach a join action.
+- `lobby_online_smoke` verifies a host cannot join its own public room and that
+  the rejection does not leave the hosted session.
 
 ## Desired Host Semantics
 
@@ -206,11 +208,15 @@ Status:
 - `lobby_online_smoke` verifies public rehosting leaves the previous room,
   restarts host transport, keeps the new room online, and removes the old room
   from the public list when the room code changes.
+- The top-level lobby now exposes `Stop Hosting`/`Leave Session` while online,
+  so the host or joined client can leave without re-entering host setup.
+- Gubsy now leaves the current online session before joining another direct or
+  public game.
+- `lobby_online_smoke` verifies host-then-join leaves the old hosted session,
+  connects to the new room, and becomes a non-host client.
 - Follow-up remains: expose this behavior more clearly in UI copy and add a
   focused multi-host smoke if we need stronger proof that separate host
-  processes list as separate public rooms. The lobby also needs a clearer
-  bottom action for stopping an active hosted session, plus smoke coverage that
-  host-then-join leaves the old session before connecting as a client.
+  processes list as separate public rooms.
 
 ### Hosted-Lobby Status
 
@@ -469,12 +475,9 @@ Checklist:
 11. Fix client-side start-game behavior and waiting-for-host messaging.
 12. Fix the joined-client movement and host-triggered restart ownership
     regressions.
-13. Disable the current host's own public room in `Browse Servers`, add a clear
-    lobby-level stop-hosting control, and make host-then-join leave the old
-    hosted session first.
-14. Refine top-level lobby copy so `Players` is the players card title and
+13. Refine top-level lobby copy so `Players` is the players card title and
     session/backend state stays in the status area.
-15. Add smoke coverage for browser-published host/join and joined-client
+14. Add smoke coverage for browser-published host/join and joined-client
     movement after game start.
 
 ## Open Questions
