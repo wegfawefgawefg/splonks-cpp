@@ -11,6 +11,7 @@
 #include <gubsy/lobby/state.hpp>
 #include <gubsy/runtime.hpp>
 #include <iostream>
+#include <memory>
 #include <SDL3/SDL_scancode.h>
 #include <src/gubsy_runtime_internal.hpp>
 #include <src/menu/menu_system_state.hpp>
@@ -365,6 +366,46 @@ bool CheckPeerPlayLeavesStaleTransition() {
         state.pause) {
         std::cerr << "Gubsy shell smoke failed: peer Play did not leave stale transition: "
                   << message << '\n';
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    gubsy_shell::Shutdown(shell);
+    return true;
+}
+
+bool CheckReadyPeerAutoLeavesStaleTransition() {
+    State state = State::New();
+    gubsy_shell::Shell shell;
+    if (!gubsy_shell::InitHeadless(shell, state)) {
+        std::cerr << "Gubsy shell smoke failed: InitHeadless for stale ready peer failed\n";
+        return false;
+    }
+
+    state.SetMode(Mode::StageTransition);
+    state.net_session.role = network::NetRole::Peer;
+    state.net_session.input_lockstep_enabled = true;
+    state.net_session.local_player_id = 2;
+    state.net_session.quest_id = "classic";
+    state.net_session.quest_stage_id = "classic_mines_1";
+    state.net_transport =
+        std::make_unique<network::NetTransportRuntime>(network::NetTransportRuntime::New());
+    state.net_transport->join_request_pending = false;
+
+    EngineState& engine = gubsy_runtime_engine(shell.runtime);
+    engine.lobby.online = true;
+    engine.lobby.is_host = false;
+    engine.lobby.room_code = "ROOM1";
+    engine.lobby.contract.session_phase = "in_game";
+    engine.lobby.contract.realtime_endpoint = "127.0.0.1:35355";
+
+    gubsy_shell::UpdateRuntime(shell, 0.016F);
+    if (state.mode != Mode::Playing ||
+        state.pending_stage_transition.has_value() ||
+        state.game_over ||
+        state.pause ||
+        gubsy_shell::InGameMenuOpen(shell)) {
+        std::cerr << "Gubsy shell smoke failed: ready peer did not auto-leave stale transition\n";
         gubsy_shell::Shutdown(shell);
         return false;
     }
@@ -1150,7 +1191,7 @@ bool CheckGubsyShellSmoke() {
         return CheckOfflineStart() && CheckInGameMenuShell() && CheckInGameRestartCommand() &&
                CheckNetworkRestartCommandDoesNotDesync() && CheckPeerInputMapping() &&
                CheckPeerGameplayInputAfterStart() && CheckPeerPlayLeavesStaleTransition() &&
-               CheckInGameQuitCommand() && CheckHostJoin() &&
+               CheckReadyPeerAutoLeavesStaleTransition() && CheckInGameQuitCommand() && CheckHostJoin() &&
                CheckDirectHostJoinViaMenu() && CheckMultiLocalPlayerJoin() &&
                CheckPublicMultiLocalPlayerJoin() && CheckDirectRemoteMemberSync();
     } catch (const std::exception& e) {

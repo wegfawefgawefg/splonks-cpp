@@ -448,6 +448,21 @@ bool DirectPeerReadyToPlay(const State& state) {
            !state.net_session.quest_stage_id.empty();
 }
 
+void EnterHostedGameFromStaleTransition(Shell& shell) {
+    if (shell.state == nullptr)
+        return;
+    State& state = *shell.state;
+    if (state.mode != Mode::StageTransition || state.pending_stage_transition.has_value())
+        return;
+    state.pause = false;
+    state.game_over = false;
+    state.scene_frame = 0;
+    state.SetMode(Mode::Playing);
+    gubsy_add_alert(shell.runtime, "Entering hosted game", GubsyAlertSeverity::Success);
+    gubsy_clear_menu_stack(shell.runtime);
+    SuppressGameplayInputAfterMenu(state);
+}
+
 void SyncLobbySessionPhase(Shell& shell) {
     if (shell.state == nullptr)
         return;
@@ -458,7 +473,7 @@ void SyncLobbySessionPhase(Shell& shell) {
         return;
     }
 
-    const State& state = *shell.state;
+    State& state = *shell.state;
     if (!lobby.room_code.empty() && !lobby.is_host) {
         if (state.net_session.role != network::NetRole::Peer) {
             shell.joined_room_host_in_game = false;
@@ -467,6 +482,8 @@ void SyncLobbySessionPhase(Shell& shell) {
         shell.joined_room_host_in_game =
             shell.joined_room_host_in_game || session_contract_is_in_game(lobby.contract);
         const bool client_ready = shell.joined_room_host_in_game && DirectPeerReadyToPlay(state);
+        if (client_ready)
+            EnterHostedGameFromStaleTransition(shell);
         (void)gubsy_set_lobby_session_phase(shell.runtime, client_ready ? "in_game" : "lobby");
         return;
     }
@@ -478,6 +495,8 @@ void SyncLobbySessionPhase(Shell& shell) {
                   state.mode == Mode::GameOver;
     } else if (state.net_session.role == network::NetRole::Peer) {
         in_game = DirectPeerReadyToPlay(state);
+        if (in_game)
+            EnterHostedGameFromStaleTransition(shell);
     }
     (void)gubsy_set_lobby_session_phase(shell.runtime, in_game ? "in_game" : "lobby");
 }
