@@ -174,6 +174,18 @@ If a different host starts a different game:
 - The room browser should show both public joinable rooms if both are public and
   still alive.
 
+Status:
+
+- Gubsy now leaves any existing online session before starting a new direct or
+  public host session, so pressing host again replaces the current host session
+  instead of leaving the old room/transport alive.
+- `lobby_online_smoke` verifies public rehosting leaves the previous room,
+  restarts host transport, keeps the new room online, and removes the old room
+  from the public list when the room code changes.
+- Follow-up remains: expose this behavior more clearly in UI copy and add a
+  focused multi-host smoke if we need stronger proof that separate host
+  processes list as separate public rooms.
+
 ### Hosted-Lobby Status
 
 After hosting, the host should see clear state such as:
