@@ -4,8 +4,11 @@
 #include "network/net_lobby.hpp"
 
 #include <cstdint>
+#include <gubsy/input/types.hpp>
 #include <gubsy/runtime.hpp>
 #include <iostream>
+#include <SDL3/SDL_scancode.h>
+#include <src/gubsy_runtime_internal.hpp>
 #include <string>
 #include <string_view>
 
@@ -222,6 +225,52 @@ bool CheckPeerInputMapping() {
     if (!state.use_external_local_input_frames ||
         state.external_local_input_frames.size() < 2) {
         std::cerr << "Gubsy shell smoke failed: peer input did not map to assigned player id\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    gubsy_shell::Shutdown(shell);
+    return true;
+}
+
+bool CheckPeerGameplayInputAfterStart() {
+    State state = State::New();
+    gubsy_shell::Shell shell;
+    if (!gubsy_shell::InitHeadless(shell, state)) {
+        std::cerr << "Gubsy shell smoke failed: InitHeadless for peer gameplay input failed\n";
+        return false;
+    }
+
+    state.SetMode(Mode::Playing);
+    state.net_session.role = network::NetRole::Peer;
+    state.net_session.input_lockstep_enabled = true;
+    state.net_session.local_player_id = 2;
+    state.players.EnsureLocalPlayer(2, "Player 2", true);
+    state.suppress_gameplay_input = false;
+    state.gameplay_input_suppression_frames = 0;
+
+    EngineState& gubsy_engine = gubsy_runtime_engine(shell.runtime);
+    gubsy_engine.device_state.keyboard[static_cast<std::size_t>(SDL_SCANCODE_D)] = 1;
+
+    gubsy_shell::ApplyLobbyGameplayInput(shell);
+    if (!state.use_external_local_input_frames ||
+        state.external_local_input_frames.size() < 2 ||
+        !state.external_local_input_frames[1].right) {
+        std::cerr << "Gubsy shell smoke failed: joined-client gameplay input did not reach "
+                     "assigned player 2 after start\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    if (state.external_local_input_frames[0].right) {
+        std::cerr << "Gubsy shell smoke failed: joined-client gameplay input leaked to host "
+                     "player 1\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    if (state.suppress_gameplay_input || state.gameplay_input_suppression_frames != 0 ||
+        gubsy_shell::InGameMenuOpen(shell)) {
+        std::cerr << "Gubsy shell smoke failed: gameplay input remained menu-suppressed after "
+                     "start\n";
         gubsy_shell::Shutdown(shell);
         return false;
     }
@@ -514,7 +563,8 @@ bool CheckGubsyShellSmoke() {
     try {
         return CheckOfflineStart() && CheckInGameMenuShell() && CheckInGameRestartCommand() &&
                CheckNetworkRestartCommandDoesNotDesync() && CheckPeerInputMapping() &&
-               CheckInGameQuitCommand() && CheckHostJoin() && CheckDirectHostJoinViaMenu();
+               CheckPeerGameplayInputAfterStart() && CheckInGameQuitCommand() && CheckHostJoin() &&
+               CheckDirectHostJoinViaMenu();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';
         return false;

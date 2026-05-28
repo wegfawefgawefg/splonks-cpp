@@ -496,6 +496,10 @@ Status:
   for player IDs not assigned to their endpoint.
 - Added focused smoke coverage for the restart-style fresh network stage reload
   preserving host/local and peer/local ownership.
+- Added Gubsy shell smoke coverage for joined-client gameplay input after
+  entering `Playing`: the peer's Gubsy-bound movement input maps to assigned
+  player 2, does not leak to host player 1, and does not remain suppressed by
+  menu state.
 - The broad `--check-input-lockstep-smoke` still has a separate frame-0 input
   flag mismatch and remains a follow-up determinism test issue.
 
