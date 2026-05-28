@@ -43,6 +43,8 @@ joined-client experience need a product pass and a networking correctness pass.
 - Decide whether in-progress games remain joinable. If yes, they should stay
   visible while joinable. If no, the UI should show that they are in-progress
   and unavailable rather than silently disappearing.
+- Current decision: in-progress public rooms stay visible, but are not joinable
+  until we intentionally support mid-run join.
 
 ### Top-Level Lobby Navigation
 
@@ -121,6 +123,9 @@ Status:
 - Gubsy also rejects full/in-progress room joins before opening realtime
   transport. `lobby_config_smoke` verifies those cases do not validate config,
   apply config, or call join transport.
+- `room_smoke` verifies public in-progress rooms remain in `/rooms`, so the
+  dashboard and game browser can show them as unavailable instead of silently
+  dropping them.
 - The browser now detects the current host's own public room, badges it as
   `YOUR ROOM`, marks it unavailable, and does not attach a join action.
 - Own hosted room cards now use stronger red/grey unavailable styling and still
@@ -499,8 +504,19 @@ Checklist:
 - Confirm host update token enforcement is not rejecting updates silently.
 - Confirm second host creates a separate room rather than overwriting the first
   due to shared identity/default room code.
-- Confirm in-progress rooms remain listed if they are intended to be joinable.
+- Confirm in-progress rooms remain listed if they are intended to be visible.
 - Improve room server logs around create/update/list filtering decisions.
+
+Status:
+
+- `lobby_online_smoke` verifies public hosts are listed with `privacy > 0`,
+  direct/private hosts have no `/rooms` listing, rehosting removes stale rooms,
+  and multiple public hosts create separate room records.
+- `room_smoke` verifies private room records are hidden from `/rooms` while
+  still fetchable by direct room code, and verifies public in-progress rooms
+  remain in `/rooms`.
+- `gubsy-roomd` now logs `room_list` events with total/public/hidden counts so
+  dashboard filtering can be diagnosed from structured logs.
 
 ## Proposed Implementation Order
 
@@ -526,8 +542,6 @@ Checklist:
 
 ## Open Questions
 
-- Should in-progress public games remain joinable, visible but disabled, or
-  hidden?
 - Do we want invite codes separate from public browser visibility?
 - What persistent identity should a client have for kick/ban?
 - Should remote player management be available only to the host, or also to
