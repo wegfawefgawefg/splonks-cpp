@@ -361,3 +361,15 @@ Still needs manual verification:
   and verify the failed state, joined state, and alerts are understandable.
 - Verify in-game alerts are visible with menus closed for join, leave, kick,
   and host-start events.
+
+Latest local validation:
+
+- Passed: `gubsy ./scripts/room_smoke.sh`.
+- Passed: `gubsy ./scripts/lobby_online_smoke.sh`.
+- Passed after smoke update: `splonks-cpp ./scripts/build.sh`.
+- Passed after smoke update: `splonks-cpp ctest --test-dir build --output-on-failure -R "gubsy_shell_smoke|gubsy_import_smoke|gubsy_binds_smoke"`.
+- Attempted: `splonks-cpp ./scripts/validate_lockstep_live.py --launch-pair --profile same-house --ready-timeout 60 --report-json logs/lobbywork_lockstep_validate_report.json`.
+  This launched SDL-dummy host/peer instances and opened debug-control ports,
+  but did not prove completion because both endpoints stayed at
+  `join_barrier.phase=waiting-for-catchup` until timeout. Treat this as
+  remaining live-direct validation work, not as a passing result.
