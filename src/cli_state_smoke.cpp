@@ -360,7 +360,11 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << " ent_vid "
                    << (a.ent_vid.has_value() ? static_cast<int>(a.ent_vid->id) : -1)
                    << "/"
-                   << (b.ent_vid.has_value() ? static_cast<int>(b.ent_vid->id) : -1);
+                   << (b.ent_vid.has_value() ? static_cast<int>(b.ent_vid->id) : -1)
+                   << " input_flags " << network::PackInputFrame(a.input_frame)
+                   << "/" << network::PackInputFrame(b.input_frame)
+                   << " previous_flags " << network::PackInputFrame(a.previous_input_frame)
+                   << "/" << network::PackInputFrame(b.previous_input_frame);
             return output.str();
         }
     }

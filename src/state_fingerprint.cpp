@@ -259,7 +259,6 @@ void AddPlayerRegistryFingerprint(FingerprintWriter& writer, const PlayerRegistr
             writer.AddVid(*slot.ent_vid);
         }
         writer.AddBool(slot.connected);
-        writer.AddPod(static_cast<std::uint16_t>(slot.preferred_spawn_type));
         AddInputFrameFingerprint(writer, slot.input_frame);
         AddInputFrameFingerprint(writer, slot.previous_input_frame);
     }
