@@ -733,6 +733,11 @@ void BeginDebugFrame(Shell& shell, float dt) {
     gubsy_begin_debug_frame(shell.runtime, dt);
 }
 
+void UpdateRuntime(Shell& shell, float dt) {
+    SyncDirectNetworkMembers(shell);
+    gubsy_update_runtime(shell.runtime, dt);
+}
+
 bool OpenInGameMenu(Shell& shell) {
     if (shell.state == nullptr)
         return false;

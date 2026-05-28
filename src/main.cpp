@@ -466,6 +466,8 @@ int SplonksMain(int argc, char** argv) {
                 splonks::gubsy_shell::UpdateMenu(gubsy_shell, state, dt,
                                                  static_cast<int>(graphics.window_dims.x),
                                                  static_cast<int>(graphics.window_dims.y));
+            } else {
+                splonks::gubsy_shell::UpdateRuntime(gubsy_shell, dt);
             }
             debug_control_server.Step(state);
             const std::uint64_t step_end_counter = SDL_GetPerformanceCounter();

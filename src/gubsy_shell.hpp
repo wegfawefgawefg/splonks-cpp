@@ -42,6 +42,7 @@ bool DrawFrameToWindow(Shell& shell);
 void PresentFrame(Shell& shell);
 int ConfiguredFrameCapFps(Shell& shell);
 void BeginDebugFrame(Shell& shell, float dt);
+void UpdateRuntime(Shell& shell, float dt);
 bool OpenInGameMenu(Shell& shell);
 void CloseInGameMenu(Shell& shell);
 bool InGameMenuOpen(Shell& shell);
