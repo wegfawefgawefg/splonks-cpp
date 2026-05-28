@@ -273,6 +273,19 @@ The alert system should avoid leaking confusing internal IDs when a nicer name
 is available, but internal client IDs are acceptable as a fallback during early
 development.
 
+Status:
+
+- Gubsy now refreshes the current room member snapshot after public room create,
+  public room join, and successful online heartbeats.
+- Heartbeat membership refresh compares old and new member IDs and emits
+  lightweight joined/left alerts using display names when available, with
+  member IDs as fallback.
+- `lobby_online_smoke` verifies the host sees membership grow when a guest joins
+  and shrink when the guest leaves, and verifies joined/left alerts are emitted.
+- Follow-up remains: direct-IP sessions do not have room-service membership
+  records yet, and alerts still use room-member/client-level identities rather
+  than per-player names.
+
 ## Client Experience
 
 ### Joined Client Should Not Control Host Settings
