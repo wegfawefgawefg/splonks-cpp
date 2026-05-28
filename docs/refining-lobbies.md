@@ -223,9 +223,12 @@ Status:
   offline state, direct hosting, public hosting via `gubsy-roomd`, joined direct
   game, or joined public game.
 - The status includes the room name, room code when present, realtime endpoint
-  when present, and local-player count.
-- Follow-up remains: add remote player/client counts and richer joinability
-  state once remote member listing is surfaced in the player menu.
+  when present, room-service player count/max players, lobby/full/in-game
+  joinability state, local-player count, and public-room remote client count.
+- Joined public clients also see the host display name when room-service member
+  data is available.
+- `lobby_online_smoke` verifies room-service player counts are cached and
+  refreshed on host, join, leave, rejoin, and kick.
 
 ## Players Menu
 
