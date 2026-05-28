@@ -96,6 +96,16 @@ the only join path.
   - Direct endpoint if exposed.
   - State: lobby, in progress, full, stale, private, or unavailable.
 
+Status:
+
+- The Gubsy `Browse Servers` screen now has a normal empty state instead of
+  blank cards when no public games are listed.
+- Room cards now show room name, host fallback, player count/max players,
+  lobby/in-game state, `gubsy-roomd` backend/source, and realtime endpoint when
+  one is exposed.
+- Follow-up remains: decide whether in-progress/full rooms should be joinable,
+  visible but disabled, or hidden.
+
 ## Desired Host Semantics
 
 ### Room Name
