@@ -450,7 +450,9 @@ void SyncLobbySessionPhase(Shell& shell) {
         return;
 
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
-    if (!lobby.online || !lobby.room_code.empty())
+    if (!lobby.online)
+        return;
+    if (!lobby.room_code.empty() && !lobby.is_host)
         return;
 
     const State& state = *shell.state;
