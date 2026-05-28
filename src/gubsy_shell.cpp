@@ -769,6 +769,10 @@ void RenderMenu(Shell& shell, SDL_Renderer* renderer, int screen_width, int scre
     gubsy_render_menu(shell.runtime, renderer, screen_width, screen_height);
 }
 
+void RenderAlerts(Shell& shell, SDL_Renderer* renderer, int screen_width) {
+    gubsy_render_alerts(shell.runtime, renderer, screen_width);
+}
+
 void UpdateTitleMenu(Shell& shell, State& state, Graphics& graphics, float dt, int screen_width,
                      int screen_height) {
     if (shell.direct_join_pending) {

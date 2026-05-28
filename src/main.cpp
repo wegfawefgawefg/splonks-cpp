@@ -483,6 +483,8 @@ int SplonksMain(int argc, char** argv) {
                                                  static_cast<int>(graphics.window_dims.x),
                                                  static_cast<int>(graphics.window_dims.y));
             }
+            splonks::gubsy_shell::RenderAlerts(gubsy_shell, renderer,
+                                               static_cast<int>(graphics.window_dims.x));
             const std::uint64_t render_end_counter = SDL_GetPerformanceCounter();
             splonks::UpdateDebugAudioBrush(debug, state, audio, graphics);
             const std::uint64_t imgui_begin_counter = SDL_GetPerformanceCounter();

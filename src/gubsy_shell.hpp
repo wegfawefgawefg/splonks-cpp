@@ -47,6 +47,7 @@ void CloseInGameMenu(Shell& shell);
 bool InGameMenuOpen(Shell& shell);
 void UpdateMenu(Shell& shell, const State& state, float dt, int screen_width, int screen_height);
 void RenderMenu(Shell& shell, SDL_Renderer* renderer, int screen_width, int screen_height);
+void RenderAlerts(Shell& shell, SDL_Renderer* renderer, int screen_width);
 void UpdateTitleMenu(Shell& shell, State& state, Graphics& graphics, float dt,
                      int screen_width, int screen_height);
 void RenderTitleMenu(Shell& shell, SDL_Renderer* renderer, int screen_width, int screen_height);
