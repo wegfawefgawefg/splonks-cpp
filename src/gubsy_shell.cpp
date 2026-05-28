@@ -475,6 +475,7 @@ void SyncLobbySessionPhase(Shell& shell) {
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
     if (!lobby.online) {
         shell.joined_room_host_in_game = false;
+        (void)gubsy_set_lobby_player_roster_locked(shell.runtime, false);
         return;
     }
 
@@ -490,6 +491,8 @@ void SyncLobbySessionPhase(Shell& shell) {
         if (client_ready)
             EnterHostedGameFromStaleTransition(shell);
         (void)gubsy_set_lobby_session_phase(shell.runtime, client_ready ? "in_game" : "lobby");
+        (void)gubsy_set_lobby_player_roster_locked(shell.runtime,
+                                                   shell.joined_room_host_in_game);
         return;
     }
     shell.joined_room_host_in_game = false;
@@ -504,6 +507,7 @@ void SyncLobbySessionPhase(Shell& shell) {
             EnterHostedGameFromStaleTransition(shell);
     }
     (void)gubsy_set_lobby_session_phase(shell.runtime, in_game ? "in_game" : "lobby");
+    (void)gubsy_set_lobby_player_roster_locked(shell.runtime, in_game);
 }
 
 void SyncDirectJoinStatus(Shell& shell) {

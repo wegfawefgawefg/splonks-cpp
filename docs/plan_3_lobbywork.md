@@ -468,6 +468,15 @@ Latest local validation:
   lowered onto the typed text baseline, and shell lobby status uses top-right
   wrapped/right-aligned copy. Splonks' embedded Gubsy layout copy also includes
   the new top-right status slot.
+- Player roster changes should be locked once an online host is actively
+  in-game. The intended shortcut UX is host-authoritative but simple: local
+  add/remove is available while offline, while hosting a setup lobby, and while
+  joined to a host that has not started yet. Once the host starts active play,
+  Gubsy disables `Add Local Player` and `Remove Player` with explanatory copy.
+  Players who want multiple local players on one client should add them before
+  joining or before the host starts. Runtime add/remove during active play is a
+  future protocol task because it needs host approval, cap checks, topology
+  broadcast, snapshot/join-barrier handling, and pending/rejected UI states.
 - Passed after text/status update: `gubsy ./scripts/build.sh`.
 - Passed after text/status update:
   `gubsy GUBSY_RENDER_SMOKE=1 ./scripts/lobby_online_smoke.sh`.
