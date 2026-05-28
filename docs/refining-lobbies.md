@@ -107,6 +107,9 @@ the only join path.
 - If a host chooses to join another server from any join path, the current
   hosted session should be stopped/left first so the host does not keep a stale
   public room or live direct host while becoming somebody else's client.
+- Joining another server while hosting should be treated exactly like pressing
+  `Stop Hosting` first, then joining. This needs to apply to direct-IP joins and
+  room-browser joins so there is no path that leaves a background host running.
 
 Status:
 
@@ -210,6 +213,9 @@ If the same running host application presses `Host` again:
   the lobby without needing to re-enter the host setup screen. Prefer a stable
   bottom-lobby button placement so it is reachable from the main hosted-lobby
   state.
+- The hosted lobby should expose `Stop Hosting` as a first-class bottom command,
+  not as a hidden submenu action. The label should be visible while hosting and
+  should make it obvious that the current public/direct session will be closed.
 - Joining another game while hosting should first stop/leave the current hosted
   session.
 
@@ -283,6 +289,11 @@ Status:
   appear as grey helper text while session/backend state appears as the row
   title. The `Players` command should read as the command, with local/remote
   counts as supporting detail only.
+- The `Players` row should never mix command text and session state hierarchy.
+  `Players` must be the primary/title text on that row. Session state such as
+  `Currently Public Hosting via gubsy-roomd` belongs in the hosted-lobby status
+  area, and row secondary text should only summarize player counts or the action
+  the row opens.
 
 ## Players Menu
 
@@ -536,7 +547,10 @@ Status:
     regressions.
 13. Polish hosted-session leave controls, own-room disabled styling in the
     browser, and `Players` row/status text hierarchy after the next live UI
-    pass.
+    pass. Explicitly verify that own public rooms are red/grey and unclickable,
+    `Stop Hosting` is visible at the bottom of the hosted lobby, joining another
+    game stops the current host first, and `Players` remains the row title
+    instead of being demoted beneath backend/session state.
 14. Add smoke coverage for browser-published host/join and joined-client
     movement after game start.
 
