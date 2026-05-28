@@ -263,6 +263,16 @@ If a player is joined to somebody else's lobby:
 - The client should see who the host is and what backend/room they joined.
 - The client should see player counts and lobby membership.
 
+Status:
+
+- Gubsy game settings already mark host-owned rows read-only when the runtime
+  is joined as a non-host client.
+- The top-level lobby now labels joined clients as joined/waiting and prevents
+  them from opening the host-game flow while they are connected to another
+  host.
+- Follow-up remains: show fuller host/backend/player-count context in the
+  top-level lobby once remote member/client listing is available.
+
 ### Start Game Button For Joined Clients
 
 The `Start Game` button is currently available to joined clients. When pressed,
@@ -284,6 +294,15 @@ Possible future behavior:
 - Clients can toggle `Ready`.
 - Host sees ready count.
 - Host starts when ready, or forces start.
+
+Status:
+
+- Gubsy now blocks non-host joined clients from starting the game through both
+  the lobby menu and `gubsy_start_lobby_game`.
+- Joined clients see `Waiting For Host` in the top-level lobby action slot, and
+  the public API returns `Waiting For Host To Start` without invoking the start
+  callback.
+- `public_api_smoke` covers the non-host joined-client start rejection.
 
 ## Client Movement Regression
 
