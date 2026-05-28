@@ -214,9 +214,10 @@ Status:
   public game.
 - `lobby_online_smoke` verifies host-then-join leaves the old hosted session,
   connects to the new room, and becomes a non-host client.
-- Follow-up remains: expose this behavior more clearly in UI copy and add a
-  focused multi-host smoke if we need stronger proof that separate host
-  processes list as separate public rooms.
+- `lobby_online_smoke` verifies two separate public host processes list as two
+  separate public rooms before one host joins the other.
+- Follow-up remains: expose this behavior more clearly in UI copy if further
+  playtesting shows the current labels are not clear enough.
 
 ### Hosted-Lobby Status
 
