@@ -435,9 +435,7 @@ void StepSingleTickWithMode(
     SimulationTickMode mode
 ) {
     if (mode == SimulationTickMode::Normal &&
-        (state.mode == Mode::Playing ||
-         state.mode == Mode::StageTransition ||
-         state.mode == Mode::GameOver) &&
+        (state.mode == Mode::Playing || state.mode == Mode::GameOver) &&
         network::IsInputLockstepActive(state) &&
         !network::PrepareInputLockstepFrame(state, graphics)) {
         return;

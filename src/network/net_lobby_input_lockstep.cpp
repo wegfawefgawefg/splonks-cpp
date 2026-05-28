@@ -462,6 +462,45 @@ void QueueJoinBarrierTopologyAck(State& state, PlayerId target_peer_id) {
     }
 }
 
+std::vector<PlayerId> JoinBarrierEndpointTargetsForPlayers(
+    const NetTransportRuntime& transport,
+    const std::vector<PlayerId>& player_ids
+) {
+    std::vector<PlayerId> targets;
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        if (remote.player_ids.empty()) {
+            continue;
+        }
+        const bool endpoint_has_joined_player =
+            std::any_of(
+                remote.player_ids.begin(),
+                remote.player_ids.end(),
+                [&](PlayerId player_id) {
+                    return std::find(player_ids.begin(), player_ids.end(), player_id) !=
+                           player_ids.end();
+                }
+            );
+        if (!endpoint_has_joined_player) {
+            continue;
+        }
+        const PlayerId target = remote.player_ids.front();
+        if (target != kInvalidPlayerId &&
+            std::find(targets.begin(), targets.end(), target) == targets.end()) {
+            targets.push_back(target);
+        }
+    }
+
+    if (targets.empty()) {
+        for (const PlayerId player_id : player_ids) {
+            if (player_id != kInvalidPlayerId) {
+                targets.push_back(player_id);
+                break;
+            }
+        }
+    }
+    return targets;
+}
+
 std::optional<PlayerId> PopJoinBarrierPeer(State& state) {
     std::vector<PlayerId>& queue = state.net_session.join_barrier_queue;
     if (queue.empty()) {
@@ -1932,8 +1971,13 @@ void BeginJoinBarrierTopologyChange(
     if (state.net_session.role != NetRole::Host || joined_player_ids.empty()) {
         return;
     }
+    const std::vector<PlayerId> endpoint_targets =
+        JoinBarrierEndpointTargetsForPlayers(transport, joined_player_ids);
+    if (endpoint_targets.empty()) {
+        return;
+    }
     if (!state.net_session.join_barrier_active) {
-        BeginJoinBarrierCatchup(state, joined_player_ids.front());
+        BeginJoinBarrierCatchup(state, endpoint_targets.front());
     }
 
     std::vector<PlayerId>& joined = state.net_session.join_barrier_joined_player_ids;
@@ -1944,7 +1988,9 @@ void BeginJoinBarrierTopologyChange(
         if (std::find(joined.begin(), joined.end(), player_id) == joined.end()) {
             joined.push_back(player_id);
         }
-        QueueJoinBarrierPeer(state, player_id);
+    }
+    for (const PlayerId target_peer_id : endpoint_targets) {
+        QueueJoinBarrierPeer(state, target_peer_id);
     }
 
     // If another peer joins while a catchup snapshot is already in flight, the

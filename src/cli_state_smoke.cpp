@@ -1653,6 +1653,25 @@ bool RunJoinBarrierProtocolSmoke() {
         return false;
     }
 
+    State multi_local_host = State::New();
+    multi_local_host.net_session.role = network::NetRole::Host;
+    multi_local_host.net_session.local_player_id = 1;
+    multi_local_host.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    network::NetTransportRuntime multi_local_transport = network::NetTransportRuntime::New();
+    multi_local_transport.remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {3, 4, 5},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39205},
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = 100,
+    });
+    network::BeginJoinBarrierTopologyChange(multi_local_host, multi_local_transport, {3, 4, 5});
+    if (multi_local_host.net_session.join_barrier_queue.size() != 1 ||
+        multi_local_host.net_session.join_barrier_queue[0] != 3 ||
+        multi_local_host.net_session.join_barrier_joined_player_ids.size() != 3) {
+        std::cerr << "join barrier protocol smoke failed: multi-local endpoint queued more than one catchup target\n";
+        return false;
+    }
+
     network::JoinBarrierStatusPacket status;
     status.stage_instance_id = host.net_session.stage_instance_id;
     status.sender_peer_id = static_cast<std::uint32_t>(host.net_session.local_player_id);
