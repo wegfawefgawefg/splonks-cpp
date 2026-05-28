@@ -47,6 +47,19 @@ should be treated as worth fixing, even if they are not addressed immediately:
   `Currently Public Hosting via gubsy-roomd` belongs in the lobby status panel,
   not in the `Players` row title/subtitle hierarchy.
 
+Status:
+
+- `lobby_online_smoke` verifies the own-room browser card has no join action,
+  explains `Hosting Here | Unavailable`, uses red/grey unavailable styling, and
+  cannot be joined by the current host.
+- `lobby_online_smoke` verifies `Stop Hosting` is exposed from the hosted shell
+  lobby bottom command slot.
+- `lobby_online_smoke` now verifies host-then-join cleanup through both direct
+  IP and browser-listed room paths: the old hosted session leaves first, then
+  the runtime becomes a client of the selected room/session.
+- `lobby_online_smoke` verifies the `Players` row hierarchy in public-host,
+  direct-host, and joined-public states.
+
 ### Host Session Screen
 
 - The `Publish To Browser` control appears in a strange horizontal position.
@@ -306,6 +319,8 @@ Status:
   public game.
 - `lobby_online_smoke` verifies host-then-join leaves the old hosted session,
   connects to the new room, and becomes a non-host client.
+- `lobby_online_smoke` verifies this invariant for direct-IP joins and
+  browser-listed room joins, not only room-code joins.
 - `lobby_online_smoke` verifies two separate public host processes list as two
   separate public rooms before one host joins the other.
 - `lobby_online_smoke` verifies the hosted shell lobby exposes `Stop Hosting` in
@@ -704,15 +719,8 @@ Implemented and verified:
 
 Remaining live-playtest polish to re-check before closing this plan:
 
-- Confirm the own-room browser card is visually red/grey enough in the actual
-  game UI, not only unavailable in smoke metadata.
-- Confirm `Stop Hosting` is visible in the bottom hosted-lobby action area
-  during live play.
-- Confirm host-then-join leaves the hosted session from both direct-IP and
-  room-browser paths in live play.
-- Confirm the `Players` row hierarchy reads correctly in the actual rendered
-  lobby: `Players` as the command/title, counts or management copy as subtitle,
-  and hosting/backend state only in the status panel.
+- Run one final rendered/live pass after the next game-session test to confirm
+  the smoke-backed widget state also reads correctly on screen.
 
 Required validation commands:
 
