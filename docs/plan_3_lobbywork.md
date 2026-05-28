@@ -361,6 +361,7 @@ Still needs manual verification:
   `logs/lobby_human_playtest_verdict.json` through
   `scripts/fill_lobby_human_playtest_verdict.py`, then verify it with
   `scripts/summarize_lobby_human_playtest.py`.
+  Final completion should pass `scripts/audit_lobbywork_completion.sh`.
 - Run `gubsy-roomd`, host a public Splonks lobby, join from a second Splonks
   instance through `Browse Servers`, start from the host, and verify the client
   sees `Play` and enters gameplay.
@@ -408,3 +409,7 @@ Latest local validation:
   `splonks-cpp scripts/run_lobby_human_playtest.sh --fill-verdict`.
   The launcher can now prompt for and audit the verdict after both playtest
   windows close.
+- Added completion audit wrapper:
+  `splonks-cpp scripts/audit_lobbywork_completion.sh`.
+  This reruns focused automated evidence and requires the filled human verdict
+  before the plan can be considered complete.

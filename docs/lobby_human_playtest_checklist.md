@@ -28,6 +28,12 @@ scripts/fill_lobby_human_playtest_verdict.py
 scripts/summarize_lobby_human_playtest.py
 ```
 
+For the final goal gate, run:
+
+```sh
+scripts/audit_lobbywork_completion.sh
+```
+
 If testing across two machines, run `gubsy-roomd` on the host machine and start
 both games with the same `GUB_ROOM_SERVER_URL`, for example:
 
@@ -120,3 +126,4 @@ Also verify alerts render over active gameplay with the menu closed.
   `docs/plan_3_lobbywork.md` before marking the goal complete.
 - `scripts/summarize_lobby_human_playtest.py` reports `ok` for the filled
   verdict JSON.
+- `scripts/audit_lobbywork_completion.sh` passes.
