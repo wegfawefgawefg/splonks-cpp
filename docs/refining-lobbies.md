@@ -103,8 +103,13 @@ Status:
 - Room cards now show room name, host fallback, player count/max players,
   lobby/in-game state, `gubsy-roomd` backend/source, and realtime endpoint when
   one is exposed.
-- Follow-up remains: decide whether in-progress/full rooms should be joinable,
-  visible but disabled, or hidden.
+- Full and in-progress rooms now remain visible but are marked unavailable in
+  the browser and do not trigger a join action from the room card.
+- Gubsy also rejects full/in-progress room joins before opening realtime
+  transport. `lobby_config_smoke` verifies those cases do not validate config,
+  apply config, or call join transport.
+- Follow-up remains: add richer visual treatment for unavailable rows if the
+  renderer needs a clearer disabled-card style.
 
 ## Desired Host Semantics
 
