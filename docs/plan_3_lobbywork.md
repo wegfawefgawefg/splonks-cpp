@@ -366,6 +366,10 @@ Latest local validation:
 
 - Passed: `gubsy ./scripts/room_smoke.sh`.
 - Passed: `gubsy ./scripts/lobby_online_smoke.sh`.
+- Passed after render-smoke strengthening: `gubsy GUBSY_RENDER_SMOKE=1 ./scripts/lobby_online_smoke.sh`.
+  This checks rendered/widget placement for Host Public below the host form,
+  browser Search Servers above room cards, bottom Refresh below room cards, and
+  own hosted public rooms as unavailable `YOUR ROOM` rows.
 - Passed after smoke update: `splonks-cpp ./scripts/build.sh`.
 - Passed after smoke update: `splonks-cpp ctest --test-dir build --output-on-failure -R "gubsy_shell_smoke|gubsy_import_smoke|gubsy_binds_smoke"`.
 - Passed after validation launcher update: `splonks-cpp ./scripts/validate_lockstep_live.py --launch-pair --profile same-house --ready-timeout 60 --report-json logs/lobbywork_lockstep_validate_report.json`.
