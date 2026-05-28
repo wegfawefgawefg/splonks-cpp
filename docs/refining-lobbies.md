@@ -105,11 +105,12 @@ Status:
   one is exposed.
 - Full and in-progress rooms now remain visible but are marked unavailable in
   the browser and do not trigger a join action from the room card.
+- The browser now uses explicit room-card badges: joinable rooms show `JOIN`,
+  full rooms show `FULL`, and in-progress rooms show `IN GAME` with muted
+  unavailable-card styling while keeping the room code in the card detail.
 - Gubsy also rejects full/in-progress room joins before opening realtime
   transport. `lobby_config_smoke` verifies those cases do not validate config,
   apply config, or call join transport.
-- Follow-up remains: add richer visual treatment for unavailable rows if the
-  renderer needs a clearer disabled-card style.
 
 ## Desired Host Semantics
 
