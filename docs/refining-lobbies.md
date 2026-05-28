@@ -59,6 +59,10 @@ Status:
   the runtime becomes a client of the selected room/session.
 - `lobby_online_smoke` verifies the `Players` row hierarchy in public-host,
   direct-host, and joined-public states.
+- `GUBSY_RENDER_SMOKE=1 ./scripts/lobby_online_smoke.sh` performs the final
+  rendered pass on a real SDL renderer. It verifies the shell lobby/browser draw
+  nonblank UI, `Players` and `Stop Hosting` render as separate visible widgets,
+  and the host's own browser room renders with red/error unavailable treatment.
 
 ### Host Session Screen
 
@@ -717,15 +721,11 @@ Implemented and verified:
   separate rooms, rehosting removes stale rooms, and in-progress public rooms
   remain visible but unavailable.
 
-Remaining live-playtest polish to re-check before closing this plan:
-
-- Run one final rendered/live pass after the next game-session test to confirm
-  the smoke-backed widget state also reads correctly on screen.
-
 Required validation commands:
 
 - `gubsy`: `./scripts/build.sh`
 - `gubsy`: `./scripts/lobby_online_smoke.sh`
+- `gubsy`: `SDL_VIDEODRIVER=x11 GUBSY_RENDER_SMOKE=1 ./scripts/lobby_online_smoke.sh`
 - `gubsy`: `./scripts/room_smoke.sh`
 - `gubsy`: focused `ctest` for `public_api_smoke`, `lobby_config_smoke`, and
   `lobby_online_smoke`
