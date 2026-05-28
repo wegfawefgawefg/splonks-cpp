@@ -95,6 +95,13 @@ the only join path.
   - Backend/source, such as `gubsy-roomd`.
   - Direct endpoint if exposed.
   - State: lobby, in progress, full, stale, private, or unavailable.
+- If the current runtime is already hosting a public room, its own room may
+  appear in the server browser for awareness, but it must be visibly disabled
+  and unjoinable. Treat it like an unavailable row, ideally with a red or muted
+  `YOUR ROOM`/`HOSTING` state instead of a normal join action.
+- If a host chooses to join another server from any join path, the current
+  hosted session should be stopped/left first so the host does not keep a stale
+  public room or live direct host while becoming somebody else's client.
 
 Status:
 
@@ -111,6 +118,8 @@ Status:
 - Gubsy also rejects full/in-progress room joins before opening realtime
   transport. `lobby_config_smoke` verifies those cases do not validate config,
   apply config, or call join transport.
+- Follow-up remains: detect the current host's own public room in `Browse
+  Servers`, mark it unavailable/host-owned, and verify it cannot be selected.
 
 ## Desired Host Semantics
 
@@ -178,6 +187,10 @@ If the same running host application presses `Host` again:
 - The host token/update token should remain tied to the current room lifecycle.
 - Rehosting should cleanly close/reopen the old socket or reuse it deliberately;
   whichever behavior we choose should be documented in code and UI behavior.
+- The host should have an obvious `Stop Hosting`/`Leave Session` control from
+  the lobby without needing to re-enter the host setup screen.
+- Joining another game while hosting should first stop/leave the current hosted
+  session.
 
 If a different host starts a different game:
 
@@ -195,7 +208,9 @@ Status:
   from the public list when the room code changes.
 - Follow-up remains: expose this behavior more clearly in UI copy and add a
   focused multi-host smoke if we need stronger proof that separate host
-  processes list as separate public rooms.
+  processes list as separate public rooms. The lobby also needs a clearer
+  bottom action for stopping an active hosted session, plus smoke coverage that
+  host-then-join leaves the old session before connecting as a client.
 
 ### Hosted-Lobby Status
 
@@ -229,6 +244,10 @@ Status:
   data is available.
 - `lobby_online_smoke` verifies room-service player counts are cached and
   refreshed on host, join, leave, rejoin, and kick.
+- Follow-up remains: refine the top-level copy hierarchy. `Players` should be
+  the primary/card title for the players entry, while hosting/backend text such
+  as `Currently Public Hosting via gubsy-roomd` belongs in the lobby status
+  area, not as confusing title text on the players card.
 
 ## Players Menu
 
@@ -450,7 +469,12 @@ Checklist:
 11. Fix client-side start-game behavior and waiting-for-host messaging.
 12. Fix the joined-client movement and host-triggered restart ownership
     regressions.
-13. Add smoke coverage for browser-published host/join and joined-client
+13. Disable the current host's own public room in `Browse Servers`, add a clear
+    lobby-level stop-hosting control, and make host-then-join leave the old
+    hosted session first.
+14. Refine top-level lobby copy so `Players` is the players card title and
+    session/backend state stays in the status area.
+15. Add smoke coverage for browser-published host/join and joined-client
     movement after game start.
 
 ## Open Questions
