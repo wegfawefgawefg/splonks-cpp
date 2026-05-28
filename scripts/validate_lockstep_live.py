@@ -90,6 +90,22 @@ def wait_ready(endpoints: list[Endpoint], timeout_s: float) -> None:
     raise ControlError(f"lockstep session was not ready within {timeout_s:.1f}s: {last_error}")
 
 
+def wait_controls_available(endpoints: list[Endpoint], timeout_s: float) -> None:
+    deadline = time.monotonic() + timeout_s
+    last_error = ""
+    while time.monotonic() < deadline:
+        try:
+            for endpoint in endpoints:
+                control(endpoint, "ping")
+            return
+        except Exception as exc:  # keep waiting while processes boot
+            last_error = str(exc)
+        time.sleep(0.2)
+    raise ControlError(
+        f"debug controls were not available within {timeout_s:.1f}s: {last_error}"
+    )
+
+
 def is_ready(net: dict[str, Any]) -> bool:
     barrier = net.get("join_barrier", {})
     return (
@@ -321,6 +337,8 @@ def launch_pair(
             stdout=host_log,
             stderr=subprocess.STDOUT,
         ))
+    wait_controls_available([Endpoint("host", host_control_port)], 10.0)
+    control(Endpoint("host", host_control_port), "start-game")
     time.sleep(0.5)
     with open(logs / "lockstep_validate_peer.log", "wb") as peer_log:
         processes.append(subprocess.Popen(
@@ -456,7 +474,12 @@ def main() -> int:
 
     results: list[dict[str, Any]] = []
     try:
+        if args.launch_pair:
+            wait_controls_available(endpoints, args.ready_timeout)
         wait_ready(endpoints, args.ready_timeout)
+        if args.launch_pair:
+            control(peer, "start-game")
+            wait_ready(endpoints, args.ready_timeout)
         for run_index in range(1, args.repeat + 1):
             for profile in profiles:
                 apply_profile(endpoints, profile)

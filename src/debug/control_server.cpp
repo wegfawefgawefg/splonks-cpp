@@ -564,6 +564,20 @@ std::string HandleInputCommand(State& state, const std::vector<std::string>& par
     return out.str();
 }
 
+std::string HandleStartGameCommand(State& state) {
+    if (network::IsInputLockstepCatchupBlocking(state)) {
+        return MakeError("waiting for lockstep catchup");
+    }
+    if (state.mode == Mode::Playing || state.mode == Mode::StageTransition) {
+        return "{\"ok\":true,\"cmd\":\"start-game\",\"already_started\":true}\n";
+    }
+    if (state.mode != Mode::Title) {
+        return MakeError("start-game is only available from title/lobby");
+    }
+    state.SetMode(Mode::Playing);
+    return "{\"ok\":true,\"cmd\":\"start-game\",\"already_started\":false}\n";
+}
+
 std::string HandlePlayersCommand(const State& state) {
     std::ostringstream out;
     out << "{\"ok\":true,\"cmd\":\"players\",\"players\":[";
@@ -1175,7 +1189,7 @@ std::string HandleCommand(State& state, std::string_view command) {
         return "{\"ok\":true,\"cmd\":\"ping\",\"pong\":true}\n";
     }
     if (op == "help") {
-        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"quit\",\"status\",\"players\",\"ents [limit]\",\"ents near [radius] [limit]\",\"ent <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"net settings status\",\"net settings set <delay_frames> <rollback_frames>\",\"net settings auto <on|off>\",\"net fuzzer status\",\"net fuzzer off\",\"net fuzzer preset <name>\",\"net fuzzer set <latency_ms> <jitter_ms> <loss_pct> <duplicate_pct> <reorder_window>\",\"fingerprint\",\"perf\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
+        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"quit\",\"status\",\"players\",\"ents [limit]\",\"ents near [radius] [limit]\",\"ent <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"net settings status\",\"net settings set <delay_frames> <rollback_frames>\",\"net settings auto <on|off>\",\"net fuzzer status\",\"net fuzzer off\",\"net fuzzer preset <name>\",\"net fuzzer set <latency_ms> <jitter_ms> <loss_pct> <duplicate_pct> <reorder_window>\",\"fingerprint\",\"perf\",\"start-game\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
     }
     if (op == "quit") {
         state.running = false;
@@ -1204,6 +1218,9 @@ std::string HandleCommand(State& state, std::string_view command) {
     }
     if (op == "perf") {
         return HandlePerfCommand(state);
+    }
+    if (op == "start-game") {
+        return HandleStartGameCommand(state);
     }
     if (op == "input") {
         return HandleInputCommand(state, parts);
