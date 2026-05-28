@@ -33,6 +33,17 @@ joined-client experience need a product pass and a networking correctness pass.
   publishing through `gubsy-roomd`, or hosting through a future backend such as
   Steam.
 
+Status:
+
+- The Gubsy host screen now labels the advertised room field as `Room Name` and
+  the direct port field as `Host Port`.
+- `Host Public` now uses the bottom-middle command slot between `Back` and
+  `Host Direct`, instead of living in the main vertical settings list.
+- Invalid host ports now show status copy explaining the problem, disable both
+  host actions, and use red/error styling.
+- `lobby_online_smoke` verifies the host screen labels, bottom-row host action
+  placement, valid actionable state, and invalid-port disabled/error state.
+
 ### Browser Publishing And Room Dashboard
 
 - `gubsy-roomd` reports room updates, but the browser dashboard can still show
