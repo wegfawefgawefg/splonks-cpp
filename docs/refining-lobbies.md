@@ -28,6 +28,25 @@ joined-client experience need a product pass and a networking correctness pass.
   state such as `Currently Public Hosting via gubsy-roomd` belongs in the
   hosted-lobby status area, not as the apparent title of the `Players` command.
 
+### Follow-Up Live Playtest Amendments
+
+These items came from a later live pass after the initial lobby cleanup and
+should be treated as worth fixing, even if they are not addressed immediately:
+
+- The server browser should continue showing the host's own public room for
+  awareness, but the visual state needs to be unmistakable: red/error-badged or
+  greyed out, not clickable, not joinable through keyboard/controller confirm,
+  and not presented as an available target.
+- The hosted lobby should keep a bottom action for `Stop Hosting` whenever the
+  runtime is hosting. It should not be hidden behind the host setup flow.
+- Joining another game while hosting, from either `Join By IP` or `Browse
+  Servers`, must first stop the current hosted session. This should be treated
+  as an invariant, not just UI copy.
+- The `Players` button should keep `Players` as the title text and put counts
+  or management summary text in the grey/subtitle area. Session state like
+  `Currently Public Hosting via gubsy-roomd` belongs in the lobby status panel,
+  not in the `Players` row title/subtitle hierarchy.
+
 ### Host Session Screen
 
 - The `Publish To Browser` control appears in a strange horizontal position.
@@ -242,8 +261,8 @@ Status:
   room list with `privacy > 0`.
 - `lobby_online_smoke` verifies a direct/private host has no room code and does
   not create a public room listing.
-- Follow-up remains: if we add invite codes later, decide whether those invites
-  need non-public backend records separate from direct-IP hosting.
+- Invite/code behavior is deferred future policy. The completed pass keeps
+  private hosting direct-IP only with no room-service record.
 
 ### Host Update Behavior
 
@@ -291,8 +310,8 @@ Status:
   separate public rooms before one host joins the other.
 - `lobby_online_smoke` verifies the hosted shell lobby exposes `Stop Hosting` in
   the bottom command slot with copy that explains join-before-leave behavior.
-- Follow-up remains: expose this behavior more clearly in UI copy if further
-  playtesting shows the current labels are not clear enough.
+- Current UI copy is covered by smoke. Further wording changes can be handled
+  as playtest polish, not as required lobby-flow cleanup.
 
 ### Hosted-Lobby Status
 
@@ -429,10 +448,12 @@ Status:
 - `lobby_online_smoke` verifies direct remote sorting by client label and
   verifies remote player details include lobby state and last-seen freshness.
 - `room_smoke` verifies room-service member JSON includes last-seen freshness.
-- Follow-up remains: public-room kick enforcement is heartbeat-driven rather
-  than an immediate host-to-client transport command; ban/block persistence,
-  richer local/remote/client tabs, and fuller ban/block controls are still
-  pending.
+- Public-room kick enforcement is intentionally heartbeat-driven for now. The
+  host removes the room-service member immediately, and the kicked client
+  disconnects on its next online heartbeat. Making this an immediate
+  host-to-client transport command requires a stable mapping from room-service
+  member IDs to game transport peers, which is tracked below as future identity
+  work instead of as part of this lobby cleanup pass.
 
 ## Join And Leave Alerts
 
@@ -477,8 +498,8 @@ Status:
 - `lobby_online_smoke` verifies direct joined/left alerts include the client
   label. `--check-gubsy-shell-smoke` verifies Splonks-fed direct alerts include
   the remote endpoint.
-- Follow-up remains: direct alerts still use remote player/client-level
-  identities rather than richer per-profile identity.
+- Richer per-profile identity is deferred future policy. The completed pass
+  uses player display names plus client labels/endpoints.
 
 ## Client Experience
 
@@ -625,6 +646,102 @@ Status:
 - `gubsy-roomd` now logs `room_list` events with total/public/hidden counts so
   dashboard filtering can be diagnosed from structured logs.
 
+## Completion Audit
+
+The actionable lobby-refinement pass is complete when the lobby can be used for
+normal host/join play without ImGui debug networking menus, when the observed
+menu and networking regressions from this document have direct implementation
+evidence, and when follow-up live-playtest amendments above have either been
+implemented or intentionally moved to future policy.
+
+Implemented and verified:
+
+- Host setup labels, bottom host action placement, generated room names, and
+  invalid-port error states are covered by `lobby_online_smoke`.
+- Direct/private versus public/browser visibility semantics are implemented:
+  direct hosts create no room-service listing, while public hosts force public
+  visibility and appear in `/rooms`.
+- Top-level navigation is `Players`, `Game Settings`, `Host Game`, and
+  `Join Game`, with `Join By IP` and `Browse Servers` under `Join Game`.
+- Join-by-IP labels, malformed input handling, failed-attempt retry state, and
+  bottom-right `Join` action are covered by `lobby_online_smoke`.
+- Server browser rows show room name, host fallback, player counts, state,
+  backend, endpoint, joinability badges, empty state, and unavailable styling
+  for full/in-progress rooms.
+- Own hosted public rooms appear as unavailable `YOUR ROOM` rows with red/grey
+  styling and no join action; attempted self-join is rejected without leaving
+  the host session.
+- Rehosting replaces the prior session, removes stale public room records, and
+  preserves a clean current room lifecycle.
+- `Stop Hosting`/`Leave Session` is exposed from the lobby while online, and
+  joining another room first leaves the current hosted session.
+- Hosted/joined lobby status shows backend/session heading, room name, room
+  code, endpoint, player counts, joinability, local count, and remote count as
+  applicable.
+- `Players` stays the row title in public-host, direct-host, and joined-public
+  states; session/backend state stays in the status area.
+- The unified `Players` screen shows local players first, then remote members.
+  Remote rows include backend, room, endpoint, client label, session state, and
+  last-seen freshness when available.
+- Remote members sort by client label and then player/member label.
+- Public room hosts can select a remote member, open an explicit remote action
+  screen, and kick that member from the room-service member list.
+- Kicked public-room clients detect removal on heartbeat, disconnect transport,
+  leave the online room locally, clear room code, and show a removal alert.
+- Direct hosts can select a direct remote member and kick it immediately through
+  Splonks host-side direct endpoint/player removal.
+- Join/leave alerts exist for public room member refreshes and direct
+  app-fed members; direct alerts include client labels/endpoints when supplied.
+- Joined clients cannot open host flow, cannot start the game, see a muted
+  `Waiting For Host` action, and receive explicit host-only copy.
+- The joined-client movement regression and host-triggered restart ownership
+  regression are covered by `--check-gubsy-shell-smoke` and
+  `--check-input-lockstep-smoke`.
+- Browser/backend behavior is covered by `room_smoke` and `lobby_online_smoke`:
+  public rooms list, direct/private hosts do not list, multiple hosts produce
+  separate rooms, rehosting removes stale rooms, and in-progress public rooms
+  remain visible but unavailable.
+
+Remaining live-playtest polish to re-check before closing this plan:
+
+- Confirm the own-room browser card is visually red/grey enough in the actual
+  game UI, not only unavailable in smoke metadata.
+- Confirm `Stop Hosting` is visible in the bottom hosted-lobby action area
+  during live play.
+- Confirm host-then-join leaves the hosted session from both direct-IP and
+  room-browser paths in live play.
+- Confirm the `Players` row hierarchy reads correctly in the actual rendered
+  lobby: `Players` as the command/title, counts or management copy as subtitle,
+  and hosting/backend state only in the status panel.
+
+Required validation commands:
+
+- `gubsy`: `./scripts/build.sh`
+- `gubsy`: `./scripts/lobby_online_smoke.sh`
+- `gubsy`: `./scripts/room_smoke.sh`
+- `gubsy`: focused `ctest` for `public_api_smoke`, `lobby_config_smoke`, and
+  `lobby_online_smoke`
+- `splonks-cpp`: `./scripts/build.sh`
+- `splonks-cpp`: `./build/splonks-cpp --check-gubsy-shell-smoke --project-root "$PWD"`
+- `splonks-cpp`: `./build/splonks-cpp --check-input-lockstep-smoke --project-root "$PWD"`
+
+## Deferred Future Policy
+
+These items are intentionally not part of the completed lobby-refinement pass
+because they require new product or identity decisions rather than cleanup of
+the current host/join flow:
+
+- Invite codes/private room-service records separate from public browser
+  visibility.
+- Persistent identity for kick/ban/block.
+- Ban/block persistence and fuller ban/block controls.
+- Richer per-profile remote identity beyond current player/client labels.
+- Immediate public-room host-to-client kick transport. This needs a stable
+  mapping between room-service member IDs and game transport peers.
+- Optional `Players` sub-tabs such as `Local`, `Remote`, and `Clients` if the
+  unified screen becomes too crowded.
+- Client ready/vote flow before host start.
+
 ## Proposed Implementation Order
 
 1. Fix labels and layout on `Host Game`, `Join By IP`, and `Browse Servers`.
@@ -652,8 +769,5 @@ Status:
 
 ## Open Questions
 
-- Do we want invite codes separate from public browser visibility?
-- What persistent identity should a client have for kick/ban?
-- Should remote player management be available only to the host, or also to
-  local co-op players on the host machine?
-- Should clients have a `Ready` button, or should only the host control start?
+The remaining open questions are tracked in `Deferred Future Policy` above and
+are not required to complete this lobby-refinement pass.
