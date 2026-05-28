@@ -616,6 +616,11 @@ bool CheckDirectRemoteMemberSync() {
         gubsy_shell::Shutdown(shell);
         return false;
     }
+    if (!GubsyAlertContains(engine, "Remote Friend joined from client 192.0.2.55:45454")) {
+        std::cerr << "Gubsy shell smoke failed: direct remote join client alert missing\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
 
     gubsy_clear_menu_stack(shell.runtime);
     if (!gubsy_push_menu_screen(shell.runtime, MenuScreenID::SHELL_LOBBY)) {
@@ -677,6 +682,11 @@ bool CheckDirectRemoteMemberSync() {
     }
     if (!GubsyAlertContains(engine, "Remote Friend left")) {
         std::cerr << "Gubsy shell smoke failed: direct remote leave alert missing\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    if (!GubsyAlertContains(engine, "Remote Friend left from client 192.0.2.55:45454")) {
+        std::cerr << "Gubsy shell smoke failed: direct remote leave client alert missing\n";
         gubsy_shell::Shutdown(shell);
         return false;
     }

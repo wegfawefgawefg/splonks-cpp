@@ -616,8 +616,8 @@ void SyncDirectNetworkMembers(Shell& shell) {
             : "Remote " + std::to_string(slot.player_id);
         member.is_host = slot.player_id == state.net_session.host_player_id;
         if (peer != nullptr && !peer->endpoint_address.empty() && peer->endpoint_port != 0) {
-            member.member_id = "direct:" + peer->endpoint_address + ":" +
-                               std::to_string(peer->endpoint_port);
+            member.client_label = peer->endpoint_address + ":" + std::to_string(peer->endpoint_port);
+            member.member_id = "direct:" + member.client_label;
         } else {
             member.member_id = "direct:player:" + std::to_string(slot.player_id);
         }

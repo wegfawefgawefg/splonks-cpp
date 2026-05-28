@@ -459,8 +459,15 @@ Status:
   member counts inside Gubsy. `--check-gubsy-shell-smoke` verifies Splonks
   direct network members sync into Gubsy, surface in the shell lobby, and emit
   joined/left alerts.
+- Direct member alerts now include a client label when the game supplies one,
+  so direct sessions can show messages like `<player> joined from client
+  <endpoint>` instead of only raw member IDs. Splonks supplies the direct UDP
+  endpoint as that client label.
+- `lobby_online_smoke` verifies direct joined/left alerts include the client
+  label. `--check-gubsy-shell-smoke` verifies Splonks-fed direct alerts include
+  the remote endpoint.
 - Follow-up remains: direct alerts still use remote player/client-level
-  identities rather than a richer per-player profile identity.
+  identities rather than richer per-profile identity.
 
 ## Client Experience
 
