@@ -418,6 +418,13 @@ Status:
   screen and expose a direct-session `Kick Player` action. `--check-gubsy-shell-smoke`
   verifies Splonks removes the direct remote peer and Gubsy clears the member
   after the next direct-member sync.
+- Remote member rows now sort by client label and then player/member label, so
+  connected clients are grouped consistently instead of appearing in raw service
+  order.
+- Remote member details now include the current session state (`State Lobby` or
+  `State In Game`) alongside backend, room, endpoint, and client context.
+- `lobby_online_smoke` verifies direct remote sorting by client label and
+  verifies remote player details include lobby state.
 - Follow-up remains: public-room kick enforcement is heartbeat-driven rather
   than an immediate host-to-client transport command; ban/block persistence,
   richer local/remote/client tabs, and fuller ban/block controls are still
