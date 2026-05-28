@@ -5,7 +5,9 @@
 #include "network/net_lobby.hpp"
 
 #include <cstdint>
+#include <cstdlib>
 #include <gubsy/input/types.hpp>
+#include <gubsy/lobby/room_matchmaking.hpp>
 #include <gubsy/lobby/state.hpp>
 #include <gubsy/runtime.hpp>
 #include <iostream>
@@ -606,6 +608,91 @@ bool CheckDirectHostJoinViaMenu() {
     return true;
 }
 
+bool CheckRealRoomdHostJoin() {
+    const char* server_url_env = std::getenv("GUB_ROOM_SERVER_URL");
+    if (server_url_env == nullptr || *server_url_env == '\0') {
+        std::cerr << "Gubsy shell real-roomd smoke skipped: GUB_ROOM_SERVER_URL is unset\n";
+        return true;
+    }
+
+    RoomServerMatchmaking matchmaking;
+    std::string message;
+
+    State host_state = State::New();
+    gubsy_shell::Shell host_shell;
+    if (!gubsy_shell::InitHeadless(host_shell, host_state)) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: host InitHeadless failed\n";
+        return false;
+    }
+    EngineState& host_engine = gubsy_runtime_engine(host_shell.runtime);
+    host_engine.lobby.room_server_url = server_url_env;
+    host_engine.lobby.visibility = GubsyLobbyVisibility::Public;
+    if (!gubsy_host_lobby_room(host_shell.runtime, 0, message)) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: host room failed: " << message << '\n';
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    const GubsyLobbyState& host_lobby = gubsy_get_lobby_state(host_shell.runtime);
+    if (!host_lobby.online || !host_lobby.is_host || host_lobby.room_code.empty() ||
+        host_state.net_session.role != network::NetRole::Host) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: public host state invalid\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    std::vector<MatchmakingRoom> rooms;
+    std::string err;
+    if (!matchmaking.list_rooms(server_url_env, rooms, err)) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: list rooms failed: " << err << '\n';
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    const auto host_room_it = std::find_if(rooms.begin(), rooms.end(), [&](const MatchmakingRoom& room) {
+        return room.room_code == host_lobby.room_code;
+    });
+    if (host_room_it == rooms.end() || host_room_it->privacy <= 0 ||
+        host_room_it->contract.realtime_endpoint != host_lobby.advertised_endpoint) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: hosted room was not listed correctly\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    State guest_state = State::New();
+    gubsy_shell::Shell guest_shell;
+    if (!gubsy_shell::InitHeadless(guest_shell, guest_state)) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: guest InitHeadless failed\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    gubsy_runtime_engine(guest_shell.runtime).lobby.room_server_url = server_url_env;
+    if (!gubsy_join_lobby_room_code(guest_shell.runtime, host_lobby.room_code, message)) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: join room failed: " << message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (!PumpJoinUntilConfirmed(host_shell, host_state, guest_shell, guest_state, [&]() {
+            const GubsyLobbyState& guest_lobby = gubsy_get_lobby_state(guest_shell.runtime);
+            return guest_lobby.online && !guest_lobby.is_host &&
+                   guest_lobby.room_code == host_lobby.room_code &&
+                   guest_state.net_session.role == network::NetRole::Peer;
+        })) {
+        const GubsyLobbyState& guest_lobby = gubsy_get_lobby_state(guest_shell.runtime);
+        std::cerr << "Gubsy shell real-roomd smoke failed: public join was not confirmed: "
+                  << guest_lobby.status_message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
+    (void)gubsy_leave_lobby_room(host_shell.runtime, message);
+    gubsy_shell::Shutdown(guest_shell);
+    gubsy_shell::Shutdown(host_shell);
+    return true;
+}
+
 bool CheckDirectRemoteMemberSync() {
     std::string message;
     State state = State::New();
@@ -738,6 +825,15 @@ bool CheckGubsyShellSmoke() {
                CheckDirectHostJoinViaMenu() && CheckDirectRemoteMemberSync();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';
+        return false;
+    }
+}
+
+bool CheckGubsyShellRealRoomdSmoke() {
+    try {
+        return CheckRealRoomdHostJoin();
+    } catch (const std::exception& e) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: " << e.what() << '\n';
         return false;
     }
 }

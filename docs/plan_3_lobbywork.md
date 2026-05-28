@@ -372,3 +372,8 @@ Latest local validation:
   The launcher now starts the host into gameplay before launching the peer,
   waits for lockstep catchup, starts the peer, then runs the same-house input
   sequence with no hash mismatches or fatal desync.
+- Passed after real-roomd smoke addition: `splonks-cpp ./scripts/validate_gubsy_roomd_live.sh`.
+  This starts a local `gubsy-roomd`, hosts a public room through Splonks'
+  Gubsy shell callbacks, verifies the room is listed by the real HTTP backend,
+  joins from a second Splonks shell, and confirms the actual direct transport
+  join path.

@@ -516,6 +516,10 @@ bool RunCliCommand(int argc, char** argv) {
         std::exit(CheckGubsyShellSmoke() ? 0 : 1);
     }
 
+    if (command == "--check-gubsy-shell-real-roomd-smoke") {
+        std::exit(CheckGubsyShellRealRoomdSmoke() ? 0 : 1);
+    }
+
     if (command == "--dump-recording-text") {
         if (argc < 4) {
             std::cerr << "usage: --dump-recording-text <input.splrec> <output.txt>\n";
