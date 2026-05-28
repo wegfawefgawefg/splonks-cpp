@@ -24,7 +24,7 @@ esac
 
 usage() {
     printf '%s\n' \
-        "Usage: scripts/run_lobby_human_playtest.sh [--no-build] [--no-roomd]" \
+        "Usage: scripts/run_lobby_human_playtest.sh [--no-build] [--no-roomd] [--init-verdict]" \
         "" \
         "Starts local gubsy-roomd plus two Splonks windows for the lobby" \
         "human playtest checklist." \
@@ -37,11 +37,13 @@ usage() {
         "  SPLONKS_I3_OUTPUT      Optional i3 output for the workspace." \
         "  SDL_VIDEODRIVER        Defaults to x11 when DISPLAY is set." \
         "" \
-        "Checklist: docs/lobby_human_playtest_checklist.md"
+        "Checklist: docs/lobby_human_playtest_checklist.md" \
+        "Verdict: logs/lobby_human_playtest_verdict.json"
 }
 
 build=1
 start_roomd=1
+init_verdict=0
 while (($#)); do
     case "$1" in
         --no-build)
@@ -50,6 +52,10 @@ while (($#)); do
             ;;
         --no-roomd)
             start_roomd=0
+            shift
+            ;;
+        --init-verdict)
+            init_verdict=1
             shift
             ;;
         -h|--help)
@@ -63,6 +69,17 @@ while (($#)); do
             ;;
     esac
 done
+
+if ((init_verdict != 0)); then
+    mkdir -p "${repo_root}/logs"
+    verdict_path="${repo_root}/logs/lobby_human_playtest_verdict.json"
+    if [[ -e "${verdict_path}" ]]; then
+        printf 'Verdict JSON already exists: %s\n' "${verdict_path}"
+    else
+        cp "${repo_root}/docs/lobby_human_playtest_verdict_template.json" "${verdict_path}"
+        printf 'Initialized verdict JSON: %s\n' "${verdict_path}"
+    fi
+fi
 
 if [ -n "${DISPLAY:-}" ] && [ -z "${SDL_VIDEODRIVER:-}" ]; then
     export SDL_VIDEODRIVER=x11
@@ -112,6 +129,8 @@ if [[ -n "${roomd_pid}" ]]; then
     printf 'gubsy-roomd log: %s\n' "${server_log}"
 fi
 printf 'Checklist: docs/lobby_human_playtest_checklist.md\n\n'
+printf 'After the playtest, fill logs/lobby_human_playtest_verdict.json and run:\n'
+printf '  scripts/summarize_lobby_human_playtest.py\n\n'
 printf 'Manual checks:\n'
 printf '  1. Host window: Host Game -> Host Public.\n'
 printf '  2. Client window: Join Game -> Browse Servers -> select host room.\n'

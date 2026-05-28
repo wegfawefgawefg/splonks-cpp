@@ -1,0 +1,30 @@
+{
+  "ok": false,
+  "public_browser_flow": {
+    "host_fields_labeled_ok": false,
+    "host_public_bottom_action_ok": false,
+    "browser_search_and_refresh_ok": false,
+    "joined_actions_gated_ok": false,
+    "wait_then_play_ok": false,
+    "client_enters_gameplay_or_loading_ok": false,
+    "client_input_moves_player_ok": false,
+    "notes": ""
+  },
+  "direct_join_flow": {
+    "join_fields_labeled_ok": false,
+    "no_server_stays_on_join_by_ip_ok": false,
+    "no_false_joined_state_ok": false,
+    "direct_success_ok": false,
+    "joined_state_truthful_ok": false,
+    "notes": ""
+  },
+  "alerts": {
+    "join_failure_success_alerts_ok": false,
+    "player_join_leave_alerts_ok": false,
+    "host_start_alert_ok": false,
+    "gameplay_menu_closed_alerts_ok": false,
+    "stacking_readability_ok": false,
+    "notes": ""
+  },
+  "overall_notes": ""
+}

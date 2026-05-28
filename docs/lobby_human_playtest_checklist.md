@@ -10,12 +10,20 @@ Splonks instances.
 Run:
 
 ```sh
-scripts/run_lobby_human_playtest.sh
+scripts/run_lobby_human_playtest.sh --init-verdict
 ```
 
 The launcher builds Splonks if needed, starts a local `gubsy-roomd`, sets
 `GUB_ROOM_SERVER_URL` for both Splonks instances, and opens two game windows.
 Use one as host and one as client.
+
+It also initializes `logs/lobby_human_playtest_verdict.json` from
+`docs/lobby_human_playtest_verdict_template.json` when `--init-verdict` is set.
+Fill that verdict after the playtest, then run:
+
+```sh
+scripts/summarize_lobby_human_playtest.py
+```
 
 If testing across two machines, run `gubsy-roomd` on the host machine and start
 both games with the same `GUB_ROOM_SERVER_URL`, for example:
@@ -107,3 +115,5 @@ Also verify alerts render over active gameplay with the menu closed.
 - Alerts are visible and understandable in lobby and in-game.
 - Any failed, confusing, or clipped UI state is recorded back into
   `docs/plan_3_lobbywork.md` before marking the goal complete.
+- `scripts/summarize_lobby_human_playtest.py` reports `ok` for the filled
+  verdict JSON.
