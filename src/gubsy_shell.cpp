@@ -46,6 +46,8 @@ constexpr RespawnOption kRespawnOptions[] = {
      MultiplayerRespawnMode::RespawnAtEntrance},
 };
 
+void SuppressGameplayInputAfterMenu(State& state);
+
 int FindRespawnOption(MultiplayerRespawnMode mode) {
     for (int i = 0; i < static_cast<int>(std::size(kRespawnOptions)); ++i) {
         if (kRespawnOptions[i].mode == mode)
@@ -279,6 +281,23 @@ void StartSplonksFromGubsy(void* user_data, std::int32_t) {
     auto* shell = static_cast<Shell*>(user_data);
     if (shell == nullptr || shell->state == nullptr)
         return;
+
+    if (shell->state->net_session.role == network::NetRole::Peer) {
+        if (network::IsInputLockstepCatchupBlocking(*shell->state)) {
+            gubsy_add_alert(shell->runtime, "Waiting for host state", GubsyAlertSeverity::Info);
+            return;
+        }
+        shell->state->pause = false;
+        if (shell->state->mode == Mode::Title) {
+            shell->state->scene_frame = 0;
+            shell->state->SetMode(Mode::Playing);
+        }
+        gubsy_add_alert(shell->runtime, "Entering hosted game", GubsyAlertSeverity::Success);
+        gubsy_clear_menu_stack(shell->runtime);
+        SuppressGameplayInputAfterMenu(*shell->state);
+        return;
+    }
+
     ApplyLobbyConfigToSplonks(*shell, gubsy_get_lobby_state(shell->runtime),
                               shell->state->net_session.role == network::NetRole::Offline);
     QueueStageTransition(*shell->state,
