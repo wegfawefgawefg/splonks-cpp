@@ -609,7 +609,7 @@ Status:
   run-rate skew, carry-transition, respawn-policy, rollback, snapshot-resync,
   hash-exchange, stage-transition resync-block, and rollback-latency cases.
 
-Investigation areas:
+Investigation areas covered by the smokes above:
 
 - Verify Gubsy input forwarding for joined clients after the lobby transitions
   into gameplay.
@@ -626,7 +626,7 @@ Investigation areas:
 - Add or update smoke coverage for joined-client gameplay movement, not just
   lobby host/join.
 
-Expected fix outcome:
+Expected fix outcome verified by the smokes above:
 
 - Host can move their local player.
 - Joined client can move their local assigned player.
@@ -750,7 +750,7 @@ the current host/join flow:
   unified screen becomes too crowded.
 - Client ready/vote flow before host start.
 
-## Proposed Implementation Order
+## Completed Implementation Order
 
 1. Fix labels and layout on `Host Game`, `Join By IP`, and `Browse Servers`.
 2. Replace `Local Game` default with generated room names.
