@@ -264,9 +264,13 @@ Status:
 - The `Players` screen now lists local players first and remote room members
   below them, with host/client labels and member identifiers as early remote
   client context.
-- Follow-up remains: remote player rows are informational only for now; kick,
-  ban/block, richer endpoint/backend detail, and local/remote/client tabs are
-  still pending.
+- Public room hosts can now select a non-host remote member in `Players` to
+  kick them from the room-service member list.
+- `lobby_online_smoke` verifies host kick removes the member from the host's
+  visible member list and emits a kick alert.
+- Follow-up remains: kick currently removes the room-service membership only;
+  transport-level disconnect enforcement, ban/block persistence, richer
+  endpoint/backend detail, and local/remote/client tabs are still pending.
 
 ## Join And Leave Alerts
 
