@@ -82,6 +82,18 @@ the only join path.
   - Consider making the button disabled or red/error-styled when the input is
     malformed or the last connection attempt failed.
 
+Status:
+
+- The Gubsy `Join By IP` screen now labels the direct host field as
+  `IP / Host`, labels the port field as `Port`, and uses a bottom-right `Join`
+  action instead of `Join Direct`.
+- Malformed direct-join input now shows status copy explaining the problem,
+  disables the `Join` action, and uses red/error styling.
+- Failed direct-join attempts keep `Join` retryable while using red/error
+  styling and explanatory retry copy.
+- `lobby_online_smoke` verifies the Join By IP labels, valid actionable state,
+  malformed-port disabled state, and failed-attempt retry state.
+
 ### Browse Servers Screen
 
 - The browser servers view is too rough for normal use.
