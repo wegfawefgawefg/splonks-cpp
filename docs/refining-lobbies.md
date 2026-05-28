@@ -153,6 +153,11 @@ that the room is not browser-visible. Avoid the contradictory feeling of
 
 Status:
 
+- The host screen no longer exposes a generic `Visibility` selector. The
+  hosting action now defines the visibility, which keeps the menu from saying
+  "published to browser but private".
+- `Host Direct` now means direct/private hosting and does not create a
+  browser-visible room.
 - The Gubsy `Host Public` menu command now forces `Public` before creating the
   room, matching `gubsy-roomd`'s public-list rule that only rooms with
   `privacy > 0` appear in `/rooms`.
