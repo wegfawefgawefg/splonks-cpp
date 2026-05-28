@@ -19,6 +19,7 @@
 #include "tools/tool_spec.hpp"
 
 #include <SDL3/SDL.h>
+#include <cstdlib>
 #include <cmath>
 #include <filesystem>
 #include <iostream>
@@ -137,6 +138,28 @@ bool HasStartupFlag(int argc, char** argv, const std::string& flag) {
     return false;
 }
 
+bool RebaseCwdToExplicitProjectRoot(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i] != nullptr ? argv[i] : "";
+        if ((arg == "--project-root" || arg == "--content-root") && i + 1 < argc) {
+            const std::filesystem::path root = argv[++i] != nullptr ? argv[i] : "";
+            if (std::filesystem::exists(root / "assets") &&
+                std::filesystem::exists(root / "data")) {
+                std::filesystem::current_path(root);
+                return true;
+            }
+        }
+    }
+    if (const char* env_root = std::getenv("SPLONKS_PROJECT_ROOT")) {
+        const std::filesystem::path root = env_root;
+        if (std::filesystem::exists(root / "assets") && std::filesystem::exists(root / "data")) {
+            std::filesystem::current_path(root);
+            return true;
+        }
+    }
+    return false;
+}
+
 bool InGameMenuOpenRequested() {
     return splonks::KeyPressedEdge(SDL_SCANCODE_ESCAPE) ||
            splonks::GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_START);
@@ -202,8 +225,10 @@ bool StartDebugControlServer(
 
 } // namespace
 
-int main(int argc, char** argv) {
-    RebaseCwdToRepoRoot();
+int SplonksMain(int argc, char** argv) {
+    if (!RebaseCwdToExplicitProjectRoot(argc, argv)) {
+        RebaseCwdToRepoRoot();
+    }
 
     if (splonks::RunCliCommand(argc, argv)) {
         return 0;
@@ -613,4 +638,14 @@ int main(int argc, char** argv) {
         std::cerr << "  ./build-debug/splonks-cpp --check-tile-source-data\n\n";
         return 1;
     }
+}
+
+#ifdef __ANDROID__
+extern "C" int SDL_main(int argc, char** argv) {
+    return SplonksMain(argc, argv);
+}
+#endif
+
+int main(int argc, char** argv) {
+    return SplonksMain(argc, argv);
 }

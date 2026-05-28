@@ -26,4 +26,4 @@ if [[ ! -x "${binary}" ]]; then
     exit 1
 fi
 
-"${binary}"
+"${binary}" "$@" --project-root "${repo_root}"
