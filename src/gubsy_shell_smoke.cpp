@@ -637,6 +637,186 @@ bool CheckDirectHostJoinViaMenu() {
     return true;
 }
 
+bool CheckMultiLocalPlayerJoin() {
+    std::string message;
+    State host_state = State::New();
+    gubsy_shell::Shell host_shell;
+    if (!gubsy_shell::InitHeadless(host_shell, host_state)) {
+        std::cerr << "Gubsy shell smoke failed: multi-local host InitHeadless failed\n";
+        return false;
+    }
+    if (!gubsy_host_lobby_direct(host_shell.runtime, 0, message)) {
+        std::cerr << "Gubsy shell smoke failed: multi-local direct host failed: " << message << '\n';
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    const GubsyLobbyState& host_lobby = gubsy_get_lobby_state(host_shell.runtime);
+    std::string direct_host;
+    std::uint16_t direct_port = 0;
+    if (!ParseEndpoint(host_lobby.advertised_endpoint, direct_host, direct_port)) {
+        std::cerr << "Gubsy shell smoke failed: multi-local direct host endpoint invalid\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    State guest_state = State::New();
+    gubsy_shell::Shell guest_shell;
+    if (!gubsy_shell::InitHeadless(guest_shell, guest_state)) {
+        std::cerr << "Gubsy shell smoke failed: multi-local guest InitHeadless failed\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (gubsy_add_lobby_local_player(guest_shell.runtime) != 1) {
+        std::cerr << "Gubsy shell smoke failed: multi-local guest did not add second local player\n";
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    const GubsyLobbyState& guest_lobby_before_join = gubsy_get_lobby_state(guest_shell.runtime);
+    if (guest_lobby_before_join.local_players.size() != 2) {
+        std::cerr << "Gubsy shell smoke failed: multi-local Gubsy lobby did not keep two local players\n";
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    if (!gubsy_join_lobby_direct(guest_shell.runtime, direct_host, direct_port, message)) {
+        std::cerr << "Gubsy shell smoke failed: multi-local direct join failed: " << message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (!PumpJoinUntilConfirmed(host_shell, host_state, guest_shell, guest_state, [&]() {
+            std::size_t host_remote_players = 0;
+            for (const PlayerSlot& slot : host_state.players.slots) {
+                if (slot.connected && slot.connection_kind == PlayerConnectionKind::Remote)
+                    ++host_remote_players;
+            }
+            std::size_t guest_local_players = 0;
+            for (const PlayerSlot& slot : guest_state.players.slots) {
+                if (slot.connected && slot.connection_kind == PlayerConnectionKind::Local)
+                    ++guest_local_players;
+            }
+            return host_remote_players == 2 && guest_local_players == 2;
+        })) {
+        std::size_t host_remote_players = 0;
+        std::size_t guest_local_players = 0;
+        for (const PlayerSlot& slot : host_state.players.slots) {
+            if (slot.connected && slot.connection_kind == PlayerConnectionKind::Remote)
+                ++host_remote_players;
+        }
+        for (const PlayerSlot& slot : guest_state.players.slots) {
+            if (slot.connected && slot.connection_kind == PlayerConnectionKind::Local)
+                ++guest_local_players;
+        }
+        std::cerr << "Gubsy shell smoke failed: multi-local join did not produce two remote/local players: host_remote="
+                  << host_remote_players << " guest_local=" << guest_local_players << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    Graphics graphics;
+    PumpTitleNetwork(host_shell, host_state, graphics);
+    const GubsyLobbyState& synced_host_lobby = gubsy_get_lobby_state(host_shell.runtime);
+    if (synced_host_lobby.members.size() != 2) {
+        std::cerr << "Gubsy shell smoke failed: multi-local host lobby did not expose two remote members: "
+                  << synced_host_lobby.members.size() << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
+    (void)gubsy_leave_lobby_room(host_shell.runtime, message);
+    gubsy_shell::Shutdown(guest_shell);
+    gubsy_shell::Shutdown(host_shell);
+    return true;
+}
+
+bool CheckPublicMultiLocalPlayerJoin() {
+    SmokeMatchmaking matchmaking;
+    std::string message;
+    State host_state = State::New();
+    gubsy_shell::Shell host_shell;
+    if (!gubsy_shell::InitHeadless(host_shell, host_state)) {
+        std::cerr << "Gubsy shell smoke failed: public multi-local host InitHeadless failed\n";
+        return false;
+    }
+    gubsy_set_lobby_matchmaking_backend(host_shell.runtime, &matchmaking);
+    if (!gubsy_host_lobby_room(host_shell.runtime, 0, message)) {
+        std::cerr << "Gubsy shell smoke failed: public multi-local host failed: " << message << '\n';
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    State guest_state = State::New();
+    gubsy_shell::Shell guest_shell;
+    if (!gubsy_shell::InitHeadless(guest_shell, guest_state)) {
+        std::cerr << "Gubsy shell smoke failed: public multi-local guest InitHeadless failed\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    gubsy_set_lobby_matchmaking_backend(guest_shell.runtime, &matchmaking);
+    if (gubsy_add_lobby_local_player(guest_shell.runtime) != 1) {
+        std::cerr << "Gubsy shell smoke failed: public multi-local guest did not add second local player\n";
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (!gubsy_join_lobby_room_code(guest_shell.runtime, matchmaking.room.room_code, message)) {
+        std::cerr << "Gubsy shell smoke failed: public multi-local join failed: " << message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (!PumpJoinUntilConfirmed(host_shell, host_state, guest_shell, guest_state, [&]() {
+            std::size_t host_remote_players = 0;
+            for (const PlayerSlot& slot : host_state.players.slots) {
+                if (slot.connected && slot.connection_kind == PlayerConnectionKind::Remote)
+                    ++host_remote_players;
+            }
+            return host_remote_players == 2 && guest_state.net_session.role == network::NetRole::Peer;
+        })) {
+        std::cerr << "Gubsy shell smoke failed: public multi-local join did not create two host remote players\n";
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    Graphics graphics;
+    PumpTitleNetwork(host_shell, host_state, graphics);
+    const GubsyLobbyState& host_lobby = gubsy_get_lobby_state(host_shell.runtime);
+    if (host_lobby.members.size() != 2 ||
+        host_lobby.members[0].member_id.rfind("direct:player:", 0) != 0 ||
+        host_lobby.members[1].member_id.rfind("direct:player:", 0) != 0) {
+        std::cerr << "Gubsy shell smoke failed: public multi-local host lobby did not expose two remote players: "
+                  << host_lobby.members.size() << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
+    for (int i = 0; i < 60; ++i) {
+        PumpTitleNetwork(host_shell, host_state, graphics);
+        if (gubsy_get_lobby_state(host_shell.runtime).members.empty())
+            break;
+    }
+    if (!gubsy_get_lobby_state(host_shell.runtime).members.empty()) {
+        std::cerr << "Gubsy shell smoke failed: public multi-local leave did not remove all remote players\n";
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    (void)gubsy_leave_lobby_room(host_shell.runtime, message);
+    gubsy_shell::Shutdown(guest_shell);
+    gubsy_shell::Shutdown(host_shell);
+    return true;
+}
+
 bool CheckRealRoomdHostJoin() {
     const char* server_url_env = std::getenv("GUB_ROOM_SERVER_URL");
     if (server_url_env == nullptr || *server_url_env == '\0') {
@@ -831,7 +1011,8 @@ bool CheckDirectRemoteMemberSync() {
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
     EngineState& engine = gubsy_runtime_engine(shell.runtime);
     if (lobby.members.size() != 1 || lobby.members.front().display_name != "Remote Friend" ||
-        lobby.members.front().member_id.find("192.0.2.55:45454") == std::string::npos) {
+        lobby.members.front().member_id != "direct:player:2" ||
+        lobby.members.front().client_label != "192.0.2.55:45454") {
         std::cerr << "Gubsy shell smoke failed: direct remote member was not synced into Gubsy\n";
         gubsy_shell::Shutdown(shell);
         return false;
@@ -857,9 +1038,9 @@ bool CheckDirectRemoteMemberSync() {
     const MenuWidget* status = GubsyWidgetBySlot(engine, SettingsObjectID::STATUS_RIGHT);
     const MenuWidget* players = GubsyWidgetBySlot(engine, SettingsObjectID::CARD0);
     if (status == nullptr || status->secondary == nullptr ||
-        std::string(status->secondary).find("1 remote client") == std::string::npos ||
+        std::string(status->secondary).find("1 remote player") == std::string::npos ||
         players == nullptr || players->secondary == nullptr ||
-        std::string(players->secondary).find("1 remote client") == std::string::npos) {
+        std::string(players->secondary).find("1 remote player") == std::string::npos) {
         std::cerr << "Gubsy shell smoke failed: direct remote count missing from lobby UI\n";
         gubsy_shell::Shutdown(shell);
         return false;
@@ -928,7 +1109,8 @@ bool CheckGubsyShellSmoke() {
         return CheckOfflineStart() && CheckInGameMenuShell() && CheckInGameRestartCommand() &&
                CheckNetworkRestartCommandDoesNotDesync() && CheckPeerInputMapping() &&
                CheckPeerGameplayInputAfterStart() && CheckInGameQuitCommand() && CheckHostJoin() &&
-               CheckDirectHostJoinViaMenu() && CheckDirectRemoteMemberSync();
+               CheckDirectHostJoinViaMenu() && CheckMultiLocalPlayerJoin() &&
+               CheckPublicMultiLocalPlayerJoin() && CheckDirectRemoteMemberSync();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';
         return false;

@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <iterator>
 #include <string>
 
 namespace splonks::gubsy_shell {
@@ -694,24 +695,7 @@ const network::NetPeerState* FindPeerStateForPlayer(const State& state, PlayerId
     return nullptr;
 }
 
-void SyncDirectNetworkMembers(Shell& shell) {
-    if (shell.state == nullptr) {
-        return;
-    }
-
-    SyncLobbySessionPhase(shell);
-
-    const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
-    if (!lobby.online || !lobby.room_code.empty()) {
-        return;
-    }
-
-    const State& state = *shell.state;
-    if (state.net_session.role == network::NetRole::Offline) {
-        gubsy_set_lobby_direct_members(shell.runtime, {});
-        return;
-    }
-
+std::vector<MatchmakingMember> BuildNetworkRemoteMembers(const State& state) {
     std::vector<MatchmakingMember> members;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || slot.connection_kind != PlayerConnectionKind::Remote ||
@@ -725,14 +709,48 @@ void SyncDirectNetworkMembers(Shell& shell) {
             ? slot.display_name
             : "Remote " + std::to_string(slot.player_id);
         member.is_host = slot.player_id == state.net_session.host_player_id;
+        member.member_id = "direct:player:" + std::to_string(slot.player_id);
         if (peer != nullptr && !peer->endpoint_address.empty() && peer->endpoint_port != 0) {
             member.client_label = peer->endpoint_address + ":" + std::to_string(peer->endpoint_port);
-            member.member_id = "direct:" + member.client_label;
-        } else {
-            member.member_id = "direct:player:" + std::to_string(slot.player_id);
         }
         members.push_back(std::move(member));
     }
+    return members;
+}
+
+void SyncDirectNetworkMembers(Shell& shell) {
+    if (shell.state == nullptr) {
+        return;
+    }
+
+    SyncLobbySessionPhase(shell);
+
+    const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
+    if (!lobby.online) {
+        return;
+    }
+
+    const State& state = *shell.state;
+    if (state.net_session.role == network::NetRole::Offline) {
+        gubsy_set_lobby_direct_members(shell.runtime, {});
+        return;
+    }
+
+    std::vector<MatchmakingMember> members;
+    if (!lobby.room_code.empty()) {
+        if (!lobby.is_host) {
+            return;
+        }
+        for (const MatchmakingMember& member : lobby.members) {
+            if (member.is_host || (!lobby.member_id.empty() && member.member_id == lobby.member_id)) {
+                members.push_back(member);
+            }
+        }
+    }
+    std::vector<MatchmakingMember> network_members = BuildNetworkRemoteMembers(state);
+    members.insert(members.end(),
+                   std::make_move_iterator(network_members.begin()),
+                   std::make_move_iterator(network_members.end()));
 
     gubsy_set_lobby_direct_members(shell.runtime, members);
 }
