@@ -450,12 +450,25 @@ void SyncLobbySessionPhase(Shell& shell) {
         return;
 
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
-    if (!lobby.online)
+    if (!lobby.online) {
+        shell.joined_room_host_in_game = false;
         return;
-    if (!lobby.room_code.empty() && !lobby.is_host)
-        return;
+    }
 
     const State& state = *shell.state;
+    if (!lobby.room_code.empty() && !lobby.is_host) {
+        if (state.net_session.role != network::NetRole::Peer) {
+            shell.joined_room_host_in_game = false;
+            return;
+        }
+        shell.joined_room_host_in_game =
+            shell.joined_room_host_in_game || session_contract_is_in_game(lobby.contract);
+        const bool client_ready = shell.joined_room_host_in_game && DirectPeerReadyToPlay(state);
+        (void)gubsy_set_lobby_session_phase(shell.runtime, client_ready ? "in_game" : "lobby");
+        return;
+    }
+    shell.joined_room_host_in_game = false;
+
     bool in_game = false;
     if (state.net_session.role == network::NetRole::Host) {
         in_game = state.mode == Mode::Playing || state.mode == Mode::StageTransition ||

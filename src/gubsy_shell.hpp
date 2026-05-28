@@ -25,6 +25,7 @@ struct Shell {
     bool block_next_menu_input = false;
     bool block_menu_input_until_release = false;
     bool direct_join_pending = false;
+    bool joined_room_host_in_game = false;
     std::string direct_join_endpoint;
     std::uint64_t direct_join_started_ms = 0;
 };

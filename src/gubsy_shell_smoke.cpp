@@ -686,6 +686,83 @@ bool CheckRealRoomdHostJoin() {
         return false;
     }
 
+    if (!gubsy_push_menu_screen(guest_shell.runtime, MenuScreenID::SHELL_LOBBY)) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: guest shell lobby screen missing\n";
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    StepMenu(guest_shell, guest_state);
+    const EngineState& waiting_engine = gubsy_runtime_engine(guest_shell.runtime);
+    const MenuWidget* waiting_action = GubsyWidgetBySlot(waiting_engine, SettingsObjectID::ACTION);
+    if (waiting_action == nullptr || waiting_action->label == nullptr ||
+        std::string(waiting_action->label) != "Waiting For Host") {
+        std::cerr << "Gubsy shell real-roomd smoke failed: joined guest did not wait for host\n";
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    if (!gubsy_start_lobby_game(host_shell.runtime, message)) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: host start failed: " << message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    bool guest_stayed_waiting = false;
+    for (int i = 0; i < 120; ++i) {
+        gubsy_shell::UpdateRuntime(host_shell, 0.016F);
+        StepMenu(guest_shell, guest_state);
+        const EngineState& guest_engine = gubsy_runtime_engine(guest_shell.runtime);
+        const MenuWidget* guest_action = GubsyWidgetBySlot(guest_engine, SettingsObjectID::ACTION);
+        if (guest_shell.joined_room_host_in_game &&
+            guest_action != nullptr && guest_action->label != nullptr &&
+            std::string(guest_action->label) == "Waiting For Host") {
+            guest_stayed_waiting = true;
+            break;
+        }
+    }
+    if (!guest_stayed_waiting) {
+        const GubsyLobbyState& guest_lobby = gubsy_get_lobby_state(guest_shell.runtime);
+        std::cerr << "Gubsy shell real-roomd smoke failed: guest did not wait for host state: "
+                  << guest_lobby.contract.session_phase << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    guest_state.net_session.input_lockstep_enabled = false;
+    bool guest_saw_play = false;
+    for (int i = 0; i < 30; ++i) {
+        StepMenu(guest_shell, guest_state);
+        const EngineState& guest_engine = gubsy_runtime_engine(guest_shell.runtime);
+        const MenuWidget* play_action = GubsyWidgetBySlot(guest_engine, SettingsObjectID::ACTION);
+        if (play_action != nullptr && play_action->label != nullptr &&
+            std::string(play_action->label) == "Play") {
+            guest_saw_play = true;
+            break;
+        }
+    }
+    if (!guest_saw_play) {
+        const GubsyLobbyState& guest_lobby = gubsy_get_lobby_state(guest_shell.runtime);
+        std::cerr << "Gubsy shell real-roomd smoke failed: guest never saw Play after host start: "
+                  << guest_lobby.contract.session_phase << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    if (!gubsy_start_lobby_game(guest_shell.runtime, message) ||
+        (guest_state.mode != Mode::Playing && guest_state.mode != Mode::StageTransition) ||
+        gubsy_shell::InGameMenuOpen(guest_shell)) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: guest Play did not enter gameplay: "
+                  << message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
     (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
     (void)gubsy_leave_lobby_room(host_shell.runtime, message);
     gubsy_shell::Shutdown(guest_shell);

@@ -330,7 +330,8 @@ Current code status:
 - Done in Gubsy: joined sessions hide normal `Host Game` and `Join Game`
   entries and expose `Leave Session` as the bottom exit action.
 - Done in Gubsy/Splonks: joined clients show `Waiting For Host` until host
-  state is playable, then the action becomes `Play` and enters the synced game.
+  state is playable and local Splonks catchup is ready, then the action becomes
+  `Play` and leaves the lobby for the synced game/loading state.
 - Done in Gubsy: offline start says `Start Local Game`; hosted and joined
   states use `Start Game`, `Waiting For Host`, or `Play` as appropriate.
 - Done in Gubsy/Splonks: alerts are runtime toasts with severity colors, finite
@@ -381,3 +382,7 @@ Latest local validation:
   Gubsy shell callbacks, verifies the room is listed by the real HTTP backend,
   joins from a second Splonks shell, and confirms the actual direct transport
   join path.
+- Passed after readiness-gating update: `splonks-cpp ./scripts/validate_gubsy_roomd_live.sh`.
+  The real-roomd smoke now also verifies a browser-joined client remains in
+  `Waiting For Host` after the host starts until Splonks' local peer catchup is
+  ready, then sees `Play` and leaves the lobby for gameplay/loading.
