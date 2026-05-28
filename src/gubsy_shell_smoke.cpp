@@ -268,6 +268,45 @@ bool CheckInGameRestartCommand() {
     return true;
 }
 
+bool CheckNetworkRestartCommandDoesNotDesync() {
+    State state = State::New();
+    gubsy_shell::Shell shell;
+    if (!gubsy_shell::InitHeadless(shell, state)) {
+        std::cerr << "Gubsy shell smoke failed: InitHeadless for network restart failed\n";
+        return false;
+    }
+
+    state.SetMode(Mode::Playing);
+    std::string status;
+    if (!network::StartHostSession(state, 0, &status)) {
+        std::cerr << "Gubsy shell smoke failed: host session for network restart failed: "
+                  << status << '\n';
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    if (!gubsy_shell::OpenInGameMenu(shell)) {
+        std::cerr << "Gubsy shell smoke failed: network restart menu did not open\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    StepMenu(shell, state);
+    PressDown(shell, state);
+    PressDown(shell, state);
+    PressSelect(shell, state);
+
+    if (gubsy_shell::InGameMenuOpen(shell) || state.mode != Mode::Playing ||
+        state.pending_stage_transition.has_value() ||
+        state.net_session.role != network::NetRole::Host || state.pause) {
+        std::cerr << "Gubsy shell smoke failed: network restart queued a local transition\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    gubsy_shell::Shutdown(shell);
+    return true;
+}
+
 bool CheckInGameQuitCommand() {
     State state = State::New();
     gubsy_shell::Shell shell;
@@ -474,8 +513,8 @@ bool CheckDirectHostJoinViaMenu() {
 bool CheckGubsyShellSmoke() {
     try {
         return CheckOfflineStart() && CheckInGameMenuShell() && CheckInGameRestartCommand() &&
-               CheckPeerInputMapping() && CheckInGameQuitCommand() && CheckHostJoin() &&
-               CheckDirectHostJoinViaMenu();
+               CheckNetworkRestartCommandDoesNotDesync() && CheckPeerInputMapping() &&
+               CheckInGameQuitCommand() && CheckHostJoin() && CheckDirectHostJoinViaMenu();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';
         return false;

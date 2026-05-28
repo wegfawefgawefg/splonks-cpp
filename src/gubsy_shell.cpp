@@ -305,8 +305,14 @@ void RestartSplonksFromGubsy(void* user_data, std::int32_t) {
     auto* shell = static_cast<Shell*>(user_data);
     if (shell == nullptr || shell->state == nullptr)
         return;
-    if (shell->state->net_session.role == network::NetRole::Peer)
+    if (shell->state->net_session.role != network::NetRole::Offline) {
+        // Network run restart needs a coordinated stage-transition packet. Until that exists,
+        // do not let one client reload the stage locally and desync the lockstep session.
+        gubsy_close_in_game_menu(shell->runtime);
+        shell->state->pause = false;
+        SuppressGameplayInputAfterMenu(*shell->state);
         return;
+    }
     gubsy_close_in_game_menu(shell->runtime);
     QueueStageTransition(*shell->state,
                          StageLoadTarget::ForQuestStage("classic", "classic_mines_1"), false);
