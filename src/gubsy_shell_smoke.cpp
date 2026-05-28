@@ -145,6 +145,19 @@ const MenuWidget* GubsyWidgetBySlot(const EngineState& engine, UILayoutObjectId 
     return it == menu.cache.widgets.end() ? nullptr : &*it;
 }
 
+SDL_FRect GubsyWidgetRectBySlot(const EngineState& engine, UILayoutObjectId slot) {
+    const auto& menu = menu_system_internal::runtime_state(engine);
+    for (std::size_t i = 0; i < menu.cache.widgets.size() && i < menu.cache.rects.size(); ++i) {
+        if (menu.cache.widgets[i].slot == slot)
+            return menu.cache.rects[i];
+    }
+    return SDL_FRect{};
+}
+
+bool RectHasArea(const SDL_FRect& rect) {
+    return rect.w > 1.0F && rect.h > 1.0F;
+}
+
 void PressDown(gubsy_shell::Shell& shell, State& state) {
     MenuInputs inputs = MenuInputs::New();
     inputs.down.down = true;
@@ -560,6 +573,22 @@ bool CheckDirectHostJoinViaMenu() {
         return false;
     }
     StepMenu(host_shell, host_state);
+    const EngineState& host_engine = gubsy_runtime_engine(host_shell.runtime);
+    const MenuWidget* host_public = GubsyWidgetBySlot(host_engine, SettingsObjectID::CARD4);
+    if (host_public == nullptr || host_public->label == nullptr ||
+        std::string(host_public->label) != "Host Public") {
+        std::cerr << "Gubsy shell smoke failed: host setup missing Host Public bottom action\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    const SDL_FRect max_players_rect = GubsyWidgetRectBySlot(host_engine, SettingsObjectID::CARD2);
+    const SDL_FRect host_public_rect = GubsyWidgetRectBySlot(host_engine, SettingsObjectID::CARD4);
+    if (!RectHasArea(host_public_rect) || !RectHasArea(max_players_rect) ||
+        host_public_rect.y <= max_players_rect.y) {
+        std::cerr << "Gubsy shell smoke failed: Host Public is not below host setup form rows\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
     PressDown(host_shell, host_state);
     PressDown(host_shell, host_state);
     PressDown(host_shell, host_state);

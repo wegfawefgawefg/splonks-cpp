@@ -413,3 +413,8 @@ Latest local validation:
   `splonks-cpp scripts/audit_lobbywork_completion.sh`.
   This reruns focused automated evidence and requires the filled human verdict
   before the plan can be considered complete.
+- Fixed Splonks' embedded Gubsy layout copy:
+  `splonks-cpp data/gubsy/ui_layouts/layouts.lisp` now includes the `CARD4`
+  bottom command slot used by `Host Public`. Without this, Gubsy's own render
+  smoke passed but Splonks' live Gubsy data root could place `Host Public` over
+  the room-name form row.
