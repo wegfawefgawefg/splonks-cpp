@@ -421,7 +421,11 @@ Status:
 - Joined clients see `Waiting For Host` in the top-level lobby action slot, and
   the public API returns `Waiting For Host To Start` without invoking the start
   callback.
+- The joined-client `Waiting For Host` action now has no start command, explains
+  that only the host can start the game, and uses muted disabled-style colors.
 - `public_api_smoke` covers the non-host joined-client start rejection.
+- `lobby_online_smoke` verifies the joined-client shell lobby replaces
+  `Start Game` with the muted host-only waiting state.
 
 ## Client Movement Regression
 
