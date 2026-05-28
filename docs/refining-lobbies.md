@@ -309,9 +309,13 @@ Status:
   kick them from the room-service member list.
 - `lobby_online_smoke` verifies host kick removes the member from the host's
   visible member list and emits a kick alert.
+- Remote public-room rows now include backend, room code, and realtime endpoint
+  context in their detail text.
+- `lobby_online_smoke` verifies the built `Players` screen exposes that remote
+  backend/room/endpoint context.
 - Follow-up remains: kick currently removes the room-service membership only;
   transport-level disconnect enforcement, ban/block persistence, richer
-  endpoint/backend detail, and local/remote/client tabs are still pending.
+  local/remote/client tabs, and fuller ban/block controls are still pending.
 
 ## Join And Leave Alerts
 
