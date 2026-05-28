@@ -123,9 +123,11 @@ Status:
   apply config, or call join transport.
 - The browser now detects the current host's own public room, badges it as
   `YOUR ROOM`, marks it unavailable, and does not attach a join action.
-- Follow-up remains: make the own-room unavailable state visually stronger in
-  the final UI pass, with clear greyed-out/red treatment and no ambiguous join
-  affordance.
+- Own hosted room cards now use stronger red/grey unavailable styling and still
+  have no join action.
+- `lobby_online_smoke` verifies the own-room card is badged `YOUR ROOM`, has no
+  join action, explains `Hosting Here | Unavailable`, and uses unavailable
+  red/grey styling.
 - `lobby_online_smoke` verifies a host cannot join its own public room and that
   the rejection does not leave the hosted session.
 
@@ -218,16 +220,18 @@ Status:
   from the public list when the room code changes.
 - The top-level lobby now exposes `Stop Hosting`/`Leave Session` while online,
   so the host or joined client can leave without re-entering host setup.
+- The hosted lobby now places `Stop Hosting` in the bottom-middle command slot
+  and explains that it closes the hosted session before joining elsewhere.
 - Gubsy now leaves the current online session before joining another direct or
   public game.
 - `lobby_online_smoke` verifies host-then-join leaves the old hosted session,
   connects to the new room, and becomes a non-host client.
 - `lobby_online_smoke` verifies two separate public host processes list as two
   separate public rooms before one host joins the other.
+- `lobby_online_smoke` verifies the hosted shell lobby exposes `Stop Hosting` in
+  the bottom command slot with copy that explains join-before-leave behavior.
 - Follow-up remains: expose this behavior more clearly in UI copy if further
-  playtesting shows the current labels are not clear enough, and confirm the
-  control lands in the intended bottom-lobby position once the full layout pass
-  is done.
+  playtesting shows the current labels are not clear enough.
 
 ### Hosted-Lobby Status
 
