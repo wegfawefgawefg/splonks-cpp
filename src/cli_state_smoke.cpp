@@ -1158,6 +1158,15 @@ bool PrepareLockstepSmokeState(
         failed_step = "configure lockstep ownership";
         return false;
     }
+    state.SetMode(Mode::Playing);
+    return true;
+}
+
+bool PrepareRespawnPolicySmokeEntrance(State& state, const char*& failed_step) {
+    if (!SetScenarioForegroundTile(state, IVec2::New(4, 19), Tile::Entrance)) {
+        failed_step = "prepare respawn entrance";
+        return false;
+    }
     return true;
 }
 
@@ -1339,7 +1348,7 @@ bool StepReadyLockstepFrames(
             SimulationTickMode::ReplayNoNetwork
         );
         const CanonicalStateFingerprint fingerprint =
-            ComputeGameplayDeterminismFingerprint(peer.state);
+            ComputeNetworkStateFingerprint(peer.state);
         peer.frame_hashes.push_back(fingerprint.value);
         peer.next_frame_to_step += 1;
 
@@ -4403,6 +4412,12 @@ bool CheckInputLockstepSmoke() {
                               << (failed_step != nullptr ? failed_step : "unknown") << '\n';
                     return false;
                 }
+                if (!PrepareRespawnPolicySmokeEntrance(peer0.state, failed_step) ||
+                    !PrepareRespawnPolicySmokeEntrance(peer1.state, failed_step)) {
+                    std::cerr << "input lockstep respawn-policy smoke failed during entrance setup: "
+                              << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+                    return false;
+                }
                 ConfigureSmokeNetworkRoles(peer0.state, peer1.state);
                 peer0.state.multiplayer_respawn_mode = mode;
                 peer1.state.multiplayer_respawn_mode = mode;
@@ -4422,9 +4437,18 @@ bool CheckInputLockstepSmoke() {
             }
             StepSingleTick(peer0.state, peer0_audio, peer0_graphics);
             StepSingleTick(peer1.state, peer1_audio, peer1_graphics);
-            if (!SmokePlayerIsAlive(peer0.state, 1) || !SmokePlayerIsAlive(peer1.state, 1) ||
-                !CompareCanonicalFingerprints(peer0.state, peer1.state, "input lockstep easy respawn")) {
-                std::cerr << "input lockstep respawn-policy smoke failed: easy respawn did not revive player 1\n";
+            const bool peer0_p1_alive = SmokePlayerIsAlive(peer0.state, 1);
+            const bool peer1_p1_alive = SmokePlayerIsAlive(peer1.state, 1);
+            if (!peer0_p1_alive || !peer1_p1_alive) {
+                std::cerr << "input lockstep respawn-policy smoke failed: easy respawn did not revive player 1"
+                          << " peer0_alive=" << peer0_p1_alive
+                          << " peer1_alive=" << peer1_p1_alive << '\n';
+                return false;
+            }
+            if (!CompareCanonicalFingerprints(peer0.state, peer1.state, "input lockstep easy respawn")) {
+                std::cerr << "input lockstep respawn-policy smoke failed: easy respawn state diverged"
+                          << "\n  first simple diff: "
+                          << DescribeFirstStateDifference(peer0.state, peer1.state) << '\n';
                 return false;
             }
 

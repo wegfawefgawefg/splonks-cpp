@@ -81,6 +81,12 @@ Desired top-level organization:
 This separates hosting from joining and avoids making `Browse Servers` feel like
 the only join path.
 
+Status:
+
+- Implemented in Gubsy. The top-level lobby now uses `Join Game` instead of a
+  top-level `Browse Servers` entry.
+- `Join Game` opens a submenu containing `Join By IP` and `Browse Servers`.
+
 ### Join By IP Screen
 
 - Direct join fields are unlabeled or poorly labeled.
@@ -500,8 +506,13 @@ Status:
   entering `Playing`: the peer's Gubsy-bound movement input maps to assigned
   player 2, does not leak to host player 1, and does not remain suppressed by
   menu state.
-- The broad `--check-input-lockstep-smoke` still has a separate frame-0 input
-  flag mismatch and remains a follow-up determinism test issue.
+- Fixed the broad `--check-input-lockstep-smoke` by aligning the standalone
+  smoke hash with the runtime lockstep network-state hash, adding an explicit
+  respawn-policy entrance fixture, and making the fake lockstep peers enter
+  `Playing` so the smoke actually advances gameplay frames.
+- `--check-input-lockstep-smoke` now passes through the fuzzer profiles,
+  run-rate skew, carry-transition, respawn-policy, rollback, snapshot-resync,
+  hash-exchange, stage-transition resync-block, and rollback-latency cases.
 
 Investigation areas:
 
