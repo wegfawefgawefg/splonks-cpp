@@ -312,3 +312,52 @@ Implementation notes:
   rows.
 - `Host Public` is grouped with bottom host actions.
 - Targeted smoke/render checks cover the above.
+
+## Implementation Status
+
+Current code status:
+
+- Done in Gubsy: `Join By IP` text fields are labeled `IP / Host` and `Port`,
+  and labeled text inputs render their editable value below helper copy instead
+  of replacing the title line.
+- Done in Gubsy: `Host Session` text fields are labeled `Room Name` and
+  `Host Port`, with the generated room name shown as the editable value.
+- Done in Gubsy/Splonks: direct join does not mark the lobby online until the
+  Splonks transport accepts the join. Failed direct joins stay on `Join By IP`
+  and report `No server found at <ip>:<port>`.
+- Done in Gubsy: after a failed endpoint-specific direct join, the action is
+  disabled and shown as `No Server Found` until the user edits the endpoint.
+- Done in Gubsy: joined sessions hide normal `Host Game` and `Join Game`
+  entries and expose `Leave Session` as the bottom exit action.
+- Done in Gubsy/Splonks: joined clients show `Waiting For Host` until host
+  state is playable, then the action becomes `Play` and enters the synced game.
+- Done in Gubsy: offline start says `Start Local Game`; hosted and joined
+  states use `Start Game`, `Waiting For Host`, or `Play` as appropriate.
+- Done in Gubsy/Splonks: alerts are runtime toasts with severity colors, finite
+  duration, and a small cap. Splonks updates and renders them even while menus
+  are closed, so gameplay join/leave/error alerts can appear over the game.
+- Done in Gubsy: server browser has a top `Search Servers` text box that
+  filters fetched rooms by name, and `Refresh` is a bottom action near `Back`.
+- Done in Gubsy: `Leave Session` and `Stop Hosting` are bottom actions in
+  lobby and host setup flows.
+- Done in Gubsy: `Host Public` is grouped in the bottom action row with
+  `Back` and `Host Direct` / `Stop Hosting`.
+- Done in Splonks: public hosts continuously sync lobby versus in-game phase
+  back to Gubsy so browser-joined clients can see when `Play` is available.
+
+Intentional behavior:
+
+- Direct join reachability is still confirmed by the actual Splonks join
+  attempt and subsequent transport acceptance, not by a separate background
+  UDP probe while typing. The button copy says it checks the endpoint, then
+  the runtime records the truthful success/failure state.
+
+Still needs manual verification:
+
+- Run `gubsy-roomd`, host a public Splonks lobby, join from a second Splonks
+  instance through `Browse Servers`, start from the host, and verify the client
+  sees `Play` and enters gameplay.
+- Repeat direct host/join with no server running first, then with a real host,
+  and verify the failed state, joined state, and alerts are understandable.
+- Verify in-game alerts are visible with menus closed for join, leave, kick,
+  and host-start events.
