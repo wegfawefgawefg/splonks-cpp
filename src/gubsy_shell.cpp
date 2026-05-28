@@ -767,11 +767,6 @@ void SyncDirectNetworkMembers(Shell& shell) {
         if (!lobby.is_host) {
             return;
         }
-        for (const MatchmakingMember& member : lobby.members) {
-            if (member.is_host || (!lobby.member_id.empty() && member.member_id == lobby.member_id)) {
-                members.push_back(member);
-            }
-        }
     }
     std::vector<MatchmakingMember> network_members = BuildNetworkRemoteMembers(state);
     members.insert(members.end(),

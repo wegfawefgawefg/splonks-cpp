@@ -803,9 +803,9 @@ bool CheckMultiLocalPlayerJoin() {
     Graphics graphics;
     PumpTitleNetwork(host_shell, host_state, graphics);
     const GubsyLobbyState& synced_host_lobby = gubsy_get_lobby_state(host_shell.runtime);
-    if (synced_host_lobby.members.size() != 2) {
+    if (synced_host_lobby.game_members.size() != 2) {
         std::cerr << "Gubsy shell smoke failed: multi-local host lobby did not expose two remote members: "
-                  << synced_host_lobby.members.size() << '\n';
+                  << synced_host_lobby.game_members.size() << '\n';
         gubsy_shell::Shutdown(guest_shell);
         gubsy_shell::Shutdown(host_shell);
         return false;
@@ -871,11 +871,11 @@ bool CheckPublicMultiLocalPlayerJoin() {
     Graphics graphics;
     PumpTitleNetwork(host_shell, host_state, graphics);
     const GubsyLobbyState& host_lobby = gubsy_get_lobby_state(host_shell.runtime);
-    if (host_lobby.members.size() != 2 ||
-        host_lobby.members[0].member_id.rfind("direct:player:", 0) != 0 ||
-        host_lobby.members[1].member_id.rfind("direct:player:", 0) != 0) {
+    if (host_lobby.game_members.size() != 2 ||
+        host_lobby.game_members[0].member_id.rfind("direct:player:", 0) != 0 ||
+        host_lobby.game_members[1].member_id.rfind("direct:player:", 0) != 0) {
         std::cerr << "Gubsy shell smoke failed: public multi-local host lobby did not expose two remote players: "
-                  << host_lobby.members.size() << '\n';
+                  << host_lobby.game_members.size() << '\n';
         gubsy_shell::Shutdown(guest_shell);
         gubsy_shell::Shutdown(host_shell);
         return false;
@@ -884,10 +884,10 @@ bool CheckPublicMultiLocalPlayerJoin() {
     (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
     for (int i = 0; i < 60; ++i) {
         PumpTitleNetwork(host_shell, host_state, graphics);
-        if (gubsy_get_lobby_state(host_shell.runtime).members.empty())
+        if (gubsy_get_lobby_state(host_shell.runtime).game_members.empty())
             break;
     }
-    if (!gubsy_get_lobby_state(host_shell.runtime).members.empty()) {
+    if (!gubsy_get_lobby_state(host_shell.runtime).game_members.empty()) {
         std::cerr << "Gubsy shell smoke failed: public multi-local leave did not remove all remote players\n";
         gubsy_shell::Shutdown(guest_shell);
         gubsy_shell::Shutdown(host_shell);
@@ -1093,9 +1093,9 @@ bool CheckDirectRemoteMemberSync() {
     StepMenu(shell, state);
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
     EngineState& engine = gubsy_runtime_engine(shell.runtime);
-    if (lobby.members.size() != 1 || lobby.members.front().display_name != "Remote Friend" ||
-        lobby.members.front().member_id != "direct:player:2" ||
-        lobby.members.front().client_label != "192.0.2.55:45454") {
+    if (lobby.game_members.size() != 1 || lobby.game_members.front().display_name != "Remote Friend" ||
+        lobby.game_members.front().member_id != "direct:player:2" ||
+        lobby.game_members.front().client_label != "192.0.2.55:45454") {
         std::cerr << "Gubsy shell smoke failed: direct remote member was not synced into Gubsy\n";
         gubsy_shell::Shutdown(shell);
         return false;
@@ -1129,7 +1129,7 @@ bool CheckDirectRemoteMemberSync() {
         return false;
     }
 
-    if (!gubsy_lobby_kick_direct_member(engine, lobby.members.front(), message)) {
+    if (!gubsy_lobby_kick_direct_member(engine, lobby.game_members.front(), message)) {
         std::cerr << "Gubsy shell smoke failed: direct remote kick failed: " << message << '\n';
         gubsy_shell::Shutdown(shell);
         return false;
@@ -1140,7 +1140,7 @@ bool CheckDirectRemoteMemberSync() {
         gubsy_shell::Shutdown(shell);
         return false;
     }
-    if (!gubsy_get_lobby_state(shell.runtime).members.empty()) {
+    if (!gubsy_get_lobby_state(shell.runtime).game_members.empty()) {
         std::cerr << "Gubsy shell smoke failed: direct remote kick did not clear Gubsy member\n";
         gubsy_shell::Shutdown(shell);
         return false;
@@ -1164,7 +1164,7 @@ bool CheckDirectRemoteMemberSync() {
     state.net_session.peers.clear();
     state.net_transport->remotes.clear();
     StepMenu(shell, state);
-    if (!gubsy_get_lobby_state(shell.runtime).members.empty()) {
+    if (!gubsy_get_lobby_state(shell.runtime).game_members.empty()) {
         std::cerr << "Gubsy shell smoke failed: direct remote member was not removed from Gubsy\n";
         gubsy_shell::Shutdown(shell);
         return false;
