@@ -9,6 +9,10 @@ Normal branch pushes must not block on hosted package builds. Use local
 validation during development. Use GitHub Actions only for manual or `v*`
 tagged release packaging.
 
+If this effort has been paused, resume from
+[distribution_resume_notes.md](distribution_resume_notes.md) before regenerating
+handoff packets or interpreting stale `dist/` evidence.
+
 ## Developer Onboarding Bar
 
 For developer mode, a platform is ready when a new contributor can:
