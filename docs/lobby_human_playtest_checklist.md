@@ -19,9 +19,10 @@ Use one as host and one as client.
 
 It also initializes `logs/lobby_human_playtest_verdict.json` from
 `docs/lobby_human_playtest_verdict_template.json` when `--init-verdict` is set.
-Fill that verdict after the playtest, then run:
+After the playtest, fill and verify that verdict with:
 
 ```sh
+scripts/fill_lobby_human_playtest_verdict.py
 scripts/summarize_lobby_human_playtest.py
 ```
 

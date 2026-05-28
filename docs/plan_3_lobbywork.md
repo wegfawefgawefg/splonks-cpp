@@ -358,7 +358,8 @@ Still needs manual verification:
 - Use `scripts/run_lobby_human_playtest.sh` and
   `docs/lobby_human_playtest_checklist.md` for the remaining real-window pass.
   Run with `--init-verdict`, fill `logs/lobby_human_playtest_verdict.json`,
-  then verify it with `scripts/summarize_lobby_human_playtest.py`.
+  preferably through `scripts/fill_lobby_human_playtest_verdict.py`, then
+  verify it with `scripts/summarize_lobby_human_playtest.py`.
 - Run `gubsy-roomd`, host a public Splonks lobby, join from a second Splonks
   instance through `Browse Servers`, start from the host, and verify the client
   sees `Play` and enters gameplay.
@@ -398,3 +399,7 @@ Latest local validation:
   `splonks-cpp scripts/summarize_lobby_human_playtest.py`.
   The goal is not complete until a filled `logs/lobby_human_playtest_verdict.json`
   passes that audit after a real two-window playtest.
+- Added manual verdict filler:
+  `splonks-cpp scripts/fill_lobby_human_playtest_verdict.py`.
+  This prompts through the public-browser, direct-join, and alert verdict fields
+  after the real-window pass.

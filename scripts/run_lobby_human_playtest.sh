@@ -129,7 +129,8 @@ if [[ -n "${roomd_pid}" ]]; then
     printf 'gubsy-roomd log: %s\n' "${server_log}"
 fi
 printf 'Checklist: docs/lobby_human_playtest_checklist.md\n\n'
-printf 'After the playtest, fill logs/lobby_human_playtest_verdict.json and run:\n'
+printf 'After the playtest, fill and verify the verdict with:\n'
+printf '  scripts/fill_lobby_human_playtest_verdict.py\n'
 printf '  scripts/summarize_lobby_human_playtest.py\n\n'
 printf 'Manual checks:\n'
 printf '  1. Host window: Host Game -> Host Public.\n'
