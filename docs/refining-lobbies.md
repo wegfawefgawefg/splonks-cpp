@@ -114,6 +114,13 @@ Use a small deterministic/random word-list generator:
 
 The host can still edit the name manually.
 
+Status:
+
+- Implemented in Gubsy. `gubsy_lobby_ensure_ready` now generates a default
+  two-adjective-plus-noun room name instead of using `Local Game`.
+- `lobby_online_smoke` verifies the generated name is not empty, is not
+  `Local Game`, and is preserved when a public room is listed.
+
 ### Visibility
 
 Define exact semantics:
@@ -128,6 +135,17 @@ probably be `Public`.
 If the player chooses `Private`, the UI must explain through labels/structure
 that the room is not browser-visible. Avoid the contradictory feeling of
 "published to browser but private".
+
+Status:
+
+- The Gubsy `Host Public` menu command now forces `Public` before creating the
+  room, matching `gubsy-roomd`'s public-list rule that only rooms with
+  `privacy > 0` appear in `/rooms`.
+- `lobby_online_smoke` now verifies a public hosted room is visible through the
+  room list with `privacy > 0`.
+- Follow-up remains: decide and implement exact behavior for private backend
+  records/invites, since the current UI only exposes direct private hosting and
+  public room publishing.
 
 ### Host Update Behavior
 
