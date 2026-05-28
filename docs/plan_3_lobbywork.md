@@ -238,9 +238,11 @@ Required changes:
 
 - Move the active lobby/session summary to the top-right of the screen, mirroring
   the title padding on the left.
+- Move normal menu status text to the same top-right treatment instead of
+  leaving it in the bottom-right action area on other pages.
 - Right-align the status text.
-- Wrap long status detail text so room names, room codes, endpoints, and player
-  counts remain readable.
+- Wrap long status/detail text so room names, room codes, endpoints, player
+  counts, and explicit newline-delimited status messages remain readable.
 - Keep the bottom-right action area reserved for the primary start/play/wait
   command.
 
@@ -380,6 +382,9 @@ Current code status:
   `Back` and `Host Direct` / `Stop Hosting`.
 - Done in Gubsy/Splonks data: lobby session status uses a dedicated top-right
   status slot with right-aligned wrapping instead of the bottom action area.
+- Done in Gubsy/Splonks data: the shared `STATUS` slots for settings-style and
+  mods-style menu pages also live top-right, and status rendering is
+  right-aligned/wrapped by default with explicit newline breaks preserved.
 - Done in Gubsy: active text input commits on Select/Enter, Back exits active
   editing before screen navigation, and the value-line caret is aligned with the
   editable text.

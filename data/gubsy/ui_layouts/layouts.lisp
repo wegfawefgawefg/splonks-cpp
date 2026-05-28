@@ -106,7 +106,7 @@
     (form_factor desktop)
     (objects
       (object (id 301) (label "title") (x 0.08) (y 0.09) (w 0.28) (h 0.08))
-      (object (id 302) (label "status") (x 0.54) (y 0.86) (w 0.34) (h 0.06))
+      (object (id 302) (label "status") (x 0.62) (y 0.09) (w 0.3) (h 0.15))
       (object (id 303) (label "search") (x 0.18) (y 0.2) (w 0.51) (h 0.07))
       (object (id 304) (label "prev") (x 0.7) (y 0.2) (w 0.05) (h 0.07))
       (object (id 305) (label "next") (x 0.77) (y 0.2) (w 0.05) (h 0.07))
@@ -125,7 +125,7 @@
     (form_factor tablet)
     (objects
       (object (id 301) (label "title") (x 0.08) (y 0.09) (w 0.3) (h 0.09))
-      (object (id 302) (label "status") (x 0.5) (y 0.87) (w 0.38) (h 0.06))
+      (object (id 302) (label "status") (x 0.56) (y 0.09) (w 0.36) (h 0.16))
       (object (id 303) (label "search") (x 0.16) (y 0.2) (w 0.55) (h 0.08))
       (object (id 304) (label "prev") (x 0.72) (y 0.2) (w 0.05) (h 0.08))
       (object (id 305) (label "next") (x 0.79) (y 0.2) (w 0.05) (h 0.08))
@@ -144,7 +144,7 @@
     (form_factor desktop)
     (objects
       (object (id 301) (label "title") (x 0.06) (y 0.08) (w 0.24) (h 0.08))
-      (object (id 302) (label "status") (x 0.46) (y 0.84) (w 0.36) (h 0.06))
+      (object (id 302) (label "status") (x 0.64) (y 0.08) (w 0.3) (h 0.15))
       (object (id 303) (label "search") (x 0.16) (y 0.18) (w 0.47) (h 0.07))
       (object (id 304) (label "prev") (x 0.64) (y 0.18) (w 0.05) (h 0.07))
       (object (id 305) (label "next") (x 0.71) (y 0.18) (w 0.05) (h 0.07))
@@ -172,7 +172,7 @@
       (object (id 322) (label "card2") (x 0.1) (y 0.56) (w 0.8) (h 0.09))
       (object (id 323) (label "card3") (x 0.1) (y 0.68) (w 0.8) (h 0.09))
       (object (id 330) (label "back") (x 0.1) (y 0.86) (w 0.32) (h 0.07))
-      (object (id 302) (label "status") (x 0.46) (y 0.82) (w 0.44) (h 0.06))
+      (object (id 302) (label "status") (x 0.2) (y 0.17) (w 0.68) (h 0.14))
     )
   )
   (layout
@@ -182,7 +182,7 @@
     (form_factor desktop)
     (objects
       (object (id 401) (label "title") (x 0.08) (y 0.09) (w 0.28) (h 0.08))
-      (object (id 402) (label "status") (x 0.54) (y 0.86) (w 0.34) (h 0.06))
+      (object (id 402) (label "status") (x 0.62) (y 0.09) (w 0.3) (h 0.15))
       (object (id 403) (label "search") (x 0.18) (y 0.2) (w 0.51) (h 0.07))
       (object (id 404) (label "prev") (x 0.7) (y 0.2) (w 0.05) (h 0.07))
       (object (id 405) (label "next") (x 0.77) (y 0.2) (w 0.05) (h 0.07))
@@ -204,7 +204,7 @@
     (form_factor tablet)
     (objects
       (object (id 401) (label "title") (x 0.08) (y 0.09) (w 0.3) (h 0.09))
-      (object (id 402) (label "status") (x 0.5) (y 0.87) (w 0.38) (h 0.06))
+      (object (id 402) (label "status") (x 0.56) (y 0.09) (w 0.36) (h 0.16))
       (object (id 403) (label "search") (x 0.16) (y 0.2) (w 0.55) (h 0.08))
       (object (id 404) (label "prev") (x 0.72) (y 0.2) (w 0.05) (h 0.08))
       (object (id 405) (label "next") (x 0.79) (y 0.2) (w 0.05) (h 0.08))
@@ -226,7 +226,7 @@
     (form_factor desktop)
     (objects
       (object (id 401) (label "title") (x 0.06) (y 0.08) (w 0.24) (h 0.08))
-      (object (id 402) (label "status") (x 0.46) (y 0.84) (w 0.36) (h 0.06))
+      (object (id 402) (label "status") (x 0.64) (y 0.08) (w 0.3) (h 0.15))
       (object (id 403) (label "search") (x 0.16) (y 0.18) (w 0.47) (h 0.07))
       (object (id 404) (label "prev") (x 0.64) (y 0.18) (w 0.05) (h 0.07))
       (object (id 405) (label "next") (x 0.71) (y 0.18) (w 0.05) (h 0.07))
@@ -259,7 +259,7 @@
       (object (id 424) (label "card4") (x 0.46) (y 0.86) (w 0.34) (h 0.07))
       (object (id 430) (label "back") (x 0.1) (y 0.86) (w 0.32) (h 0.07))
       (object (id 431) (label "action") (x 0.58) (y 0.86) (w 0.32) (h 0.07))
-      (object (id 402) (label "status") (x 0.46) (y 0.82) (w 0.44) (h 0.06))
+      (object (id 402) (label "status") (x 0.2) (y 0.17) (w 0.68) (h 0.14))
       (object (id 432) (label "status_right") (x 0.2) (y 0.17) (w 0.68) (h 0.14))
     )
   )
