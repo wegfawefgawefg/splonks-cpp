@@ -76,6 +76,10 @@ Expected joined-client lobby behavior:
 - `Join Game` should not be available while joined to another host unless we
   deliberately support "leave current session and join another" from that path.
 - `Leave Session` should be the obvious way out of the joined state.
+- More generally, `Host Game` and `Join Game` should only appear when the
+  runtime is not already in an online/direct/public session. If we are in a
+  session, the user should leave that session before seeing normal host/join
+  entry points again.
 
 Current issue:
 
@@ -83,6 +87,37 @@ Current issue:
   with `Host Game` disabled via copy. This feels wrong for the normal joined
   client state. Prefer hiding host/join actions, or moving any rejoin/switch
   behavior behind an explicit leave-first flow.
+
+### Joined Client Play Transition
+
+When a client joins through the room browser, the lobby can show
+`Waiting For Host` / `Only the host can start`. If the host later starts the
+game, the client can receive host state but remain stuck on the lobby view.
+
+This is wrong for Splonks' current multiplayer model. Joined clients should be
+able to enter play once the host is actually in a playable state. That can mean
+the host is at the initial level transition/load state or already in the middle
+of a level, because this game supports join-in-progress behavior.
+
+Expected behavior:
+
+- While the host is still in lobby, joined clients see `Waiting For Host`.
+- Once the host is in play or ready for a joined client to load in, the disabled
+  waiting action should become an actionable `Play` or equivalent.
+- The `Play` action should be green/actionable and should transition the joined
+  client into gameplay using the host-provided state.
+- The client should not stay stuck on the lobby after host state has arrived and
+  the session is playable.
+- If the host has not reached a playable state or state sync is incomplete, the
+  UI should say that clearly rather than pretending the only possible action is
+  host-owned start.
+
+Open implementation question:
+
+- Decide whether the client auto-enters play when the host sends playable state,
+  or whether the button changes to `Play` and the client confirms. Current
+  preference is a clear green `Play` button because it makes the state machine
+  visible while we are still debugging.
 
 ### Leave Session Placement
 
@@ -142,6 +177,10 @@ Required changes:
   status.
 - Add rendered/widget smoke coverage for text-input row hierarchy and bottom
   action placement.
+- Add smoke coverage for a browser-joined client receiving host playable state
+  and being able to enter gameplay instead of remaining stuck in the lobby.
+- Add widget smoke coverage proving `Host Game` and `Join Game` are absent or
+  unavailable as normal main-list actions while already in an online session.
 
 ## Done When
 
@@ -152,6 +191,8 @@ Required changes:
   reachability state.
 - Joined clients do not see normal host/join actions as available main lobby
   actions.
+- Browser-joined clients can enter play after the host starts or otherwise
+  reaches a playable join-in-progress state.
 - `Leave Session` / `Stop Hosting` are bottom actions and do not overlap list
   rows.
 - `Host Public` is grouped with bottom host actions.
