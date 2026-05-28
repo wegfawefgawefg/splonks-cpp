@@ -365,8 +365,11 @@ Status:
 - The top-level lobby now labels joined clients as joined/waiting and prevents
   them from opening the host-game flow while they are connected to another
   host.
-- Follow-up remains: show fuller host/backend/player-count context in the
-  top-level lobby once remote member/client listing is available.
+- The top-level joined-client lobby status shows public-session context,
+  host display name, player count, and remote client count when room-service
+  member data is available.
+- `lobby_online_smoke` verifies the joined-client shell-lobby status and
+  host-only host-flow copy.
 
 ### Start Game Button For Joined Clients
 
