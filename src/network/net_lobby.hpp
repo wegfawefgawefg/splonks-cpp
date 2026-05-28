@@ -34,6 +34,9 @@ bool JoinHostSession(
     std::string* status_out
 );
 void DisconnectSession(State& state, std::string* status_out);
+bool KickRemoteEndpoint(State& state, const std::string& address, std::uint16_t port,
+                        std::string* status_out);
+bool KickRemotePlayer(State& state, PlayerId player_id, std::string* status_out);
 bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);

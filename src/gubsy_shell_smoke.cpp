@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <gubsy/input/types.hpp>
+#include <gubsy/lobby/state.hpp>
 #include <gubsy/runtime.hpp>
 #include <iostream>
 #include <SDL3/SDL_scancode.h>
@@ -596,6 +597,10 @@ bool CheckDirectRemoteMemberSync() {
     peer.endpoint_port = 45454;
     peer.connected = true;
     state.net_session.peers.push_back(peer);
+    state.net_transport->remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {2},
+        .endpoint = {.address = "192.0.2.55", .port = 45454},
+    });
 
     StepMenu(shell, state);
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
@@ -630,8 +635,40 @@ bool CheckDirectRemoteMemberSync() {
         return false;
     }
 
+    if (!gubsy_lobby_kick_direct_member(engine, lobby.members.front(), message)) {
+        std::cerr << "Gubsy shell smoke failed: direct remote kick failed: " << message << '\n';
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    StepMenu(shell, state);
+    if (state.players.Find(2) != nullptr || !state.net_transport->remotes.empty()) {
+        std::cerr << "Gubsy shell smoke failed: direct remote kick did not remove network peer\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    if (!gubsy_get_lobby_state(shell.runtime).members.empty()) {
+        std::cerr << "Gubsy shell smoke failed: direct remote kick did not clear Gubsy member\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    if (!GubsyAlertContains(engine, "Kicked direct player")) {
+        std::cerr << "Gubsy shell smoke failed: direct remote kick alert missing\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    state.players.EnsureRemotePlayer(2, "Remote Friend");
+    state.net_session.peers.clear();
+    state.net_session.peers.push_back(peer);
+    state.net_transport->remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {2},
+        .endpoint = {.address = "192.0.2.55", .port = 45454},
+    });
+    StepMenu(shell, state);
+
     state.players.Remove(2);
     state.net_session.peers.clear();
+    state.net_transport->remotes.clear();
     StepMenu(shell, state);
     if (!gubsy_get_lobby_state(shell.runtime).members.empty()) {
         std::cerr << "Gubsy shell smoke failed: direct remote member was not removed from Gubsy\n";

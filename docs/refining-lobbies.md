@@ -11,6 +11,23 @@ joined-client experience need a product pass and a networking correctness pass.
 
 ## Current Problems Observed
 
+### Live Playtest Amendments
+
+- When a host opens the server browser, their own public room may appear, but it
+  must be clearly treated as the current session, not a join target. It should
+  be red/error-badged or greyed out, unclickable, and skipped by the join
+  command path.
+- The hosted lobby needs an obvious bottom command for `Stop Hosting` so a host
+  can close the current direct/public session without navigating back through
+  host setup.
+- If a host joins another game by direct IP or server browser, joining should
+  first stop the current hosted session. There should be no state where the app
+  remains a stale/background host while also becoming a client.
+- The `Players` row hierarchy needs another visual pass. `Players` should be
+  the row title/command, with local/remote counts as secondary text. Session
+  state such as `Currently Public Hosting via gubsy-roomd` belongs in the
+  hosted-lobby status area, not as the apparent title of the `Players` command.
+
 ### Host Session Screen
 
 - The `Publish To Browser` control appears in a strange horizontal position.
@@ -394,10 +411,17 @@ Status:
 - Direct sessions now use the same remote-member surface for display purposes:
   Splonks feeds connected direct network player slots into Gubsy, and Gubsy
   shows them in the unified `Players` screen with direct-session context.
-- Follow-up remains: kick enforcement is heartbeat-driven rather than an
-  immediate host-to-client transport command; direct-session kick, ban/block
-  persistence, richer local/remote/client tabs, and fuller ban/block controls
-  are still pending.
+- Direct session hosts can now select a direct remote member and use the same
+  `Kick Player` action. Gubsy exposes an app-owned direct-kick callback, and
+  Splonks wires it to host-side direct network endpoint/player removal.
+- `lobby_online_smoke` verifies direct remote rows open the remote management
+  screen and expose a direct-session `Kick Player` action. `--check-gubsy-shell-smoke`
+  verifies Splonks removes the direct remote peer and Gubsy clears the member
+  after the next direct-member sync.
+- Follow-up remains: public-room kick enforcement is heartbeat-driven rather
+  than an immediate host-to-client transport command; ban/block persistence,
+  richer local/remote/client tabs, and fuller ban/block controls are still
+  pending.
 
 ## Join And Leave Alerts
 

@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <string>
 
 namespace splonks::gubsy_shell {
 
@@ -399,6 +400,78 @@ GubsyLobbyLeaveResult LeaveSplonksFromGubsy(void* user_data, const GubsyLobbySta
     return result;
 }
 
+bool ParseDirectMemberEndpoint(const std::string& member_id, std::string& address,
+                               std::uint16_t& port) {
+    constexpr const char* kPrefix = "direct:";
+    if (member_id.rfind(kPrefix, 0) != 0) {
+        return false;
+    }
+    const std::string endpoint = member_id.substr(std::char_traits<char>::length(kPrefix));
+    const std::size_t colon = endpoint.rfind(':');
+    if (colon == std::string::npos || colon + 1 >= endpoint.size()) {
+        return false;
+    }
+    address = endpoint.substr(0, colon);
+    if (address.empty() || address == "player") {
+        return false;
+    }
+    try {
+        const int parsed = std::stoi(endpoint.substr(colon + 1));
+        if (parsed <= 0 || parsed > 65535) {
+            return false;
+        }
+        port = static_cast<std::uint16_t>(parsed);
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+bool ParseDirectMemberPlayerId(const std::string& member_id, PlayerId& player_id) {
+    constexpr const char* kPrefix = "direct:player:";
+    if (member_id.rfind(kPrefix, 0) != 0) {
+        return false;
+    }
+    try {
+        const int parsed =
+            std::stoi(member_id.substr(std::char_traits<char>::length(kPrefix)));
+        if (parsed <= 0) {
+            return false;
+        }
+        player_id = static_cast<PlayerId>(parsed);
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+GubsyLobbyKickResult KickDirectSplonksMemberFromGubsy(void* user_data,
+                                                      const GubsyLobbyState&,
+                                                      const MatchmakingMember& member) {
+    GubsyLobbyKickResult result;
+    auto* shell = static_cast<Shell*>(user_data);
+    if (shell == nullptr || shell->state == nullptr) {
+        result.status = "Direct kick is not available.";
+        return result;
+    }
+
+    std::string address;
+    std::uint16_t port = 0;
+    if (ParseDirectMemberEndpoint(member.member_id, address, port)) {
+        result.ok = network::KickRemoteEndpoint(*shell->state, address, port, &result.status);
+    } else {
+        PlayerId player_id = kInvalidPlayerId;
+        if (ParseDirectMemberPlayerId(member.member_id, player_id)) {
+            result.ok = network::KickRemotePlayer(*shell->state, player_id, &result.status);
+        } else {
+            result.status = "Cannot identify direct player.";
+        }
+    }
+    if (!result.status.empty())
+        std::cerr << result.status << '\n';
+    return result;
+}
+
 MenuInputState BuildGubsyMenuInput(const MenuInputs& inputs, bool text_edit_active) {
     MenuInputState result{};
     result.up = inputs.up.down;
@@ -486,6 +559,8 @@ bool RegisterShellMenu(Shell& shell, State& state) {
     lobby_commands.join_user_data = &shell;
     lobby_commands.leave = LeaveSplonksFromGubsy;
     lobby_commands.leave_user_data = &state;
+    lobby_commands.kick_direct_member = KickDirectSplonksMemberFromGubsy;
+    lobby_commands.kick_direct_member_user_data = &shell;
     gubsy_set_lobby_commands(shell.runtime, lobby_commands);
     return gubsy_show_main_menu(shell.runtime);
 }

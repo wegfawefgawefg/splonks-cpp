@@ -162,6 +162,65 @@ void RemoveRemoteEndpoint(
     );
 }
 
+bool KickRemoteEndpoint(
+    State& state,
+    const std::string& address,
+    std::uint16_t port,
+    std::string* status_out
+) {
+    if (state.net_session.role != NetRole::Host || state.net_transport == nullptr) {
+        if (status_out != nullptr) {
+            *status_out = "Only the host can kick direct players.";
+        }
+        return false;
+    }
+    NetEndpoint endpoint;
+    endpoint.address = address;
+    endpoint.port = port;
+    for (const NetRemoteEndpoint& remote : state.net_transport->remotes) {
+        if (EndpointsEqual(remote.endpoint, endpoint)) {
+            RemoveRemoteEndpoint(state, *state.net_transport, endpoint);
+            if (status_out != nullptr) {
+                *status_out = "Kicked direct player.";
+            }
+            return true;
+        }
+    }
+    if (status_out != nullptr) {
+        *status_out = "Direct player is no longer connected.";
+    }
+    return false;
+}
+
+bool KickRemotePlayer(State& state, PlayerId player_id, std::string* status_out) {
+    if (state.net_session.role != NetRole::Host || state.net_transport == nullptr) {
+        if (status_out != nullptr) {
+            *status_out = "Only the host can kick direct players.";
+        }
+        return false;
+    }
+    if (player_id == kInvalidPlayerId || player_id == state.net_session.local_player_id) {
+        if (status_out != nullptr) {
+            *status_out = "Cannot kick that player.";
+        }
+        return false;
+    }
+    for (const NetRemoteEndpoint& remote : state.net_transport->remotes) {
+        if (std::find(remote.player_ids.begin(), remote.player_ids.end(), player_id) !=
+            remote.player_ids.end()) {
+            RemoveRemoteEndpoint(state, *state.net_transport, remote.endpoint);
+            if (status_out != nullptr) {
+                *status_out = "Kicked direct player.";
+            }
+            return true;
+        }
+    }
+    if (status_out != nullptr) {
+        *status_out = "Direct player is no longer connected.";
+    }
+    return false;
+}
+
 void CleanupTimedOutRemoteEndpoints(State& state, NetTransportRuntime& transport) {
     transport.pending_join_endpoints.erase(
         std::remove_if(
