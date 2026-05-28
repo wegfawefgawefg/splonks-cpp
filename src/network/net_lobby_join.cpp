@@ -437,6 +437,9 @@ void HandleJoinAcceptAsPeer(
     if (state.net_session.input_lockstep_enabled) {
         state.ents = EntPool::New();
     }
+    state.pending_stage_transition.reset();
+    state.game_over = false;
+    state.pause = false;
     state.controlled_ent_vid.reset();
     state.net_session.ClearStageEntLinks();
 

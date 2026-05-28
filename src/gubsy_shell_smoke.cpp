@@ -332,6 +332,47 @@ bool CheckPeerGameplayInputAfterStart() {
     return true;
 }
 
+bool CheckPeerPlayLeavesStaleTransition() {
+    State state = State::New();
+    gubsy_shell::Shell shell;
+    if (!gubsy_shell::InitHeadless(shell, state)) {
+        std::cerr << "Gubsy shell smoke failed: InitHeadless for stale peer transition failed\n";
+        return false;
+    }
+
+    state.SetMode(Mode::StageTransition);
+    state.pending_stage_transition = StageTransitionTarget{
+        .destination = StageLoadTarget::ForQuestStage("classic", "classic_mines_1"),
+    };
+    state.net_session.role = network::NetRole::Peer;
+    state.net_session.input_lockstep_enabled = true;
+    state.net_session.local_player_id = 2;
+    state.net_session.quest_id = "classic";
+    state.net_session.quest_stage_id = "classic_mines_1";
+
+    EngineState& engine = gubsy_runtime_engine(shell.runtime);
+    engine.lobby.online = true;
+    engine.lobby.is_host = false;
+    engine.lobby.room_code = "ROOM1";
+    engine.lobby.contract.session_phase = "in_game";
+    engine.lobby.contract.realtime_endpoint = "127.0.0.1:35355";
+
+    std::string message;
+    if (!gubsy_start_lobby_game(shell.runtime, message) ||
+        state.mode != Mode::Playing ||
+        state.pending_stage_transition.has_value() ||
+        state.game_over ||
+        state.pause) {
+        std::cerr << "Gubsy shell smoke failed: peer Play did not leave stale transition: "
+                  << message << '\n';
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+
+    gubsy_shell::Shutdown(shell);
+    return true;
+}
+
 bool CheckInGameRestartCommand() {
     State state = State::New();
     gubsy_shell::Shell shell;
@@ -1108,7 +1149,8 @@ bool CheckGubsyShellSmoke() {
     try {
         return CheckOfflineStart() && CheckInGameMenuShell() && CheckInGameRestartCommand() &&
                CheckNetworkRestartCommandDoesNotDesync() && CheckPeerInputMapping() &&
-               CheckPeerGameplayInputAfterStart() && CheckInGameQuitCommand() && CheckHostJoin() &&
+               CheckPeerGameplayInputAfterStart() && CheckPeerPlayLeavesStaleTransition() &&
+               CheckInGameQuitCommand() && CheckHostJoin() &&
                CheckDirectHostJoinViaMenu() && CheckMultiLocalPlayerJoin() &&
                CheckPublicMultiLocalPlayerJoin() && CheckDirectRemoteMemberSync();
     } catch (const std::exception& e) {

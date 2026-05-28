@@ -289,7 +289,9 @@ void StartSplonksFromGubsy(void* user_data, std::int32_t) {
             return;
         }
         shell->state->pause = false;
-        if (shell->state->mode == Mode::Title) {
+        shell->state->pending_stage_transition.reset();
+        shell->state->game_over = false;
+        if (shell->state->mode != Mode::Playing) {
             shell->state->scene_frame = 0;
             shell->state->SetMode(Mode::Playing);
         }
