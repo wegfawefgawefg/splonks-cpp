@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "${script_dir}/.." && pwd)"
+gubsy_root="$(cd -- "${repo_root}/../gubsy" && pwd)"
+
+server_port="${ROOM_SERVER_PORT:-8788}"
+server_url="${GUB_ROOM_SERVER_URL:-http://127.0.0.1:${server_port}}"
+server_log="${repo_root}/logs/gubsy_roomd_lobby_playtest.log"
+roomd_binary="${gubsy_root}/build/gubsy-roomd"
+preset="${SPLONKS_PRESET:-release}"
+binary_dir="build"
+if [ "${preset}" = "dev" ]; then
+    binary_dir="build-debug"
+fi
+binary="${repo_root}/${binary_dir}/splonks-cpp"
+
+case "${OS:-}:$(uname -s)" in
+    Windows_NT:*|*:MINGW*|*:MSYS*|*:CYGWIN*)
+        binary="${binary}.exe"
+        ;;
+esac
+
+usage() {
+    printf '%s\n' \
+        "Usage: scripts/run_lobby_human_playtest.sh [--no-build] [--no-roomd]" \
+        "" \
+        "Starts local gubsy-roomd plus two Splonks windows for the lobby" \
+        "human playtest checklist." \
+        "" \
+        "Environment:" \
+        "  ROOM_SERVER_PORT       Local roomd port when GUB_ROOM_SERVER_URL is unset (default: 8788)." \
+        "  GUB_ROOM_SERVER_URL    Room server URL passed to both Splonks windows." \
+        "  SPLONKS_PRESET         release or dev (default: release)." \
+        "  SPLONKS_I3_WORKSPACE   i3 workspace for window placement (default: 2)." \
+        "  SPLONKS_I3_OUTPUT      Optional i3 output for the workspace." \
+        "  SDL_VIDEODRIVER        Defaults to x11 when DISPLAY is set." \
+        "" \
+        "Checklist: docs/lobby_human_playtest_checklist.md"
+}
+
+build=1
+start_roomd=1
+while (($#)); do
+    case "$1" in
+        --no-build)
+            build=0
+            shift
+            ;;
+        --no-roomd)
+            start_roomd=0
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            printf 'unknown option: %s\n\n' "$1" >&2
+            usage >&2
+            exit 2
+            ;;
+    esac
+done
+
+if [ -n "${DISPLAY:-}" ] && [ -z "${SDL_VIDEODRIVER:-}" ]; then
+    export SDL_VIDEODRIVER=x11
+fi
+
+if ((build != 0)); then
+    "${script_dir}/build.sh"
+    if [ ! -x "${roomd_binary}" ] && ((start_roomd != 0)); then
+        (cd "${gubsy_root}" && ./scripts/build.sh)
+    fi
+fi
+
+if [[ ! -x "${binary}" ]]; then
+    echo "Expected Splonks executable not found: ${binary}" >&2
+    exit 1
+fi
+if ((start_roomd != 0)) && [[ ! -x "${roomd_binary}" ]]; then
+    echo "Expected gubsy-roomd executable not found: ${roomd_binary}" >&2
+    exit 1
+fi
+
+mkdir -p "${repo_root}/logs"
+roomd_pid=""
+cleanup() {
+    if [[ -n "${roomd_pid}" ]]; then
+        kill "${roomd_pid}" >/dev/null 2>&1 || true
+        wait "${roomd_pid}" >/dev/null 2>&1 || true
+    fi
+}
+trap cleanup EXIT
+
+if ((start_roomd != 0)); then
+    "${roomd_binary}" "--port=${server_port}" >"${server_log}" 2>&1 &
+    roomd_pid=$!
+    for _ in $(seq 1 50); do
+        if curl -fsS "${server_url}/rooms" >/dev/null 2>&1; then
+            break
+        fi
+        sleep 0.1
+    done
+fi
+
+printf 'Lobby human playtest\n'
+printf 'Room server: %s\n' "${server_url}"
+if [[ -n "${roomd_pid}" ]]; then
+    printf 'gubsy-roomd pid: %s\n' "${roomd_pid}"
+    printf 'gubsy-roomd log: %s\n' "${server_log}"
+fi
+printf 'Checklist: docs/lobby_human_playtest_checklist.md\n\n'
+printf 'Manual checks:\n'
+printf '  1. Host window: Host Game -> Host Public.\n'
+printf '  2. Client window: Join Game -> Browse Servers -> select host room.\n'
+printf '  3. Host starts; client waits, then sees Play and enters gameplay/loading.\n'
+printf '  4. Repeat Join By IP failure and success.\n'
+printf '  5. Confirm lobby/in-game alerts.\n\n'
+
+launch_child() {
+    local role="$1"
+    local ctl_port="$2"
+    cd "${repo_root}"
+    GUB_ROOM_SERVER_URL="${server_url}" "${binary}" \
+        --debug-control-port "${ctl_port}" \
+        --project-root "${repo_root}" &
+    printf '%s pid: %s debug-control-port: %s\n' "${role}" "$!" "${ctl_port}"
+}
+
+if ! command -v i3-msg >/dev/null 2>&1; then
+    launch_child "host-window" 41210
+    sleep 0.4
+    launch_child "client-window" 41211
+    wait
+    exit 0
+fi
+
+workspace="${SPLONKS_I3_WORKSPACE:-2}"
+target_output="${SPLONKS_I3_OUTPUT:-}"
+window_title="${SPLONKS_I3_WINDOW_TITLE:-^Splonks$}"
+i3-msg "workspace number ${workspace}" >/dev/null
+if [ -n "${target_output}" ]; then
+    i3-msg "move workspace to output ${target_output}" >/dev/null
+fi
+i3-msg "layout splitv" >/dev/null
+
+launch_child "host-window" 41210
+sleep 0.4
+launch_child "client-window" 41211
+sleep "${SPLONKS_I3_SETTLE_SECONDS:-1.2}"
+i3-msg "workspace number ${workspace}" >/dev/null
+i3-msg "[title=\"${window_title}\"] floating disable" >/dev/null || true
+i3-msg "[title=\"${window_title}\"] focus" >/dev/null || true
+i3-msg "layout splitv" >/dev/null
+
+wait

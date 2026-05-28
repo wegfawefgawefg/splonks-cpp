@@ -355,6 +355,8 @@ Intentional behavior:
 
 Still needs manual verification:
 
+- Use `scripts/run_lobby_human_playtest.sh` and
+  `docs/lobby_human_playtest_checklist.md` for the remaining real-window pass.
 - Run `gubsy-roomd`, host a public Splonks lobby, join from a second Splonks
   instance through `Browse Servers`, start from the host, and verify the client
   sees `Play` and enters gameplay.
@@ -386,3 +388,7 @@ Latest local validation:
   The real-roomd smoke now also verifies a browser-joined client remains in
   `Waiting For Host` after the host starts until Splonks' local peer catchup is
   ready, then sees `Play` and leaves the lobby for gameplay/loading.
+- Added manual verification aid:
+  `splonks-cpp scripts/run_lobby_human_playtest.sh --help`.
+  The launcher/checklist starts local `gubsy-roomd` plus two Splonks windows
+  and enumerates the remaining public-browser, direct-join, and alert checks.
