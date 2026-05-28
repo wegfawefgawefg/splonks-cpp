@@ -245,6 +245,17 @@ rather than separate top-level entries:
 - `Remote`
 - `Clients`
 
+Status:
+
+- The top-level Gubsy `Players` row now summarizes local players plus remote
+  room members when matchmaking member data is available.
+- The `Players` screen now lists local players first and remote room members
+  below them, with host/client labels and member identifiers as early remote
+  client context.
+- Follow-up remains: remote player rows are informational only for now; kick,
+  ban/block, richer endpoint/backend detail, and local/remote/client tabs are
+  still pending.
+
 ## Join And Leave Alerts
 
 Add lightweight alerts/toasts for lobby membership changes:
