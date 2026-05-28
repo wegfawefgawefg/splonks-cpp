@@ -209,6 +209,41 @@ Required changes:
   commands.
 - Make sure text does not clip in the bottom actions at 1280x720.
 
+### Text Input Accept And Caret Alignment
+
+Text input needs to behave like a normal game UI control, especially for
+controller/keyboard-only use.
+
+Observed issues:
+
+- The active text cursor appears slightly too high relative to the value text.
+- Pressing Enter/confirm while editing does not accept the current value and exit
+  editing.
+- Pressing Back from a controller should exit text input before it backs out of
+  the screen.
+
+Required changes:
+
+- Align the text-input caret to the editable value baseline.
+- Make Select/Enter commit the active text field.
+- Keep Back/Escape behavior scoped so it closes active text input first and only
+  navigates back when no field is actively being edited.
+
+### Lobby Session Status Placement
+
+The session-state summary was drawn in the bottom-right action area where it can
+collide with buttons and become unreadable.
+
+Required changes:
+
+- Move the active lobby/session summary to the top-right of the screen, mirroring
+  the title padding on the left.
+- Right-align the status text.
+- Wrap long status detail text so room names, room codes, endpoints, and player
+  counts remain readable.
+- Keep the bottom-right action area reserved for the primary start/play/wait
+  command.
+
 ### Alert / Toast System
 
 The game needs a cheap general-purpose alert system: short messages that slide
@@ -343,6 +378,11 @@ Current code status:
   lobby and host setup flows.
 - Done in Gubsy: `Host Public` is grouped in the bottom action row with
   `Back` and `Host Direct` / `Stop Hosting`.
+- Done in Gubsy/Splonks data: lobby session status uses a dedicated top-right
+  status slot with right-aligned wrapping instead of the bottom action area.
+- Done in Gubsy: active text input commits on Select/Enter, Back exits active
+  editing before screen navigation, and the value-line caret is aligned with the
+  editable text.
 - Done in Splonks: public hosts continuously sync lobby versus in-game phase
   back to Gubsy so browser-joined clients can see when `Play` is available.
 
@@ -418,3 +458,14 @@ Latest local validation:
   bottom command slot used by `Host Public`. Without this, Gubsy's own render
   smoke passed but Splonks' live Gubsy data root could place `Host Public` over
   the room-name form row.
+- Fixed Gubsy text entry and lobby status placement:
+  text fields now commit on confirm while editing, the value-line caret is
+  lowered onto the typed text baseline, and shell lobby status uses top-right
+  wrapped/right-aligned copy. Splonks' embedded Gubsy layout copy also includes
+  the new top-right status slot.
+- Passed after text/status update: `gubsy ./scripts/build.sh`.
+- Passed after text/status update:
+  `gubsy GUBSY_RENDER_SMOKE=1 ./scripts/lobby_online_smoke.sh`.
+- Passed after embedded layout/smoke update: `splonks-cpp ./scripts/build.sh`.
+- Passed after embedded layout/smoke update:
+  `splonks-cpp ctest --test-dir build --output-on-failure -R "gubsy_shell_smoke|gubsy_import_smoke|gubsy_binds_smoke"`.

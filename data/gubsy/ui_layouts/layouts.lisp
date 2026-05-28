@@ -194,6 +194,7 @@
       (object (id 424) (label "card4") (x 0.38) (y 0.88) (w 0.28) (h 0.07))
       (object (id 430) (label "back") (x 0.08) (y 0.88) (w 0.2) (h 0.07))
       (object (id 431) (label "action") (x 0.72) (y 0.88) (w 0.2) (h 0.07))
+      (object (id 432) (label "status_right") (x 0.62) (y 0.09) (w 0.3) (h 0.15))
     )
   )
   (layout
@@ -215,6 +216,7 @@
       (object (id 424) (label "card4") (x 0.38) (y 0.88) (w 0.28) (h 0.08))
       (object (id 430) (label "back") (x 0.08) (y 0.88) (w 0.24) (h 0.08))
       (object (id 431) (label "action") (x 0.68) (y 0.88) (w 0.24) (h 0.08))
+      (object (id 432) (label "status_right") (x 0.56) (y 0.09) (w 0.36) (h 0.16))
     )
   )
   (layout
@@ -236,6 +238,7 @@
       (object (id 424) (label "card4") (x 0.34) (y 0.84) (w 0.28) (h 0.07))
       (object (id 430) (label "back") (x 0.08) (y 0.84) (w 0.2) (h 0.07))
       (object (id 431) (label "action") (x 0.72) (y 0.84) (w 0.2) (h 0.07))
+      (object (id 432) (label "status_right") (x 0.64) (y 0.08) (w 0.3) (h 0.15))
     )
   )
   (layout
@@ -257,6 +260,7 @@
       (object (id 430) (label "back") (x 0.1) (y 0.86) (w 0.32) (h 0.07))
       (object (id 431) (label "action") (x 0.58) (y 0.86) (w 0.32) (h 0.07))
       (object (id 402) (label "status") (x 0.46) (y 0.82) (w 0.44) (h 0.06))
+      (object (id 432) (label "status_right") (x 0.2) (y 0.17) (w 0.68) (h 0.14))
     )
   )
   (layout

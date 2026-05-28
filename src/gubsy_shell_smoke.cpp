@@ -854,7 +854,7 @@ bool CheckDirectRemoteMemberSync() {
         return false;
     }
     StepMenu(shell, state);
-    const MenuWidget* status = GubsyWidgetBySlot(engine, SettingsObjectID::STATUS);
+    const MenuWidget* status = GubsyWidgetBySlot(engine, SettingsObjectID::STATUS_RIGHT);
     const MenuWidget* players = GubsyWidgetBySlot(engine, SettingsObjectID::CARD0);
     if (status == nullptr || status->secondary == nullptr ||
         std::string(status->secondary).find("1 remote client") == std::string::npos ||
