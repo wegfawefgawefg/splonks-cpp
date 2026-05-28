@@ -1,0 +1,16 @@
+(input_settings_profiles
+  (profile
+    (id 98231816)
+    (name "DefaultInputSettings")
+    (mouse_sensitivity 1)
+    (mouse_invert_x 0)
+    (mouse_invert_y 0)
+    (controller_sensitivity 1)
+    (stick_deadzone 0.15)
+    (trigger_threshold 0.1)
+    (controller_invert_x 0)
+    (controller_invert_y 0)
+    (vibration_enabled 1)
+    (vibration_strength 1)
+  )
+)
