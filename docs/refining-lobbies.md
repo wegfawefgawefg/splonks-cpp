@@ -265,6 +265,19 @@ move.
 This is a regression from before the Gubsy integration and must be treated as a
 blocking gameplay/network bug.
 
+Status:
+
+- Fixed initial joined-client movement by mapping Gubsy gameplay input to the
+  assigned network `PlayerId` instead of the local player slot index.
+- Fixed host-triggered multiplayer restart preserving the wrong local/remote
+  player ownership on peers.
+- Added a host-side input ownership guard so peers cannot submit input records
+  for player IDs not assigned to their endpoint.
+- Added focused smoke coverage for the restart-style fresh network stage reload
+  preserving host/local and peer/local ownership.
+- The broad `--check-input-lockstep-smoke` still has a separate frame-0 input
+  flag mismatch and remains a follow-up determinism test issue.
+
 Investigation areas:
 
 - Verify Gubsy input forwarding for joined clients after the lobby transitions
@@ -288,6 +301,10 @@ Expected fix outcome:
 - Joined client can move their local assigned player.
 - Host sees joined client movement.
 - Joined client sees host movement.
+- After a host-triggered restart, host and clients keep the same local/remote
+  player ownership.
+- After a host-triggered restart, the host continues syncing canonical input to
+  clients and clients only submit their own assigned player inputs.
 
 ## Room Browser Backend Checks
 
@@ -320,7 +337,8 @@ Checklist:
 9. Add remote player/client listing and basic kick action.
 10. Add join/leave alerts.
 11. Fix client-side start-game behavior and waiting-for-host messaging.
-12. Fix the joined-client movement regression.
+12. Fix the joined-client movement and host-triggered restart ownership
+    regressions.
 13. Add smoke coverage for browser-published host/join and joined-client
     movement after game start.
 
@@ -335,4 +353,3 @@ Checklist:
 - Should remote player management be available only to the host, or also to
   local co-op players on the host machine?
 - Should clients have a `Ready` button, or should only the host control start?
-
