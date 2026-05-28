@@ -194,6 +194,16 @@ The status should include:
 - Player count.
 - Joinability state.
 
+Status:
+
+- The top-level Gubsy lobby now includes a stable session status line showing
+  offline state, direct hosting, public hosting via `gubsy-roomd`, joined direct
+  game, or joined public game.
+- The status includes the room name, room code when present, realtime endpoint
+  when present, and local-player count.
+- Follow-up remains: add remote player/client counts and richer joinability
+  state once remote member listing is surfaced in the player menu.
+
 ## Players Menu
 
 Prefer one unified `Players` menu instead of separate `Local Players` and
