@@ -436,6 +436,34 @@ bool DirectJoinAccepted(const State& state) {
            !state.net_transport->join_request_pending;
 }
 
+bool DirectPeerReadyToPlay(const State& state) {
+    return state.net_session.role == network::NetRole::Peer &&
+           state.net_transport &&
+           !state.net_transport->join_request_pending &&
+           !network::IsInputLockstepCatchupBlocking(state) &&
+           !state.net_session.quest_id.empty() &&
+           !state.net_session.quest_stage_id.empty();
+}
+
+void SyncLobbySessionPhase(Shell& shell) {
+    if (shell.state == nullptr)
+        return;
+
+    const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
+    if (!lobby.online || !lobby.room_code.empty())
+        return;
+
+    const State& state = *shell.state;
+    bool in_game = false;
+    if (state.net_session.role == network::NetRole::Host) {
+        in_game = state.mode == Mode::Playing || state.mode == Mode::StageTransition ||
+                  state.mode == Mode::GameOver;
+    } else if (state.net_session.role == network::NetRole::Peer) {
+        in_game = DirectPeerReadyToPlay(state);
+    }
+    (void)gubsy_set_lobby_session_phase(shell.runtime, in_game ? "in_game" : "lobby");
+}
+
 void SyncDirectJoinStatus(Shell& shell) {
     if (!shell.direct_join_pending || shell.state == nullptr)
         return;
@@ -654,6 +682,8 @@ void SyncDirectNetworkMembers(Shell& shell) {
     if (shell.state == nullptr) {
         return;
     }
+
+    SyncLobbySessionPhase(shell);
 
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
     if (!lobby.online || !lobby.room_code.empty()) {
