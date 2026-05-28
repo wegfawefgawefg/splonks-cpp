@@ -52,6 +52,8 @@ void UpdateTitleMenu(Shell& shell, State& state, Graphics& graphics, float dt,
 void RenderTitleMenu(Shell& shell, SDL_Renderer* renderer, int screen_width, int screen_height);
 void RenderDebug(Shell& shell, SDL_Renderer* renderer, int screen_width, int screen_height);
 void ShutdownDebug(Shell& shell);
+void AddAlert(Shell& shell, const std::string& text,
+              GubsyAlertSeverity severity = GubsyAlertSeverity::Info);
 void Shutdown(Shell& shell);
 
 } // namespace splonks::gubsy_shell

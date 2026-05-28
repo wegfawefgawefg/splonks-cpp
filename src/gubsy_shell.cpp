@@ -790,6 +790,10 @@ void ShutdownDebug(Shell& shell) {
     gubsy_shutdown_debug(shell.runtime);
 }
 
+void AddAlert(Shell& shell, const std::string& text, GubsyAlertSeverity severity) {
+    gubsy_add_alert(shell.runtime, text, severity);
+}
+
 void Shutdown(Shell& shell) {
     gubsy_shutdown_debug(shell.runtime);
     cleanup_gubsy_runtime(shell.runtime);
