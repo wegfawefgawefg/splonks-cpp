@@ -2600,6 +2600,12 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
     NetTransportRuntime& transport = *state.net_transport;
     transport.fuzzer_config = state.net_session.fuzzer_config;
     PumpInputLockstepPackets(state, graphics, transport);
+    SendPendingRunRestart(state, transport);
+    if (ApplyDueRunRestart(state)) {
+        FlushFuzzedOutgoingPackets(transport);
+        state.net_session.fuzzer_stats = transport.fuzzer_stats;
+        return true;
+    }
     SendPendingJoinBarrier(state, graphics, transport);
     if (IsJoinBarrierBlocking(state)) {
         FlushFuzzedOutgoingPackets(transport);

@@ -20,6 +20,7 @@ static_assert(sizeof(JoinBarrierStatusPacket) <= kNetPacketMaxBytes - sizeof(Net
 static_assert(sizeof(JoinBarrierResumePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(JoinBarrierTopologyPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(JoinBarrierTopologyAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(RunRestartPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
 
@@ -135,6 +136,10 @@ EncodedNetPacket EncodeJoinBarrierTopology(const JoinBarrierTopologyPacket& pack
 
 EncodedNetPacket EncodeJoinBarrierTopologyAck(const JoinBarrierTopologyAckPacket& packet) {
     return EncodePayload(NetPacketType::JoinBarrierTopologyAck, packet);
+}
+
+EncodedNetPacket EncodeRunRestart(const RunRestartPacket& packet) {
+    return EncodePayload(NetPacketType::RunRestart, packet);
 }
 
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size) {
@@ -395,6 +400,25 @@ std::optional<JoinBarrierTopologyAckPacket> TryDecodeJoinBarrierTopologyAck(
     JoinBarrierTopologyAckPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
+    }
+    return packet;
+}
+
+std::optional<RunRestartPacket> TryDecodeRunRestart(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::RunRestart, offset)) {
+        return std::nullopt;
+    }
+    RunRestartPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    if (ReadFixedString(packet.quest_id).empty() ||
+        ReadFixedString(packet.quest_stage_id).empty()) {
+        return std::nullopt;
+    }
+    if (packet.stage_seed == 0) {
+        packet.stage_seed = 1;
     }
     return packet;
 }

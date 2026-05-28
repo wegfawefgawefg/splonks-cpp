@@ -284,6 +284,13 @@ struct NetSessionState {
     std::uint64_t lockstep_arbitrated_neutral_input_count = 0;
     std::uint32_t lockstep_last_arbitrated_missing_span = 0;
     std::vector<LockstepInputArbitrationStats> lockstep_arbitration_stats_by_player;
+    bool run_restart_pending = false;
+    std::uint32_t run_restart_next_sequence = 1;
+    std::uint32_t run_restart_last_sequence = 0;
+    LockstepFrame run_restart_apply_frame = 0;
+    std::uint32_t run_restart_stage_seed = 1;
+    std::string run_restart_quest_id;
+    std::string run_restart_quest_stage_id;
 
     static NetSessionState NewOffline();
 

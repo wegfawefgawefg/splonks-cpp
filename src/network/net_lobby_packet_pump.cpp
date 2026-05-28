@@ -214,6 +214,12 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             // Host owns topology deltas. Ignore peer-originated topology packets.
             continue;
         }
+
+        if (const std::optional<RunRestartPacket> restart =
+                TryDecodeRunRestart(packet->bytes.data(), packet->size)) {
+            // Host owns run restart. Ignore peer-originated restart packets.
+            continue;
+        }
     }
     CleanupTimedOutRemoteEndpoints(state, transport);
 }
@@ -312,6 +318,12 @@ void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& tran
         if (const std::optional<SnapshotResyncChunkPacket> chunk =
                 TryDecodeSnapshotResyncChunk(packet->bytes.data(), packet->size)) {
             HandleSnapshotResyncChunk(state, graphics, transport, *chunk);
+            continue;
+        }
+
+        if (const std::optional<RunRestartPacket> restart =
+                TryDecodeRunRestart(packet->bytes.data(), packet->size)) {
+            HandleRunRestartPacket(state, *restart);
             continue;
         }
     }

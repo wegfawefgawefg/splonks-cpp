@@ -84,6 +84,9 @@ void HandleJoinBarrierTopology(
     const JoinBarrierTopologyPacket& packet
 );
 void HandleJoinBarrierTopologyAck(State& state, const JoinBarrierTopologyAckPacket& packet);
+void SendPendingRunRestart(State& state, NetTransportRuntime& transport);
+void HandleRunRestartPacket(State& state, const RunRestartPacket& packet);
+bool ApplyDueRunRestart(State& state);
 void HandleSnapshotResyncRequest(
     State& state,
     const Graphics& graphics,

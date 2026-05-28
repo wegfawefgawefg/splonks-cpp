@@ -296,9 +296,9 @@ bool CheckNetworkRestartCommandDoesNotDesync() {
     PressSelect(shell, state);
 
     if (gubsy_shell::InGameMenuOpen(shell) || state.mode != Mode::Playing ||
-        state.pending_stage_transition.has_value() ||
+        state.pending_stage_transition.has_value() || !state.net_session.run_restart_pending ||
         state.net_session.role != network::NetRole::Host || state.pause) {
-        std::cerr << "Gubsy shell smoke failed: network restart queued a local transition\n";
+        std::cerr << "Gubsy shell smoke failed: network restart was not scheduled safely\n";
         gubsy_shell::Shutdown(shell);
         return false;
     }

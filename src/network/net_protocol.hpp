@@ -39,6 +39,7 @@ enum class NetPacketType : std::uint16_t {
     JoinBarrierResume = 27,
     JoinBarrierTopology = 28,
     JoinBarrierTopologyAck = 29,
+    RunRestart = 30,
 };
 
 enum class JoinPendingReason : std::uint8_t {
@@ -211,6 +212,16 @@ struct JoinBarrierTopologyAckPacket {
     std::uint8_t success = 0;
 };
 
+struct RunRestartPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t sequence = 0;
+    std::uint64_t apply_frame = 0;
+    std::uint32_t stage_seed = 1;
+    std::array<char, kNetQuestIdBytes> quest_id{};
+    std::array<char, kNetQuestStageIdBytes> quest_stage_id{};
+};
+
 struct EncodedNetPacket {
     std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
     std::size_t size = 0;
@@ -232,6 +243,7 @@ EncodedNetPacket EncodeJoinBarrierStatus(const JoinBarrierStatusPacket& packet);
 EncodedNetPacket EncodeJoinBarrierResume(const JoinBarrierResumePacket& packet);
 EncodedNetPacket EncodeJoinBarrierTopology(const JoinBarrierTopologyPacket& packet);
 EncodedNetPacket EncodeJoinBarrierTopologyAck(const JoinBarrierTopologyAckPacket& packet);
+EncodedNetPacket EncodeRunRestart(const RunRestartPacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinPendingPacket> TryDecodeJoinPending(const std::uint8_t* bytes, std::size_t size);
@@ -248,6 +260,7 @@ std::optional<JoinBarrierStatusPacket> TryDecodeJoinBarrierStatus(const std::uin
 std::optional<JoinBarrierResumePacket> TryDecodeJoinBarrierResume(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinBarrierTopologyPacket> TryDecodeJoinBarrierTopology(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinBarrierTopologyAckPacket> TryDecodeJoinBarrierTopologyAck(const std::uint8_t* bytes, std::size_t size);
+std::optional<RunRestartPacket> TryDecodeRunRestart(const std::uint8_t* bytes, std::size_t size);
 
 template <std::size_t N>
 std::string ReadFixedString(const std::array<char, N>& text) {

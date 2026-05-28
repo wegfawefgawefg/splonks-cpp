@@ -343,6 +343,7 @@ set(SPLONKS_SOURCES
     src/network/net_lobby_packets.cpp
     src/network/net_lobby_player_lifecycle.cpp
     src/network/net_lobby_retained_player.cpp
+    src/network/net_lobby_restart.cpp
     src/network/net_lobby_session.cpp
     src/network/net_lobby_stage.cpp
     src/network/net_progression.cpp

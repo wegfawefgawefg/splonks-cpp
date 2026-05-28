@@ -306,8 +306,10 @@ void RestartSplonksFromGubsy(void* user_data, std::int32_t) {
     if (shell == nullptr || shell->state == nullptr)
         return;
     if (shell->state->net_session.role != network::NetRole::Offline) {
-        // Network run restart needs a coordinated stage-transition packet. Until that exists,
-        // do not let one client reload the stage locally and desync the lockstep session.
+        std::string status;
+        (void)network::RequestRunRestart(*shell->state, &status);
+        if (!status.empty())
+            std::cerr << status << '\n';
         gubsy_close_in_game_menu(shell->runtime);
         shell->state->pause = false;
         SuppressGameplayInputAfterMenu(*shell->state);
