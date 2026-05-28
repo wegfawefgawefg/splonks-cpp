@@ -163,6 +163,63 @@ Required changes:
   commands.
 - Make sure text does not clip in the bottom actions at 1280x720.
 
+### Alert / Toast System
+
+The game needs a cheap general-purpose alert system: short messages that slide
+or appear from the top of the screen, stack vertically, last for a configured
+duration, and then disappear automatically.
+
+This should be useful for lobby/network events, gameplay events, errors, and
+debug notifications. Right now the host has no strong way to notice that a
+client joined, left, disconnected, got kicked, started loading, or entered the
+game except by watching player rows change.
+
+Required behavior:
+
+- Store alerts in a small runtime list.
+- Each alert stores message text, creation time, duration, and a color/severity.
+- Step/update alerts every frame.
+- Remove alerts once `now - created_at >= duration`.
+- Render active alerts stacked from the top of the screen.
+- Newer alerts should stack cleanly without covering each other.
+- Alerts should be cheap and safe to emit from many systems.
+
+Suggested severities/colors:
+
+- Info: neutral/white/blue for normal state changes.
+- Success: green for successful joins, server found, game entered.
+- Warning: yellow/orange for recoverable issues.
+- Error: red for failed joins, disconnects, invalid state, server not found.
+- Debug: muted grey/purple for development-only diagnostics if enabled.
+
+Initial alert use cases:
+
+- Joining lobby started.
+- Lobby join succeeded.
+- Lobby join failed / no server found.
+- Joining game / loading host state.
+- Entered game.
+- Player joined.
+- Player left.
+- Player disconnected.
+- Host started game.
+- Host stopped hosting.
+- Client left session.
+- Client kicked / removed.
+- Debug networking messages while developing lobby flow.
+
+Implementation notes:
+
+- Gubsy already has some alert/message concepts for menu smokes; use or replace
+  them with a real rendered stacked-alert surface.
+- Alerts should be available from both Gubsy shell/menu code and Splonks
+  gameplay/network code.
+- Keep lifetime and rendering deterministic enough for smoke tests.
+- Add a small cap, such as 6-8 visible alerts, to prevent spam from covering
+  the whole screen.
+- If many alerts arrive at once, expire oldest first or compact into a debug
+  count later. Do the simple list first.
+
 ## Implementation Notes
 
 - This is a Gubsy UI/state pass surfaced through Splonks. Most fixes likely
@@ -181,6 +238,8 @@ Required changes:
   and being able to enter gameplay instead of remaining stuck in the lobby.
 - Add widget smoke coverage proving `Host Game` and `Join Game` are absent or
   unavailable as normal main-list actions while already in an online session.
+- Add smoke/render coverage proving alerts stack, expire, and render with
+  severity color.
 
 ## Done When
 
@@ -193,6 +252,8 @@ Required changes:
   actions.
 - Browser-joined clients can enter play after the host starts or otherwise
   reaches a playable join-in-progress state.
+- Timed stacked alerts render from the top of the screen and are used for
+  join/leave/disconnect/joining-game/error events.
 - `Leave Session` / `Stop Hosting` are bottom actions and do not overlap list
   rows.
 - `Host Public` is grouped with bottom host actions.
