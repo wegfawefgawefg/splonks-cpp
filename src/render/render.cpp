@@ -267,12 +267,17 @@ void Render(SDL_Renderer* renderer, SDL_Texture* render_texture, const RenderPos
         break;
     }
 
-    if (state.mode == Mode::Playing || state.mode == Mode::GameOver) {
+    const bool render_gameplay_overlays =
+        state.mode == Mode::Playing || state.mode == Mode::GameOver;
+    if (render_gameplay_overlays) {
         RenderPlayingHud(renderer, state, graphics);
         if (state.mode == Mode::Playing) {
             RenderWorldPrompts(renderer, state, graphics);
         }
         RenderDebugOverlay(renderer, graphics, state, audio);
+    }
+
+    if (render_gameplay_overlays || state.mode == Mode::StageTransition) {
         RenderJoinBarrierOverlay(renderer, state, graphics);
     }
 
