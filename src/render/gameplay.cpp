@@ -3,6 +3,7 @@
 #include "ent/manager.hpp"
 #include "ents/common/common.hpp"
 #include "graphics.hpp"
+#include "network/net_lobby.hpp"
 #include "player_queries.hpp"
 #include "render/camera.hpp"
 #include "render/tiles_and_ents.hpp"
@@ -120,12 +121,26 @@ const char* GetStageTransitionMessage(const State& state) {
         return "Press [jump] to continue...";
     }
 
+    if (state.net_session.role != network::NetRole::Offline) {
+        if (state.scene_frame < 60) {
+            return "Preparing synced stage...";
+        }
+        if (network::IsInputLockstepCatchupBlocking(state)) {
+            return "Synchronizing with host...";
+        }
+        return "Entering game...";
+    }
+
+    if (state.scene_frame >= 60) {
+        return "Press [jump] to continue...";
+    }
+
     const StageLoadTarget& target = state.pending_stage_transition->destination;
     if (target.kind == StageLoadTargetKind::DebugLevel) {
-        return "Loading debug level...";
+        return "Preparing debug level...";
     }
     if (target.kind == StageLoadTargetKind::QuestStage) {
-        return "Loading quest stage...";
+        return "Preparing quest stage...";
     }
     return GetStageTypeTransitionMessage(target.stage_type);
 }
