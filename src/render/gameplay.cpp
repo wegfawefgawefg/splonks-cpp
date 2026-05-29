@@ -131,17 +131,15 @@ const char* GetStageTransitionMessage(const State& state) {
         return "Entering game...";
     }
 
-    if (state.scene_frame >= 60) {
+    if (state.scene_frame < 60) {
+        return "";
+    }
+
+    if (state.pending_stage_transition->destination.kind != StageLoadTargetKind::StageType) {
         return "Press [jump] to continue...";
     }
 
     const StageLoadTarget& target = state.pending_stage_transition->destination;
-    if (target.kind == StageLoadTargetKind::DebugLevel) {
-        return "Preparing debug level...";
-    }
-    if (target.kind == StageLoadTargetKind::QuestStage) {
-        return "Preparing quest stage...";
-    }
     return GetStageTypeTransitionMessage(target.stage_type);
 }
 
