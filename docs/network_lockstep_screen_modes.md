@@ -68,9 +68,9 @@ and snapshot catchup. A leave flow may not need a full join-style barrier, but
 removing a client or that client's players still needs host-authoritative
 topology removal so every peer agrees on the required input set.
 
-## Target Model
+## Fixed Tick Model
 
-The fixed update flow should eventually look like this:
+The fixed update flow uses this shape:
 
 ```cpp
 if (network::IsInputLockstepActive(state)) {
@@ -89,9 +89,9 @@ StepCurrentMode(state, audio, graphics);
 `PrepareInputLockstepFrame()` should be the path that advances one lockstep
 simulation frame when possible.
 
-`MaintainInputLockstepTransport()` should be the path that keeps network
-transport alive while the current screen is not advancing simulation. It should
-be called from fixed update flow, not from render flow.
+`MaintainInputLockstepTransport()` is the single fixed-tick transport path for
+active lockstep sessions, including gameplay modes that are about to advance
+simulation. It is called from fixed update flow, not from render flow.
 
 ## Screen Text
 
@@ -110,18 +110,24 @@ These are rendering decisions. They should not decide whether packets are sent.
 
 ## Current State
 
-`MaintainInputLockstepTransport()` exists. Fixed update flow owns transport
-maintenance for screens that do not advance lockstep simulation, while
-`PrepareInputLockstepFrame()` owns the simulation-advancing path for gameplay
-modes. Individual screens should not call packet pump code directly.
+`MaintainInputLockstepTransport()` owns packet pumping, pending control packets,
+settings broadcasts, local input history sends, snapshot/join-barrier progress,
+hash sends, fuzzer flushing, and transport stats for every active lockstep
+fixed tick.
+
+`PrepareInputLockstepFrame()` no longer pumps packets. It only checks whether
+the current lockstep simulation frame can advance, applies rollback repair when
+needed, builds the frame inputs, records the rollback snapshot, applies those
+inputs, and advances `lockstep_next_frame_to_step`.
+
+Fixed update flow calls transport maintenance before simulation gating. The
+visible screen no longer decides whether lockstep packets are maintained.
 
 The concrete stage-door freeze was fixed by keeping old-stage lockstep
 transport alive until peers receive the final old-stage input frames.
 
 ## Follow-Up Work
 
-- Finish separating packet maintenance from `PrepareInputLockstepFrame()` so the
-  transport path is fully single-purpose.
 - Recheck `StageTransition`, `GameOver`, future score screens, shops, pause
   overlays, and lobby overlays against this rule.
 - Keep screen copy/state labels in render code or UI state helpers, not in

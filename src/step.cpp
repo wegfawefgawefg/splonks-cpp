@@ -424,9 +424,7 @@ void MaintainNetworkForFixedTick(
     }
 
     if (network::IsInputLockstepActive(state)) {
-        if (!ModeAdvancesLockstepSimulation(state.mode)) {
-            network::MaintainInputLockstepTransport(state, graphics);
-        }
+        network::MaintainInputLockstepTransport(state, graphics);
         return;
     }
 

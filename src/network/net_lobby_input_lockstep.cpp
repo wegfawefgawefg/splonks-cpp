@@ -2629,41 +2629,20 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
         return true;
     }
 
-    NetTransportRuntime& transport = *state.net_transport;
-    transport.fuzzer_config = state.net_session.fuzzer_config;
-    PumpInputLockstepPackets(state, graphics, transport);
-    SendPendingRunRestart(state, transport);
-    if (ApplyDueRunRestart(state)) {
-        FlushFuzzedOutgoingPackets(transport);
-        state.net_session.fuzzer_stats = transport.fuzzer_stats;
-        return true;
-    }
-    SendPendingJoinBarrier(state, graphics, transport);
     if (IsJoinBarrierBlocking(state)) {
-        FlushFuzzedOutgoingPackets(transport);
-        state.net_session.fuzzer_stats = transport.fuzzer_stats;
         return false;
     }
-    SendPendingSnapshotResync(state, graphics, transport);
     if (HasFatalLockstepDesync(state)) {
         return false;
     }
     if (IsSnapshotResyncBlocking(state)) {
-        FlushFuzzedOutgoingPackets(transport);
-        state.net_session.fuzzer_stats = transport.fuzzer_stats;
         return false;
     }
-    if (state.net_session.role == NetRole::Peer && transport.join_request_pending) {
+    if (state.net_session.role == NetRole::Peer &&
+        state.net_transport &&
+        state.net_transport->join_request_pending) {
         return false;
     }
-
-    ApplyDueLockstepSettings(state);
-    UpdateLockstepAutoDelay(state);
-    SendBroadcastLockstepSettings(state, transport);
-    QueueLocalInputsThroughTargetFrame(state);
-    SendLocalInputFramePacket(state, transport);
-    FlushFuzzedOutgoingPackets(transport);
-    state.net_session.fuzzer_stats = transport.fuzzer_stats;
 
     const std::vector<PlayerId> required_players = GetConnectedPlayerIds(state);
     if (required_players.empty()) {
@@ -2676,10 +2655,6 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
     if (!ReplayPendingInputLockstepRollback(state, graphics)) {
         return false;
     }
-    RecordPreviousCompletedLockstepHash(state);
-    SendDueLockstepHash(state, transport);
-    FlushFuzzedOutgoingPackets(transport);
-    state.net_session.fuzzer_stats = transport.fuzzer_stats;
 
     std::vector<InputFrame> frame_inputs;
     if (!BuildOrPredictFrameInputs(
@@ -2726,7 +2701,18 @@ void MaintainInputLockstepTransport(State& state, Graphics& graphics) {
     }
     SendPendingJoinBarrier(state, graphics, transport);
     SendPendingSnapshotResync(state, graphics, transport);
+    if (HasFatalLockstepDesync(state)) {
+        FlushFuzzedOutgoingPackets(transport);
+        state.net_session.fuzzer_stats = transport.fuzzer_stats;
+        return;
+    }
+    ApplyDueLockstepSettings(state);
+    UpdateLockstepAutoDelay(state);
+    SendBroadcastLockstepSettings(state, transport);
+    QueueLocalInputsThroughTargetFrame(state);
     SendLocalInputFramePacket(state, transport);
+    RecordPreviousCompletedLockstepHash(state);
+    SendDueLockstepHash(state, transport);
     FlushFuzzedOutgoingPackets(transport);
     state.net_session.fuzzer_stats = transport.fuzzer_stats;
 }

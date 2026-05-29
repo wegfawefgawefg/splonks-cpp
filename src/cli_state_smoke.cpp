@@ -3363,7 +3363,12 @@ bool RunHostWaitsForMissingInputSmoke() {
     host_input.run = true;
     host.playing_input_snapshot = ToPlayingInputSnapshot(host_input);
 
-    if (!network::PrepareInputLockstepFrame(host, host_graphics)) {
+    const auto maintain_and_prepare = [&]() {
+        network::MaintainInputLockstepTransport(host, host_graphics);
+        return network::PrepareInputLockstepFrame(host, host_graphics);
+    };
+
+    if (!maintain_and_prepare()) {
         std::cerr << "host waits for missing input smoke failed: host did not step frame 0\n";
         return false;
     }
@@ -3379,7 +3384,7 @@ bool RunHostWaitsForMissingInputSmoke() {
         SimulationTickMode::ReplayNoNetwork
     );
 
-    if (network::PrepareInputLockstepFrame(host, host_graphics)) {
+    if (maintain_and_prepare()) {
         std::cerr << "host waits for missing input smoke failed: host stepped without remote"
                   << " frame 1 input\n";
         return false;
@@ -3400,8 +3405,8 @@ bool RunHostWaitsForMissingInputSmoke() {
     }
 
     network::RemoveRemotePlayers(host, *host.net_transport, {2});
-    (void)network::PrepareInputLockstepFrame(host, host_graphics);
-    if (!network::PrepareInputLockstepFrame(host, host_graphics)) {
+    (void)maintain_and_prepare();
+    if (!maintain_and_prepare()) {
         std::cerr << "host waits for missing input smoke failed: host did not resume"
                   << " after all remotes disconnected\n";
         return false;
