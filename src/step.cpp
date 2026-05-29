@@ -300,12 +300,8 @@ void RefreshPlayableCharacterLamp(State& state) {
             continue;
         }
 
-        bool emits_lamp =
-            state.controlled_ent_vid.has_value() && ent.vid == *state.controlled_ent_vid;
-        if (state.net_session.input_lockstep_enabled) {
-            const PlayerSlot* const slot = state.players.FindByEntVid(ent.vid);
-            emits_lamp = slot != nullptr && slot->connected;
-        }
+        const PlayerSlot* const slot = state.players.FindByEntVid(ent.vid);
+        const bool emits_lamp = slot != nullptr && slot->connected;
 
         if (!emits_lamp || ent.condition == EntCondition::Dead) {
             ent.light_strength = 0.0F;
