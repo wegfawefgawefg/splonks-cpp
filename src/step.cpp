@@ -594,7 +594,7 @@ void StepStageTransition(
             return;
         }
         if (!state.pending_stage_transition.has_value()) {
-            state.SetMode(Mode::Win);
+            state.SetMode(Mode::Playing);
             return;
         }
 

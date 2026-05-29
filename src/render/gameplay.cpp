@@ -103,6 +103,9 @@ const char* GetStageTypeTransitionMessage(StageType stage_type) {
 
 const char* GetStageTransitionTitle(const State& state) {
     if (!state.pending_stage_transition.has_value()) {
+        if (state.net_session.role != network::NetRole::Offline) {
+            return "Joining Game";
+        }
         return "No Transition";
     }
 
@@ -118,6 +121,14 @@ const char* GetStageTransitionTitle(const State& state) {
 
 const char* GetStageTransitionMessage(const State& state) {
     if (!state.pending_stage_transition.has_value()) {
+        if (state.net_session.role != network::NetRole::Offline) {
+            if (network::IsInputLockstepCatchupBlocking(state)) {
+                return state.net_session.role == network::NetRole::Host
+                    ? "Synchronizing players..."
+                    : "Synchronizing with host...";
+            }
+            return "Entering game...";
+        }
         return "Press [jump] to continue...";
     }
 
@@ -126,7 +137,9 @@ const char* GetStageTransitionMessage(const State& state) {
             return "Preparing synced stage...";
         }
         if (network::IsInputLockstepCatchupBlocking(state)) {
-            return "Synchronizing with host...";
+            return state.net_session.role == network::NetRole::Host
+                ? "Synchronizing players..."
+                : "Synchronizing with host...";
         }
         return "Entering game...";
     }

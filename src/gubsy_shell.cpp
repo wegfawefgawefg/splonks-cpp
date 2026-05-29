@@ -500,8 +500,18 @@ void SyncLobbySessionPhase(Shell& shell) {
         shell.joined_room_host_in_game =
             shell.joined_room_host_in_game || session_contract_is_in_game(lobby.contract);
         const bool client_ready = shell.joined_room_host_in_game && DirectPeerReadyToPlay(state);
-        if (client_ready)
+        if (client_ready) {
             EnterHostedGameFromStaleTransition(shell);
+        } else if (shell.joined_room_host_in_game &&
+                   state.net_transport &&
+                   !state.net_transport->join_request_pending &&
+                   state.mode != Mode::StageTransition &&
+                   state.mode != Mode::Playing) {
+            state.pending_stage_transition.reset();
+            state.scene_frame = 0;
+            state.SetMode(Mode::StageTransition);
+            gubsy_clear_menu_stack(shell.runtime);
+        }
         (void)gubsy_set_lobby_session_phase(shell.runtime, client_ready ? "in_game" : "lobby");
         (void)gubsy_set_lobby_player_roster_locked(shell.runtime,
                                                    shell.joined_room_host_in_game);
