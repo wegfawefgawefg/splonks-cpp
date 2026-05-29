@@ -27,6 +27,11 @@ struct CameraFocus {
     bool has_target = false;
 };
 
+struct CameraViewBounds {
+    Vec2 tl = Vec2::New(0.0F, 0.0F);
+    Vec2 br = Vec2::New(0.0F, 0.0F);
+};
+
 void LerpCamera(Graphics& graphics, const Vec2& target, float zoom) {
     const float t = std::clamp(graphics.camera_lerp_factor, 0.0F, 1.0F);
     graphics.camera.target += (target - graphics.camera.target) * t;
@@ -125,6 +130,23 @@ const char* GetStageTransitionMessage(const State& state) {
     return GetStageTypeTransitionMessage(target.stage_type);
 }
 
+CameraViewBounds GetCameraViewBounds(const Graphics& graphics, const Vec2& target, float zoom) {
+    return CameraViewBounds{
+        .tl = target - (graphics.camera.offset / zoom),
+        .br = target + ((ToVec2(graphics.dims) - graphics.camera.offset) / zoom),
+    };
+}
+
+Vec2 GetCameraTargetForCenteredViewBounds(
+    const Graphics& graphics,
+    const CameraViewBounds& bounds,
+    float zoom
+) {
+    const Vec2 center = (bounds.tl + bounds.br) / 2.0F;
+    const Vec2 centered_offset = graphics.camera.offset - (ToVec2(graphics.dims) / 2.0F);
+    return center + (centered_offset / zoom);
+}
+
 CameraFocus ComputeLocalPlayerCameraFocus(const State& state, const Graphics& graphics) {
     const Ent* anchor_ent = GetPrimaryLocalPlayer(state);
     if (anchor_ent == nullptr || !anchor_ent->active ||
@@ -174,10 +196,12 @@ CameraFocus ComputeLocalPlayerCameraFocus(const State& state, const Graphics& gr
         const Vec2 local_center =
             anchor_center + GetNearestWorldDelta(state.stage, anchor_center, visual_center);
         const Vec2 single_camera_target = ClampCameraTargetToStage(state.stage, local_center);
-        union_tl.x = std::min(union_tl.x, single_camera_target.x);
-        union_tl.y = std::min(union_tl.y, single_camera_target.y);
-        union_br.x = std::max(union_br.x, single_camera_target.x);
-        union_br.y = std::max(union_br.y, single_camera_target.y);
+        const CameraViewBounds player_view =
+            GetCameraViewBounds(graphics, single_camera_target, default_zoom);
+        union_tl.x = std::min(union_tl.x, player_view.tl.x);
+        union_tl.y = std::min(union_tl.y, player_view.tl.y);
+        union_br.x = std::max(union_br.x, player_view.br.x);
+        union_br.y = std::max(union_br.y, player_view.br.y);
         ++count;
     }
 
@@ -186,23 +210,22 @@ CameraFocus ComputeLocalPlayerCameraFocus(const State& state, const Graphics& gr
     }
 
     CameraFocus focus;
-    const Vec2 union_center = (union_tl + union_br) / 2.0F;
-    focus.target = union_center;
+    const CameraViewBounds union_view = CameraViewBounds{
+        .tl = union_tl,
+        .br = union_br,
+    };
+    focus.target = GetCameraTargetForCenteredViewBounds(graphics, union_view, default_zoom);
     focus.zoom = default_zoom;
     focus.has_target = true;
 
     if (count > 1) {
-        constexpr float kGroupCameraPaddingPx = 96.0F;
-        const float usable_width =
-            std::max(1.0F, static_cast<float>(graphics.dims.x) - (kGroupCameraPaddingPx * 2.0F));
-        const float usable_height =
-            std::max(1.0F, static_cast<float>(graphics.dims.y) - (kGroupCameraPaddingPx * 2.0F));
         const float required_width = std::max(1.0F, union_br.x - union_tl.x);
         const float required_height = std::max(1.0F, union_br.y - union_tl.y);
-        const float fit_zoom_x = usable_width / required_width;
-        const float fit_zoom_y = usable_height / required_height;
+        const float fit_zoom_x = static_cast<float>(graphics.dims.x) / required_width;
+        const float fit_zoom_y = static_cast<float>(graphics.dims.y) / required_height;
         const float fit_zoom = std::min(fit_zoom_x, fit_zoom_y);
         focus.zoom = std::min(fit_zoom, focus.zoom);
+        focus.target = GetCameraTargetForCenteredViewBounds(graphics, union_view, focus.zoom);
     }
 
     return focus;
