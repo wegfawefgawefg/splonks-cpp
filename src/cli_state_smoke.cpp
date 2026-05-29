@@ -1943,6 +1943,76 @@ bool RunJoinBarrierProtocolSmoke() {
         return false;
     }
 
+    State menu_snapshot_host = State::New();
+    Graphics menu_snapshot_graphics;
+    Audio menu_snapshot_audio;
+    InitCliSmokeRuntimeTables(menu_snapshot_graphics);
+    const char* menu_snapshot_failed_step = nullptr;
+    if (!PrepareLockstepSmokeState(
+            menu_snapshot_host,
+            menu_snapshot_graphics,
+            {1},
+            menu_snapshot_failed_step
+        )) {
+        std::cerr << "join barrier protocol smoke failed during menu snapshot setup: "
+                  << (menu_snapshot_failed_step != nullptr ? menu_snapshot_failed_step : "unknown")
+                  << '\n';
+        return false;
+    }
+    menu_snapshot_host.SetMode(Mode::Settings);
+    menu_snapshot_host.net_session.role = network::NetRole::Host;
+    menu_snapshot_host.net_session.local_player_id = 1;
+    menu_snapshot_host.net_session.host_player_id = 1;
+    menu_snapshot_host.net_session.input_lockstep_enabled = true;
+    menu_snapshot_host.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    menu_snapshot_host.net_session.lockstep_next_frame_to_step = 320;
+    menu_snapshot_host.net_transport =
+        std::make_unique<network::NetTransportRuntime>(network::NetTransportRuntime::New());
+    menu_snapshot_host.net_transport->capture_outgoing_packets = true;
+    std::string menu_snapshot_socket_error;
+    if (!menu_snapshot_host.net_transport->socket.Open(0, &menu_snapshot_socket_error)) {
+        std::cerr << "join barrier protocol smoke failed opening menu snapshot socket: "
+                  << menu_snapshot_socket_error << '\n';
+        return false;
+    }
+    menu_snapshot_host.net_transport->remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {2},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39223},
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = 100,
+    });
+    menu_snapshot_host.net_session.peers.push_back(network::NetPeerState{
+        .player_id = 2,
+        .display_name = "Menu Peer",
+        .endpoint_address = "127.0.0.1",
+        .endpoint_port = 39223,
+        .connected = true,
+    });
+    std::string menu_snapshot_status;
+    if (!network::ForceLockstepSnapshotResync(menu_snapshot_host, 2, &menu_snapshot_status)) {
+        std::cerr << "join barrier protocol smoke failed queueing menu snapshot: "
+                  << menu_snapshot_status << '\n';
+        return false;
+    }
+    StepSingleTick(menu_snapshot_host, menu_snapshot_audio, menu_snapshot_graphics);
+    bool menu_snapshot_chunk_sent = false;
+    for (const network::UdpPacket& packet : menu_snapshot_host.net_transport->captured_packets) {
+        const std::optional<network::SnapshotResyncChunkPacket> decoded_menu_chunk =
+            network::TryDecodeSnapshotResyncChunk(packet.bytes.data(), packet.size);
+        if (decoded_menu_chunk.has_value() &&
+            decoded_menu_chunk->snapshot_frame == 320 &&
+            decoded_menu_chunk->chunk_count > 0) {
+            menu_snapshot_chunk_sent = true;
+            break;
+        }
+    }
+    if (!menu_snapshot_chunk_sent ||
+        menu_snapshot_host.net_session.lockstep_snapshot_resync_pending_request ||
+        !menu_snapshot_host.net_session.lockstep_snapshot_resync_waiting_for_ack) {
+        std::cerr << "join barrier protocol smoke failed: menu fixed tick did not send snapshot chunk\n";
+        return false;
+    }
+
     State existing_peer = State::New();
     existing_peer.net_session.role = network::NetRole::Peer;
     existing_peer.net_session.stage_instance_id = host.net_session.stage_instance_id;
