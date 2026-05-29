@@ -37,6 +37,37 @@ Simulation stepping is separate:
 
 A screen may pause simulation. A screen must not accidentally stop transport.
 
+## Barriers
+
+This rule should remove bespoke networking behavior from screen modes. It does
+not remove protocol barriers for deterministic simulation changes.
+
+Screens should not own barriers just because they are visible. The protocol
+should own barriers when the deterministic contract changes.
+
+Screen states that should not need bespoke barriers:
+
+- Showing a stage splash.
+- Showing a score or post-level screen.
+- Showing a shop UI.
+- Showing a pause or menu overlay.
+- Waiting for local player confirmation.
+- Changing the text from "Loading" to "Synchronizing" or "Press jump to continue".
+
+Protocol events that may still need barriers or explicit coordination:
+
+- Adding players to the active lockstep player set.
+- Removing players from the active lockstep player set.
+- Loading a new stage, seed, or `stage_instance_id`.
+- Catching up a late joiner from a host snapshot.
+- Applying deterministic settings changes.
+- Restarting a network run.
+
+The join barrier is an example of a protocol barrier: it coordinates topology
+and snapshot catchup. A leave flow may not need a full join-style barrier, but
+removing a client or that client's players still needs host-authoritative
+topology removal so every peer agrees on the required input set.
+
 ## Target Model
 
 The main frame flow should eventually look like this:
