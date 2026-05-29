@@ -15,10 +15,17 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace splonks {
 
 namespace {
+
+struct CameraFocus {
+    Vec2 target = Vec2::New(0.0F, 0.0F);
+    float zoom = 1.0F;
+    bool has_target = false;
+};
 
 void LerpCamera(Graphics& graphics, const Vec2& target, float zoom) {
     const float t = std::clamp(graphics.camera_lerp_factor, 0.0F, 1.0F);
@@ -118,6 +125,87 @@ const char* GetStageTransitionMessage(const State& state) {
     return GetStageTypeTransitionMessage(target.stage_type);
 }
 
+CameraFocus ComputeLocalPlayerCameraFocus(const State& state, const Graphics& graphics) {
+    const Ent* anchor_ent = GetPrimaryLocalPlayer(state);
+    if (anchor_ent == nullptr || !anchor_ent->active ||
+        anchor_ent->condition == EntCondition::Dead) {
+        anchor_ent = nullptr;
+        for (const PlayerSlot& slot : state.players.slots) {
+            if (!slot.connected || slot.connection_kind != PlayerConnectionKind::Local ||
+                !slot.ent_vid.has_value()) {
+                continue;
+            }
+            const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+            if (player != nullptr && player->active && player->condition != EntCondition::Dead) {
+                anchor_ent = player;
+                break;
+            }
+        }
+    }
+    if (anchor_ent == nullptr) {
+        return {};
+    }
+
+    const Vec2 anchor_center =
+        ents::common::GetVisualCenterForEnt(*anchor_ent, graphics, anchor_ent->GetCenter());
+    Vec2 sum = Vec2::New(0.0F, 0.0F);
+    Vec2 min_pos = Vec2::New(
+        std::numeric_limits<float>::max(),
+        std::numeric_limits<float>::max()
+    );
+    Vec2 max_pos = Vec2::New(
+        std::numeric_limits<float>::lowest(),
+        std::numeric_limits<float>::lowest()
+    );
+    std::size_t count = 0;
+
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || slot.connection_kind != PlayerConnectionKind::Local ||
+            !slot.ent_vid.has_value()) {
+            continue;
+        }
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+        if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
+            continue;
+        }
+
+        const Vec2 visual_center =
+            ents::common::GetVisualCenterForEnt(*player, graphics, player->GetCenter());
+        const Vec2 local_center =
+            anchor_center + GetNearestWorldDelta(state.stage, anchor_center, visual_center);
+        sum += local_center;
+        min_pos.x = std::min(min_pos.x, local_center.x);
+        min_pos.y = std::min(min_pos.y, local_center.y);
+        max_pos.x = std::max(max_pos.x, local_center.x);
+        max_pos.y = std::max(max_pos.y, local_center.y);
+        ++count;
+    }
+
+    if (count == 0) {
+        return {};
+    }
+
+    CameraFocus focus;
+    focus.target = sum / static_cast<float>(count);
+    focus.zoom = GetDefaultFollowCameraZoom(graphics);
+    focus.has_target = true;
+
+    if (count > 1) {
+        constexpr float kGroupCameraPaddingPx = 96.0F;
+        constexpr float kMinGroupCameraZoom = 2.0F;
+        const float required_width = std::max(1.0F, (max_pos.x - min_pos.x) +
+                                                     (kGroupCameraPaddingPx * 2.0F));
+        const float required_height = std::max(1.0F, (max_pos.y - min_pos.y) +
+                                                      (kGroupCameraPaddingPx * 2.0F));
+        const float fit_zoom_x = static_cast<float>(graphics.dims.x) / required_width;
+        const float fit_zoom_y = static_cast<float>(graphics.dims.y) / required_height;
+        const float fit_zoom = std::min(fit_zoom_x, fit_zoom_y);
+        focus.zoom = std::clamp(fit_zoom, kMinGroupCameraZoom, focus.zoom);
+    }
+
+    return focus;
+}
+
 } // namespace
 
 void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
@@ -141,10 +229,20 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
         zoom = GetStageFitCameraZoom(state.stage, graphics);
     } else if (camera_target_ent != nullptr && camera_target_ent->active) {
         if (!graphics.debug_lock_play_camera) {
-            const Vec2 controlled_visual_center =
-                ents::common::GetVisualCenterForEnt(*camera_target_ent, graphics, camera_target_ent->GetCenter());
+            const CameraFocus local_focus = ComputeLocalPlayerCameraFocus(state, graphics);
+            const Vec2 raw_follow_target =
+                local_focus.has_target
+                    ? local_focus.target
+                    : ents::common::GetVisualCenterForEnt(
+                          *camera_target_ent,
+                          graphics,
+                          camera_target_ent->GetCenter()
+                      );
             const Vec2 camera_follow_target =
-                RotateWorldPointForActiveWorldRotation(graphics, controlled_visual_center);
+                RotateWorldPointForActiveWorldRotation(graphics, raw_follow_target);
+            if (local_focus.has_target) {
+                zoom = local_focus.zoom;
+            }
             if (graphics.world_rotation_active) {
                 graphics.play_cam.pos = camera_follow_target;
             } else {
