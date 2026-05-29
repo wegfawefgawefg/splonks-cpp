@@ -59,6 +59,7 @@ bool IsInputLockstepActive(const State& state);
 bool IsInputLockstepCatchupBlocking(const State& state);
 void ResetInputLockstepState(State& state);
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics);
+void MaintainInputLockstepTransport(State& state, Graphics& graphics);
 bool ReplayPendingInputLockstepRollback(State& state, Graphics& graphics);
 void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet);
 void HandleLockstepSettingsPacket(State& state, const LockstepSettingsPacket& packet);

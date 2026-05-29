@@ -2710,6 +2710,22 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
     return true;
 }
 
+void MaintainInputLockstepTransport(State& state, Graphics& graphics) {
+    if (!IsInputLockstepActive(state)) {
+        return;
+    }
+
+    NetTransportRuntime& transport = *state.net_transport;
+    transport.fuzzer_config = state.net_session.fuzzer_config;
+    PumpInputLockstepPackets(state, graphics, transport);
+    SendPendingRunRestart(state, transport);
+    SendPendingJoinBarrier(state, graphics, transport);
+    SendPendingSnapshotResync(state, graphics, transport);
+    SendLocalInputFramePacket(state, transport);
+    FlushFuzzedOutgoingPackets(transport);
+    state.net_session.fuzzer_stats = transport.fuzzer_stats;
+}
+
 void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet) {
     if (packet.stage_instance_id != state.net_session.stage_instance_id) {
         return;

@@ -53,6 +53,7 @@ bool IsInputLockstepSession(const State& state);
 bool IsInputLockstepActive(const State& state);
 bool IsInputLockstepCatchupBlocking(const State& state);
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics);
+void MaintainInputLockstepTransport(State& state, Graphics& graphics);
 void StepNetworkLobby(State& state, Graphics& graphics);
 bool IsTransportOpen(const State& state);
 std::uint16_t BoundTransportPort(const State& state);

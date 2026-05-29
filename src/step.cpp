@@ -584,6 +584,8 @@ void StepStageTransition(
     if (mode == SimulationTickMode::Normal) {
         if (network::IsInputLockstepCatchupBlocking(state)) {
             (void)network::PrepareInputLockstepFrame(state, graphics);
+        } else if (network::IsInputLockstepActive(state)) {
+            network::MaintainInputLockstepTransport(state, graphics);
         } else {
             network::StepNetworkLobby(state, graphics);
         }
