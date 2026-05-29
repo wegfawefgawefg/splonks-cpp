@@ -512,7 +512,6 @@ void SyncLobbySessionPhase(Shell& shell) {
             state.SetMode(Mode::StageTransition);
             gubsy_clear_menu_stack(shell.runtime);
         }
-        (void)gubsy_set_lobby_session_phase(shell.runtime, client_ready ? "in_game" : "lobby");
         (void)gubsy_set_lobby_player_roster_locked(shell.runtime,
                                                    shell.joined_room_host_in_game);
         return;

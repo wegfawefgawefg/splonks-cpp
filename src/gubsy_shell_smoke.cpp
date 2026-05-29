@@ -1099,20 +1099,21 @@ bool CheckRealRoomdHostJoin() {
         return false;
     }
 
-    bool guest_stayed_waiting = false;
+    bool guest_waited_for_host_state = false;
     for (int i = 0; i < 120; ++i) {
         gubsy_shell::UpdateRuntime(host_shell, 0.016F);
         StepMenu(guest_shell, guest_state);
         const EngineState& guest_engine = gubsy_runtime_engine(guest_shell.runtime);
         const MenuWidget* guest_action = GubsyWidgetBySlot(guest_engine, SettingsObjectID::ACTION);
         if (guest_shell.joined_room_host_in_game &&
-            guest_action != nullptr && guest_action->label != nullptr &&
-            std::string(guest_action->label) == "Waiting For Host") {
-            guest_stayed_waiting = true;
+            ((guest_action != nullptr && guest_action->label != nullptr &&
+              std::string(guest_action->label) == "Waiting For Host") ||
+             guest_state.mode == Mode::StageTransition)) {
+            guest_waited_for_host_state = true;
             break;
         }
     }
-    if (!guest_stayed_waiting) {
+    if (!guest_waited_for_host_state) {
         const GubsyLobbyState& guest_lobby = gubsy_get_lobby_state(guest_shell.runtime);
         std::cerr << "Gubsy shell real-roomd smoke failed: guest did not wait for host state: "
                   << guest_lobby.contract.session_phase << '\n';
@@ -1123,8 +1124,15 @@ bool CheckRealRoomdHostJoin() {
 
     guest_state.net_session.input_lockstep_enabled = false;
     bool guest_saw_play = false;
+    bool guest_entered_from_sync = false;
     for (int i = 0; i < 30; ++i) {
         StepMenu(guest_shell, guest_state);
+        if (guest_state.mode == Mode::Playing ||
+            (guest_state.mode == Mode::StageTransition &&
+             !gubsy_shell::InGameMenuOpen(guest_shell))) {
+            guest_entered_from_sync = true;
+            break;
+        }
         const EngineState& guest_engine = gubsy_runtime_engine(guest_shell.runtime);
         const MenuWidget* play_action = GubsyWidgetBySlot(guest_engine, SettingsObjectID::ACTION);
         if (play_action != nullptr && play_action->label != nullptr &&
@@ -1133,7 +1141,7 @@ bool CheckRealRoomdHostJoin() {
             break;
         }
     }
-    if (!guest_saw_play) {
+    if (!guest_saw_play && !guest_entered_from_sync) {
         const GubsyLobbyState& guest_lobby = gubsy_get_lobby_state(guest_shell.runtime);
         std::cerr << "Gubsy shell real-roomd smoke failed: guest never saw Play after host start: "
                   << guest_lobby.contract.session_phase << '\n';
@@ -1142,10 +1150,16 @@ bool CheckRealRoomdHostJoin() {
         return false;
     }
 
-    if (!gubsy_start_lobby_game(guest_shell.runtime, message) ||
-        (guest_state.mode != Mode::Playing && guest_state.mode != Mode::StageTransition) ||
-        gubsy_shell::InGameMenuOpen(guest_shell)) {
+    if (guest_saw_play && !gubsy_start_lobby_game(guest_shell.runtime, message)) {
         std::cerr << "Gubsy shell real-roomd smoke failed: guest Play did not enter gameplay: "
+                  << message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if ((guest_state.mode != Mode::Playing && guest_state.mode != Mode::StageTransition) ||
+        gubsy_shell::InGameMenuOpen(guest_shell)) {
+        std::cerr << "Gubsy shell real-roomd smoke failed: guest did not enter hosted flow: "
                   << message << '\n';
         gubsy_shell::Shutdown(guest_shell);
         gubsy_shell::Shutdown(host_shell);
