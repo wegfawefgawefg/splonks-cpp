@@ -49,6 +49,28 @@ void PlacePlayerAtEntrance(State& state) {
         "No entrance tile found. You have a game breaking bug in the map generation code.");
 }
 
+void SpawnConnectedPlayers(State& state, const Vec2& spawn_pos) {
+    unsigned int player_index = 0;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || slot.player_id == kInvalidPlayerId) {
+            continue;
+        }
+        const std::optional<VID> player_vid = SpawnPlayerForPlayerId(
+            state,
+            slot.player_id,
+            spawn_pos + Vec2::New(static_cast<float>(player_index) * 8.0F, 0.0F)
+        );
+        if (player_vid.has_value() &&
+            (slot.primary_local || !state.controlled_ent_vid.has_value())) {
+            state.controlled_ent_vid = *player_vid;
+        }
+        ++player_index;
+    }
+    if (player_index == 0) {
+        SpawnPlayer(state, spawn_pos);
+    }
+}
+
 } // namespace
 
 void InitStage(State& state, bool preserve_player_state) {
@@ -70,7 +92,7 @@ void InitStage(State& state, bool preserve_player_state) {
     if (!carryover.players.empty()) {
         RestoreStageCarryover(state, carryover);
     } else {
-        SpawnPlayer(state, Vec2::New(0.0F, 0.0F));
+        SpawnConnectedPlayers(state, Vec2::New(0.0F, 0.0F));
     }
     SpawnAuthoredStageEnts(state);
 

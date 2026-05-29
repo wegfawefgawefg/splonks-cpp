@@ -3,6 +3,7 @@
 #include "gubsy_shell.hpp"
 #include "graphics.hpp"
 #include "network/net_lobby.hpp"
+#include "stage_progression.hpp"
 
 #include <cstdint>
 #include <cstdlib>
@@ -37,6 +38,27 @@ bool ParseEndpoint(const std::string& endpoint, std::string& host, std::uint16_t
     } catch (...) {
         return false;
     }
+}
+
+std::size_t ConnectedLocalPlayerCount(const State& state) {
+    std::size_t count = 0;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (slot.connected && slot.connection_kind == PlayerConnectionKind::Local) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+std::size_t ConnectedLocalPlayerEntCount(const State& state) {
+    std::size_t count = 0;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (slot.connected && slot.connection_kind == PlayerConnectionKind::Local &&
+            slot.ent_vid.has_value()) {
+            ++count;
+        }
+    }
+    return count;
 }
 
 struct SmokeMatchmaking final : IMatchmaking {
@@ -187,16 +209,23 @@ bool CheckOfflineStart() {
         std::cerr << "Gubsy shell smoke failed: InitHeadless failed\n";
         return false;
     }
+    if (gubsy_add_lobby_local_player(shell.runtime) != 1 ||
+        gubsy_add_lobby_local_player(shell.runtime) != 2) {
+        std::cerr << "Gubsy shell smoke failed: offline local player setup failed\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
 
     std::string message;
     const bool started = gubsy_start_lobby_game(shell.runtime, message);
-    gubsy_shell::Shutdown(shell);
     if (!started) {
         std::cerr << "Gubsy shell smoke failed: " << message << '\n';
+        gubsy_shell::Shutdown(shell);
         return false;
     }
     if (state.mode != Mode::StageTransition) {
         std::cerr << "Gubsy shell smoke failed: lobby start did not enter stage transition\n";
+        gubsy_shell::Shutdown(shell);
         return false;
     }
     if (!state.pending_stage_transition.has_value() ||
@@ -206,16 +235,59 @@ bool CheckOfflineStart() {
         std::string_view(state.pending_stage_transition->destination.quest_stage_id.data()) !=
             "classic_mines_1") {
         std::cerr << "Gubsy shell smoke failed: lobby start did not queue Mines 1\n";
+        gubsy_shell::Shutdown(shell);
         return false;
     }
     if (state.players.FindPrimaryLocal() == nullptr) {
         std::cerr << "Gubsy shell smoke failed: missing primary local player\n";
+        gubsy_shell::Shutdown(shell);
+        return false;
+    }
+    ApplyPendingStageTransition(state);
+    if (ConnectedLocalPlayerCount(state) != 3 || ConnectedLocalPlayerEntCount(state) != 3) {
+        std::cerr << "Gubsy shell smoke failed: offline start did not spawn three local players: slots="
+                  << ConnectedLocalPlayerCount(state) << " ents="
+                  << ConnectedLocalPlayerEntCount(state) << '\n';
+        gubsy_shell::Shutdown(shell);
         return false;
     }
     if (state.multiplayer_respawn_mode != MultiplayerRespawnMode::GenerousNextLevel) {
         std::cerr << "Gubsy shell smoke failed: lobby config was not applied\n";
+        gubsy_shell::Shutdown(shell);
         return false;
     }
+    gubsy_shell::Shutdown(shell);
+    return true;
+}
+
+bool CheckHostStartKeepsLocalPlayers() {
+    std::string message;
+    State host_state = State::New();
+    gubsy_shell::Shell host_shell;
+    if (!gubsy_shell::InitHeadless(host_shell, host_state)) {
+        std::cerr << "Gubsy shell smoke failed: multi-local host start InitHeadless failed\n";
+        return false;
+    }
+    if (gubsy_add_lobby_local_player(host_shell.runtime) != 1 ||
+        gubsy_add_lobby_local_player(host_shell.runtime) != 2) {
+        std::cerr << "Gubsy shell smoke failed: multi-local host setup failed\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (!gubsy_host_lobby_direct(host_shell.runtime, 0, message)) {
+        std::cerr << "Gubsy shell smoke failed: multi-local host start failed: " << message << '\n';
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (ConnectedLocalPlayerCount(host_state) != 3 || ConnectedLocalPlayerEntCount(host_state) != 3) {
+        std::cerr << "Gubsy shell smoke failed: hosted start did not keep three local players: slots="
+                  << ConnectedLocalPlayerCount(host_state) << " ents="
+                  << ConnectedLocalPlayerEntCount(host_state) << '\n';
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    (void)gubsy_leave_lobby_room(host_shell.runtime, message);
+    gubsy_shell::Shutdown(host_shell);
     return true;
 }
 
@@ -1193,7 +1265,8 @@ bool CheckGubsyShellSmoke() {
                CheckNetworkRestartCommandDoesNotDesync() && CheckPeerInputMapping() &&
                CheckPeerGameplayInputAfterStart() && CheckPeerPlayLeavesStaleTransition() &&
                CheckReadyPeerAutoLeavesStaleTransition() && CheckInGameQuitCommand() && CheckHostJoin() &&
-               CheckDirectHostJoinViaMenu() && CheckMultiLocalPlayerJoin() &&
+               CheckDirectHostJoinViaMenu() && CheckHostStartKeepsLocalPlayers() &&
+               CheckMultiLocalPlayerJoin() &&
                CheckPublicMultiLocalPlayerJoin() && CheckDirectRemoteMemberSync();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';
