@@ -1342,103 +1342,89 @@ LockstepInputRecord MakeLockstepInputRecord(const InputFrameRecordEntry& entry) 
     return record;
 }
 
-LockstepFrame FirstInputFrameThatFitsPacket(
-    LockstepFrame last_frame,
-    std::size_t player_count,
-    std::size_t max_records
-) {
-    if (player_count == 0 || max_records == 0) {
-        return last_frame;
-    }
-
-    const std::size_t frames_that_fit = std::max<std::size_t>(1, max_records / player_count);
-    const auto history_frames = static_cast<LockstepFrame>(std::min<std::size_t>(
-        frames_that_fit,
-        static_cast<std::size_t>(kInputHistoryFrames + 1)
-    ));
+LockstepFrame FirstInputHistoryFrame(LockstepFrame last_frame) {
+    constexpr LockstepFrame history_frames = kInputHistoryFrames + 1;
     if (last_frame + 1 <= history_frames) {
         return 0;
     }
     return last_frame + 1 - history_frames;
 }
 
-InputFrameRecordsPacket BuildLocalInputFramePacket(State& state) {
-    InputFrameRecordsPacket packet;
-    packet.stage_instance_id = state.net_session.stage_instance_id;
-    packet.sender_peer_id = static_cast<std::uint32_t>(state.net_session.local_player_id);
-
+std::vector<InputFrameRecordsPacket> BuildLocalInputFramePackets(State& state) {
     std::vector<LockstepInputRecord> records;
     if (state.net_session.role == NetRole::Host) {
         const std::vector<PlayerId> connected_player_ids = GetConnectedPlayerIds(state);
         if (connected_player_ids.empty() || state.net_session.lockstep_next_frame_to_step == 0) {
-            return packet;
+            return {};
         }
         const LockstepFrame last_frame = state.net_session.lockstep_next_frame_to_step - 1;
-        const LockstepFrame first_frame = FirstInputFrameThatFitsPacket(
-            last_frame,
-            connected_player_ids.size(),
-            packet.records.size()
-        );
+        const LockstepFrame first_frame = FirstInputHistoryFrame(last_frame);
         state.net_session.lockstep_input_buffer.CollectCanonicalRecords(
             connected_player_ids,
             first_frame,
             last_frame,
             records,
-            packet.records.size()
+            connected_player_ids.size() * static_cast<std::size_t>(kInputHistoryFrames + 1)
         );
     } else {
         const std::vector<PlayerId> local_player_ids = GetLocalPlayerIds(state);
         if (local_player_ids.empty() || state.net_session.lockstep_next_local_input_frame == 0) {
-            return packet;
+            return {};
         }
 
         const LockstepFrame last_frame = state.net_session.lockstep_next_local_input_frame - 1;
-        const LockstepFrame first_frame = FirstInputFrameThatFitsPacket(
-            last_frame,
-            local_player_ids.size(),
-            packet.records.size()
-        );
+        const LockstepFrame first_frame = FirstInputHistoryFrame(last_frame);
         state.net_session.lockstep_input_buffer.CollectRecords(
             local_player_ids,
             first_frame,
             last_frame,
             records,
-            packet.records.size()
+            local_player_ids.size() * static_cast<std::size_t>(kInputHistoryFrames + 1)
         );
     }
 
     if (records.empty()) {
-        return packet;
+        return {};
     }
 
-    packet.record_count = static_cast<std::uint32_t>(records.size());
-    for (std::uint32_t i = 0; i < packet.record_count; ++i) {
-        packet.records[i] = MakeInputFrameRecordEntry(records[i]);
+    std::vector<InputFrameRecordsPacket> packets;
+    packets.reserve((records.size() + kNetInputFrameRecordsPerPacket - 1) /
+                    kNetInputFrameRecordsPerPacket);
+    for (std::size_t offset = 0; offset < records.size();) {
+        InputFrameRecordsPacket packet;
+        packet.stage_instance_id = state.net_session.stage_instance_id;
+        packet.sender_peer_id = static_cast<std::uint32_t>(state.net_session.local_player_id);
+        const std::size_t count =
+            std::min<std::size_t>(packet.records.size(), records.size() - offset);
+        packet.record_count = static_cast<std::uint32_t>(count);
+        for (std::uint32_t i = 0; i < packet.record_count; ++i) {
+            packet.records[i] = MakeInputFrameRecordEntry(records[offset + i]);
+        }
+        packets.push_back(packet);
+        offset += count;
     }
-    return packet;
+    return packets;
 }
 
-void SendInputFramePacketToEndpoint(
+void SendInputFramePacketsToEndpoint(
     State& state,
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint
 ) {
-    const InputFrameRecordsPacket packet = BuildLocalInputFramePacket(state);
-    if (packet.record_count == 0) {
-        return;
+    for (const InputFrameRecordsPacket& packet : BuildLocalInputFramePackets(state)) {
+        SendEncodedPacket(transport, endpoint, EncodeInputFrameRecords(packet));
     }
-    SendEncodedPacket(transport, endpoint, EncodeInputFrameRecords(packet));
 }
 
 void SendLocalInputFramePacket(State& state, NetTransportRuntime& transport) {
     if (state.net_session.role == NetRole::Host) {
         for (const NetRemoteEndpoint& remote : transport.remotes) {
-            SendInputFramePacketToEndpoint(state, transport, remote.endpoint);
+            SendInputFramePacketsToEndpoint(state, transport, remote.endpoint);
         }
         return;
     }
     if (state.net_session.role == NetRole::Peer && !transport.join_request_pending) {
-        SendInputFramePacketToEndpoint(state, transport, transport.host_endpoint);
+        SendInputFramePacketsToEndpoint(state, transport, transport.host_endpoint);
     }
 }
 
