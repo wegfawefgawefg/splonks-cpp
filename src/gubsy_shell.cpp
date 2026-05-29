@@ -303,8 +303,14 @@ void StartSplonksFromGubsy(void* user_data, std::int32_t) {
 
     ApplyLobbyConfigToSplonks(*shell, gubsy_get_lobby_state(shell->runtime),
                               shell->state->net_session.role == network::NetRole::Offline);
-    QueueStageTransition(*shell->state,
-                         StageLoadTarget::ForQuestStage("classic", "classic_mines_1"), false);
+    QueueStageTransition(
+        *shell->state,
+        StageTransitionTarget{
+            .destination = StageLoadTarget::ForQuestStage("classic", "classic_mines_1"),
+            .preserve_player_state = false,
+            .seed = MakeRandomStageSeed(),
+        }
+    );
     shell->state->scene_frame = 0;
     shell->state->SetMode(Mode::StageTransition);
 }
@@ -341,8 +347,14 @@ void RestartSplonksFromGubsy(void* user_data, std::int32_t) {
         return;
     }
     gubsy_close_in_game_menu(shell->runtime);
-    QueueStageTransition(*shell->state,
-                         StageLoadTarget::ForQuestStage("classic", "classic_mines_1"), false);
+    QueueStageTransition(
+        *shell->state,
+        StageTransitionTarget{
+            .destination = StageLoadTarget::ForQuestStage("classic", "classic_mines_1"),
+            .preserve_player_state = false,
+            .seed = MakeRandomStageSeed(),
+        }
+    );
     shell->state->scene_frame = 0;
     shell->state->game_over = false;
     shell->state->pause = false;

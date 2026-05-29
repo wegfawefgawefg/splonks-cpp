@@ -38,6 +38,7 @@ bool AabbsIntersect(const AABB& left, const AABB& right);
 namespace rng {
 
 void SetSeed(std::uint32_t seed);
+std::uint32_t RandomU32();
 int RandomIntInclusive(int minimum, int maximum);
 int RandomIntExclusive(int minimum, int maximum);
 float RandomFloat(float minimum, float maximum);

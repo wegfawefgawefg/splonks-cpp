@@ -4,6 +4,7 @@
 #include "quest_stage_loader.hpp"
 #include "stage_init.hpp"
 #include "state.hpp"
+#include "utils.hpp"
 #include <algorithm>
 #include <cstring>
 #include <string>
@@ -84,6 +85,11 @@ const char* GetDebugLevelKindName(DebugLevelKind kind) {
     }
 
     return "Unknown";
+}
+
+std::uint32_t MakeRandomStageSeed() {
+    const std::uint32_t seed = rng::RandomU32();
+    return seed == 0 ? 1U : seed;
 }
 
 void QueueStageTransition(State& state, const StageTransitionTarget& target) {

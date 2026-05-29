@@ -64,6 +64,7 @@ struct StageTransitionTarget {
 };
 
 const char* GetDebugLevelKindName(DebugLevelKind kind);
+std::uint32_t MakeRandomStageSeed();
 void QueueStageTransition(State& state, const StageTransitionTarget& target);
 void QueueStageTransition(
     State& state,

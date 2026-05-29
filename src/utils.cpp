@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <limits>
 #include <random>
 
 namespace splonks {
@@ -82,6 +83,14 @@ std::mt19937& GetRandomGenerator() {
 
 void SetSeed(std::uint32_t seed) {
     GetRandomGenerator().seed(seed);
+}
+
+std::uint32_t RandomU32() {
+    std::uniform_int_distribution<std::uint32_t> distribution(
+        0,
+        std::numeric_limits<std::uint32_t>::max()
+    );
+    return distribution(GetRandomGenerator());
 }
 
 int RandomIntInclusive(int minimum, int maximum) {
