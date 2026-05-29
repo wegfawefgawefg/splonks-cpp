@@ -1896,6 +1896,53 @@ bool RunJoinBarrierProtocolSmoke() {
         return false;
     }
 
+    State menu_host = State::New();
+    Graphics menu_graphics;
+    Audio menu_audio;
+    InitCliSmokeRuntimeTables(menu_graphics);
+    menu_host.SetMode(Mode::Settings);
+    menu_host.net_session.role = network::NetRole::Host;
+    menu_host.net_session.local_player_id = 1;
+    menu_host.net_session.host_player_id = 1;
+    menu_host.net_session.input_lockstep_enabled = true;
+    menu_host.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    menu_host.net_session.join_barrier_active = true;
+    menu_host.net_session.join_barrier_id = 33;
+    menu_host.net_session.join_barrier_phase = network::JoinBarrierPhase::ReadyToResume;
+    menu_host.net_session.lockstep_next_frame_to_step = 240;
+    menu_host.net_session.lockstep_next_local_input_frame = 240;
+    menu_host.net_transport =
+        std::make_unique<network::NetTransportRuntime>(network::NetTransportRuntime::New());
+    menu_host.net_transport->capture_outgoing_packets = true;
+    std::string menu_socket_error;
+    if (!menu_host.net_transport->socket.Open(0, &menu_socket_error)) {
+        std::cerr << "join barrier protocol smoke failed opening menu transport socket: "
+                  << menu_socket_error << '\n';
+        return false;
+    }
+    menu_host.net_transport->remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {2},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39222},
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = 100,
+    });
+    StepSingleTick(menu_host, menu_audio, menu_graphics);
+    bool menu_resume_sent = false;
+    for (const network::UdpPacket& packet : menu_host.net_transport->captured_packets) {
+        const std::optional<network::JoinBarrierResumePacket> decoded_menu_resume =
+            network::TryDecodeJoinBarrierResume(packet.bytes.data(), packet.size);
+        if (decoded_menu_resume.has_value() &&
+            decoded_menu_resume->barrier_id == 33 &&
+            decoded_menu_resume->resume_frame == 240) {
+            menu_resume_sent = true;
+            break;
+        }
+    }
+    if (!menu_resume_sent || menu_host.net_session.join_barrier_active) {
+        std::cerr << "join barrier protocol smoke failed: menu fixed tick did not resume barrier\n";
+        return false;
+    }
+
     State existing_peer = State::New();
     existing_peer.net_session.role = network::NetRole::Peer;
     existing_peer.net_session.stage_instance_id = host.net_session.stage_instance_id;
