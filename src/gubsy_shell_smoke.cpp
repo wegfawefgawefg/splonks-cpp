@@ -970,6 +970,27 @@ bool CheckPublicMultiLocalPlayerJoin() {
         return false;
     }
 
+    if (!gubsy_join_lobby_room_code(guest_shell.runtime, matchmaking.room.room_code, message)) {
+        std::cerr << "Gubsy shell smoke failed: public multi-local rejoin failed: " << message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (!PumpJoinUntilConfirmed(host_shell, host_state, guest_shell, guest_state, [&]() {
+            std::size_t host_remote_players = 0;
+            for (const PlayerSlot& slot : host_state.players.slots) {
+                if (slot.connected && slot.connection_kind == PlayerConnectionKind::Remote)
+                    ++host_remote_players;
+            }
+            return host_remote_players == 2 && guest_state.net_session.role == network::NetRole::Peer;
+        })) {
+        std::cerr << "Gubsy shell smoke failed: public multi-local rejoin did not recreate two host remote players\n";
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
     (void)gubsy_leave_lobby_room(host_shell.runtime, message);
     gubsy_shell::Shutdown(guest_shell);
     gubsy_shell::Shutdown(host_shell);
