@@ -6,23 +6,31 @@
 
 namespace splonks {
 
+namespace {
+
+Vec2 WorldToScreenRaw(const Graphics& graphics, const Vec2& world_pos) {
+    return ((world_pos - graphics.camera.target) * graphics.camera.zoom) + graphics.camera.offset;
+}
+
+} // namespace
+
 Vec2 WorldToScreen(const Graphics& graphics, const Vec2& world_pos) {
-    const Vec2 screen =
-        ((world_pos - graphics.camera.target) * graphics.camera.zoom) + graphics.camera.offset;
+    const Vec2 screen = WorldToScreenRaw(graphics, world_pos);
     return Vec2::New(std::round(screen.x), std::round(screen.y));
 }
 
 SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, const Vec2& world_size) {
-    const Vec2 screen_pos = WorldToScreen(graphics, world_pos);
-    const Vec2 screen_size = Vec2::New(
-        std::round(world_size.x * graphics.camera.zoom),
-        std::round(world_size.y * graphics.camera.zoom)
-    );
+    const Vec2 screen_tl = WorldToScreenRaw(graphics, world_pos);
+    const Vec2 screen_br = WorldToScreenRaw(graphics, world_pos + world_size);
+    const float left = std::floor(std::min(screen_tl.x, screen_br.x));
+    const float top = std::floor(std::min(screen_tl.y, screen_br.y));
+    const float right = std::ceil(std::max(screen_tl.x, screen_br.x));
+    const float bottom = std::ceil(std::max(screen_tl.y, screen_br.y));
     return SDL_FRect{
-        screen_pos.x,
-        screen_pos.y,
-        screen_size.x,
-        screen_size.y,
+        left,
+        top,
+        right - left,
+        bottom - top,
     };
 }
 
