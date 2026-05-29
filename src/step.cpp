@@ -581,7 +581,7 @@ void StepStageTransition(
     SimulationTickMode mode
 ) {
     (void)audio;
-    if (mode == SimulationTickMode::Normal && !network::IsInputLockstepActive(state)) {
+    if (mode == SimulationTickMode::Normal) {
         network::StepNetworkLobby(state, graphics);
     }
 

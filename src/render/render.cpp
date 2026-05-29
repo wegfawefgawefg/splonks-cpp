@@ -79,11 +79,10 @@ bool IsQueuedJoinBarrierPeer(const State& state) {
 }
 
 std::string LocalJoinBarrierClientText(const State& state) {
-    const PlayerId local_player_id = state.net_session.local_player_id;
     if (state.net_session.role == network::NetRole::Host) {
-        return "You: host / client " + std::to_string(local_player_id);
+        return "This client: host";
     }
-    return "You: client " + std::to_string(local_player_id);
+    return "This client: joining";
 }
 
 std::string ActiveJoinBarrierClientText(const State& state) {
@@ -91,27 +90,30 @@ std::string ActiveJoinBarrierClientText(const State& state) {
     if (active_peer_id == kInvalidPlayerId) {
         return "Syncing: none";
     }
-    return "Syncing: client " + std::to_string(active_peer_id);
+    return IsLocalJoinBarrierPeer(state) ? "Syncing: this client" : "Syncing: remote client";
 }
 
-std::string FormatClientList(const std::vector<PlayerId>& player_ids) {
+std::string FormatPlayerChangeList(const std::vector<PlayerId>& player_ids) {
     if (player_ids.empty()) {
         return "";
+    }
+    if (player_ids.size() > 2) {
+        return std::to_string(player_ids.size()) + " players";
     }
     std::string result;
     for (std::size_t i = 0; i < player_ids.size(); ++i) {
         if (i > 0) {
             result += i + 1 == player_ids.size() ? " and " : ", ";
         }
-        result += "client " + std::to_string(player_ids[i]);
+        result += "player " + std::to_string(player_ids[i]);
     }
     return result;
 }
 
 std::string JoinBarrierChangeText(const State& state) {
     const network::NetSessionState& session = state.net_session;
-    const std::string joined = FormatClientList(session.join_barrier_joined_player_ids);
-    const std::string removed = FormatClientList(session.join_barrier_removed_player_ids);
+    const std::string joined = FormatPlayerChangeList(session.join_barrier_joined_player_ids);
+    const std::string removed = FormatPlayerChangeList(session.join_barrier_removed_player_ids);
     if (!joined.empty() && !removed.empty()) {
         return joined + " joined, " + removed + " left";
     }
