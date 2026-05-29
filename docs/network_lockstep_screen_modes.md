@@ -110,16 +110,18 @@ These are rendering decisions. They should not decide whether packets are sent.
 
 ## Current State
 
-`MaintainInputLockstepTransport()` exists. Transport maintenance is being moved
-toward fixed update flow so individual screens do not own packet pump behavior.
-The concrete stage-door freeze was fixed by keeping old-stage lockstep transport
-alive until peers receive the final old-stage input frames.
+`MaintainInputLockstepTransport()` exists. Fixed update flow owns transport
+maintenance for screens that do not advance lockstep simulation, while
+`PrepareInputLockstepFrame()` owns the simulation-advancing path for gameplay
+modes. Individual screens should not call packet pump code directly.
+
+The concrete stage-door freeze was fixed by keeping old-stage lockstep
+transport alive until peers receive the final old-stage input frames.
 
 ## Follow-Up Work
 
-- Move lockstep transport maintenance to a single high-level fixed update site.
-- Keep `PrepareInputLockstepFrame()` responsible only for advancing simulation.
-- Add a clear helper for whether a mode advances lockstep simulation.
+- Finish separating packet maintenance from `PrepareInputLockstepFrame()` so the
+  transport path is fully single-purpose.
 - Recheck `StageTransition`, `GameOver`, future score screens, shops, pause
   overlays, and lobby overlays against this rule.
 - Keep screen copy/state labels in render code or UI state helpers, not in

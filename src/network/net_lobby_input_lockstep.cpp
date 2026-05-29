@@ -2719,6 +2719,11 @@ void MaintainInputLockstepTransport(State& state, Graphics& graphics) {
     transport.fuzzer_config = state.net_session.fuzzer_config;
     PumpInputLockstepPackets(state, graphics, transport);
     SendPendingRunRestart(state, transport);
+    if (ApplyDueRunRestart(state)) {
+        FlushFuzzedOutgoingPackets(transport);
+        state.net_session.fuzzer_stats = transport.fuzzer_stats;
+        return;
+    }
     SendPendingJoinBarrier(state, graphics, transport);
     SendPendingSnapshotResync(state, graphics, transport);
     SendLocalInputFramePacket(state, transport);
