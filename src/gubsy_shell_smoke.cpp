@@ -1,9 +1,11 @@
 #include "gubsy_shell_smoke.hpp"
 
+#include "audio.hpp"
 #include "gubsy_shell.hpp"
 #include "graphics.hpp"
 #include "network/net_lobby.hpp"
 #include "stage_progression.hpp"
+#include "step.hpp"
 
 #include <cstdint>
 #include <cstdlib>
@@ -142,6 +144,8 @@ bool GubsyAlertContains(const EngineState& engine, std::string_view needle) {
 }
 
 void PumpTitleNetwork(gubsy_shell::Shell& shell, State& state, Graphics& graphics) {
+    Audio audio;
+    StepSingleTick(state, audio, graphics);
     gubsy_shell::UpdateTitleMenu(shell, state, graphics, 0.016F, 1280, 720);
 }
 

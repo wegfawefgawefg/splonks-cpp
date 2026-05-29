@@ -410,6 +410,29 @@ void StepDebugLocalPlayerBots(State& state) {
     }
 }
 
+bool ModeAdvancesLockstepSimulation(Mode mode) {
+    return mode == Mode::Playing || mode == Mode::GameOver;
+}
+
+void MaintainNetworkForFixedTick(
+    State& state,
+    Graphics& graphics,
+    SimulationTickMode mode
+) {
+    if (mode != SimulationTickMode::Normal) {
+        return;
+    }
+
+    if (network::IsInputLockstepActive(state)) {
+        if (!ModeAdvancesLockstepSimulation(state.mode)) {
+            network::MaintainInputLockstepTransport(state, graphics);
+        }
+        return;
+    }
+
+    network::StepNetworkLobby(state, graphics);
+}
+
 } // namespace
 
 void Step(State& state, Audio& audio, Graphics& graphics, float frame_dt) {
@@ -430,8 +453,10 @@ void StepSingleTickWithMode(
     Graphics& graphics,
     SimulationTickMode mode
 ) {
+    MaintainNetworkForFixedTick(state, graphics, mode);
+
     if (mode == SimulationTickMode::Normal &&
-        (state.mode == Mode::Playing || state.mode == Mode::GameOver) &&
+        ModeAdvancesLockstepSimulation(state.mode) &&
         network::IsInputLockstepActive(state) &&
         !network::PrepareInputLockstepFrame(state, graphics)) {
         return;
@@ -498,6 +523,7 @@ void StepPlaying(
     float dt,
     SimulationTickMode mode
 ) {
+    (void)mode;
     // audio
     //     .rl_audio_device
     //     .update_music_stream(&mut audio.songs[audio_asset_ids::Playing as usize]);
@@ -522,9 +548,6 @@ void StepPlaying(
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEnts(state, audio, graphics, dt);
-    if (mode == SimulationTickMode::Normal && !network::IsInputLockstepActive(state)) {
-        network::StepNetworkLobby(state, graphics);
-    }
     UpdateAudioEmitters(state, audio, graphics);
     for (Ent& ent : state.ents.ents) {
         if (!ent.active) {
@@ -581,15 +604,6 @@ void StepStageTransition(
     SimulationTickMode mode
 ) {
     (void)audio;
-    if (mode == SimulationTickMode::Normal) {
-        if (network::IsInputLockstepCatchupBlocking(state)) {
-            (void)network::PrepareInputLockstepFrame(state, graphics);
-        } else if (network::IsInputLockstepActive(state)) {
-            network::MaintainInputLockstepTransport(state, graphics);
-        } else {
-            network::StepNetworkLobby(state, graphics);
-        }
-    }
 
     if (network::IsInputLockstepSession(state)) {
         if (state.scene_frame < kNetworkStageTransitionFrames) {
@@ -633,6 +647,7 @@ void StepGameOver(
     float dt,
     SimulationTickMode mode
 ) {
+    (void)mode;
     // audio
     //     .rl_audio_device
     //     .update_music_stream(&mut audio.songs[audio_asset_ids::GameOver as usize]);
@@ -656,9 +671,6 @@ void StepGameOver(
     state.stage.SyncTileShakeGrid();
     StepEnts(state, audio, graphics, dt);
     ApplyLockstepGameOverConfirm(state, graphics);
-    if (mode == SimulationTickMode::Normal && !network::IsInputLockstepActive(state)) {
-        network::StepNetworkLobby(state, graphics);
-    }
     UpdateAudioEmitters(state, audio, graphics);
     for (Ent& ent : state.ents.ents) {
         if (!ent.active) {

@@ -912,9 +912,7 @@ void RenderAlerts(Shell& shell, SDL_Renderer* renderer, int screen_width) {
 
 void UpdateTitleMenu(Shell& shell, State& state, Graphics& graphics, float dt, int screen_width,
                      int screen_height) {
-    if (network::IsInputLockstepActive(state)) {
-        network::StepNetworkLobby(state, graphics);
-    }
+    (void)graphics;
     if (shell.direct_join_pending) {
         SyncDirectJoinStatus(shell);
     }
