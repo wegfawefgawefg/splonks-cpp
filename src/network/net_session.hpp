@@ -292,6 +292,15 @@ struct NetSessionState {
     std::uint32_t run_restart_stage_seed = 1;
     std::string run_restart_quest_id;
     std::string run_restart_quest_stage_id;
+    std::uint64_t run_restart_packets_sent = 0;
+    std::uint64_t run_restart_packets_received = 0;
+    std::uint64_t run_restart_packets_accepted = 0;
+    std::uint64_t run_restart_packets_ignored = 0;
+    StageInstanceId run_restart_last_packet_stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t run_restart_last_packet_sender_peer_id = 0;
+    std::uint32_t run_restart_last_packet_sequence = 0;
+    std::uint32_t run_restart_last_packet_stage_seed = 0;
+    std::string run_restart_last_ignore_reason;
 
     static NetSessionState NewOffline();
 

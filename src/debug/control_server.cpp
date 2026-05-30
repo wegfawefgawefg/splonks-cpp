@@ -836,6 +836,31 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << ",\"quest\":" << JsonString(state.net_session.quest_id)
         << ",\"stage\":" << JsonString(state.net_session.quest_stage_id)
         << ",\"seed\":" << state.net_session.stage_seed
+        << ",\"run_restart\":{"
+        << "\"pending\":" << (state.net_session.run_restart_pending ? "true" : "false")
+        << ",\"applied_locally\":"
+        << (state.net_session.run_restart_applied_locally ? "true" : "false")
+        << ",\"next_sequence\":" << state.net_session.run_restart_next_sequence
+        << ",\"last_sequence\":" << state.net_session.run_restart_last_sequence
+        << ",\"apply_frame\":" << state.net_session.run_restart_apply_frame
+        << ",\"stage_seed\":" << state.net_session.run_restart_stage_seed
+        << ",\"quest\":" << JsonString(state.net_session.run_restart_quest_id)
+        << ",\"stage\":" << JsonString(state.net_session.run_restart_quest_stage_id)
+        << ",\"packets_sent\":" << state.net_session.run_restart_packets_sent
+        << ",\"packets_received\":" << state.net_session.run_restart_packets_received
+        << ",\"packets_accepted\":" << state.net_session.run_restart_packets_accepted
+        << ",\"packets_ignored\":" << state.net_session.run_restart_packets_ignored
+        << ",\"last_packet_stage_instance_id\":"
+        << state.net_session.run_restart_last_packet_stage_instance_id
+        << ",\"last_packet_sender_peer_id\":"
+        << state.net_session.run_restart_last_packet_sender_peer_id
+        << ",\"last_packet_sequence\":"
+        << state.net_session.run_restart_last_packet_sequence
+        << ",\"last_packet_stage_seed\":"
+        << state.net_session.run_restart_last_packet_stage_seed
+        << ",\"last_ignore_reason\":"
+        << JsonString(state.net_session.run_restart_last_ignore_reason)
+        << "}"
         << ",\"input_lockstep_enabled\":" << (state.net_session.input_lockstep_enabled ? "true" : "false")
         << ",\"lockstep_next_frame\":" << state.net_session.lockstep_next_frame_to_step
         << ",\"lockstep_next_local_input_frame\":" << state.net_session.lockstep_next_local_input_frame

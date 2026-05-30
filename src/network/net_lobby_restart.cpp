@@ -72,6 +72,7 @@ void BroadcastRunRestart(State& state, NetTransportRuntime& transport) {
     const EncodedNetPacket encoded = EncodeRunRestart(MakeRunRestartPacket(state));
     for (const NetRemoteEndpoint& remote : transport.remotes) {
         SendEncodedPacket(transport, remote.endpoint, encoded);
+        state.net_session.run_restart_packets_sent += 1;
     }
 }
 
@@ -138,18 +139,37 @@ void SendPendingRunRestart(State& state, NetTransportRuntime& transport) {
 }
 
 void HandleRunRestartPacket(State& state, const RunRestartPacket& packet) {
+    state.net_session.run_restart_packets_received += 1;
+    state.net_session.run_restart_last_packet_stage_instance_id = packet.stage_instance_id;
+    state.net_session.run_restart_last_packet_sender_peer_id = packet.sender_peer_id;
+    state.net_session.run_restart_last_packet_sequence = packet.sequence;
+    state.net_session.run_restart_last_packet_stage_seed = packet.stage_seed;
+    state.net_session.run_restart_last_ignore_reason.clear();
+
     const bool packet_matches_current_stage =
         packet.stage_instance_id == state.net_session.stage_instance_id;
     const bool packet_matches_next_stage =
         packet.stage_instance_id == state.net_session.stage_instance_id + 1;
-    if (state.net_session.role != NetRole::Peer ||
-        (!packet_matches_current_stage && !packet_matches_next_stage) ||
-        packet.sender_peer_id != state.net_session.host_player_id) {
+    if (state.net_session.role != NetRole::Peer) {
+        state.net_session.run_restart_packets_ignored += 1;
+        state.net_session.run_restart_last_ignore_reason = "not-peer";
+        return;
+    }
+    if (!packet_matches_current_stage && !packet_matches_next_stage) {
+        state.net_session.run_restart_packets_ignored += 1;
+        state.net_session.run_restart_last_ignore_reason = "stage";
+        return;
+    }
+    if (packet.sender_peer_id != state.net_session.host_player_id) {
+        state.net_session.run_restart_packets_ignored += 1;
+        state.net_session.run_restart_last_ignore_reason = "sender";
         return;
     }
     if (packet.sequence < state.net_session.run_restart_last_sequence ||
         (packet.sequence == state.net_session.run_restart_last_sequence &&
          state.net_session.run_restart_applied_locally)) {
+        state.net_session.run_restart_packets_ignored += 1;
+        state.net_session.run_restart_last_ignore_reason = "sequence";
         return;
     }
 
@@ -163,6 +183,7 @@ void HandleRunRestartPacket(State& state, const RunRestartPacket& packet) {
         ReadFixedString(packet.quest_id),
         ReadFixedString(packet.quest_stage_id)
     );
+    state.net_session.run_restart_packets_accepted += 1;
 }
 
 bool ApplyDueRunRestart(State& state) {
