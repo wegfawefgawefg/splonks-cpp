@@ -51,7 +51,7 @@ namespace {
 constexpr const char* kAnnotationsYamlPath = "assets/graphics/annotations.yaml";
 constexpr std::uint32_t kDesyncReplayMagic = 0x53445250U; // SDRP
 constexpr std::uint32_t kDesyncReplayVersionMin = 1;
-constexpr std::uint32_t kDesyncReplayVersionMax = 2;
+constexpr std::uint32_t kDesyncReplayVersionMax = 3;
 
 struct DesyncReplayInputRecord {
     PlayerId player_id = kInvalidPlayerId;
@@ -75,6 +75,7 @@ struct DesyncReplayFile {
     NetworkStateFingerprintComponents remote_components;
     std::vector<std::uint8_t> initial_snapshot_bytes;
     std::vector<DesyncReplayInputRecord> inputs;
+    std::vector<NetworkEntFingerprint> captured_local_ent_hashes;
 };
 
 template <typename T>
@@ -185,6 +186,26 @@ bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std
                 *status = "failed to read input mouse records";
             }
             return false;
+        }
+    }
+    if (version >= 3) {
+        std::uint64_t ent_hash_count = 0;
+        if (!ReadReplayPod(in, ent_hash_count)) {
+            if (status != nullptr) {
+                *status = "failed to read local entity hash count";
+            }
+            return false;
+        }
+        replay.captured_local_ent_hashes.resize(static_cast<std::size_t>(ent_hash_count));
+        for (NetworkEntFingerprint& ent_hash : replay.captured_local_ent_hashes) {
+            if (!ReadReplayPod(in, ent_hash.net_ent_id) ||
+                !ReadReplayPod(in, ent_hash.type) ||
+                !ReadReplayPod(in, ent_hash.hash)) {
+                if (status != nullptr) {
+                    *status = "failed to read local entity hashes";
+                }
+                return false;
+            }
         }
     }
     return true;
@@ -741,6 +762,22 @@ bool ReplayDesyncFile(const std::string& path, std::optional<network::LockstepFr
             }
             if (ent_hashes.size() > limit) {
                 std::cout << "  ... " << (ent_hashes.size() - limit) << " more\n";
+            }
+        }
+        if (!replay.captured_local_ent_hashes.empty()) {
+            std::cout << "captured_local_ent_hashes="
+                      << replay.captured_local_ent_hashes.size() << '\n';
+            const std::size_t limit =
+                std::min<std::size_t>(replay.captured_local_ent_hashes.size(), 64);
+            for (std::size_t i = 0; i < limit; ++i) {
+                const NetworkEntFingerprint& ent = replay.captured_local_ent_hashes[i];
+                std::cout << "  ent net=" << ent.net_ent_id
+                          << " type=" << ent.type
+                          << " hash=" << ent.hash << '\n';
+            }
+            if (replay.captured_local_ent_hashes.size() > limit) {
+                std::cout << "  ... " << (replay.captured_local_ent_hashes.size() - limit)
+                          << " more\n";
             }
         }
         return true;

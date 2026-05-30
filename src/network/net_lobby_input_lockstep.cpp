@@ -29,7 +29,7 @@ constexpr std::size_t kMaxPendingRemoteHashes = 128;
 constexpr std::uint32_t kInputRecordFlagCanonical = 1U << 31U;
 constexpr std::uint32_t kInputRecordFlagArbitratedMissing = 1U << 30U;
 constexpr std::uint32_t kDesyncReplayMagic = 0x53445250U; // SDRP
-constexpr std::uint32_t kDesyncReplayVersion = 2;
+constexpr std::uint32_t kDesyncReplayVersion = 3;
 // Snapshot chunks are UDP packets. Keep this below the packet pump receive budget
 // so a catchup burst does not overrun peer socket buffers and permanently miss chunks.
 constexpr std::uint32_t kSnapshotResyncChunksPerPump = 4;
@@ -194,6 +194,18 @@ void DumpLockstepReplayCaptureOnDesync(
         WriteReplayPod(out, input.input_flags);
         WriteReplayPod(out, input.mouse_x);
         WriteReplayPod(out, input.mouse_y);
+    }
+
+    const std::vector<NetworkEntFingerprint> local_ent_hashes =
+        local.component_ents != remote.component_ents
+            ? ComputeNetworkEntFingerprints(state)
+            : std::vector<NetworkEntFingerprint>{};
+    const std::uint64_t ent_hash_count = local_ent_hashes.size();
+    WriteReplayPod(out, ent_hash_count);
+    for (const NetworkEntFingerprint& ent_hash : local_ent_hashes) {
+        WriteReplayPod(out, ent_hash.net_ent_id);
+        WriteReplayPod(out, ent_hash.type);
+        WriteReplayPod(out, ent_hash.hash);
     }
 
     if (!out.good()) {
