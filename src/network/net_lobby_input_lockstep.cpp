@@ -34,6 +34,7 @@ constexpr std::uint32_t kDesyncReplayVersion = 1;
 // so a catchup burst does not overrun peer socket buffers and permanently miss chunks.
 constexpr std::uint32_t kSnapshotResyncChunksPerPump = 4;
 constexpr std::uint32_t kJoinBarrierChunksPerPump = 8;
+constexpr std::size_t kReplayInputReserveChunk = 4096;
 
 enum class LockstepHashContext : std::uint8_t {
     Normal,
@@ -85,7 +86,13 @@ void RecordLockstepReplayInputs(
         return;
     }
     LockstepReplayCapture& capture = state.net_session.lockstep_replay_capture;
-    capture.inputs.reserve(capture.inputs.size() + input_frames.size());
+    const std::size_t required_size = capture.inputs.size() + input_frames.size();
+    if (required_size > capture.inputs.capacity()) {
+        const std::size_t chunked_capacity =
+            ((required_size + kReplayInputReserveChunk - 1) / kReplayInputReserveChunk) *
+            kReplayInputReserveChunk;
+        capture.inputs.reserve(chunked_capacity);
+    }
     for (std::size_t i = 0; i < player_ids.size() && i < input_frames.size(); ++i) {
         capture.inputs.push_back(LockstepReplayInputRecord{
             .player_id = player_ids[i],
