@@ -35,6 +35,8 @@ constexpr std::uint32_t kDesyncReplayVersion = 1;
 constexpr std::uint32_t kSnapshotResyncChunksPerPump = 4;
 constexpr std::uint32_t kJoinBarrierChunksPerPump = 8;
 constexpr std::size_t kReplayInputReserveChunk = 4096;
+constexpr std::uint32_t kMaxReplayDumpsPerRun = 32;
+constexpr LockstepFrame kReplayDumpMinFrameGap = 60;
 
 enum class LockstepHashContext : std::uint8_t {
     Normal,
@@ -72,7 +74,8 @@ void EnsureLockstepReplayCaptureStarted(State& state) {
     capture.start_frame = state.net_session.lockstep_next_frame_to_step;
     capture.initial_snapshot = SerializeSimSnapshotToBytes(MakeSimSnapshot(state));
     capture.inputs.clear();
-    capture.dumped = false;
+    capture.last_dump_frame = 0;
+    capture.dump_count = 0;
 }
 
 void RecordLockstepReplayInputs(
@@ -120,8 +123,15 @@ void DumpLockstepReplayCaptureOnDesync(
     const LockstepRemoteHashRecord& remote
 ) {
     LockstepReplayCapture& capture = state.net_session.lockstep_replay_capture;
-    if (!state.net_session.lockstep_replay_capture_enabled || capture.dumped ||
+    if (!state.net_session.lockstep_replay_capture_enabled ||
         capture.initial_snapshot.empty()) {
+        return;
+    }
+    if (capture.dump_count >= kMaxReplayDumpsPerRun) {
+        return;
+    }
+    if (capture.dump_count > 0 &&
+        remote.frame < capture.last_dump_frame + kReplayDumpMinFrameGap) {
         return;
     }
 
@@ -134,6 +144,7 @@ void DumpLockstepReplayCaptureOnDesync(
     path << "logs/desync_replay_" << RoleSlug(state.net_session.role)
          << "_stage" << state.net_session.stage_instance_id
          << "_frame" << remote.frame
+         << "_seq" << capture.dump_count
          << "_" << millis << ".sdrp";
 
     std::ofstream out(path.str(), std::ios::binary);
@@ -184,7 +195,8 @@ void DumpLockstepReplayCaptureOnDesync(
     if (!out.good()) {
         return;
     }
-    capture.dumped = true;
+    capture.last_dump_frame = remote.frame;
+    capture.dump_count += 1;
     state.net_session.lockstep_last_desync_replay_path = path.str();
 }
 

@@ -152,7 +152,8 @@ struct LockstepReplayCapture {
     LockstepFrame start_frame = 0;
     std::vector<std::uint8_t> initial_snapshot;
     std::vector<LockstepReplayInputRecord> inputs;
-    bool dumped = false;
+    LockstepFrame last_dump_frame = 0;
+    std::uint32_t dump_count = 0;
 };
 
 struct LockstepInputArbitrationStats {
