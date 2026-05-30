@@ -96,6 +96,37 @@ bool RequestRunRestart(State& state, std::string* status_out) {
     return true;
 }
 
+bool RequestRunStart(State& state, std::uint32_t stage_seed, std::string* status_out) {
+    if (!IsInputLockstepActive(state) || state.net_session.role != NetRole::Host ||
+        state.net_transport == nullptr) {
+        if (status_out != nullptr) {
+            *status_out = "Only the host can start a network run.";
+        }
+        return false;
+    }
+    if (state.net_session.lockstep_next_frame_to_step != 0) {
+        if (status_out != nullptr) {
+            *status_out = "Network run has already started.";
+        }
+        return false;
+    }
+
+    const std::uint32_t sequence = state.net_session.run_restart_next_sequence++;
+    StorePendingRestart(
+        state,
+        sequence,
+        0,
+        stage_seed == 0 ? 1U : stage_seed,
+        "classic",
+        "classic_mines_1"
+    );
+    BroadcastRunRestart(state, *state.net_transport);
+    if (status_out != nullptr) {
+        *status_out = "Network run start scheduled.";
+    }
+    return true;
+}
+
 void SendPendingRunRestart(State& state, NetTransportRuntime& transport) {
     BroadcastRunRestart(state, transport);
 }
@@ -108,7 +139,8 @@ void HandleRunRestartPacket(State& state, const RunRestartPacket& packet) {
         return;
     }
 
-    const LockstepFrame minimum_apply_frame = state.net_session.lockstep_next_frame_to_step + 1;
+    const LockstepFrame minimum_apply_frame =
+        packet.apply_frame == 0 ? 0 : state.net_session.lockstep_next_frame_to_step + 1;
     StorePendingRestart(
         state,
         packet.sequence,

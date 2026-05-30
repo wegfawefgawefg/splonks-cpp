@@ -41,6 +41,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
 bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string* status_out);
+bool RequestRunStart(State& state, std::uint32_t stage_seed, std::string* status_out);
 bool RequestRunRestart(State& state, std::string* status_out);
 bool ScheduleLockstepSettingsChange(
     State& state,

@@ -607,17 +607,23 @@ void StepStageTransition(
         if (state.scene_frame < kNetworkStageTransitionFrames) {
             return;
         }
+        if (state.pending_stage_transition.has_value() &&
+            !state.pending_stage_transition->preserve_player_state) {
+            ApplyPendingStageTransitionNow(state, graphics);
+            state.scene_frame = 0;
+            state.SetMode(Mode::Playing);
+            return;
+        }
         if (mode == SimulationTickMode::Normal &&
             network::IsInputLockstepCatchupBlocking(state)) {
             return;
         }
-        if (!state.pending_stage_transition.has_value()) {
+        if (state.pending_stage_transition.has_value()) {
+            ApplyPendingStageTransitionNow(state, graphics);
+            state.scene_frame = 0;
             state.SetMode(Mode::Playing);
             return;
         }
-
-        ApplyPendingStageTransitionNow(state, graphics);
-        state.scene_frame = 0;
         state.SetMode(Mode::Playing);
         return;
     }

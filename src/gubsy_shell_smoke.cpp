@@ -894,6 +894,104 @@ bool CheckMultiLocalPlayerJoin() {
     return true;
 }
 
+bool CheckNetworkHostStartSynchronizesStage() {
+    std::string message;
+    State host_state = State::New();
+    gubsy_shell::Shell host_shell;
+    if (!gubsy_shell::InitHeadless(host_shell, host_state)) {
+        std::cerr << "Gubsy shell smoke failed: network start host InitHeadless failed\n";
+        return false;
+    }
+    if (!gubsy_host_lobby_direct(host_shell.runtime, 0, message)) {
+        std::cerr << "Gubsy shell smoke failed: network start direct host failed: "
+                  << message << '\n';
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    const GubsyLobbyState& host_lobby = gubsy_get_lobby_state(host_shell.runtime);
+    std::string direct_host;
+    std::uint16_t direct_port = 0;
+    if (!ParseEndpoint(host_lobby.advertised_endpoint, direct_host, direct_port)) {
+        std::cerr << "Gubsy shell smoke failed: network start host endpoint invalid\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    State guest_state = State::New();
+    gubsy_shell::Shell guest_shell;
+    if (!gubsy_shell::InitHeadless(guest_shell, guest_state)) {
+        std::cerr << "Gubsy shell smoke failed: network start guest InitHeadless failed\n";
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (!gubsy_join_lobby_direct(guest_shell.runtime, direct_host, direct_port, message)) {
+        std::cerr << "Gubsy shell smoke failed: network start direct join failed: "
+                  << message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+    if (!PumpJoinUntilConfirmed(host_shell, host_state, guest_shell, guest_state, [&]() {
+            return host_state.net_session.role == network::NetRole::Host &&
+                   guest_state.net_session.role == network::NetRole::Peer &&
+                   host_state.net_transport != nullptr &&
+                   !host_state.net_transport->remotes.empty() &&
+                   !guest_state.net_transport->join_request_pending;
+        })) {
+        std::cerr << "Gubsy shell smoke failed: network start join was not confirmed\n";
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    if (!gubsy_start_lobby_game(host_shell.runtime, message)) {
+        std::cerr << "Gubsy shell smoke failed: network host start failed: " << message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    Graphics host_graphics;
+    Graphics guest_graphics;
+    Audio host_audio;
+    Audio guest_audio;
+    bool matched_started_stage = false;
+    for (int i = 0; i < 240; ++i) {
+        StepSingleTick(host_state, host_audio, host_graphics);
+        gubsy_shell::UpdateRuntime(host_shell, 0.016F);
+        StepSingleTick(guest_state, guest_audio, guest_graphics);
+        gubsy_shell::UpdateRuntime(guest_shell, 0.016F);
+        if (host_state.net_session.stage_instance_id == guest_state.net_session.stage_instance_id &&
+            host_state.net_session.stage_seed == guest_state.net_session.stage_seed &&
+            host_state.stage.generation_seed == guest_state.stage.generation_seed &&
+            host_state.net_session.lockstep_next_frame_to_step > 0 &&
+            guest_state.net_session.lockstep_next_frame_to_step > 0) {
+            matched_started_stage = true;
+            break;
+        }
+    }
+    if (!matched_started_stage) {
+        std::cerr << "Gubsy shell smoke failed: network host start did not synchronize stage:"
+                  << " host_instance=" << host_state.net_session.stage_instance_id
+                  << " guest_instance=" << guest_state.net_session.stage_instance_id
+                  << " host_seed=" << host_state.net_session.stage_seed
+                  << " guest_seed=" << guest_state.net_session.stage_seed
+                  << " host_frame=" << host_state.net_session.lockstep_next_frame_to_step
+                  << " guest_frame=" << guest_state.net_session.lockstep_next_frame_to_step
+                  << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
+    (void)gubsy_leave_lobby_room(host_shell.runtime, message);
+    gubsy_shell::Shutdown(guest_shell);
+    gubsy_shell::Shutdown(host_shell);
+    return true;
+}
+
 bool CheckPublicMultiLocalPlayerJoin() {
     SmokeMatchmaking matchmaking;
     std::string message;
@@ -1305,7 +1403,7 @@ bool CheckGubsyShellSmoke() {
                CheckPeerGameplayInputAfterStart() && CheckPeerPlayLeavesStaleTransition() &&
                CheckReadyPeerAutoLeavesStaleTransition() && CheckInGameQuitCommand() && CheckHostJoin() &&
                CheckDirectHostJoinViaMenu() && CheckHostStartKeepsLocalPlayers() &&
-               CheckMultiLocalPlayerJoin() &&
+               CheckMultiLocalPlayerJoin() && CheckNetworkHostStartSynchronizesStage() &&
                CheckPublicMultiLocalPlayerJoin() && CheckDirectRemoteMemberSync();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell smoke failed: " << e.what() << '\n';

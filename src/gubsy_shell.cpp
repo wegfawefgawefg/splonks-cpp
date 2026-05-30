@@ -303,6 +303,21 @@ void StartSplonksFromGubsy(void* user_data, std::int32_t) {
 
     ApplyLobbyConfigToSplonks(*shell, gubsy_get_lobby_state(shell->runtime),
                               shell->state->net_session.role == network::NetRole::Offline);
+    if (shell->state->net_session.role == network::NetRole::Host) {
+        std::string status;
+        if (!network::RequestRunStart(*shell->state, MakeRandomStageSeed(), &status)) {
+            if (!status.empty()) {
+                gubsy_add_alert(shell->runtime, status.c_str(), GubsyAlertSeverity::Error);
+            }
+            return;
+        }
+        if (!status.empty()) {
+            gubsy_add_alert(shell->runtime, status.c_str(), GubsyAlertSeverity::Success);
+        }
+        gubsy_clear_menu_stack(shell->runtime);
+        SuppressGameplayInputAfterMenu(*shell->state);
+        return;
+    }
     QueueStageTransition(
         *shell->state,
         StageTransitionTarget{
