@@ -1043,7 +1043,7 @@ void RequestReplayForPendingRemoteHashesAfterCanonicalInput(
     std::optional<LockstepFrame> earliest_pending_frame;
     for (const LockstepRemoteHashRecord& remote :
          state.net_session.lockstep_pending_remote_hashes) {
-        if (remote.frame < canonical_input_frame ||
+        if (remote.frame > canonical_input_frame ||
             FindLocalHashRecord(state, remote.frame) != nullptr) {
             continue;
         }
@@ -1055,10 +1055,7 @@ void RequestReplayForPendingRemoteHashesAfterCanonicalInput(
         return;
     }
 
-    RequestRollbackFromFrame(
-        state,
-        std::min(canonical_input_frame, *earliest_pending_frame)
-    );
+    RequestRollbackFromFrame(state, *earliest_pending_frame);
 }
 
 void RecordCompletedLockstepHash(
