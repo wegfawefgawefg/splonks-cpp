@@ -285,6 +285,8 @@ struct NetSessionState {
     std::uint32_t lockstep_last_arbitrated_missing_span = 0;
     std::vector<LockstepInputArbitrationStats> lockstep_arbitration_stats_by_player;
     bool run_restart_pending = false;
+    bool run_restart_applied_locally = false;
+    std::uint32_t run_restart_rebroadcast_ticks = 0;
     std::uint32_t run_restart_next_sequence = 1;
     std::uint32_t run_restart_last_sequence = 0;
     LockstepFrame run_restart_apply_frame = 0;
