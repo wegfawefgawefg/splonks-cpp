@@ -1276,6 +1276,9 @@ void RecordCompletedLockstepHash(
 }
 
 void RecordPreviousCompletedLockstepHash(State& state) {
+    if (IsJoinBarrierBlocking(state) || IsSnapshotResyncBlocking(state)) {
+        return;
+    }
     if (state.net_session.lockstep_next_frame_to_step == 0) {
         return;
     }
@@ -1302,6 +1305,9 @@ LockstepHashNetPacket MakeLockstepHashPacket(const State& state, const LockstepH
 }
 
 void SendDueLockstepHash(State& state, NetTransportRuntime& transport) {
+    if (IsJoinBarrierBlocking(state) || IsSnapshotResyncBlocking(state)) {
+        return;
+    }
     if (!state.net_session.lockstep_has_recorded_hash) {
         return;
     }
