@@ -142,6 +142,8 @@ struct LockstepReplayInputRecord {
     PlayerId player_id = kInvalidPlayerId;
     LockstepFrame frame = 0;
     std::uint32_t input_flags = 0;
+    std::uint32_t mouse_x = 0;
+    std::uint32_t mouse_y = 0;
 };
 
 struct LockstepReplayCapture {

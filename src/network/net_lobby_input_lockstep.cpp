@@ -29,7 +29,7 @@ constexpr std::size_t kMaxPendingRemoteHashes = 128;
 constexpr std::uint32_t kInputRecordFlagCanonical = 1U << 31U;
 constexpr std::uint32_t kInputRecordFlagArbitratedMissing = 1U << 30U;
 constexpr std::uint32_t kDesyncReplayMagic = 0x53445250U; // SDRP
-constexpr std::uint32_t kDesyncReplayVersion = 1;
+constexpr std::uint32_t kDesyncReplayVersion = 2;
 // Snapshot chunks are UDP packets. Keep this below the packet pump receive budget
 // so a catchup burst does not overrun peer socket buffers and permanently miss chunks.
 constexpr std::uint32_t kSnapshotResyncChunksPerPump = 4;
@@ -101,6 +101,8 @@ void RecordLockstepReplayInputs(
             .player_id = player_ids[i],
             .frame = frame,
             .input_flags = PackInputFrame(input_frames[i]),
+            .mouse_x = input_frames[i].mouse_pos.x,
+            .mouse_y = input_frames[i].mouse_pos.y,
         });
     }
 }
@@ -190,6 +192,8 @@ void DumpLockstepReplayCaptureOnDesync(
         WriteReplayPod(out, input.player_id);
         WriteReplayPod(out, input.frame);
         WriteReplayPod(out, input.input_flags);
+        WriteReplayPod(out, input.mouse_x);
+        WriteReplayPod(out, input.mouse_y);
     }
 
     if (!out.good()) {

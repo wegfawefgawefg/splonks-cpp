@@ -1,4 +1,6 @@
 #include "simulation_snapshot.hpp"
+
+#include "ent/spec_restore.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
 
@@ -362,6 +364,9 @@ void RestoreSimSnapshot(const SimSnapshot& snapshot, State& state, Graphics& gra
     state.frame_pause = snapshot.frame_pause;
     state.debug_level = snapshot.debug_level;
     state.ents = snapshot.ents;
+    for (Ent& ent : state.ents.ents) {
+        RestoreEntRuntimeCallbacksFromSpec(ent);
+    }
     state.area_listener_vids = snapshot.area_listener_vids;
     state.stage = snapshot.stage;
     state.contact = snapshot.contact;

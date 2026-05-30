@@ -50,12 +50,15 @@ namespace {
 
 constexpr const char* kAnnotationsYamlPath = "assets/graphics/annotations.yaml";
 constexpr std::uint32_t kDesyncReplayMagic = 0x53445250U; // SDRP
-constexpr std::uint32_t kDesyncReplayVersion = 1;
+constexpr std::uint32_t kDesyncReplayVersionMin = 1;
+constexpr std::uint32_t kDesyncReplayVersionMax = 2;
 
 struct DesyncReplayInputRecord {
     PlayerId player_id = kInvalidPlayerId;
     network::LockstepFrame frame = 0;
     std::uint32_t input_flags = 0;
+    std::uint32_t mouse_x = 0;
+    std::uint32_t mouse_y = 0;
 };
 
 struct DesyncReplayFile {
@@ -105,7 +108,8 @@ bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std
     std::uint32_t magic = 0;
     std::uint32_t version = 0;
     if (!ReadReplayPod(in, magic) || !ReadReplayPod(in, version) ||
-        magic != kDesyncReplayMagic || version != kDesyncReplayVersion) {
+        magic != kDesyncReplayMagic || version < kDesyncReplayVersionMin ||
+        version > kDesyncReplayVersionMax) {
         if (status != nullptr) {
             *status = "invalid desync replay header";
         }
@@ -172,6 +176,13 @@ bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std
             !ReadReplayPod(in, input.input_flags)) {
             if (status != nullptr) {
                 *status = "failed to read input records";
+            }
+            return false;
+        }
+        if (version >= 2 &&
+            (!ReadReplayPod(in, input.mouse_x) || !ReadReplayPod(in, input.mouse_y))) {
+            if (status != nullptr) {
+                *status = "failed to read input mouse records";
             }
             return false;
         }
@@ -623,8 +634,10 @@ void ApplyReplayInputsForFrame(
     }
     while (input_index < inputs.size() && inputs[input_index].frame == frame) {
         const DesyncReplayInputRecord& input = inputs[input_index];
-        const InputFrame input_frame =
-            network::UnpackInputFrame(input.input_flags, UVec2::New(0, 0));
+        const InputFrame input_frame = network::UnpackInputFrame(
+            input.input_flags,
+            UVec2::New(input.mouse_x, input.mouse_y)
+        );
         if (input.player_id == primary_player_id) {
             state.playing_input_snapshot = ToPlayingInputSnapshot(input_frame);
         } else {
