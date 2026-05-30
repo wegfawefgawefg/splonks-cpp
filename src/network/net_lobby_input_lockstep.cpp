@@ -1036,6 +1036,31 @@ void StoreOrCompareRemoteHash(State& state, const LockstepRemoteHashRecord& remo
     }
 }
 
+void RequestReplayForPendingRemoteHashesAfterCanonicalInput(
+    State& state,
+    LockstepFrame canonical_input_frame
+) {
+    std::optional<LockstepFrame> earliest_pending_frame;
+    for (const LockstepRemoteHashRecord& remote :
+         state.net_session.lockstep_pending_remote_hashes) {
+        if (remote.frame < canonical_input_frame ||
+            FindLocalHashRecord(state, remote.frame) != nullptr) {
+            continue;
+        }
+        if (!earliest_pending_frame.has_value() || remote.frame < *earliest_pending_frame) {
+            earliest_pending_frame = remote.frame;
+        }
+    }
+    if (!earliest_pending_frame.has_value()) {
+        return;
+    }
+
+    RequestRollbackFromFrame(
+        state,
+        std::min(canonical_input_frame, *earliest_pending_frame)
+    );
+}
+
 void RecordCompletedLockstepHash(
     State& state,
     LockstepFrame frame,
@@ -2751,6 +2776,7 @@ void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet
                 }
             } else {
                 state.net_session.lockstep_prediction_late_match_count += 1;
+                RequestReplayForPendingRemoteHashesAfterCanonicalInput(state, record.frame);
             }
         }
         if (result.mismatch_frame.has_value()) {
