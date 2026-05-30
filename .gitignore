@@ -41,6 +41,7 @@ __pycache__/
 debug_recording.*
 logs/network_events_*.log
 logs/network_messages_*.log
+logs/desync_replay_*.sdrp
 logs/lockstep_validate_*.log
 logs/lockstep_validate_report.json
 logs/lockstep_playtest_*.json
