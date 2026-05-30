@@ -369,10 +369,14 @@ void HandleJoinRequestAsHost(
     const EncodedNetPacket encoded = EncodeJoinAccept(accept);
     SendEncodedPacket(transport, udp_packet.endpoint, encoded);
 
-    // Late join changes the lockstep player set. Pause stepping, snapshot only
-    // the joining endpoint, and send already-synced peers a small topology delta.
-    if (!endpoint_already_registered && !player_ids.empty()) {
-        BeginJoinBarrierTopologyChange(state, transport, player_ids);
+    // A join accept only contains enough data to bootstrap the endpoint; the
+    // authoritative player/entity topology comes from the join barrier snapshot.
+    if (!player_ids.empty()) {
+        if (endpoint_already_registered) {
+            BeginJoinBarrierCatchup(state, player_ids.front());
+        } else {
+            BeginJoinBarrierTopologyChange(state, transport, player_ids);
+        }
     }
 }
 
