@@ -38,9 +38,11 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -76,6 +78,16 @@ struct DesyncReplayFile {
     std::vector<std::uint8_t> initial_snapshot_bytes;
     std::vector<DesyncReplayInputRecord> inputs;
     std::vector<NetworkEntFingerprint> captured_local_ent_hashes;
+};
+
+struct ReplayedDesyncFile {
+    std::string path;
+    DesyncReplayFile replay;
+    Graphics graphics;
+    State state;
+    NetworkStateFingerprintComponents components;
+    std::uint64_t hash = 0;
+    std::vector<NetworkEntFingerprint> ent_hashes;
 };
 
 template <typename T>
@@ -683,102 +695,335 @@ void PrintComponents(
               << '\n';
 }
 
-bool ReplayDesyncFile(const std::string& path, std::optional<network::LockstepFrame> stop_frame) {
-    try {
-        DesyncReplayFile replay;
-        std::string status;
-        if (!LoadDesyncReplayFile(path, replay, &status)) {
-            std::cerr << "desync replay load failed: " << status << '\n';
-            return false;
+std::string Vec2DebugString(Vec2 value) {
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(4) << "(" << value.x << "," << value.y << ")";
+    return out.str();
+}
+
+std::string IVec2DebugString(IVec2 value) {
+    return "(" + std::to_string(value.x) + "," + std::to_string(value.y) + ")";
+}
+
+std::string OptionalVidDebugString(const std::optional<VID>& value) {
+    return value.has_value() ? std::to_string(value->id) : std::string("none");
+}
+
+const Ent* FindEntByNetId(const State& state, network::NetEntId net_ent_id) {
+    if (net_ent_id == network::kInvalidNetEntId) {
+        return nullptr;
+    }
+    const std::optional<VID> vid = state.net_session.FindLocalVid(net_ent_id);
+    return vid.has_value() ? state.ents.GetEnt(*vid) : nullptr;
+}
+
+bool ReplayDesyncToState(
+    const std::string& path,
+    std::optional<network::LockstepFrame> stop_frame,
+    ReplayedDesyncFile& result,
+    std::string* status
+) {
+    result = ReplayedDesyncFile{};
+    result.path = path;
+
+    if (!LoadDesyncReplayFile(path, result.replay, status)) {
+        return false;
+    }
+
+    SimSnapshot snapshot;
+    if (!DeserializeSimSnapshotFromBytes(result.replay.initial_snapshot_bytes, snapshot)) {
+        if (status != nullptr) {
+            *status = "snapshot decode failed";
         }
+        return false;
+    }
 
-        SimSnapshot snapshot;
-        if (!DeserializeSimSnapshotFromBytes(replay.initial_snapshot_bytes, snapshot)) {
-            std::cerr << "desync replay load failed: snapshot decode failed\n";
-            return false;
-        }
+    result.graphics = MakeCliGraphics();
+    PopulateEntSpecsTable();
+    SyncEntSpecSizesFromAFrame(result.graphics);
+    PopulateToolSpecsTable();
 
-        Graphics graphics = MakeCliGraphics();
-        PopulateEntSpecsTable();
-        SyncEntSpecSizesFromAFrame(graphics);
-        PopulateToolSpecsTable();
+    result.state = State::New();
+    RestoreSimSnapshot(snapshot, result.state, result.graphics);
+    result.state.net_session.role = network::NetRole::Offline;
+    result.state.net_session.stage_instance_id = result.replay.stage_instance_id;
+    result.state.net_session.quest_id = result.replay.quest_id;
+    result.state.net_session.quest_stage_id = result.replay.quest_stage_id;
+    result.state.net_session.stage_seed = result.replay.stage_seed;
 
-        State state = State::New();
-        RestoreSimSnapshot(snapshot, state, graphics);
-        state.net_session.role = network::NetRole::Offline;
-        state.net_session.stage_instance_id = replay.stage_instance_id;
-        state.net_session.quest_id = replay.quest_id;
-        state.net_session.quest_stage_id = replay.quest_stage_id;
-        state.net_session.stage_seed = replay.stage_seed;
-
-        Audio audio;
-        const network::LockstepFrame target_frame =
-            stop_frame.value_or(replay.mismatch_frame);
-        std::size_t input_index = 0;
-        for (network::LockstepFrame frame = replay.start_frame; frame <= target_frame; ++frame) {
-            ApplyReplayInputsForFrame(state, replay.inputs, input_index, frame);
-            StepSingleTickWithMode(state, audio, graphics, SimulationTickMode::ReplayNoNetwork);
-            state.audio_emitters.ClearAll();
+    Audio audio;
+    const network::LockstepFrame target_frame = stop_frame.value_or(result.replay.mismatch_frame);
+    std::size_t input_index = 0;
+    if (result.replay.start_frame <= target_frame) {
+        for (network::LockstepFrame frame = result.replay.start_frame; frame <= target_frame; ++frame) {
+            ApplyReplayInputsForFrame(result.state, result.replay.inputs, input_index, frame);
+            StepSingleTickWithMode(
+                result.state,
+                audio,
+                result.graphics,
+                SimulationTickMode::ReplayNoNetwork
+            );
+            result.state.audio_emitters.ClearAll();
             if (frame == target_frame) {
                 break;
             }
         }
+    }
 
-        const NetworkStateFingerprintComponents components =
-            ComputeNetworkStateFingerprintComponents(state);
-        const std::uint64_t hash = CombineNetworkStateFingerprintComponents(components);
+    result.components = ComputeNetworkStateFingerprintComponents(result.state);
+    result.hash = CombineNetworkStateFingerprintComponents(result.components);
+    result.ent_hashes = ComputeNetworkEntFingerprints(result.state);
+    return true;
+}
 
-        std::cout << "desync replay: " << path << '\n'
-                  << "stage_instance=" << replay.stage_instance_id
-                  << " quest=" << replay.quest_id
-                  << " stage=" << replay.quest_stage_id
-                  << " seed=" << replay.stage_seed << '\n'
-                  << "start_frame=" << replay.start_frame
-                  << " target_frame=" << target_frame
-                  << " captured_mismatch_frame=" << replay.mismatch_frame
-                  << " inputs=" << replay.inputs.size() << '\n';
-        PrintComponents("replayed", components, hash);
-        PrintComponents("captured_local", replay.local_components, replay.local_hash);
-        PrintComponents("captured_remote", replay.remote_components, replay.remote_hash);
+void PrintReplaySummary(
+    const ReplayedDesyncFile& replayed,
+    network::LockstepFrame target_frame
+) {
+    const DesyncReplayFile& replay = replayed.replay;
+    std::cout << "desync replay: " << replayed.path << '\n'
+              << "stage_instance=" << replay.stage_instance_id
+              << " quest=" << replay.quest_id
+              << " stage=" << replay.quest_stage_id
+              << " seed=" << replay.stage_seed << '\n'
+              << "start_frame=" << replay.start_frame
+              << " target_frame=" << target_frame
+              << " captured_mismatch_frame=" << replay.mismatch_frame
+              << " inputs=" << replay.inputs.size() << '\n';
+    PrintComponents("replayed", replayed.components, replayed.hash);
+    PrintComponents("captured_local", replay.local_components, replay.local_hash);
+    PrintComponents("captured_remote", replay.remote_components, replay.remote_hash);
 
-        const bool at_mismatch = target_frame == replay.mismatch_frame;
-        if (at_mismatch) {
-            std::cout << "replay_vs_captured_local="
-                      << (hash == replay.local_hash ? "match" : "DIFFERENT")
-                      << '\n';
+    if (target_frame == replay.mismatch_frame) {
+        std::cout << "replay_vs_captured_local="
+                  << (replayed.hash == replay.local_hash ? "match" : "DIFFERENT")
+                  << '\n';
+    }
+}
+
+void PrintEntHashList(const char* label, const std::vector<NetworkEntFingerprint>& hashes) {
+    std::cout << label << "=" << hashes.size() << '\n';
+    const std::size_t limit = std::min<std::size_t>(hashes.size(), 64);
+    for (std::size_t i = 0; i < limit; ++i) {
+        const NetworkEntFingerprint& ent = hashes[i];
+        std::cout << "  ent net=" << ent.net_ent_id
+                  << " type=" << ent.type
+                  << " hash=" << ent.hash << '\n';
+    }
+    if (hashes.size() > limit) {
+        std::cout << "  ... " << (hashes.size() - limit) << " more\n";
+    }
+}
+
+void PrintFieldDiff(const char* name, const std::string& left, const std::string& right) {
+    if (left != right) {
+        std::cout << "    " << name << ": " << left << " != " << right << '\n';
+    }
+}
+
+void PrintFieldDiff(const char* name, bool left, bool right) {
+    PrintFieldDiff(
+        name,
+        std::string(left ? "true" : "false"),
+        std::string(right ? "true" : "false")
+    );
+}
+
+template <typename T>
+void PrintNumericFieldDiff(const char* name, T left, T right) {
+    if (left != right) {
+        std::cout << "    " << name << ": " << left << " != " << right << '\n';
+    }
+}
+
+void PrintEntStateDiff(const Ent* left, const Ent* right) {
+    if (left == nullptr || right == nullptr) {
+        std::cout << "    presence: "
+                  << (left != nullptr ? "present" : "missing") << " != "
+                  << (right != nullptr ? "present" : "missing") << '\n';
+        return;
+    }
+
+    PrintFieldDiff("active", left->active, right->active);
+    PrintFieldDiff("grounded", left->grounded, right->grounded);
+    PrintFieldDiff("holding", left->holding, right->holding);
+    PrintFieldDiff("wanted", left->wanted, right->wanted);
+    PrintNumericFieldDiff("type", static_cast<int>(left->type_), static_cast<int>(right->type_));
+    PrintFieldDiff("pos", Vec2DebugString(left->pos), Vec2DebugString(right->pos));
+    PrintFieldDiff("vel", Vec2DebugString(left->vel), Vec2DebugString(right->vel));
+    PrintFieldDiff("acc", Vec2DebugString(left->acc), Vec2DebugString(right->acc));
+    PrintFieldDiff("size", Vec2DebugString(left->size), Vec2DebugString(right->size));
+    PrintNumericFieldDiff("rotation", left->rotation, right->rotation);
+    PrintNumericFieldDiff("coyote_time", left->coyote_time, right->coyote_time);
+    PrintNumericFieldDiff("stun_timer", left->stun_timer, right->stun_timer);
+    PrintNumericFieldDiff("fall_timer", left->fall_timer, right->fall_timer);
+    PrintNumericFieldDiff("facing", static_cast<int>(left->facing), static_cast<int>(right->facing));
+    PrintNumericFieldDiff(
+        "condition",
+        static_cast<int>(left->condition),
+        static_cast<int>(right->condition)
+    );
+    PrintNumericFieldDiff("ai_state", static_cast<int>(left->ai_state), static_cast<int>(right->ai_state));
+    PrintNumericFieldDiff(
+        "damage_vuln",
+        static_cast<int>(left->damage_vuln),
+        static_cast<int>(right->damage_vuln)
+    );
+    PrintNumericFieldDiff("movement_flags", left->movement_flags, right->movement_flags);
+    PrintNumericFieldDiff("health", left->health, right->health);
+    PrintFieldDiff("back_vid", OptionalVidDebugString(left->back_vid), OptionalVidDebugString(right->back_vid));
+    PrintFieldDiff(
+        "holding_vid",
+        OptionalVidDebugString(left->holding_vid),
+        OptionalVidDebugString(right->holding_vid)
+    );
+    PrintFieldDiff(
+        "held_by_vid",
+        OptionalVidDebugString(left->held_by_vid),
+        OptionalVidDebugString(right->held_by_vid)
+    );
+    PrintFieldDiff("ent_a", OptionalVidDebugString(left->ent_a), OptionalVidDebugString(right->ent_a));
+    PrintFieldDiff("ent_b", OptionalVidDebugString(left->ent_b), OptionalVidDebugString(right->ent_b));
+    PrintFieldDiff("ent_c", OptionalVidDebugString(left->ent_c), OptionalVidDebugString(right->ent_c));
+    PrintFieldDiff("ent_d", OptionalVidDebugString(left->ent_d), OptionalVidDebugString(right->ent_d));
+    PrintNumericFieldDiff("stage_exit_id", left->stage_exit_id, right->stage_exit_id);
+    PrintNumericFieldDiff("money", left->money, right->money);
+    PrintNumericFieldDiff("counter_a", left->counter_a, right->counter_a);
+    PrintNumericFieldDiff("counter_b", left->counter_b, right->counter_b);
+    PrintNumericFieldDiff("counter_c", left->counter_c, right->counter_c);
+    PrintNumericFieldDiff("counter_d", left->counter_d, right->counter_d);
+    PrintNumericFieldDiff("light_strength", left->light_strength, right->light_strength);
+    PrintNumericFieldDiff("light_radius", left->light_radius, right->light_radius);
+    PrintFieldDiff("point_a", IVec2DebugString(left->point_a), IVec2DebugString(right->point_a));
+    PrintFieldDiff("point_b", IVec2DebugString(left->point_b), IVec2DebugString(right->point_b));
+    PrintNumericFieldDiff(
+        "anim_id",
+        static_cast<int>(left->aframe_animator.anim_id),
+        static_cast<int>(right->aframe_animator.anim_id)
+    );
+    PrintNumericFieldDiff(
+        "anim_frame",
+        left->aframe_animator.current_frame,
+        right->aframe_animator.current_frame
+    );
+    PrintNumericFieldDiff(
+        "anim_time",
+        left->aframe_animator.current_time,
+        right->aframe_animator.current_time
+    );
+}
+
+std::unordered_map<network::NetEntId, NetworkEntFingerprint> LinkedEntHashMap(
+    const std::vector<NetworkEntFingerprint>& hashes
+) {
+    std::unordered_map<network::NetEntId, NetworkEntFingerprint> result;
+    for (const NetworkEntFingerprint& hash : hashes) {
+        if (hash.net_ent_id != network::kInvalidNetEntId) {
+            result[hash.net_ent_id] = hash;
+        }
+    }
+    return result;
+}
+
+bool CompareDesyncFiles(
+    const std::string& left_path,
+    const std::string& right_path,
+    std::optional<network::LockstepFrame> stop_frame
+) {
+    try {
+        ReplayedDesyncFile left;
+        ReplayedDesyncFile right;
+        std::string status;
+        if (!ReplayDesyncToState(left_path, stop_frame, left, &status)) {
+            std::cerr << "left desync replay failed: " << status << '\n';
+            return false;
+        }
+        if (!ReplayDesyncToState(right_path, stop_frame, right, &status)) {
+            std::cerr << "right desync replay failed: " << status << '\n';
+            return false;
         }
 
-        if (components.ents != replay.remote_components.ents ||
-            components.ents != replay.local_components.ents) {
-            const std::vector<NetworkEntFingerprint> ent_hashes =
-                ComputeNetworkEntFingerprints(state);
-            std::cout << "replayed_ent_hashes=" << ent_hashes.size() << '\n';
-            const std::size_t limit = std::min<std::size_t>(ent_hashes.size(), 64);
-            for (std::size_t i = 0; i < limit; ++i) {
-                const NetworkEntFingerprint& ent = ent_hashes[i];
-                std::cout << "  ent net=" << ent.net_ent_id
-                          << " type=" << ent.type
-                          << " hash=" << ent.hash << '\n';
+        const network::LockstepFrame target_frame =
+            stop_frame.value_or(std::min(left.replay.mismatch_frame, right.replay.mismatch_frame));
+        std::cout << "compare desync replays at frame " << target_frame << '\n'
+                  << "left=" << left_path << '\n'
+                  << "right=" << right_path << '\n';
+        PrintComponents("left_replayed", left.components, left.hash);
+        PrintComponents("right_replayed", right.components, right.hash);
+
+        if (left.hash == right.hash) {
+            std::cout << "replayed_states=match\n";
+            return true;
+        }
+        std::cout << "replayed_states=DIFFERENT\n";
+
+        const auto left_hashes = LinkedEntHashMap(left.ent_hashes);
+        const auto right_hashes = LinkedEntHashMap(right.ent_hashes);
+        std::set<network::NetEntId> net_ids;
+        for (const auto& [net_id, _] : left_hashes) {
+            net_ids.insert(net_id);
+        }
+        for (const auto& [net_id, _] : right_hashes) {
+            net_ids.insert(net_id);
+        }
+
+        std::size_t printed = 0;
+        for (network::NetEntId net_id : net_ids) {
+            const auto left_found = left_hashes.find(net_id);
+            const auto right_found = right_hashes.find(net_id);
+            const bool left_present = left_found != left_hashes.end();
+            const bool right_present = right_found != right_hashes.end();
+            const std::uint64_t left_hash = left_present ? left_found->second.hash : 0;
+            const std::uint64_t right_hash = right_present ? right_found->second.hash : 0;
+            if (left_present && right_present && left_hash == right_hash) {
+                continue;
             }
-            if (ent_hashes.size() > limit) {
-                std::cout << "  ... " << (ent_hashes.size() - limit) << " more\n";
+
+            const Ent* left_ent = FindEntByNetId(left.state, net_id);
+            const Ent* right_ent = FindEntByNetId(right.state, net_id);
+            const EntType type = left_ent != nullptr
+                ? left_ent->type_
+                : (right_ent != nullptr ? right_ent->type_ : EntType::None);
+            std::cout << "  differing ent net=" << net_id
+                      << " type=" << GetEntTypeName(type)
+                      << " left_hash=" << left_hash
+                      << " right_hash=" << right_hash << '\n';
+            PrintEntStateDiff(left_ent, right_ent);
+
+            printed += 1;
+            if (printed >= 16) {
+                std::cout << "  ... more differing linked entities omitted\n";
+                break;
             }
         }
-        if (!replay.captured_local_ent_hashes.empty()) {
-            std::cout << "captured_local_ent_hashes="
-                      << replay.captured_local_ent_hashes.size() << '\n';
-            const std::size_t limit =
-                std::min<std::size_t>(replay.captured_local_ent_hashes.size(), 64);
-            for (std::size_t i = 0; i < limit; ++i) {
-                const NetworkEntFingerprint& ent = replay.captured_local_ent_hashes[i];
-                std::cout << "  ent net=" << ent.net_ent_id
-                          << " type=" << ent.type
-                          << " hash=" << ent.hash << '\n';
-            }
-            if (replay.captured_local_ent_hashes.size() > limit) {
-                std::cout << "  ... " << (replay.captured_local_ent_hashes.size() - limit)
-                          << " more\n";
-            }
+        return false;
+    } catch (const std::exception& e) {
+        std::cerr << "desync compare failed: " << e.what() << '\n';
+        return false;
+    }
+}
+
+bool ReplayDesyncFile(const std::string& path, std::optional<network::LockstepFrame> stop_frame) {
+    try {
+        ReplayedDesyncFile replayed;
+        std::string status;
+        if (!ReplayDesyncToState(path, stop_frame, replayed, &status)) {
+            std::cerr << "desync replay load failed: " << status << '\n';
+            return false;
+        }
+        const network::LockstepFrame target_frame =
+            stop_frame.value_or(replayed.replay.mismatch_frame);
+        PrintReplaySummary(replayed, target_frame);
+
+        if (replayed.components.ents != replayed.replay.remote_components.ents ||
+            replayed.components.ents != replayed.replay.local_components.ents) {
+            PrintEntHashList("replayed_ent_hashes", replayed.ent_hashes);
+        }
+        if (!replayed.replay.captured_local_ent_hashes.empty()) {
+            PrintEntHashList(
+                "captured_local_ent_hashes",
+                replayed.replay.captured_local_ent_hashes
+            );
         }
         return true;
     } catch (const std::exception& e) {
@@ -868,6 +1113,14 @@ bool RunCliCommand(int argc, char** argv) {
             return true;
         }
         std::exit(ReplayDesyncFile(argv[2], ParseStopFrameArg(argc, argv)) ? 0 : 1);
+    }
+
+    if (command == "--compare-desync") {
+        if (argc < 4) {
+            std::cerr << "usage: --compare-desync <left.sdrp> <right.sdrp> [--stop-frame N]\n";
+            return true;
+        }
+        std::exit(CompareDesyncFiles(argv[2], argv[3], ParseStopFrameArg(argc, argv)) ? 0 : 1);
     }
 
     return false;
