@@ -284,12 +284,12 @@ void StartSplonksFromGubsy(void* user_data, std::int32_t) {
         return;
 
     if (shell->state->net_session.role == network::NetRole::Peer) {
-        if (network::IsInputLockstepCatchupBlocking(*shell->state)) {
+        if (shell->state->pending_stage_transition.has_value() ||
+            network::IsInputLockstepCatchupBlocking(*shell->state)) {
             gubsy_add_alert(shell->runtime, "Waiting for host state", GubsyAlertSeverity::Info);
             return;
         }
         shell->state->pause = false;
-        shell->state->pending_stage_transition.reset();
         shell->state->game_over = false;
         if (shell->state->mode != Mode::Playing) {
             shell->state->scene_frame = 0;

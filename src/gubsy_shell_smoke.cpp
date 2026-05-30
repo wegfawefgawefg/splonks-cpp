@@ -436,11 +436,11 @@ bool CheckPeerPlayLeavesStaleTransition() {
 
     std::string message;
     if (!gubsy_start_lobby_game(shell.runtime, message) ||
-        state.mode != Mode::Playing ||
-        state.pending_stage_transition.has_value() ||
+        state.mode != Mode::StageTransition ||
+        !state.pending_stage_transition.has_value() ||
         state.game_over ||
         state.pause) {
-        std::cerr << "Gubsy shell smoke failed: peer Play did not leave stale transition: "
+        std::cerr << "Gubsy shell smoke failed: peer Play discarded pending transition: "
                   << message << '\n';
         gubsy_shell::Shutdown(shell);
         return false;

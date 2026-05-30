@@ -838,6 +838,8 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << ",\"seed\":" << state.net_session.stage_seed
         << ",\"run_restart\":{"
         << "\"pending\":" << (state.net_session.run_restart_pending ? "true" : "false")
+        << ",\"transition_queued\":"
+        << (state.net_session.run_restart_transition_queued ? "true" : "false")
         << ",\"applied_locally\":"
         << (state.net_session.run_restart_applied_locally ? "true" : "false")
         << ",\"next_sequence\":" << state.net_session.run_restart_next_sequence

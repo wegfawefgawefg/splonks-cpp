@@ -25,6 +25,7 @@ void NotifyStageLoaded(State& state) {
     state.net_session.stage_seed = state.stage.generation_seed.value_or(MakeHostStageSeed(state));
     state.net_session.stage_instance_id += 1;
     ResetInputLockstepState(state);
+    NotifyRunRestartStageLoaded(state);
     state.net_session.ClearStageEntLinks();
     RegisterStageEntLinks(state);
 }

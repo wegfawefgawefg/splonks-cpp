@@ -45,6 +45,7 @@ void StorePendingRestart(
     const std::string& quest_stage_id
 ) {
     state.net_session.run_restart_pending = true;
+    state.net_session.run_restart_transition_queued = false;
     state.net_session.run_restart_applied_locally = false;
     state.net_session.run_restart_last_sequence = sequence;
     state.net_session.run_restart_apply_frame = apply_frame;
@@ -172,6 +173,11 @@ void HandleRunRestartPacket(State& state, const RunRestartPacket& packet) {
         state.net_session.run_restart_last_ignore_reason = "sequence";
         return;
     }
+    if (packet.sequence == state.net_session.run_restart_last_sequence &&
+        state.net_session.run_restart_pending) {
+        state.net_session.run_restart_packets_accepted += 1;
+        return;
+    }
 
     const LockstepFrame minimum_apply_frame =
         packet.apply_frame == 0 ? 0 : state.net_session.lockstep_next_frame_to_step + 1;
@@ -188,6 +194,7 @@ void HandleRunRestartPacket(State& state, const RunRestartPacket& packet) {
 
 bool ApplyDueRunRestart(State& state) {
     if (!state.net_session.run_restart_pending ||
+        state.net_session.run_restart_transition_queued ||
         state.net_session.run_restart_applied_locally ||
         state.net_session.lockstep_next_frame_to_step < state.net_session.run_restart_apply_frame) {
         return false;
@@ -204,15 +211,31 @@ bool ApplyDueRunRestart(State& state) {
             .seed = state.net_session.run_restart_stage_seed,
         }
     );
-    state.net_session.run_restart_applied_locally = true;
-    if (state.net_session.role != NetRole::Host) {
-        state.net_session.run_restart_pending = false;
-    }
+    state.net_session.run_restart_transition_queued = true;
     state.scene_frame = 0;
     state.game_over = false;
     state.pause = false;
     state.SetMode(Mode::StageTransition);
     return true;
+}
+
+void NotifyRunRestartStageLoaded(State& state) {
+    if (!state.net_session.run_restart_pending ||
+        !state.net_session.run_restart_transition_queued ||
+        state.net_session.run_restart_applied_locally) {
+        return;
+    }
+    if (state.stage.quest_id != state.net_session.run_restart_quest_id ||
+        state.stage.quest_stage_id != state.net_session.run_restart_quest_stage_id ||
+        state.stage.generation_seed.value_or(0) != state.net_session.run_restart_stage_seed) {
+        return;
+    }
+
+    state.net_session.run_restart_transition_queued = false;
+    state.net_session.run_restart_applied_locally = true;
+    if (state.net_session.role != NetRole::Host) {
+        state.net_session.run_restart_pending = false;
+    }
 }
 
 } // namespace splonks::network
