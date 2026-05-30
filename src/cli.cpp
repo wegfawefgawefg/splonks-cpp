@@ -8,6 +8,7 @@
 #include "aframe.hpp"
 #include "graphics.hpp"
 #include "gubsy_shell_smoke.hpp"
+#include "network/input_lockstep.hpp"
 #include "quest.hpp"
 #include "quest_stage_loader.hpp"
 #include "raw_aframe.hpp"
@@ -32,11 +33,14 @@
 #include <exception>
 #include <filesystem>
 #include <iomanip>
+#include <fstream>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -45,6 +49,146 @@ namespace splonks {
 namespace {
 
 constexpr const char* kAnnotationsYamlPath = "assets/graphics/annotations.yaml";
+constexpr std::uint32_t kDesyncReplayMagic = 0x53445250U; // SDRP
+constexpr std::uint32_t kDesyncReplayVersion = 1;
+
+struct DesyncReplayInputRecord {
+    PlayerId player_id = kInvalidPlayerId;
+    network::LockstepFrame frame = 0;
+    std::uint32_t input_flags = 0;
+};
+
+struct DesyncReplayFile {
+    network::StageInstanceId stage_instance_id = network::kInvalidStageInstanceId;
+    std::uint32_t stage_seed = 0;
+    network::LockstepFrame start_frame = 0;
+    std::string quest_id;
+    std::string quest_stage_id;
+    PlayerId mismatch_peer_id = kInvalidPlayerId;
+    network::LockstepFrame mismatch_frame = 0;
+    std::uint64_t local_hash = 0;
+    std::uint64_t remote_hash = 0;
+    NetworkStateFingerprintComponents local_components;
+    NetworkStateFingerprintComponents remote_components;
+    std::vector<std::uint8_t> initial_snapshot_bytes;
+    std::vector<DesyncReplayInputRecord> inputs;
+};
+
+template <typename T>
+bool ReadReplayPod(std::istream& in, T& value) {
+    static_assert(std::is_trivially_copyable_v<T>);
+    in.read(reinterpret_cast<char*>(&value), static_cast<std::streamsize>(sizeof(T)));
+    return in.good();
+}
+
+bool ReadReplayString(std::istream& in, std::string& value) {
+    std::uint32_t size = 0;
+    if (!ReadReplayPod(in, size)) {
+        return false;
+    }
+    value.resize(size);
+    if (size > 0) {
+        in.read(value.data(), static_cast<std::streamsize>(size));
+    }
+    return in.good();
+}
+
+bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std::string* status) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in.is_open()) {
+        if (status != nullptr) {
+            *status = "failed to open replay file";
+        }
+        return false;
+    }
+
+    std::uint32_t magic = 0;
+    std::uint32_t version = 0;
+    if (!ReadReplayPod(in, magic) || !ReadReplayPod(in, version) ||
+        magic != kDesyncReplayMagic || version != kDesyncReplayVersion) {
+        if (status != nullptr) {
+            *status = "invalid desync replay header";
+        }
+        return false;
+    }
+
+    if (!ReadReplayPod(in, replay.stage_instance_id) ||
+        !ReadReplayPod(in, replay.stage_seed) ||
+        !ReadReplayPod(in, replay.start_frame) ||
+        !ReadReplayString(in, replay.quest_id) ||
+        !ReadReplayString(in, replay.quest_stage_id) ||
+        !ReadReplayPod(in, replay.mismatch_peer_id) ||
+        !ReadReplayPod(in, replay.mismatch_frame) ||
+        !ReadReplayPod(in, replay.local_hash) ||
+        !ReadReplayPod(in, replay.remote_hash) ||
+        !ReadReplayPod(in, replay.local_components.root) ||
+        !ReadReplayPod(in, replay.remote_components.root) ||
+        !ReadReplayPod(in, replay.local_components.stage) ||
+        !ReadReplayPod(in, replay.remote_components.stage) ||
+        !ReadReplayPod(in, replay.local_components.players) ||
+        !ReadReplayPod(in, replay.remote_components.players) ||
+        !ReadReplayPod(in, replay.local_components.tools) ||
+        !ReadReplayPod(in, replay.remote_components.tools) ||
+        !ReadReplayPod(in, replay.local_components.ents) ||
+        !ReadReplayPod(in, replay.remote_components.ents)) {
+        if (status != nullptr) {
+            *status = "failed to read replay metadata";
+        }
+        return false;
+    }
+
+    std::uint32_t snapshot_size = 0;
+    if (!ReadReplayPod(in, snapshot_size)) {
+        if (status != nullptr) {
+            *status = "failed to read snapshot size";
+        }
+        return false;
+    }
+    replay.initial_snapshot_bytes.resize(snapshot_size);
+    if (snapshot_size > 0) {
+        in.read(
+            reinterpret_cast<char*>(replay.initial_snapshot_bytes.data()),
+            static_cast<std::streamsize>(snapshot_size)
+        );
+        if (!in.good()) {
+            if (status != nullptr) {
+                *status = "failed to read snapshot bytes";
+            }
+            return false;
+        }
+    }
+
+    std::uint64_t input_count = 0;
+    if (!ReadReplayPod(in, input_count)) {
+        if (status != nullptr) {
+            *status = "failed to read input count";
+        }
+        return false;
+    }
+    replay.inputs.resize(static_cast<std::size_t>(input_count));
+    for (DesyncReplayInputRecord& input : replay.inputs) {
+        if (!ReadReplayPod(in, input.player_id) ||
+            !ReadReplayPod(in, input.frame) ||
+            !ReadReplayPod(in, input.input_flags)) {
+            if (status != nullptr) {
+                *status = "failed to read input records";
+            }
+            return false;
+        }
+    }
+    return true;
+}
+
+Graphics MakeCliGraphics() {
+    Graphics graphics;
+    const RawAFrameFile raw_file = LoadRawAFrameFile(kAnnotationsYamlPath);
+    graphics.aframe_db = AFrameDb::FromRaw(raw_file);
+    graphics.tile_source_db = BuildTileSourceDb(graphics.aframe_db);
+    graphics.tile_contact_db = BuildTileContactDb(graphics.tile_source_db);
+    graphics.window_dims = UVec2::New(1920, 540);
+    graphics.dims = UVec2::New(1920, 540);
+    return graphics;
+}
 
 void PrintAFrameSummary() {
     const RawAFrameFile raw_file = LoadRawAFrameFile(kAnnotationsYamlPath);
@@ -374,10 +518,7 @@ void InitBigMonkeySampleStage(State& state) {
 
 bool SampleMonkeyTest(int frames, bool big_stage) {
     try {
-        Graphics graphics;
-        const RawAFrameFile raw_file = LoadRawAFrameFile(kAnnotationsYamlPath);
-        graphics.aframe_db = AFrameDb::FromRaw(raw_file);
-        graphics.tile_source_db = BuildTileSourceDb(graphics.aframe_db);
+        Graphics graphics = MakeCliGraphics();
 
         PopulateEntSpecsTable();
         SyncEntSpecSizesFromAFrame(graphics);
@@ -449,6 +590,149 @@ bool SampleMonkeyTest(int frames, bool big_stage) {
         return true;
     } catch (const std::exception& e) {
         std::cerr << "monkey test sample failed: " << e.what() << '\n';
+        return false;
+    }
+}
+
+std::optional<network::LockstepFrame> ParseStopFrameArg(int argc, char** argv) {
+    for (int i = 3; i + 1 < argc; ++i) {
+        const std::string arg = argv[i] != nullptr ? argv[i] : "";
+        if (arg == "--stop-frame") {
+            try {
+                return static_cast<network::LockstepFrame>(std::stoull(argv[i + 1]));
+            } catch (...) {
+                return std::nullopt;
+            }
+        }
+    }
+    return std::nullopt;
+}
+
+void ApplyReplayInputsForFrame(
+    State& state,
+    const std::vector<DesyncReplayInputRecord>& inputs,
+    std::size_t& input_index,
+    network::LockstepFrame frame
+) {
+    const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal();
+    const PlayerId primary_player_id =
+        primary_slot != nullptr ? primary_slot->player_id : kInvalidPlayerId;
+
+    while (input_index < inputs.size() && inputs[input_index].frame < frame) {
+        ++input_index;
+    }
+    while (input_index < inputs.size() && inputs[input_index].frame == frame) {
+        const DesyncReplayInputRecord& input = inputs[input_index];
+        const InputFrame input_frame =
+            network::UnpackInputFrame(input.input_flags, UVec2::New(0, 0));
+        if (input.player_id == primary_player_id) {
+            state.playing_input_snapshot = ToPlayingInputSnapshot(input_frame);
+        } else {
+            state.players.SetInputFrameForPlayer(input.player_id, input_frame);
+        }
+        ++input_index;
+    }
+}
+
+void PrintComponents(
+    const char* label,
+    const NetworkStateFingerprintComponents& components,
+    std::uint64_t hash
+) {
+    std::cout << label
+              << " hash=" << hash
+              << " root=" << components.root
+              << " stage=" << components.stage
+              << " players=" << components.players
+              << " tools=" << components.tools
+              << " ents=" << components.ents
+              << '\n';
+}
+
+bool ReplayDesyncFile(const std::string& path, std::optional<network::LockstepFrame> stop_frame) {
+    try {
+        DesyncReplayFile replay;
+        std::string status;
+        if (!LoadDesyncReplayFile(path, replay, &status)) {
+            std::cerr << "desync replay load failed: " << status << '\n';
+            return false;
+        }
+
+        SimSnapshot snapshot;
+        if (!DeserializeSimSnapshotFromBytes(replay.initial_snapshot_bytes, snapshot)) {
+            std::cerr << "desync replay load failed: snapshot decode failed\n";
+            return false;
+        }
+
+        Graphics graphics = MakeCliGraphics();
+        PopulateEntSpecsTable();
+        SyncEntSpecSizesFromAFrame(graphics);
+        PopulateToolSpecsTable();
+
+        State state = State::New();
+        RestoreSimSnapshot(snapshot, state, graphics);
+        state.net_session.role = network::NetRole::Offline;
+        state.net_session.stage_instance_id = replay.stage_instance_id;
+        state.net_session.quest_id = replay.quest_id;
+        state.net_session.quest_stage_id = replay.quest_stage_id;
+        state.net_session.stage_seed = replay.stage_seed;
+
+        Audio audio;
+        const network::LockstepFrame target_frame =
+            stop_frame.value_or(replay.mismatch_frame);
+        std::size_t input_index = 0;
+        for (network::LockstepFrame frame = replay.start_frame; frame <= target_frame; ++frame) {
+            ApplyReplayInputsForFrame(state, replay.inputs, input_index, frame);
+            StepSingleTickWithMode(state, audio, graphics, SimulationTickMode::ReplayNoNetwork);
+            state.audio_emitters.ClearAll();
+            if (frame == target_frame) {
+                break;
+            }
+        }
+
+        const NetworkStateFingerprintComponents components =
+            ComputeNetworkStateFingerprintComponents(state);
+        const std::uint64_t hash = CombineNetworkStateFingerprintComponents(components);
+
+        std::cout << "desync replay: " << path << '\n'
+                  << "stage_instance=" << replay.stage_instance_id
+                  << " quest=" << replay.quest_id
+                  << " stage=" << replay.quest_stage_id
+                  << " seed=" << replay.stage_seed << '\n'
+                  << "start_frame=" << replay.start_frame
+                  << " target_frame=" << target_frame
+                  << " captured_mismatch_frame=" << replay.mismatch_frame
+                  << " inputs=" << replay.inputs.size() << '\n';
+        PrintComponents("replayed", components, hash);
+        PrintComponents("captured_local", replay.local_components, replay.local_hash);
+        PrintComponents("captured_remote", replay.remote_components, replay.remote_hash);
+
+        const bool at_mismatch = target_frame == replay.mismatch_frame;
+        if (at_mismatch) {
+            std::cout << "replay_vs_captured_local="
+                      << (hash == replay.local_hash ? "match" : "DIFFERENT")
+                      << '\n';
+        }
+
+        if (components.ents != replay.remote_components.ents ||
+            components.ents != replay.local_components.ents) {
+            const std::vector<NetworkEntFingerprint> ent_hashes =
+                ComputeNetworkEntFingerprints(state);
+            std::cout << "replayed_ent_hashes=" << ent_hashes.size() << '\n';
+            const std::size_t limit = std::min<std::size_t>(ent_hashes.size(), 64);
+            for (std::size_t i = 0; i < limit; ++i) {
+                const NetworkEntFingerprint& ent = ent_hashes[i];
+                std::cout << "  ent net=" << ent.net_ent_id
+                          << " type=" << ent.type
+                          << " hash=" << ent.hash << '\n';
+            }
+            if (ent_hashes.size() > limit) {
+                std::cout << "  ... " << (ent_hashes.size() - limit) << " more\n";
+            }
+        }
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "desync replay failed: " << e.what() << '\n';
         return false;
     }
 }
@@ -526,6 +810,14 @@ bool RunCliCommand(int argc, char** argv) {
             return true;
         }
         return DumpRecordingAsText(argv[2], argv[3]);
+    }
+
+    if (command == "--replay-desync") {
+        if (argc < 3) {
+            std::cerr << "usage: --replay-desync <input.sdrp> [--stop-frame N]\n";
+            return true;
+        }
+        std::exit(ReplayDesyncFile(argv[2], ParseStopFrameArg(argc, argv)) ? 0 : 1);
     }
 
     return false;
