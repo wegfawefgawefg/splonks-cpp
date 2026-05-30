@@ -12,7 +12,6 @@ namespace splonks::network {
 namespace {
 
 constexpr LockstepFrame kRunRestartSafetyFrames = 30;
-constexpr std::uint32_t kPostApplyRunRestartRebroadcastTicks = 180;
 
 std::uint32_t MixRestartSeed(std::uint32_t seed, std::uint32_t value) {
     seed ^= value + 0x9E3779B9U + (seed << 6U) + (seed >> 2U);
@@ -47,7 +46,6 @@ void StorePendingRestart(
 ) {
     state.net_session.run_restart_pending = true;
     state.net_session.run_restart_applied_locally = false;
-    state.net_session.run_restart_rebroadcast_ticks = kPostApplyRunRestartRebroadcastTicks;
     state.net_session.run_restart_last_sequence = sequence;
     state.net_session.run_restart_apply_frame = apply_frame;
     state.net_session.run_restart_stage_seed = stage_seed == 0 ? 1U : stage_seed;
@@ -68,9 +66,7 @@ RunRestartPacket MakeRunRestartPacket(const State& state) {
 }
 
 void BroadcastRunRestart(State& state, NetTransportRuntime& transport) {
-    if (!state.net_session.run_restart_pending || state.net_session.role != NetRole::Host ||
-        (state.net_session.run_restart_applied_locally &&
-         state.net_session.run_restart_rebroadcast_ticks == 0)) {
+    if (!state.net_session.run_restart_pending || state.net_session.role != NetRole::Host) {
         return;
     }
     const EncodedNetPacket encoded = EncodeRunRestart(MakeRunRestartPacket(state));
@@ -135,11 +131,9 @@ bool RequestRunStart(State& state, std::uint32_t stage_seed, std::string* status
 void SendPendingRunRestart(State& state, NetTransportRuntime& transport) {
     BroadcastRunRestart(state, transport);
     if (state.net_session.run_restart_applied_locally &&
-        state.net_session.run_restart_rebroadcast_ticks > 0) {
-        state.net_session.run_restart_rebroadcast_ticks -= 1;
-        if (state.net_session.run_restart_rebroadcast_ticks == 0) {
-            state.net_session.run_restart_pending = false;
-        }
+        state.net_session.lockstep_next_frame_to_step >
+            state.net_session.run_restart_apply_frame) {
+        state.net_session.run_restart_pending = false;
     }
 }
 
@@ -150,8 +144,12 @@ void HandleRunRestartPacket(State& state, const RunRestartPacket& packet) {
         packet.stage_instance_id == state.net_session.stage_instance_id + 1;
     if (state.net_session.role != NetRole::Peer ||
         (!packet_matches_current_stage && !packet_matches_next_stage) ||
-        packet.sender_peer_id != state.net_session.host_player_id ||
-        packet.sequence <= state.net_session.run_restart_last_sequence) {
+        packet.sender_peer_id != state.net_session.host_player_id) {
+        return;
+    }
+    if (packet.sequence < state.net_session.run_restart_last_sequence ||
+        (packet.sequence == state.net_session.run_restart_last_sequence &&
+         state.net_session.run_restart_applied_locally)) {
         return;
     }
 
