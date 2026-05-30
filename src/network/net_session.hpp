@@ -138,6 +138,23 @@ struct LockstepEntHashDiagnostic {
     std::uint64_t hash = 0;
 };
 
+struct LockstepReplayInputRecord {
+    PlayerId player_id = kInvalidPlayerId;
+    LockstepFrame frame = 0;
+    std::uint32_t input_flags = 0;
+};
+
+struct LockstepReplayCapture {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::string quest_id;
+    std::string quest_stage_id;
+    std::uint32_t stage_seed = 0;
+    LockstepFrame start_frame = 0;
+    std::vector<std::uint8_t> initial_snapshot;
+    std::vector<LockstepReplayInputRecord> inputs;
+    bool dumped = false;
+};
+
 struct LockstepInputArbitrationStats {
     PlayerId player_id = kInvalidPlayerId;
     std::uint64_t missing_input_count = 0;
@@ -215,6 +232,9 @@ struct NetSessionState {
     std::vector<LockstepHashRecord> lockstep_hash_history;
     std::vector<LockstepRemoteHashRecord> lockstep_remote_hash_history;
     std::vector<LockstepRemoteHashRecord> lockstep_pending_remote_hashes;
+    bool lockstep_replay_capture_enabled = true;
+    LockstepReplayCapture lockstep_replay_capture;
+    std::string lockstep_last_desync_replay_path;
     LockstepFrame lockstep_last_recorded_hash_frame = 0;
     bool lockstep_has_recorded_hash = false;
     LockstepFrame lockstep_last_sent_hash_frame = 0;

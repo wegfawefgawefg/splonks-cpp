@@ -10,9 +10,13 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <string>
+#include <type_traits>
 
 namespace splonks::network {
 
@@ -24,6 +28,8 @@ constexpr LockstepFrame kInputHistoryFrames = 12;
 constexpr std::size_t kMaxPendingRemoteHashes = 128;
 constexpr std::uint32_t kInputRecordFlagCanonical = 1U << 31U;
 constexpr std::uint32_t kInputRecordFlagArbitratedMissing = 1U << 30U;
+constexpr std::uint32_t kDesyncReplayMagic = 0x53445250U; // SDRP
+constexpr std::uint32_t kDesyncReplayVersion = 1;
 // Snapshot chunks are UDP packets. Keep this below the packet pump receive budget
 // so a catchup burst does not overrun peer socket buffers and permanently miss chunks.
 constexpr std::uint32_t kSnapshotResyncChunksPerPump = 4;
@@ -33,6 +39,147 @@ enum class LockstepHashContext : std::uint8_t {
     Normal,
     Rollback,
 };
+
+template <typename T>
+void WriteReplayPod(std::ostream& out, const T& value) {
+    static_assert(std::is_trivially_copyable_v<T>);
+    out.write(reinterpret_cast<const char*>(&value), static_cast<std::streamsize>(sizeof(T)));
+}
+
+void WriteReplayString(std::ostream& out, const std::string& value) {
+    const std::uint32_t size = static_cast<std::uint32_t>(value.size());
+    WriteReplayPod(out, size);
+    if (size > 0) {
+        out.write(value.data(), static_cast<std::streamsize>(size));
+    }
+}
+
+void ResetLockstepReplayCapture(State& state) {
+    state.net_session.lockstep_replay_capture = LockstepReplayCapture{};
+}
+
+void EnsureLockstepReplayCaptureStarted(State& state) {
+    if (!state.net_session.lockstep_replay_capture_enabled ||
+        !state.net_session.lockstep_replay_capture.initial_snapshot.empty()) {
+        return;
+    }
+    LockstepReplayCapture& capture = state.net_session.lockstep_replay_capture;
+    capture.stage_instance_id = state.net_session.stage_instance_id;
+    capture.quest_id = state.net_session.quest_id;
+    capture.quest_stage_id = state.net_session.quest_stage_id;
+    capture.stage_seed = state.net_session.stage_seed;
+    capture.start_frame = state.net_session.lockstep_next_frame_to_step;
+    capture.initial_snapshot = SerializeSimSnapshotToBytes(MakeSimSnapshot(state));
+    capture.inputs.clear();
+    capture.dumped = false;
+}
+
+void RecordLockstepReplayInputs(
+    State& state,
+    LockstepFrame frame,
+    const std::vector<PlayerId>& player_ids,
+    const std::vector<InputFrame>& input_frames
+) {
+    EnsureLockstepReplayCaptureStarted(state);
+    if (state.net_session.lockstep_replay_capture.initial_snapshot.empty()) {
+        return;
+    }
+    LockstepReplayCapture& capture = state.net_session.lockstep_replay_capture;
+    capture.inputs.reserve(capture.inputs.size() + input_frames.size());
+    for (std::size_t i = 0; i < player_ids.size() && i < input_frames.size(); ++i) {
+        capture.inputs.push_back(LockstepReplayInputRecord{
+            .player_id = player_ids[i],
+            .frame = frame,
+            .input_flags = PackInputFrame(input_frames[i]),
+        });
+    }
+}
+
+std::string RoleSlug(NetRole role) {
+    switch (role) {
+    case NetRole::Host:
+        return "host";
+    case NetRole::Peer:
+        return "peer";
+    case NetRole::Offline:
+        return "offline";
+    }
+    return "unknown";
+}
+
+void DumpLockstepReplayCaptureOnDesync(
+    State& state,
+    const LockstepHashRecord& local,
+    const LockstepRemoteHashRecord& remote
+) {
+    LockstepReplayCapture& capture = state.net_session.lockstep_replay_capture;
+    if (!state.net_session.lockstep_replay_capture_enabled || capture.dumped ||
+        capture.initial_snapshot.empty()) {
+        return;
+    }
+
+    std::error_code ec;
+    std::filesystem::create_directories("logs", ec);
+    const auto now = std::chrono::system_clock::now().time_since_epoch();
+    const auto millis =
+        std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+    std::ostringstream path;
+    path << "logs/desync_replay_" << RoleSlug(state.net_session.role)
+         << "_stage" << state.net_session.stage_instance_id
+         << "_frame" << remote.frame
+         << "_" << millis << ".sdrp";
+
+    std::ofstream out(path.str(), std::ios::binary);
+    if (!out.is_open()) {
+        return;
+    }
+
+    WriteReplayPod(out, kDesyncReplayMagic);
+    WriteReplayPod(out, kDesyncReplayVersion);
+    WriteReplayPod(out, capture.stage_instance_id);
+    WriteReplayPod(out, capture.stage_seed);
+    WriteReplayPod(out, capture.start_frame);
+    WriteReplayString(out, capture.quest_id);
+    WriteReplayString(out, capture.quest_stage_id);
+    WriteReplayPod(out, remote.peer_id);
+    WriteReplayPod(out, remote.frame);
+    WriteReplayPod(out, local.hash);
+    WriteReplayPod(out, remote.hash);
+    WriteReplayPod(out, local.component_root);
+    WriteReplayPod(out, remote.component_root);
+    WriteReplayPod(out, local.component_stage);
+    WriteReplayPod(out, remote.component_stage);
+    WriteReplayPod(out, local.component_players);
+    WriteReplayPod(out, remote.component_players);
+    WriteReplayPod(out, local.component_tools);
+    WriteReplayPod(out, remote.component_tools);
+    WriteReplayPod(out, local.component_ents);
+    WriteReplayPod(out, remote.component_ents);
+
+    const std::uint32_t snapshot_size =
+        static_cast<std::uint32_t>(capture.initial_snapshot.size());
+    WriteReplayPod(out, snapshot_size);
+    if (snapshot_size > 0) {
+        out.write(
+            reinterpret_cast<const char*>(capture.initial_snapshot.data()),
+            static_cast<std::streamsize>(capture.initial_snapshot.size())
+        );
+    }
+
+    const std::uint64_t input_count = capture.inputs.size();
+    WriteReplayPod(out, input_count);
+    for (const LockstepReplayInputRecord& input : capture.inputs) {
+        WriteReplayPod(out, input.player_id);
+        WriteReplayPod(out, input.frame);
+        WriteReplayPod(out, input.input_flags);
+    }
+
+    if (!out.good()) {
+        return;
+    }
+    capture.dumped = true;
+    state.net_session.lockstep_last_desync_replay_path = path.str();
+}
 
 struct RollbackPresentationSnapshot {
     ParticleSystem particles;
@@ -108,6 +255,7 @@ void ClearLockstepHashState(State& state) {
     state.net_session.lockstep_last_confirmed_hash_frame = 0;
     state.net_session.lockstep_last_confirmed_hash = 0;
     state.net_session.lockstep_last_mismatch_local_ent_hashes.clear();
+    ResetLockstepReplayCapture(state);
 }
 
 void SetPostCatchupHashQuietWindow(State& state, LockstepFrame resume_frame) {
@@ -887,6 +1035,7 @@ void CaptureLockstepMismatchDiagnostics(
             );
         }
     }
+    DumpLockstepReplayCaptureOnDesync(state, local, remote);
 }
 
 void CompareLockstepHash(State& state, const LockstepRemoteHashRecord& remote) {
@@ -1599,9 +1748,14 @@ void MaybeScheduleAutoDelayChange(State& state) {
 
 void ApplyLockstepInputsToState(
     State& state,
+    LockstepFrame frame,
     const std::vector<PlayerId>& player_ids,
-    const std::vector<InputFrame>& input_frames
+    const std::vector<InputFrame>& input_frames,
+    bool record_replay
 ) {
+    if (record_replay) {
+        RecordLockstepReplayInputs(state, frame, player_ids, input_frames);
+    }
     const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal();
     const PlayerId primary_player_id =
         primary_slot != nullptr ? primary_slot->player_id : kInvalidPlayerId;
@@ -1876,7 +2030,7 @@ bool ReplayRollbackWindow(
             return false;
         }
         SaveRollbackSnapshot(state, graphics, frame);
-        ApplyLockstepInputsToState(state, required_players, frame_inputs);
+        ApplyLockstepInputsToState(state, frame, required_players, frame_inputs, false);
         state.net_session.lockstep_next_frame_to_step += 1;
         StepSingleTickWithMode(state, replay_audio, graphics, SimulationTickMode::ReplayNoNetwork);
         if (ShouldRecordCompletedLockstepHash(state, frame)) {
@@ -2572,6 +2726,7 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_hash_history.clear();
     state.net_session.lockstep_remote_hash_history.clear();
     state.net_session.lockstep_pending_remote_hashes.clear();
+    ResetLockstepReplayCapture(state);
     state.net_session.lockstep_last_recorded_hash_frame = 0;
     state.net_session.lockstep_has_recorded_hash = false;
     state.net_session.lockstep_last_sent_hash_frame = 0;
@@ -2670,7 +2825,13 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
 
     SaveRollbackSnapshot(state, graphics, state.net_session.lockstep_next_frame_to_step);
     state.performance_stats.rollback_buffer_bytes = ApproxRollbackBufferBytes(state);
-    ApplyLockstepInputsToState(state, required_players, frame_inputs);
+    ApplyLockstepInputsToState(
+        state,
+        state.net_session.lockstep_next_frame_to_step,
+        required_players,
+        frame_inputs,
+        true
+    );
     state.net_session.lockstep_next_frame_to_step += 1;
     const LockstepFrame input_history_frames = std::max<LockstepFrame>(
         kInputHistoryFrames,

@@ -914,6 +914,8 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << state.net_session.lockstep_last_mismatch_local_hash
         << ",\"lockstep_last_mismatch_remote_hash\":"
         << state.net_session.lockstep_last_mismatch_remote_hash
+        << ",\"lockstep_last_desync_replay_path\":"
+        << JsonString(state.net_session.lockstep_last_desync_replay_path)
         << ",\"lockstep_last_mismatch_components\":{"
         << "\"local\":{\"root\":" << state.net_session.lockstep_last_mismatch_local_root
         << ",\"stage\":" << state.net_session.lockstep_last_mismatch_local_stage
