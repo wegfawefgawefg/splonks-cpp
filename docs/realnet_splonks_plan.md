@@ -250,7 +250,9 @@ Before the two-machine run, `scripts/validate_gubsy_roomd_live.sh
 --lan-interface` verifies the same browser path against roomd through the host's
 LAN-facing address. The final two-machine result should be captured in
 `logs/realnet_lan_verdict.json` from `docs/realnet_lan_verdict_template.json`
-and audited with `scripts/summarize_realnet_lan_validation.py`.
+and audited with `scripts/summarize_realnet_lan_validation.py`. The full
+foundation gate is `scripts/audit_realnet_foundation.sh`, which reruns the
+focused local evidence and then requires that verdict.
 
 Later validation:
 

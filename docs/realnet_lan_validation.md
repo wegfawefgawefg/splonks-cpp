@@ -25,6 +25,15 @@ it:
 scripts/summarize_realnet_lan_validation.py
 ```
 
+The full Realnet foundation completion gate is:
+
+```sh
+scripts/audit_realnet_foundation.sh
+```
+
+That command reruns the focused local/same-machine/LAN-interface checks before
+auditing the filled two-machine LAN verdict.
+
 ## Automated LAN-Interface Precheck
 
 On the host machine, run:
