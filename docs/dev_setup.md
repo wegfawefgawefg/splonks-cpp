@@ -11,10 +11,14 @@ future game tooling pulls Gubsy source in, that path should stay behind the
 documented Splonks build/setup scripts.
 
 Use the `dev` preset for normal contributor work. It builds into `build-debug`
-with `SPLONKS_MODE=developer` and fetches the pinned SDL3/imgui dependencies
-when they are not already available. Desktop presets use the Ninja generator on
-Linux, macOS, and Windows so the documented setup scripts install one shared
-build backend instead of relying on each machine's CMake default.
+with `SPLONKS_MODE=developer` and uses the pinned fetched SDL3/imgui dependency
+stack by default. SDL resolution is atomic: either SDL3, SDL3_image, SDL3_ttf,
+and SDL3_mixer all come from the system/package manager, or they all come from
+the pinned fetched stack. To force local package-manager SDL, configure with
+`SPLONKS_SDL_DEPS=system`; the default presets use `SPLONKS_SDL_DEPS=fetch`.
+Desktop presets use the Ninja generator on Linux, macOS, and Windows so the
+documented setup scripts install one shared build backend instead of relying on
+each machine's CMake default.
 
 `verify_dev_env.sh` is the non-interactive onboarding check: it configures,
 builds, and runs a headless smoke through the dev binary. `run.sh` is the

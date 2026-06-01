@@ -17,7 +17,8 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
         "SPLONKS_STRICT": true,
         "SPLONKS_WARN_AS_ERROR": true,
-        "SPLONKS_FETCH_DEPS": true
+        "SPLONKS_FETCH_DEPS": true,
+        "SPLONKS_SDL_DEPS": "fetch"
       }
     },
     {
@@ -31,7 +32,8 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
         "SPLONKS_STRICT": true,
         "SPLONKS_WARN_AS_ERROR": true,
-        "SPLONKS_FETCH_DEPS": true
+        "SPLONKS_FETCH_DEPS": true,
+        "SPLONKS_SDL_DEPS": "fetch"
       }
     },
     {
@@ -45,7 +47,8 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
         "SPLONKS_STRICT": true,
         "SPLONKS_WARN_AS_ERROR": true,
-        "SPLONKS_FETCH_DEPS": true
+        "SPLONKS_FETCH_DEPS": true,
+        "SPLONKS_SDL_DEPS": "fetch"
       }
     },
     {
@@ -60,7 +63,8 @@
         "CMAKE_OSX_ARCHITECTURES": "arm64",
         "SPLONKS_STRICT": true,
         "SPLONKS_WARN_AS_ERROR": true,
-        "SPLONKS_FETCH_DEPS": true
+        "SPLONKS_FETCH_DEPS": true,
+        "SPLONKS_SDL_DEPS": "fetch"
       }
     },
     {
@@ -74,7 +78,8 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
         "SPLONKS_STRICT": true,
         "SPLONKS_WARN_AS_ERROR": true,
-        "SPLONKS_FETCH_DEPS": true
+        "SPLONKS_FETCH_DEPS": true,
+        "SPLONKS_SDL_DEPS": "fetch"
       }
     },
     {
@@ -91,7 +96,8 @@
         "SPLONKS_MODE": "release",
         "SPLONKS_STRICT": true,
         "SPLONKS_WARN_AS_ERROR": true,
-        "SPLONKS_FETCH_DEPS": true
+        "SPLONKS_FETCH_DEPS": true,
+        "SPLONKS_SDL_DEPS": "fetch"
       }
     },
     {
@@ -107,7 +113,8 @@
         "SPLONKS_MODE": "release",
         "SPLONKS_STRICT": true,
         "SPLONKS_WARN_AS_ERROR": true,
-        "SPLONKS_FETCH_DEPS": true
+        "SPLONKS_FETCH_DEPS": true,
+        "SPLONKS_SDL_DEPS": "fetch"
       }
     },
     {
@@ -124,6 +131,7 @@
         "SPLONKS_STRICT": true,
         "SPLONKS_WARN_AS_ERROR": true,
         "SPLONKS_FETCH_DEPS": true,
+        "SPLONKS_SDL_DEPS": "fetch",
         "SPLONKS_IOS_DEVELOPMENT_TEAM": "$env{SPLONKS_IOS_DEVELOPMENT_TEAM}",
         "SPLONKS_IOS_CODE_SIGN_IDENTITY": "$env{SPLONKS_IOS_CODE_SIGN_IDENTITY}",
         "SPLONKS_IOS_BUNDLE_ID": "$env{SPLONKS_IOS_BUNDLE_ID}",
