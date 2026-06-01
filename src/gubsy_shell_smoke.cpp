@@ -1581,6 +1581,12 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
     bool requested_play = false;
     bool moved_right = false;
     std::optional<float> start_x;
+    std::optional<float> last_x;
+    PlayerId last_local_player_id = kInvalidPlayerId;
+    bool last_local_input_right = false;
+    bool last_buffer_input_right = false;
+    bool last_buffer_input_canonical = false;
+    bool last_buffer_input_predicted = false;
     for (int frame = 0; frame < max_frames; ++frame) {
         EngineState& engine = gubsy_runtime_engine(guest_shell.runtime);
         if (frame % 15 == 0)
@@ -1604,6 +1610,21 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
             local_ent = guest_state.ents.GetEnt(*local_slot->ent_vid);
         }
         if (requested_play && local_ent != nullptr && guest_state.mode == Mode::Playing) {
+            last_local_player_id = local_slot != nullptr ? local_slot->player_id : kInvalidPlayerId;
+            last_x = local_ent->pos.x;
+            last_local_input_right = guest_state.playing_input_snapshot.right;
+            if (local_slot != nullptr && local_slot->player_id != kInvalidPlayerId &&
+                guest_state.net_session.lockstep_next_local_input_frame > 0) {
+                const network::LockstepFrame latest_frame =
+                    guest_state.net_session.lockstep_next_local_input_frame - 1;
+                if (const network::LockstepInputRecord* record =
+                        guest_state.net_session.lockstep_input_buffer.FindRecord(
+                            local_slot->player_id, latest_frame)) {
+                    last_buffer_input_right = record->input.right;
+                    last_buffer_input_canonical = record->canonical;
+                    last_buffer_input_predicted = record->predicted;
+                }
+            }
             if (!start_x.has_value())
                 start_x = local_ent->pos.x;
             if (local_ent->pos.x > *start_x + 0.25F)
@@ -1626,8 +1647,18 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
               << " role=" << static_cast<int>(guest_state.net_session.role)
               << " mode=" << static_cast<int>(guest_state.mode)
               << " frame=" << guest_state.net_session.lockstep_next_frame_to_step
+              << " local_input_frame=" << guest_state.net_session.lockstep_next_local_input_frame
               << " barrier=" << (guest_state.net_session.join_barrier_active ? "true" : "false")
               << " mismatches=" << guest_state.net_session.lockstep_hash_mismatch_count
+              << " local_player=" << last_local_player_id
+              << " start_x=" << (start_x.has_value() ? std::to_string(*start_x) : "none")
+              << " last_x=" << (last_x.has_value() ? std::to_string(*last_x) : "none")
+              << " snapshot_right=" << (last_local_input_right ? "true" : "false")
+              << " buffer_right=" << (last_buffer_input_right ? "true" : "false")
+              << " buffer_canonical=" << (last_buffer_input_canonical ? "true" : "false")
+              << " buffer_predicted=" << (last_buffer_input_predicted ? "true" : "false")
+              << " arbitrated_missing="
+              << guest_state.net_session.lockstep_arbitrated_missing_input_count
               << " online=" << (gubsy_get_lobby_state(guest_shell.runtime).online ? "true" : "false")
               << " is_host=" << (gubsy_get_lobby_state(guest_shell.runtime).is_host ? "true" : "false")
               << " phase=" << gubsy_get_lobby_state(guest_shell.runtime).contract.session_phase
