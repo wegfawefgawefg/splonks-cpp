@@ -15,6 +15,7 @@
 #include <gubsy/runtime.hpp>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <SDL3/SDL_scancode.h>
 #include <src/gubsy_runtime_internal.hpp>
 #include <src/menu/menu_system_state.hpp>
@@ -167,6 +168,22 @@ void PumpTitleNetwork(gubsy_shell::Shell& shell, State& state, Graphics& graphic
     Audio audio;
     StepSingleTick(state, audio, graphics);
     gubsy_shell::UpdateTitleMenu(shell, state, graphics, 0.016F, 1280, 720);
+}
+
+void StepHeadlessShell(gubsy_shell::Shell& shell, State& state, Graphics& graphics,
+                       Audio& audio, bool hold_primary_right = false) {
+    gubsy_shell::ApplyLobbyGameplayInput(shell);
+    if (hold_primary_right) {
+        state.playing_input_snapshot.right = true;
+    }
+    StepSingleTick(state, audio, graphics);
+    if (state.mode == Mode::Title) {
+        gubsy_shell::UpdateTitleMenu(shell, state, graphics, 0.016F, 1280, 720);
+    } else if (gubsy_shell::InGameMenuOpen(shell)) {
+        gubsy_shell::UpdateMenu(shell, state, 0.016F, 1280, 720);
+    } else {
+        gubsy_shell::UpdateRuntime(shell, 0.016F);
+    }
 }
 
 template <typename Done>
@@ -1414,6 +1431,213 @@ bool CheckDirectRemoteMemberSync() {
     return true;
 }
 
+bool HostHasRemotePeer(const State& state) {
+    return state.net_transport != nullptr && !state.net_transport->remotes.empty();
+}
+
+bool LockstepHealthyInGameplay(const State& state) {
+    return state.net_session.input_lockstep_enabled &&
+           state.net_session.lockstep_next_frame_to_step > 60 &&
+           state.net_session.lockstep_has_confirmed_hash &&
+           state.net_session.lockstep_hash_mismatch_count == 0 &&
+           state.net_session.lockstep_last_desync_recovery_mode !=
+               network::LockstepDesyncRecoveryMode::FatalDesync &&
+           !state.net_session.join_barrier_active;
+}
+
+bool CheckRealnetLanHost(const char* server_url, int max_frames) {
+    if (server_url == nullptr || *server_url == '\0') {
+        std::cerr << "Realnet LAN host smoke failed: missing room server URL\n";
+        return false;
+    }
+
+    std::string message;
+    State host_state = State::New();
+    gubsy_shell::Shell host_shell;
+    if (!gubsy_shell::InitHeadless(host_shell, host_state)) {
+        std::cerr << "Realnet LAN host smoke failed: InitHeadless failed\n";
+        return false;
+    }
+
+    EngineState& host_engine = gubsy_runtime_engine(host_shell.runtime);
+    host_engine.lobby.room_server_url = server_url;
+    host_engine.lobby.visibility = GubsyLobbyVisibility::Public;
+    if (!gubsy_host_lobby_room(host_shell.runtime, 0, message)) {
+        std::cerr << "Realnet LAN host smoke failed: host room failed: " << message << '\n';
+        gubsy_shell::Shutdown(host_shell);
+        return false;
+    }
+
+    const GubsyLobbyState& host_lobby = gubsy_get_lobby_state(host_shell.runtime);
+    std::cout << "REALNET_LAN_HOST_READY room_code=" << host_lobby.room_code
+              << " endpoint=" << host_lobby.advertised_endpoint << '\n';
+    std::cout.flush();
+
+    Graphics graphics;
+    Audio audio;
+    bool started = false;
+    bool healthy = false;
+    for (int frame = 0; frame < max_frames; ++frame) {
+        StepHeadlessShell(host_shell, host_state, graphics, audio);
+        if (!started && HostHasRemotePeer(host_state)) {
+            if (!gubsy_start_lobby_game(host_shell.runtime, message)) {
+                std::cerr << "Realnet LAN host smoke failed: start failed: " << message << '\n';
+                gubsy_shell::Shutdown(host_shell);
+                return false;
+            }
+            EngineState& engine = gubsy_runtime_engine(host_shell.runtime);
+            engine.lobby.contract.session_phase = "in_game";
+            gubsy_lobby_force_online_tick(engine);
+            started = true;
+            std::cout << "REALNET_LAN_HOST_STARTED\n";
+            std::cout.flush();
+        }
+        if (!healthy && started && LockstepHealthyInGameplay(host_state)) {
+            healthy = true;
+            std::cout << "REALNET_LAN_HOST_OK frame="
+                      << host_state.net_session.lockstep_next_frame_to_step << '\n';
+            std::cout.flush();
+        }
+        SDL_Delay(16);
+    }
+
+    if (healthy) {
+        (void)gubsy_leave_lobby_room(host_shell.runtime, message);
+        gubsy_shell::Shutdown(host_shell);
+        return true;
+    }
+
+    std::cerr << "Realnet LAN host smoke failed: timed out"
+              << " started=" << (started ? "true" : "false")
+              << " remotes=" << (host_state.net_transport ? host_state.net_transport->remotes.size() : 0)
+              << " frame=" << host_state.net_session.lockstep_next_frame_to_step
+              << " barrier=" << (host_state.net_session.join_barrier_active ? "true" : "false")
+              << " mismatches=" << host_state.net_session.lockstep_hash_mismatch_count << '\n';
+    (void)gubsy_leave_lobby_room(host_shell.runtime, message);
+    gubsy_shell::Shutdown(host_shell);
+    return false;
+}
+
+std::optional<MatchmakingRoom> FindJoinableRoom(const char* server_url,
+                                                const char* room_code,
+                                                std::string& err) {
+    RoomServerMatchmaking matchmaking;
+    if (room_code != nullptr && *room_code != '\0') {
+        MatchmakingRoom room;
+        if (matchmaking.fetch_room(server_url, room_code, room, err))
+            return room;
+        return std::nullopt;
+    }
+
+    std::vector<MatchmakingRoom> rooms;
+    if (!matchmaking.list_rooms(server_url, rooms, err))
+        return std::nullopt;
+    auto it = std::find_if(rooms.begin(), rooms.end(), [](const MatchmakingRoom& room) {
+        return room.privacy > 0 && !session_contract_is_in_game(room.contract);
+    });
+    if (it == rooms.end()) {
+        err = "no lobby-phase public room found";
+        return std::nullopt;
+    }
+    return *it;
+}
+
+bool CheckRealnetLanClient(const char* server_url, const char* room_code, int max_frames) {
+    if (server_url == nullptr || *server_url == '\0') {
+        std::cerr << "Realnet LAN client smoke failed: missing room server URL\n";
+        return false;
+    }
+
+    std::string err;
+    std::optional<MatchmakingRoom> room;
+    for (int attempt = 0; attempt < 120 && !room.has_value(); ++attempt) {
+        room = FindJoinableRoom(server_url, room_code, err);
+        if (!room.has_value())
+            SDL_Delay(100);
+    }
+    if (!room.has_value()) {
+        std::cerr << "Realnet LAN client smoke failed: room lookup failed: " << err << '\n';
+        return false;
+    }
+
+    std::string message;
+    State guest_state = State::New();
+    gubsy_shell::Shell guest_shell;
+    if (!gubsy_shell::InitHeadless(guest_shell, guest_state)) {
+        std::cerr << "Realnet LAN client smoke failed: InitHeadless failed\n";
+        return false;
+    }
+    gubsy_runtime_engine(guest_shell.runtime).lobby.room_server_url = server_url;
+    if (!gubsy_join_lobby_room_code(guest_shell.runtime, room->room_code, message)) {
+        std::cerr << "Realnet LAN client smoke failed: join failed: " << message << '\n';
+        gubsy_shell::Shutdown(guest_shell);
+        return false;
+    }
+    std::cout << "REALNET_LAN_CLIENT_JOINING room_code=" << room->room_code << '\n';
+    std::cout.flush();
+
+    Graphics graphics;
+    Audio audio;
+    bool requested_play = false;
+    bool moved_right = false;
+    std::optional<float> start_x;
+    for (int frame = 0; frame < max_frames; ++frame) {
+        EngineState& engine = gubsy_runtime_engine(guest_shell.runtime);
+        if (frame % 15 == 0)
+            gubsy_lobby_force_online_tick(engine);
+        StepHeadlessShell(guest_shell, guest_state, graphics, audio, requested_play);
+
+        if (!requested_play && guest_shell.joined_room_host_in_game) {
+            if (!gubsy_start_lobby_game(guest_shell.runtime, message)) {
+                std::cerr << "Realnet LAN client smoke failed: Play failed: " << message << '\n';
+                gubsy_shell::Shutdown(guest_shell);
+                return false;
+            }
+            requested_play = true;
+            std::cout << "REALNET_LAN_CLIENT_PLAY\n";
+            std::cout.flush();
+        }
+
+        const PlayerSlot* local_slot = guest_state.players.FindPrimaryLocal();
+        const Ent* local_ent = nullptr;
+        if (local_slot != nullptr && local_slot->ent_vid.has_value()) {
+            local_ent = guest_state.ents.GetEnt(*local_slot->ent_vid);
+        }
+        if (requested_play && local_ent != nullptr && guest_state.mode == Mode::Playing) {
+            if (!start_x.has_value())
+                start_x = local_ent->pos.x;
+            if (local_ent->pos.x > *start_x + 0.25F)
+                moved_right = true;
+        }
+
+        if (moved_right && LockstepHealthyInGameplay(guest_state)) {
+            std::cout << "REALNET_LAN_CLIENT_OK frame="
+                      << guest_state.net_session.lockstep_next_frame_to_step << '\n';
+            (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
+            gubsy_shell::Shutdown(guest_shell);
+            return true;
+        }
+        SDL_Delay(16);
+    }
+
+    std::cerr << "Realnet LAN client smoke failed: timed out"
+              << " requested_play=" << (requested_play ? "true" : "false")
+              << " moved_right=" << (moved_right ? "true" : "false")
+              << " role=" << static_cast<int>(guest_state.net_session.role)
+              << " mode=" << static_cast<int>(guest_state.mode)
+              << " frame=" << guest_state.net_session.lockstep_next_frame_to_step
+              << " barrier=" << (guest_state.net_session.join_barrier_active ? "true" : "false")
+              << " mismatches=" << guest_state.net_session.lockstep_hash_mismatch_count
+              << " online=" << (gubsy_get_lobby_state(guest_shell.runtime).online ? "true" : "false")
+              << " is_host=" << (gubsy_get_lobby_state(guest_shell.runtime).is_host ? "true" : "false")
+              << " phase=" << gubsy_get_lobby_state(guest_shell.runtime).contract.session_phase
+              << " status=\"" << gubsy_get_lobby_state(guest_shell.runtime).status_message << "\""
+              << '\n';
+    (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
+    gubsy_shell::Shutdown(guest_shell);
+    return false;
+}
+
 } // namespace
 
 bool CheckGubsyShellSmoke() {
@@ -1436,6 +1660,25 @@ bool CheckGubsyShellRealRoomdSmoke() {
         return CheckRealRoomdHostJoin();
     } catch (const std::exception& e) {
         std::cerr << "Gubsy shell real-roomd smoke failed: " << e.what() << '\n';
+        return false;
+    }
+}
+
+bool CheckGubsyShellRealnetLanHost(const char* server_url, int max_frames) {
+    try {
+        return CheckRealnetLanHost(server_url, max_frames);
+    } catch (const std::exception& e) {
+        std::cerr << "Realnet LAN host smoke failed: " << e.what() << '\n';
+        return false;
+    }
+}
+
+bool CheckGubsyShellRealnetLanClient(const char* server_url, const char* room_code,
+                                     int max_frames) {
+    try {
+        return CheckRealnetLanClient(server_url, room_code, max_frames);
+    } catch (const std::exception& e) {
+        std::cerr << "Realnet LAN client smoke failed: " << e.what() << '\n';
         return false;
     }
 }

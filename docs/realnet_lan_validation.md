@@ -80,6 +80,39 @@ In the host window:
 4. Wait for the client to join.
 5. Start the game.
 
+## Headless Two-Machine Check
+
+This is the preferred automated proof when both machines have current builds.
+It uses `gubsy-roomd` for browser discovery/join attempts, then connects the
+game over the advertised LAN direct candidate and verifies lockstep gameplay by
+moving the client player.
+
+On the host machine:
+
+```sh
+../gubsy/build/gubsy-roomd --host=0.0.0.0 --port=8788 \
+  > logs/realnet_lan_roomd.log 2>&1 &
+
+./build/splonks-cpp \
+  --check-gubsy-shell-realnet-lan-host http://HOST_LAN_IP:8788 1800 \
+  > logs/realnet_lan_host.log 2>&1
+```
+
+On the client machine, while the host command is waiting:
+
+```sh
+./build/splonks-cpp \
+  --check-gubsy-shell-realnet-lan-client http://HOST_LAN_IP:8788 "" 1800 \
+  > logs/realnet_lan_client.log 2>&1
+```
+
+Expected markers:
+
+- Host log: `REALNET_LAN_HOST_READY`, `REALNET_LAN_HOST_STARTED`,
+  `REALNET_LAN_HOST_OK`.
+- Client log: `REALNET_LAN_CLIENT_JOINING`, `REALNET_LAN_CLIENT_PLAY`,
+  `REALNET_LAN_CLIENT_OK`.
+
 ## Client Machine
 
 Run:

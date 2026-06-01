@@ -878,11 +878,17 @@ int ConfiguredFrameCapFps(Shell& shell) {
 }
 
 void BeginDebugFrame(Shell& shell, float dt) {
+    if (shell.direct_join_pending) {
+        SyncDirectJoinStatus(shell);
+    }
     SyncDirectNetworkMembers(shell);
     gubsy_begin_debug_frame(shell.runtime, dt);
 }
 
 void UpdateRuntime(Shell& shell, float dt) {
+    if (shell.direct_join_pending) {
+        SyncDirectJoinStatus(shell);
+    }
     SyncDirectNetworkMembers(shell);
     gubsy_update_runtime(shell.runtime, dt);
 }
@@ -914,6 +920,9 @@ bool InGameMenuOpen(Shell& shell) {
 }
 
 void UpdateMenu(Shell& shell, const State& state, float dt, int screen_width, int screen_height) {
+    if (shell.direct_join_pending) {
+        SyncDirectJoinStatus(shell);
+    }
     SyncDirectNetworkMembers(shell);
     gubsy_set_menu_input(shell.runtime, BuildFrameMenuInput(shell, state));
     gubsy_update_menu(shell.runtime, dt, screen_width, screen_height);

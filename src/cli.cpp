@@ -1099,6 +1099,25 @@ bool RunCliCommand(int argc, char** argv) {
         std::exit(CheckGubsyShellRealRoomdSmoke() ? 0 : 1);
     }
 
+    if (command == "--check-gubsy-shell-realnet-lan-host") {
+        if (argc < 3) {
+            std::cerr << "usage: --check-gubsy-shell-realnet-lan-host <room_server_url> [max_frames]\n";
+            std::exit(2);
+        }
+        const int max_frames = argc >= 4 ? std::max(1, std::atoi(argv[3])) : 1800;
+        std::exit(CheckGubsyShellRealnetLanHost(argv[2], max_frames) ? 0 : 1);
+    }
+
+    if (command == "--check-gubsy-shell-realnet-lan-client") {
+        if (argc < 3) {
+            std::cerr << "usage: --check-gubsy-shell-realnet-lan-client <room_server_url> [room_code] [max_frames]\n";
+            std::exit(2);
+        }
+        const char* room_code = argc >= 4 ? argv[3] : "";
+        const int max_frames = argc >= 5 ? std::max(1, std::atoi(argv[4])) : 1800;
+        std::exit(CheckGubsyShellRealnetLanClient(argv[2], room_code, max_frames) ? 0 : 1);
+    }
+
     if (command == "--dump-recording-text") {
         if (argc < 4) {
             std::cerr << "usage: --dump-recording-text <input.splrec> <output.txt>\n";
