@@ -22,6 +22,7 @@ After the browser and direct checks pass, fill the verdict booleans and audit
 it:
 
 ```sh
+scripts/fill_realnet_lan_verdict.py
 scripts/summarize_realnet_lan_validation.py
 ```
 
