@@ -1477,6 +1477,8 @@ bool CheckRealnetLanHost(const char* server_url, int max_frames) {
     Audio audio;
     bool started = false;
     bool healthy = false;
+    int started_frame = -1;
+    constexpr int kMinStartedFramesBeforeExit = 360;
     for (int frame = 0; frame < max_frames; ++frame) {
         StepHeadlessShell(host_shell, host_state, graphics, audio);
         if (!started && HostHasRemotePeer(host_state)) {
@@ -1489,22 +1491,23 @@ bool CheckRealnetLanHost(const char* server_url, int max_frames) {
             engine.lobby.contract.session_phase = "in_game";
             gubsy_lobby_force_online_tick(engine);
             started = true;
+            started_frame = frame;
             std::cout << "REALNET_LAN_HOST_STARTED\n";
             std::cout.flush();
         }
         if (!healthy && started && LockstepHealthyInGameplay(host_state)) {
             healthy = true;
+        }
+        if (healthy && started_frame >= 0 &&
+            frame - started_frame >= kMinStartedFramesBeforeExit) {
             std::cout << "REALNET_LAN_HOST_OK frame="
                       << host_state.net_session.lockstep_next_frame_to_step << '\n';
             std::cout.flush();
+            (void)gubsy_leave_lobby_room(host_shell.runtime, message);
+            gubsy_shell::Shutdown(host_shell);
+            return true;
         }
         SDL_Delay(16);
-    }
-
-    if (healthy) {
-        (void)gubsy_leave_lobby_room(host_shell.runtime, message);
-        gubsy_shell::Shutdown(host_shell);
-        return true;
     }
 
     std::cerr << "Realnet LAN host smoke failed: timed out"

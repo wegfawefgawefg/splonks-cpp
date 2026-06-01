@@ -83,28 +83,40 @@ In the host window:
 ## Headless Two-Machine Check
 
 This is the preferred automated proof when both machines have current builds.
-It uses `gubsy-roomd` for browser discovery/join attempts, then connects the
-game over the advertised LAN direct candidate and verifies lockstep gameplay by
-moving the client player.
+It uses `gubsy-roomd` for browser discovery/join attempts, then verifies
+lockstep gameplay by moving the client player.
+
+Use forced NAT punch when validating Realnet rendezvous itself. This makes the
+game skip the advertised direct candidate and connect through the UDP
+rendezvous endpoint.
 
 On the host machine:
 
 ```sh
 ../gubsy/build/gubsy-roomd --host=0.0.0.0 --port=8788 \
+  --rendezvous-port=8789 \
   > logs/realnet_lan_roomd.log 2>&1 &
 
+SPLONKS_REALNET_FORCE_NAT_PUNCH=1 \
+SPLONKS_REALNET_RENDEZVOUS_PORT=8789 \
 ./build/splonks-cpp \
-  --check-gubsy-shell-realnet-lan-host http://HOST_LAN_IP:8788 1800 \
+  --check-gubsy-shell-realnet-lan-host http://HOST_LAN_IP:8788 20000 \
   > logs/realnet_lan_host.log 2>&1
 ```
 
 On the client machine, while the host command is waiting:
 
 ```sh
+SPLONKS_REALNET_FORCE_NAT_PUNCH=1 \
+SPLONKS_REALNET_RENDEZVOUS_PORT=8789 \
 ./build/splonks-cpp \
   --check-gubsy-shell-realnet-lan-client http://HOST_LAN_IP:8788 "" 1800 \
   > logs/realnet_lan_client.log 2>&1
 ```
+
+If the client machine is slow to start, pass the printed room code as the third
+argument instead of `""`. Keep the host frame budget high enough that the room
+stays advertised while the remote executable starts.
 
 Expected markers:
 

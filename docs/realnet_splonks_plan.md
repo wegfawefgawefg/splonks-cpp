@@ -351,6 +351,8 @@ Current proof:
 2. Direct-failure fallback smoke passes on one machine.
 3. Same-LAN proof can use the same env flag with
    `./scripts/validate_gubsy_roomd_live.sh --lan-interface`.
-4. Real NAT traversal still requires host/client on different public networks,
+4. Two-machine same-LAN forced-punch proof passes with desktop host and laptop
+   client using the headless commands in `docs/realnet_lan_validation.md`.
+5. Real NAT traversal still requires host/client on different public networks,
    for example desktop on home internet and laptop on phone hotspot, with a
    reachable roomd.
