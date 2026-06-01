@@ -12,6 +12,26 @@ the game host over a LAN direct candidate.
 Both machines should be on the same LAN and both repos should be on the same
 commit.
 
+## Automated LAN-Interface Precheck
+
+On the host machine, run:
+
+```sh
+scripts/validate_gubsy_roomd_live.sh --lan-interface
+```
+
+This starts `gubsy-roomd` on `0.0.0.0`, reaches it through the machine's LAN
+IPv4, and runs the headless Splonks public host/browser-join smoke. It is still
+a same-machine smoke, so it does not prove firewall or second-machine routing,
+but it proves the Realnet browser path works without relying on a localhost
+roomd URL.
+
+If the detected LAN address is wrong, override it:
+
+```sh
+ROOM_SERVER_HOST=192.168.11.7 scripts/validate_gubsy_roomd_live.sh --lan-interface
+```
+
 ## Host Machine
 
 Find the host LAN address:

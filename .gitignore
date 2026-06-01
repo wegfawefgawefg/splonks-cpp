@@ -45,6 +45,7 @@ logs/desync_replay_*.sdrp
 logs/lockstep_validate_*.log
 logs/lockstep_validate_report.json
 logs/gubsy_roomd_live_smoke.log
+logs/gubsy_roomd_live_lan_smoke.log
 logs/lockstep_playtest_*.json
 logs/lockstep_playtest_*.jsonl
 logs/lockstep_playtest_audit.json
