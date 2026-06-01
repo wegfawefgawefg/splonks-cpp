@@ -67,6 +67,7 @@ struct SmokeMatchmaking final : IMatchmaking {
     MatchmakingRoom room;
     bool has_room = false;
     bool create_called = false;
+    bool join_attempt_called = false;
     bool join_called = false;
     bool leave_called = false;
 
@@ -83,13 +84,32 @@ struct SmokeMatchmaking final : IMatchmaking {
     }
 
     bool join_room(const std::string&, const std::string& room_code, const std::string&,
-                   std::string& member_id_out, std::string& err) override {
+                   const std::string& join_token, std::string& member_id_out,
+                   std::string& err) override {
         join_called = true;
         if (!has_room || room_code != room.room_code) {
             err = "room not found";
             return false;
         }
+        if (join_token != "join-token") {
+            err = "join token rejected";
+            return false;
+        }
         member_id_out = "guest-member";
+        return true;
+    }
+
+    bool create_join_attempt(const std::string&, const std::string& room_code,
+                             const std::string&, MatchmakingJoinAttemptResult& out,
+                             std::string& err) override {
+        join_attempt_called = true;
+        if (!has_room || room_code != room.room_code) {
+            err = "room not found";
+            return false;
+        }
+        out.join_attempt_id = "join-attempt";
+        out.join_token = "join-token";
+        out.room = room;
         return true;
     }
 

@@ -535,8 +535,11 @@ void SyncLobbySessionPhase(Shell& shell) {
 
     bool in_game = false;
     if (state.net_session.role == network::NetRole::Host) {
-        in_game = state.mode == Mode::Playing || state.mode == Mode::StageTransition ||
-                  state.mode == Mode::GameOver;
+        in_game = session_contract_is_in_game(lobby.contract) ||
+                  state.mode == Mode::Playing ||
+                  state.mode == Mode::StageTransition ||
+                  state.mode == Mode::GameOver ||
+                  state.pending_stage_transition.has_value();
     } else if (state.net_session.role == network::NetRole::Peer) {
         in_game = DirectPeerReadyToPlay(state);
         if (in_game)
