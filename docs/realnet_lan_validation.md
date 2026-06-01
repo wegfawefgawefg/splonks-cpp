@@ -12,6 +12,19 @@ the game host over a LAN direct candidate.
 Both machines should be on the same LAN and both repos should be on the same
 commit.
 
+Before testing, initialize the verdict file:
+
+```sh
+cp docs/realnet_lan_verdict_template.json logs/realnet_lan_verdict.json
+```
+
+After the browser and direct checks pass, fill the verdict booleans and audit
+it:
+
+```sh
+scripts/summarize_realnet_lan_validation.py
+```
+
 ## Automated LAN-Interface Precheck
 
 On the host machine, run:
@@ -107,7 +120,7 @@ Client:
 
 ## Evidence To Record
 
-Record the following in the goal notes or commit message when validating:
+Record the following in `logs/realnet_lan_verdict.json` when validating:
 
 - Host and client commit SHA.
 - Host LAN IP and roomd URL.
@@ -115,3 +128,6 @@ Record the following in the goal notes or commit message when validating:
 - Selected transport shown by the UI.
 - Whether direct IP join passed.
 - Any desync replay path if gameplay desyncs.
+
+The Realnet foundation LAN gate is not proven until
+`scripts/summarize_realnet_lan_validation.py` reports `ok`.

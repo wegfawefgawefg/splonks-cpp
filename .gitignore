@@ -50,5 +50,7 @@ logs/lockstep_playtest_*.json
 logs/lockstep_playtest_*.jsonl
 logs/lockstep_playtest_audit.json
 logs/lockstep_playtest_verdict.json
+logs/realnet_lan_audit.json
+logs/realnet_lan_verdict.json
 logs/lockstep_churn/
 .codex

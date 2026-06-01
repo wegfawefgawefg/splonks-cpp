@@ -248,7 +248,9 @@ launcher supports `--host-only` and `--client-only` so the host can run roomd
 and one Splonks window while the second machine runs only the joining client.
 Before the two-machine run, `scripts/validate_gubsy_roomd_live.sh
 --lan-interface` verifies the same browser path against roomd through the host's
-LAN-facing address.
+LAN-facing address. The final two-machine result should be captured in
+`logs/realnet_lan_verdict.json` from `docs/realnet_lan_verdict_template.json`
+and audited with `scripts/summarize_realnet_lan_validation.py`.
 
 Later validation:
 

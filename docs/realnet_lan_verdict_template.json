@@ -1,0 +1,23 @@
+{
+  "ok": false,
+  "host_commit": "",
+  "client_commit": "",
+  "room_server_url": "",
+  "browser_join": {
+    "client_can_list_roomd_rooms_ok": false,
+    "public_room_visible_ok": false,
+    "join_attempt_path_ok": false,
+    "selected_transport_shown_ok": false,
+    "host_and_client_reach_same_lobby_ok": false,
+    "host_start_enters_gameplay_ok": false,
+    "client_input_moves_player_ok": false,
+    "no_desync_or_frozen_join_ok": false,
+    "notes": ""
+  },
+  "direct_join": {
+    "direct_ip_join_ok": false,
+    "direct_join_enters_gameplay_ok": false,
+    "notes": ""
+  },
+  "overall_notes": ""
+}
