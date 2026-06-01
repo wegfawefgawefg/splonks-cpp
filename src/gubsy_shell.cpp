@@ -414,6 +414,59 @@ std::string AdvertisedHost() {
     return "127.0.0.1";
 }
 
+bool RealnetPunchForced() {
+    if (const char* value = std::getenv("SPLONKS_REALNET_FORCE_NAT_PUNCH")) {
+        return *value != '\0' && std::string(value) != "0";
+    }
+    return false;
+}
+
+bool ParseHttpEndpoint(const std::string& url, std::string& host, std::uint16_t& port) {
+    constexpr const char* kPrefix = "http://";
+    if (url.rfind(kPrefix, 0) != 0)
+        return false;
+    std::string work = url.substr(std::char_traits<char>::length(kPrefix));
+    const std::size_t slash = work.find('/');
+    if (slash != std::string::npos)
+        work = work.substr(0, slash);
+    const std::size_t colon = work.rfind(':');
+    host = colon == std::string::npos ? work : work.substr(0, colon);
+    int parsed_port = 8788;
+    if (colon != std::string::npos) {
+        try {
+            parsed_port = std::stoi(work.substr(colon + 1));
+        } catch (...) {
+            return false;
+        }
+    }
+    if (host.empty() || parsed_port <= 0 || parsed_port >= 65535)
+        return false;
+    port = static_cast<std::uint16_t>(parsed_port);
+    return true;
+}
+
+bool RealnetRendezvousEndpoint(const GubsyLobbyState& lobby, network::NetEndpoint& endpoint) {
+    std::string host;
+    std::uint16_t http_port = 0;
+    if (!ParseHttpEndpoint(lobby.room_server_url, host, http_port))
+        return false;
+    int rendezvous_port = static_cast<int>(http_port) + 1;
+    if (const char* value = std::getenv("SPLONKS_REALNET_RENDEZVOUS_PORT")) {
+        if (*value != '\0') {
+            try {
+                rendezvous_port = std::stoi(value);
+            } catch (...) {
+                return false;
+            }
+        }
+    }
+    if (rendezvous_port <= 0 || rendezvous_port > 65535)
+        return false;
+    endpoint = network::NetEndpoint{.address = host,
+                                    .port = static_cast<std::uint16_t>(rendezvous_port)};
+    return true;
+}
+
 GubsyLobbyHostResult HostSplonksFromGubsy(void* user_data, const GubsyLobbyState& lobby,
                                           std::uint16_t port) {
     GubsyLobbyHostResult result;
@@ -423,6 +476,7 @@ GubsyLobbyHostResult HostSplonksFromGubsy(void* user_data, const GubsyLobbyState
     shell->direct_join_pending = false;
     shell->direct_join_endpoint.clear();
     shell->direct_join_started_ms = 0;
+    shell->realnet_host_room_code.clear();
     ApplyLobbyConfigToSplonks(*shell, lobby, true);
     result.ok = network::StartHostSession(*shell->state, port, &result.status);
     if (result.ok) {
@@ -442,11 +496,32 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
     if (shell == nullptr || shell->state == nullptr || host == nullptr || *host == '\0')
         return result;
     ApplyLobbyConfigToSplonks(*shell, lobby, true);
-    result.ok = network::JoinHostSession(*shell->state, host, port, &result.status);
+    network::NetEndpoint rendezvous_endpoint;
+    const std::string realnet_room_code = !lobby.pending_join_room.room_code.empty()
+        ? lobby.pending_join_room.room_code
+        : lobby.room_code;
+    const bool force_realnet = RealnetPunchForced() &&
+                               !realnet_room_code.empty() &&
+                               !lobby.pending_join_attempt_id.empty() &&
+                               !lobby.pending_punch_secret.empty() &&
+                               RealnetRendezvousEndpoint(lobby, rendezvous_endpoint);
+    if (force_realnet) {
+        result.ok = network::JoinHostSessionViaRealnetPunch(*shell->state,
+                                                            rendezvous_endpoint,
+                                                            realnet_room_code,
+                                                            lobby.pending_join_attempt_id,
+                                                            lobby.pending_punch_secret,
+                                                            {},
+                                                            &result.status);
+    } else {
+        result.ok = network::JoinHostSession(*shell->state, host, port, &result.status);
+    }
     if (result.ok) {
         result.pending = true;
         shell->direct_join_pending = true;
-        shell->direct_join_endpoint = std::string(host) + ":" + std::to_string(port);
+        shell->direct_join_endpoint = force_realnet
+            ? "Realnet NAT punch " + network::EndpointToString(rendezvous_endpoint)
+            : std::string(host) + ":" + std::to_string(port);
         shell->direct_join_started_ms = SDL_GetTicks();
     }
     std::cerr << result.status << '\n';
@@ -502,11 +577,27 @@ void SyncLobbySessionPhase(Shell& shell) {
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
     if (!lobby.online) {
         shell.joined_room_host_in_game = false;
+        shell.realnet_host_room_code.clear();
         (void)gubsy_set_lobby_player_roster_locked(shell.runtime, false);
         return;
     }
 
     State& state = *shell.state;
+    if (lobby.is_host && !lobby.room_code.empty() && !lobby.host_secret.empty() &&
+        shell.realnet_host_room_code != lobby.room_code) {
+        network::NetEndpoint rendezvous_endpoint;
+        if (RealnetRendezvousEndpoint(lobby, rendezvous_endpoint)) {
+            std::string status;
+            if (network::ConfigureHostRealnetPunch(state,
+                                                   rendezvous_endpoint,
+                                                   lobby.room_code,
+                                                   lobby.host_secret,
+                                                   &status)) {
+                shell.realnet_host_room_code = lobby.room_code;
+                std::cerr << status << '\n';
+            }
+        }
+    }
     if (!lobby.room_code.empty() && !lobby.is_host) {
         if (state.net_session.role != network::NetRole::Peer) {
             shell.joined_room_host_in_game = false;

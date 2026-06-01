@@ -165,6 +165,10 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
         }
         transport.fuzzer_stats.packets_received += 1U;
 
+        if (TryHandleRealnetPunchPacket(state, transport, *packet)) {
+            continue;
+        }
+
         MarkRemoteEndpointHeard(transport, packet->endpoint);
 
         if (const std::optional<JoinRequestPacket> request =
@@ -282,6 +286,10 @@ void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& tran
             return;
         }
         transport.fuzzer_stats.packets_received += 1U;
+
+        if (TryHandleRealnetPunchPacket(state, transport, *packet)) {
+            continue;
+        }
 
         if (const std::optional<LeaveNoticePacket> leave =
                 TryDecodeLeaveNotice(packet->bytes.data(), packet->size)) {

@@ -45,6 +45,12 @@ void SendEncodedPacket(
     const EncodedNetPacket& encoded
 );
 void FlushFuzzedOutgoingPackets(NetTransportRuntime& transport);
+void MaintainRealnetPunch(State& state, NetTransportRuntime& transport);
+bool TryHandleRealnetPunchPacket(
+    State& state,
+    NetTransportRuntime& transport,
+    const UdpPacket& packet
+);
 
 void SendJoinRequest(State& state);
 void SendLeaveNotice(State& state);

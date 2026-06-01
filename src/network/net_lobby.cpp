@@ -14,6 +14,7 @@ void StepNetworkLobby(State& state, Graphics& graphics) {
     NetTransportRuntime& transport = *state.net_transport;
     transport.fuzzer_config = state.net_session.fuzzer_config;
     FlushFuzzedOutgoingPackets(transport);
+    MaintainRealnetPunch(state, transport);
 
     if (!IsInputLockstepActive(state)) {
         return;

@@ -309,3 +309,38 @@ Later validation:
 Validate the current direct-candidate foundation on a real LAN with
 `docs/realnet_lan_validation.md`, then implement the Gubsy UDP rendezvous path
 for cross-network joins without router port forwarding.
+
+## Current NAT Punch Foundation
+
+The first forced NAT-punch path is implemented behind developer environment
+flags:
+
+```bash
+SPLONKS_REALNET_FORCE_NAT_PUNCH=1 ./scripts/validate_gubsy_roomd_live.sh
+```
+
+This starts local `gubsy-roomd`, hosts a public room, joins through the room
+browser, and forces the browser join to use the Realnet UDP rendezvous path
+rather than the advertised direct candidate. The game sends Realnet rendezvous
+traffic from the same UDP socket used for gameplay, so the NAT mapping being
+punched is the mapping that subsequent lockstep packets use.
+
+Optional override:
+
+```bash
+SPLONKS_REALNET_RENDEZVOUS_PORT=8791
+```
+
+When unset, Splonks assumes the roomd rendezvous UDP port is `HTTP_PORT + 1`,
+matching the current `gubsy-roomd` default. The next step is to read the exact
+rendezvous endpoint from Gubsy room-server capabilities instead of relying on
+that default.
+
+Current proof:
+
+1. Local forced-punch smoke passes on one machine.
+2. Same-LAN proof can use the same env flag with
+   `./scripts/validate_gubsy_roomd_live.sh --lan-interface`.
+3. Real NAT traversal still requires host/client on different public networks,
+   for example desktop on home internet and laptop on phone hotspot, with a
+   reachable roomd.

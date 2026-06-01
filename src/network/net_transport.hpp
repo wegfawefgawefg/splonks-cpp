@@ -72,6 +72,23 @@ struct NetPendingJoinEndpoint {
     std::uint64_t last_heard_pump_tick = 0;
 };
 
+struct RealnetPunchRuntime {
+    bool active = false;
+    bool is_host = false;
+    bool force = false;
+    NetEndpoint rendezvous_endpoint;
+    NetEndpoint peer_endpoint;
+    bool have_peer_endpoint = false;
+    std::string room_code;
+    std::string host_secret;
+    std::string join_attempt_id;
+    std::string punch_secret;
+    std::uint64_t deadline_ms = 0;
+    std::uint64_t next_hello_ms = 0;
+    std::uint64_t next_probe_ms = 0;
+    std::uint64_t seq = 1;
+};
+
 struct NetTransportRuntime {
     UdpSocket socket;
     std::vector<NetRemoteEndpoint> remotes;
@@ -93,6 +110,7 @@ struct NetTransportRuntime {
     std::uint32_t fuzzer_burst_packets_remaining = 0;
     std::uint64_t pump_tick = 0;
     std::string last_error;
+    RealnetPunchRuntime realnet_punch;
     bool capture_outgoing_packets = false;
     std::vector<UdpPacket> captured_packets;
 

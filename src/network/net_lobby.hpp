@@ -33,6 +33,22 @@ bool JoinHostSession(
     const std::vector<PlayerId>& preferred_player_ids,
     std::string* status_out
 );
+bool JoinHostSessionViaRealnetPunch(
+    State& state,
+    const NetEndpoint& rendezvous_endpoint,
+    const std::string& room_code,
+    const std::string& join_attempt_id,
+    const std::string& punch_secret,
+    const std::vector<PlayerId>& preferred_player_ids,
+    std::string* status_out
+);
+bool ConfigureHostRealnetPunch(
+    State& state,
+    const NetEndpoint& rendezvous_endpoint,
+    const std::string& room_code,
+    const std::string& host_secret,
+    std::string* status_out
+);
 void DisconnectSession(State& state, std::string* status_out);
 bool KickRemoteEndpoint(State& state, const std::string& address, std::uint16_t port,
                         std::string* status_out);

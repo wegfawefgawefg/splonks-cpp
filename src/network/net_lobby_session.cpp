@@ -70,6 +70,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::uint32_t input_dela
     transport.join_request_pending = false;
     transport.join_request_waiting_for_host = false;
     transport.join_pending_reason = JoinPendingReason::None;
+    transport.realnet_punch = RealnetPunchRuntime{};
     if (status_out != nullptr) {
         *status_out = "Hosting UDP on port " + std::to_string(transport.socket.BoundPort()) + ".";
         const std::vector<std::string> lan_addresses = GetLocalLanIpv4Addresses();
@@ -109,6 +110,7 @@ bool JoinHostSession(State& state, const std::string& host, std::uint16_t port,
     transport.join_request_waiting_for_host = false;
     transport.join_pending_reason = JoinPendingReason::None;
     transport.join_request_retry_frames = 0;
+    transport.realnet_punch = RealnetPunchRuntime{};
     ResetInputLockstepState(state);
     SendJoinRequest(state);
     if (status_out != nullptr) {
@@ -122,6 +124,73 @@ bool JoinHostSession(State& state, const std::string& host, std::uint16_t port,
     return JoinHostSession(state, host, port, {}, status_out);
 }
 
+bool JoinHostSessionViaRealnetPunch(
+    State& state,
+    const NetEndpoint& rendezvous_endpoint,
+    const std::string& room_code,
+    const std::string& join_attempt_id,
+    const std::string& punch_secret,
+    const std::vector<PlayerId>& preferred_player_ids,
+    std::string* status_out
+) {
+    NetTransportRuntime& transport = EnsureTransport(state);
+    std::string error;
+    if (!transport.socket.Open(0, &error)) {
+        if (status_out != nullptr)
+            *status_out = "Join failed: " + error;
+        return false;
+    }
+
+    state.net_session = NetSessionState::NewOffline();
+    state.net_session.role = NetRole::Peer;
+    state.net_session.input_lockstep_enabled = true;
+    state.net_session.local_player_id = kPrimaryLocalPlayerId;
+    state.net_session.host_player_id = kPrimaryLocalPlayerId;
+    transport.preferred_player_ids = preferred_player_ids;
+    transport.host_endpoint = NetEndpoint{};
+    transport.remotes.clear();
+    transport.pending_join_endpoints.clear();
+    transport.join_request_pending = true;
+    transport.join_request_waiting_for_host = false;
+    transport.join_pending_reason = JoinPendingReason::None;
+    transport.join_request_retry_frames = 0;
+    transport.realnet_punch = RealnetPunchRuntime{};
+    transport.realnet_punch.active = true;
+    transport.realnet_punch.is_host = false;
+    transport.realnet_punch.force = true;
+    transport.realnet_punch.rendezvous_endpoint = rendezvous_endpoint;
+    transport.realnet_punch.room_code = room_code;
+    transport.realnet_punch.join_attempt_id = join_attempt_id;
+    transport.realnet_punch.punch_secret = punch_secret;
+    ResetInputLockstepState(state);
+    if (status_out != nullptr)
+        *status_out = "Joining with Realnet NAT punch via " + EndpointToString(rendezvous_endpoint) + ".";
+    return true;
+}
+
+bool ConfigureHostRealnetPunch(
+    State& state,
+    const NetEndpoint& rendezvous_endpoint,
+    const std::string& room_code,
+    const std::string& host_secret,
+    std::string* status_out
+) {
+    if (!state.net_transport || !state.net_transport->socket.IsOpen()) {
+        if (status_out != nullptr)
+            *status_out = "Realnet punch host failed: transport is closed.";
+        return false;
+    }
+    state.net_transport->realnet_punch = RealnetPunchRuntime{};
+    state.net_transport->realnet_punch.active = true;
+    state.net_transport->realnet_punch.is_host = true;
+    state.net_transport->realnet_punch.rendezvous_endpoint = rendezvous_endpoint;
+    state.net_transport->realnet_punch.room_code = room_code;
+    state.net_transport->realnet_punch.host_secret = host_secret;
+    if (status_out != nullptr)
+        *status_out = "Realnet rendezvous host enabled via " + EndpointToString(rendezvous_endpoint) + ".";
+    return true;
+}
+
 void DisconnectSession(State& state, std::string* status_out) {
     if (state.net_transport) {
         SendLeaveNotice(state);
@@ -131,6 +200,7 @@ void DisconnectSession(State& state, std::string* status_out) {
         state.net_transport->join_request_pending = false;
         state.net_transport->join_request_waiting_for_host = false;
         state.net_transport->join_pending_reason = JoinPendingReason::None;
+        state.net_transport->realnet_punch = RealnetPunchRuntime{};
     }
     state.net_session = NetSessionState::NewOffline();
     if (status_out != nullptr) {

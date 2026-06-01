@@ -106,6 +106,10 @@ void SendJoinRequest(State& state) {
     if (!state.net_transport || !state.net_transport->socket.IsOpen()) {
         return;
     }
+    if (state.net_transport->host_endpoint.address.empty() ||
+        state.net_transport->host_endpoint.port == 0) {
+        return;
+    }
 
     JoinRequestPacket request;
     request.local_player_count = CountLocalPlayers(state.players);
