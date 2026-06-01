@@ -421,6 +421,21 @@ bool RealnetPunchForced() {
     return false;
 }
 
+std::uint64_t DirectJoinTimeoutMs() {
+    if (const char* value = std::getenv("SPLONKS_REALNET_DIRECT_TIMEOUT_MS")) {
+        if (*value != '\0') {
+            try {
+                const long long parsed = std::stoll(value);
+                if (parsed > 0)
+                    return static_cast<std::uint64_t>(parsed);
+            } catch (...) {
+                return kDirectJoinTimeoutMs;
+            }
+        }
+    }
+    return kDirectJoinTimeoutMs;
+}
+
 bool ParseHttpEndpoint(const std::string& url, std::string& host, std::uint16_t& port) {
     constexpr const char* kPrefix = "http://";
     if (url.rfind(kPrefix, 0) != 0)
@@ -476,6 +491,7 @@ GubsyLobbyHostResult HostSplonksFromGubsy(void* user_data, const GubsyLobbyState
     shell->direct_join_pending = false;
     shell->direct_join_endpoint.clear();
     shell->direct_join_started_ms = 0;
+    shell->realnet_fallback_started = false;
     shell->realnet_host_room_code.clear();
     ApplyLobbyConfigToSplonks(*shell, lobby, true);
     result.ok = network::StartHostSession(*shell->state, port, &result.status);
@@ -519,6 +535,7 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
     if (result.ok) {
         result.pending = true;
         shell->direct_join_pending = true;
+        shell->realnet_fallback_started = force_realnet;
         shell->direct_join_endpoint = force_realnet
             ? "Realnet NAT punch " + network::EndpointToString(rendezvous_endpoint)
             : std::string(host) + ":" + std::to_string(port);
@@ -650,20 +667,49 @@ void SyncDirectJoinStatus(Shell& shell) {
         if (gubsy_get_lobby_state(shell.runtime).online)
             (void)gubsy_show_lobby_menu(shell.runtime);
         shell.direct_join_pending = false;
+        shell.realnet_fallback_started = false;
         shell.direct_join_endpoint.clear();
         shell.direct_join_started_ms = 0;
         return;
     }
 
     const std::uint64_t now_ms = SDL_GetTicks();
-    if (now_ms - shell.direct_join_started_ms < kDirectJoinTimeoutMs)
+    if (now_ms - shell.direct_join_started_ms < DirectJoinTimeoutMs())
         return;
+
+    const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
+    network::NetEndpoint rendezvous_endpoint;
+    if (!shell.realnet_fallback_started &&
+        lobby.room_join_pending &&
+        !lobby.pending_join_room.room_code.empty() &&
+        !lobby.pending_join_attempt_id.empty() &&
+        !lobby.pending_punch_secret.empty() &&
+        RealnetRendezvousEndpoint(lobby, rendezvous_endpoint)) {
+        std::string status;
+        network::DisconnectSession(*shell.state, &status);
+        const bool started = network::JoinHostSessionViaRealnetPunch(*shell.state,
+                                                                     rendezvous_endpoint,
+                                                                     lobby.pending_join_room.room_code,
+                                                                     lobby.pending_join_attempt_id,
+                                                                     lobby.pending_punch_secret,
+                                                                     {},
+                                                                     &status);
+        if (started) {
+            shell.realnet_fallback_started = true;
+            shell.direct_join_endpoint = "Realnet NAT punch " +
+                                         network::EndpointToString(rendezvous_endpoint);
+            shell.direct_join_started_ms = SDL_GetTicks();
+            std::cerr << status << '\n';
+            return;
+        }
+    }
 
     std::string status;
     network::DisconnectSession(*shell.state, &status);
     std::string message = "No server found at " + shell.direct_join_endpoint;
     gubsy_fail_lobby_direct_join(shell.runtime, message);
     shell.direct_join_pending = false;
+    shell.realnet_fallback_started = false;
     shell.direct_join_endpoint.clear();
     shell.direct_join_started_ms = 0;
 }

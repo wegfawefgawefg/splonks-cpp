@@ -331,6 +331,15 @@ Optional override:
 SPLONKS_REALNET_RENDEZVOUS_PORT=8791
 ```
 
+Direct-failure fallback can be validated locally by advertising an unroutable
+direct endpoint and shortening the developer timeout:
+
+```bash
+SPLONKS_ADVERTISE_HOST=203.0.113.1 \
+SPLONKS_REALNET_DIRECT_TIMEOUT_MS=1 \
+./scripts/validate_gubsy_roomd_live.sh
+```
+
 When unset, Splonks assumes the roomd rendezvous UDP port is `HTTP_PORT + 1`,
 matching the current `gubsy-roomd` default. The next step is to read the exact
 rendezvous endpoint from Gubsy room-server capabilities instead of relying on
@@ -339,8 +348,9 @@ that default.
 Current proof:
 
 1. Local forced-punch smoke passes on one machine.
-2. Same-LAN proof can use the same env flag with
+2. Direct-failure fallback smoke passes on one machine.
+3. Same-LAN proof can use the same env flag with
    `./scripts/validate_gubsy_roomd_live.sh --lan-interface`.
-3. Real NAT traversal still requires host/client on different public networks,
+4. Real NAT traversal still requires host/client on different public networks,
    for example desktop on home internet and laptop on phone hotspot, with a
    reachable roomd.
