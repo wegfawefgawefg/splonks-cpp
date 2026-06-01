@@ -41,6 +41,11 @@ both games with the same `GUB_ROOM_SERVER_URL`, for example:
 GUB_ROOM_SERVER_URL=http://192.168.11.7:8788 scripts/run.sh
 ```
 
+For the Realnet LAN validation path, use
+`docs/realnet_lan_validation.md`. It uses the same launcher with
+`--host-only` and `--client-only` so each machine opens only the window it
+needs.
+
 ## Public Browser Flow
 
 Host window:

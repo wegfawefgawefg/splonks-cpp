@@ -6,6 +6,7 @@ repo_root="$(cd -- "${script_dir}/.." && pwd)"
 gubsy_root="$(cd -- "${repo_root}/../gubsy" && pwd)"
 
 server_port="${ROOM_SERVER_PORT:-8788}"
+server_bind="${ROOM_SERVER_BIND:-127.0.0.1}"
 server_url="${GUB_ROOM_SERVER_URL:-http://127.0.0.1:${server_port}}"
 server_log="${repo_root}/logs/gubsy_roomd_lobby_playtest.log"
 roomd_binary="${gubsy_root}/build/gubsy-roomd"
@@ -24,13 +25,14 @@ esac
 
 usage() {
     printf '%s\n' \
-        "Usage: scripts/run_lobby_human_playtest.sh [--no-build] [--no-roomd] [--init-verdict] [--fill-verdict]" \
+        "Usage: scripts/run_lobby_human_playtest.sh [--no-build] [--no-roomd] [--host-only|--client-only] [--init-verdict] [--fill-verdict]" \
         "" \
         "Starts local gubsy-roomd plus two Splonks windows for the lobby" \
         "human playtest checklist." \
         "" \
         "Environment:" \
         "  ROOM_SERVER_PORT       Local roomd port when GUB_ROOM_SERVER_URL is unset (default: 8788)." \
+        "  ROOM_SERVER_BIND       Address roomd binds when started by this script (default: 127.0.0.1)." \
         "  GUB_ROOM_SERVER_URL    Room server URL passed to both Splonks windows." \
         "  SPLONKS_PRESET         release or dev (default: release)." \
         "  SPLONKS_I3_WORKSPACE   i3 workspace for window placement (default: 2)." \
@@ -38,6 +40,8 @@ usage() {
         "  SDL_VIDEODRIVER        Defaults to x11 when DISPLAY is set." \
         "" \
         "Options:" \
+        "  --host-only            Launch only the host Splonks window." \
+        "  --client-only          Launch only the client Splonks window; implies --no-roomd." \
         "  --init-verdict         Create logs/lobby_human_playtest_verdict.json if missing." \
         "  --fill-verdict         Prompt for the verdict after both windows close, then audit it." \
         "" \
@@ -47,8 +51,10 @@ usage() {
 
 build=1
 start_roomd=1
+start_roomd_set=0
 init_verdict=0
 fill_verdict=0
+launch_mode="both"
 while (($#)); do
     case "$1" in
         --no-build)
@@ -57,6 +63,15 @@ while (($#)); do
             ;;
         --no-roomd)
             start_roomd=0
+            start_roomd_set=1
+            shift
+            ;;
+        --host-only)
+            launch_mode="host"
+            shift
+            ;;
+        --client-only)
+            launch_mode="client"
             shift
             ;;
         --init-verdict)
@@ -79,6 +94,10 @@ while (($#)); do
             ;;
     esac
 done
+
+if [[ "${launch_mode}" == "client" && "${start_roomd_set}" == "0" ]]; then
+    start_roomd=0
+fi
 
 init_verdict_file() {
     mkdir -p "${repo_root}/logs"
@@ -135,7 +154,7 @@ cleanup() {
 trap cleanup EXIT
 
 if ((start_roomd != 0)); then
-    "${roomd_binary}" "--port=${server_port}" >"${server_log}" 2>&1 &
+    "${roomd_binary}" "--host=${server_bind}" "--port=${server_port}" >"${server_log}" 2>&1 &
     roomd_pid=$!
     for _ in $(seq 1 50); do
         if curl -fsS "${server_url}/rooms" >/dev/null 2>&1; then
@@ -149,6 +168,7 @@ printf 'Lobby human playtest\n'
 printf 'Room server: %s\n' "${server_url}"
 if [[ -n "${roomd_pid}" ]]; then
     printf 'gubsy-roomd pid: %s\n' "${roomd_pid}"
+    printf 'gubsy-roomd bind: %s:%s\n' "${server_bind}" "${server_port}"
     printf 'gubsy-roomd log: %s\n' "${server_log}"
 fi
 printf 'Checklist: docs/lobby_human_playtest_checklist.md\n\n'
@@ -172,10 +192,28 @@ launch_child() {
     printf '%s pid: %s debug-control-port: %s\n' "${role}" "$!" "${ctl_port}"
 }
 
+launch_selected_children() {
+    case "${launch_mode}" in
+        both)
+            launch_child "host-window" 41210
+            sleep 0.4
+            launch_child "client-window" 41211
+            ;;
+        host)
+            launch_child "host-window" 41210
+            ;;
+        client)
+            launch_child "client-window" 41211
+            ;;
+        *)
+            printf 'unknown launch mode: %s\n' "${launch_mode}" >&2
+            exit 2
+            ;;
+    esac
+}
+
 if ! command -v i3-msg >/dev/null 2>&1; then
-    launch_child "host-window" 41210
-    sleep 0.4
-    launch_child "client-window" 41211
+    launch_selected_children
     playtest_status=0
     wait || playtest_status=$?
     finish_verdict
@@ -191,9 +229,7 @@ if [ -n "${target_output}" ]; then
 fi
 i3-msg "layout splitv" >/dev/null
 
-launch_child "host-window" 41210
-sleep 0.4
-launch_child "client-window" 41211
+launch_selected_children
 sleep "${SPLONKS_I3_SETTLE_SECONDS:-1.2}"
 i3-msg "workspace number ${workspace}" >/dev/null
 i3-msg "[title=\"${window_title}\"] floating disable" >/dev/null || true

@@ -243,6 +243,10 @@ Desktop-first validation:
 6. Successful NAT traversal can start, join in progress, restart, leave, and
    stage transition without desync.
 
+Use `docs/realnet_lan_validation.md` for the two-machine LAN proof. The
+launcher supports `--host-only` and `--client-only` so the host can run roomd
+and one Splonks window while the second machine runs only the joining client.
+
 Later validation:
 
 1. Relay fallback works when direct/punch fails.
@@ -295,6 +299,6 @@ Later validation:
 
 ## Immediate Next Step
 
-Implement the Gubsy Realnet data model and UDP rendezvous path, then wire
-Splonks browser joins through the Gubsy connection cascade while preserving
-direct IP join for debugging.
+Validate the current direct-candidate foundation on a real LAN with
+`docs/realnet_lan_validation.md`, then implement the Gubsy UDP rendezvous path
+for cross-network joins without router port forwarding.
