@@ -86,9 +86,9 @@ This is the preferred automated proof when both machines have current builds.
 It uses `gubsy-roomd` for browser discovery/join attempts, then verifies
 lockstep gameplay by moving the client player.
 
-Use forced NAT punch when validating Realnet rendezvous itself. This makes the
+Use forced NAT punch when validating Realnet punch itself. This makes the
 game skip the advertised direct candidate and connect through the UDP
-rendezvous endpoint.
+punch endpoint.
 
 For normal unforced joins, Splonks still prefers direct UDP for public
 endpoints and private endpoints that appear to be on the client's local `/24`.
@@ -100,11 +100,11 @@ On the host machine:
 
 ```sh
 ../gubsy/build/gubsy-roomd --host=0.0.0.0 --port=8788 \
-  --rendezvous-port=8789 \
+  --punch-port=8789 \
   > logs/realnet_lan_roomd.log 2>&1 &
 
 SPLONKS_REALNET_FORCE_NAT_PUNCH=1 \
-SPLONKS_REALNET_RENDEZVOUS_PORT=8789 \
+SPLONKS_REALNET_PUNCH_PORT=8789 \
 ./build/splonks-cpp \
   --check-gubsy-shell-realnet-lan-host http://HOST_LAN_IP:8788 20000 \
   > logs/realnet_lan_host.log 2>&1
@@ -114,7 +114,7 @@ On the client machine, while the host command is waiting:
 
 ```sh
 SPLONKS_REALNET_FORCE_NAT_PUNCH=1 \
-SPLONKS_REALNET_RENDEZVOUS_PORT=8789 \
+SPLONKS_REALNET_PUNCH_PORT=8789 \
 ./build/splonks-cpp \
   --check-gubsy-shell-realnet-lan-client http://HOST_LAN_IP:8788 "" 1800 \
   > logs/realnet_lan_client.log 2>&1

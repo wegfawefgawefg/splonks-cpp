@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <gubsy/realnet/config.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -126,7 +127,7 @@ bool JoinHostSession(State& state, const std::string& host, std::uint16_t port,
 
 bool JoinHostSessionViaRealnetPunch(
     State& state,
-    const NetEndpoint& rendezvous_endpoint,
+    const NetEndpoint& punch_endpoint,
     const std::string& room_code,
     const std::string& join_attempt_id,
     const std::string& punch_secret,
@@ -155,22 +156,24 @@ bool JoinHostSessionViaRealnetPunch(
     transport.join_pending_reason = JoinPendingReason::None;
     transport.join_request_retry_frames = 0;
     transport.realnet_punch = RealnetPunchRuntime{};
+    transport.realnet_punch.timing = realnet::default_config().punch;
     transport.realnet_punch.active = true;
     transport.realnet_punch.is_host = false;
     transport.realnet_punch.force = true;
-    transport.realnet_punch.rendezvous_endpoint = rendezvous_endpoint;
+    transport.realnet_punch.punch_endpoint = punch_endpoint;
     transport.realnet_punch.room_code = room_code;
     transport.realnet_punch.join_attempt_id = join_attempt_id;
     transport.realnet_punch.punch_secret = punch_secret;
+    transport.realnet_punch.status = "starting_joiner_punch";
     ResetInputLockstepState(state);
     if (status_out != nullptr)
-        *status_out = "Joining with Realnet NAT punch via " + EndpointToString(rendezvous_endpoint) + ".";
+        *status_out = "Joining with Realnet NAT punch via " + EndpointToString(punch_endpoint) + ".";
     return true;
 }
 
 bool ConfigureHostRealnetPunch(
     State& state,
-    const NetEndpoint& rendezvous_endpoint,
+    const NetEndpoint& punch_endpoint,
     const std::string& room_code,
     const std::string& host_secret,
     std::string* status_out
@@ -181,13 +184,15 @@ bool ConfigureHostRealnetPunch(
         return false;
     }
     state.net_transport->realnet_punch = RealnetPunchRuntime{};
+    state.net_transport->realnet_punch.timing = realnet::default_config().punch;
     state.net_transport->realnet_punch.active = true;
     state.net_transport->realnet_punch.is_host = true;
-    state.net_transport->realnet_punch.rendezvous_endpoint = rendezvous_endpoint;
+    state.net_transport->realnet_punch.punch_endpoint = punch_endpoint;
     state.net_transport->realnet_punch.room_code = room_code;
     state.net_transport->realnet_punch.host_secret = host_secret;
+    state.net_transport->realnet_punch.status = "starting_host_punch";
     if (status_out != nullptr)
-        *status_out = "Realnet rendezvous host enabled via " + EndpointToString(rendezvous_endpoint) + ".";
+        *status_out = "Realnet punch host enabled via " + EndpointToString(punch_endpoint) + ".";
     return true;
 }
 

@@ -35,7 +35,7 @@ bool JoinHostSession(
 );
 bool JoinHostSessionViaRealnetPunch(
     State& state,
-    const NetEndpoint& rendezvous_endpoint,
+    const NetEndpoint& punch_endpoint,
     const std::string& room_code,
     const std::string& join_attempt_id,
     const std::string& punch_secret,
@@ -44,7 +44,7 @@ bool JoinHostSessionViaRealnetPunch(
 );
 bool ConfigureHostRealnetPunch(
     State& state,
-    const NetEndpoint& rendezvous_endpoint,
+    const NetEndpoint& punch_endpoint,
     const std::string& room_code,
     const std::string& host_secret,
     std::string* status_out

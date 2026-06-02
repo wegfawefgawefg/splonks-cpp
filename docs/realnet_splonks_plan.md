@@ -328,7 +328,7 @@ punched is the mapping that subsequent lockstep packets use.
 Optional override:
 
 ```bash
-SPLONKS_REALNET_RENDEZVOUS_PORT=8791
+SPLONKS_REALNET_PUNCH_PORT=8791
 ```
 
 Direct-failure fallback can be validated locally by advertising an unroutable

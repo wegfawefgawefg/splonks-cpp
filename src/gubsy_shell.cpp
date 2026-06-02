@@ -462,12 +462,12 @@ bool ParseHttpEndpoint(const std::string& url, std::string& host, std::uint16_t&
     return true;
 }
 
-bool RealnetRendezvousEndpoint(const GubsyLobbyState& lobby, network::NetEndpoint& endpoint) {
+bool RealnetPunchEndpoint(const GubsyLobbyState& lobby, network::NetEndpoint& endpoint) {
     std::string host;
     std::uint16_t http_port = 0;
     if (!ParseHttpEndpoint(lobby.room_server_url, host, http_port))
         return false;
-    int rendezvous_port = static_cast<int>(http_port) + 1;
+    int punch_port = static_cast<int>(http_port) + 1;
     RoomServerMatchmaking matchmaking;
     RoomServerCapabilities capabilities;
     std::string err;
@@ -475,28 +475,27 @@ bool RealnetRendezvousEndpoint(const GubsyLobbyState& lobby, network::NetEndpoin
         capabilities.punch_udp.enabled &&
         capabilities.punch_udp.port > 0 &&
         capabilities.punch_udp.port <= 65535 &&
-        (capabilities.punch_udp.protocol == "gubsy-punch-v1" ||
-         capabilities.punch_udp.protocol == "gubsy-rendezvous-v1")) {
-        rendezvous_port = capabilities.punch_udp.port;
+        capabilities.punch_udp.protocol == "gubsy-punch-v1") {
+        punch_port = capabilities.punch_udp.port;
         if (!capabilities.punch_udp.host.empty() &&
             capabilities.punch_udp.host != "0.0.0.0" &&
             capabilities.punch_udp.host != "::") {
             host = capabilities.punch_udp.host;
         }
     }
-    if (const char* value = std::getenv("SPLONKS_REALNET_RENDEZVOUS_PORT")) {
+    if (const char* value = std::getenv("SPLONKS_REALNET_PUNCH_PORT")) {
         if (*value != '\0') {
             try {
-                rendezvous_port = std::stoi(value);
+                punch_port = std::stoi(value);
             } catch (...) {
                 return false;
             }
         }
     }
-    if (rendezvous_port <= 0 || rendezvous_port > 65535)
+    if (punch_port <= 0 || punch_port > 65535)
         return false;
     endpoint = network::NetEndpoint{.address = host,
-                                    .port = static_cast<std::uint16_t>(rendezvous_port)};
+                                    .port = static_cast<std::uint16_t>(punch_port)};
     return true;
 }
 
@@ -552,14 +551,14 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
     if (shell == nullptr || shell->state == nullptr || host == nullptr || *host == '\0')
         return result;
     ApplyLobbyConfigToSplonks(*shell, lobby, true);
-    network::NetEndpoint rendezvous_endpoint;
+    network::NetEndpoint punch_endpoint;
     const std::string realnet_room_code = !lobby.pending_join_room.room_code.empty()
         ? lobby.pending_join_room.room_code
         : lobby.room_code;
     const bool has_realnet_join = !realnet_room_code.empty() &&
                                   !lobby.pending_join_attempt_id.empty() &&
                                   !lobby.pending_punch_secret.empty() &&
-                                  RealnetRendezvousEndpoint(lobby, rendezvous_endpoint);
+                                  RealnetPunchEndpoint(lobby, punch_endpoint);
     bool use_realnet_first = false;
     const bool has_room_plan = !lobby.pending_join_room.contract.connection_candidates.empty();
     if (has_room_plan) {
@@ -588,7 +587,7 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
             if (candidate.candidate.kind == ConnectionCandidateKind::NatPunch &&
                 has_realnet_join) {
                 result.ok = network::JoinHostSessionViaRealnetPunch(*shell->state,
-                                                                    rendezvous_endpoint,
+                                                                    punch_endpoint,
                                                                     realnet_room_code,
                                                                     lobby.pending_join_attempt_id,
                                                                     lobby.pending_punch_secret,
@@ -597,7 +596,7 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
                 if (result.ok) {
                     use_realnet_first = true;
                     shell->direct_join_endpoint = "Realnet NAT punch " +
-                                                 network::EndpointToString(rendezvous_endpoint);
+                                                 network::EndpointToString(punch_endpoint);
                 }
                 break;
             }
@@ -681,11 +680,11 @@ void SyncLobbySessionPhase(Shell& shell) {
     State& state = *shell.state;
     if (lobby.is_host && !lobby.room_code.empty() && !lobby.host_secret.empty() &&
         shell.realnet_host_room_code != lobby.room_code) {
-        network::NetEndpoint rendezvous_endpoint;
-        if (RealnetRendezvousEndpoint(lobby, rendezvous_endpoint)) {
+        network::NetEndpoint punch_endpoint;
+        if (RealnetPunchEndpoint(lobby, punch_endpoint)) {
             std::string status;
             if (network::ConfigureHostRealnetPunch(state,
-                                                   rendezvous_endpoint,
+                                                   punch_endpoint,
                                                    lobby.room_code,
                                                    lobby.host_secret,
                                                    &status)) {
@@ -757,17 +756,17 @@ void SyncDirectJoinStatus(Shell& shell) {
         return;
 
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
-    network::NetEndpoint rendezvous_endpoint;
+    network::NetEndpoint punch_endpoint;
     if (!shell.realnet_fallback_started &&
         lobby.room_join_pending &&
         !lobby.pending_join_room.room_code.empty() &&
         !lobby.pending_join_attempt_id.empty() &&
         !lobby.pending_punch_secret.empty() &&
-        RealnetRendezvousEndpoint(lobby, rendezvous_endpoint)) {
+        RealnetPunchEndpoint(lobby, punch_endpoint)) {
         std::string status;
         network::DisconnectSession(*shell.state, &status);
         const bool started = network::JoinHostSessionViaRealnetPunch(*shell.state,
-                                                                     rendezvous_endpoint,
+                                                                     punch_endpoint,
                                                                      lobby.pending_join_room.room_code,
                                                                      lobby.pending_join_attempt_id,
                                                                      lobby.pending_punch_secret,
@@ -776,7 +775,7 @@ void SyncDirectJoinStatus(Shell& shell) {
         if (started) {
             shell.realnet_fallback_started = true;
             shell.direct_join_endpoint = "Realnet NAT punch " +
-                                         network::EndpointToString(rendezvous_endpoint);
+                                         network::EndpointToString(punch_endpoint);
             shell.direct_join_started_ms = SDL_GetTicks();
             std::cerr << status << '\n';
             return;

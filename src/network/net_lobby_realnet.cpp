@@ -4,15 +4,12 @@
 #include "state.hpp"
 
 #include <chrono>
+#include <gubsy/realnet/config.hpp>
 #include <gubsy/realnet/rendezvous.hpp>
 #include <string>
 
 namespace splonks::network {
 namespace {
-
-constexpr std::uint64_t kHelloIntervalMs = 250;
-constexpr std::uint64_t kProbeIntervalMs = 50;
-constexpr std::uint64_t kPunchWindowMs = 3000;
 
 std::uint64_t NowMilliseconds() {
     using Clock = std::chrono::steady_clock;
@@ -60,7 +57,9 @@ void SendHello(NetTransportRuntime& transport) {
     packet.join_attempt_id = punch.join_attempt_id;
     packet.role = punch.is_host ? "host" : "joiner";
     const std::string& key = punch.is_host ? punch.host_secret : punch.punch_secret;
-    (void)SendRealnetPacket(transport, punch.rendezvous_endpoint, packet, key);
+    (void)SendRealnetPacket(transport, punch.punch_endpoint, packet, key);
+    punch.hello_count += 1;
+    punch.status = punch.is_host ? "sent_host_hello" : "sent_joiner_hello";
 }
 
 void SendProbe(NetTransportRuntime& transport) {
@@ -73,6 +72,8 @@ void SendProbe(NetTransportRuntime& transport) {
     packet.join_attempt_id = punch.join_attempt_id;
     packet.role = punch.is_host ? "host" : "joiner";
     (void)SendRealnetPacket(transport, punch.peer_endpoint, packet, punch.punch_secret);
+    punch.probe_count += 1;
+    punch.status = "sent_punch_probe";
 }
 
 void SendAck(NetTransportRuntime& transport, const NetEndpoint& endpoint) {
@@ -83,6 +84,8 @@ void SendAck(NetTransportRuntime& transport, const NetEndpoint& endpoint) {
     packet.join_attempt_id = punch.join_attempt_id;
     packet.role = punch.is_host ? "host" : "joiner";
     (void)SendRealnetPacket(transport, endpoint, packet, punch.punch_secret);
+    punch.ack_count += 1;
+    punch.status = "sent_punch_ack";
 }
 
 bool PacketLooksLikeJson(const UdpPacket& packet) {
@@ -98,18 +101,28 @@ void MaintainRealnetPunch(State& state, NetTransportRuntime& transport) {
 
     const std::uint64_t now_ms = NowMilliseconds();
     if (punch.deadline_ms == 0)
-        punch.deadline_ms = now_ms + kPunchWindowMs;
+        punch.deadline_ms = now_ms + punch.timing.punch_window_ms;
     if (punch.next_hello_ms <= now_ms) {
         SendHello(transport);
-        punch.next_hello_ms = now_ms + kHelloIntervalMs;
+        punch.next_hello_ms = now_ms + punch.timing.hello_interval_ms;
     }
     if (punch.have_peer_endpoint && punch.next_probe_ms <= now_ms && now_ms <= punch.deadline_ms) {
         SendProbe(transport);
-        punch.next_probe_ms = now_ms + kProbeIntervalMs;
+        punch.next_probe_ms = now_ms + punch.timing.probe_interval_ms;
     }
     if (!punch.is_host && punch.have_peer_endpoint && transport.host_endpoint.port == 0) {
         transport.host_endpoint = punch.peer_endpoint;
         SendJoinRequest(state);
+        punch.sent_join_request = true;
+        punch.established = true;
+        punch.status = "join_request_sent";
+    }
+    if (!punch.timed_out && now_ms > punch.deadline_ms && !punch.established) {
+        punch.timed_out = true;
+        punch.status = "failed";
+        punch.failure_reason = punch.have_peer_endpoint
+                                   ? "punch_probe_timeout"
+                                   : "endpoint_hint_timeout";
     }
 }
 
@@ -136,10 +149,17 @@ bool TryHandleRealnetPunchPacket(State& state, NetTransportRuntime& transport,
             punch.punch_secret = decoded.punch_secret;
         punch.peer_endpoint = ToNetEndpoint(*decoded.peer_endpoint);
         punch.have_peer_endpoint = punch.peer_endpoint.port != 0;
-        punch.deadline_ms = NowMilliseconds() + kPunchWindowMs;
+        punch.deadline_ms = NowMilliseconds() + punch.timing.punch_window_ms;
+        punch.hint_count += 1;
+        punch.status = "endpoint_hint_received";
+        punch.failure_reason.clear();
+        punch.timed_out = false;
         if (!punch.is_host && punch.have_peer_endpoint) {
             transport.host_endpoint = punch.peer_endpoint;
             SendJoinRequest(state);
+            punch.sent_join_request = true;
+            punch.established = true;
+            punch.status = "join_request_sent";
         }
         return true;
     }
@@ -149,6 +169,10 @@ bool TryHandleRealnetPunchPacket(State& state, NetTransportRuntime& transport,
             punch.peer_endpoint = packet.endpoint;
             punch.have_peer_endpoint = true;
         }
+        punch.status = "punch_probe_received";
+        punch.established = true;
+        punch.failure_reason.clear();
+        punch.timed_out = false;
         SendAck(transport, packet.endpoint);
         return true;
     }
@@ -161,7 +185,13 @@ bool TryHandleRealnetPunchPacket(State& state, NetTransportRuntime& transport,
         if (!punch.is_host) {
             transport.host_endpoint = packet.endpoint;
             SendJoinRequest(state);
+            punch.sent_join_request = true;
+            punch.established = true;
         }
+        punch.status = "punch_ack_received";
+        punch.established = true;
+        punch.failure_reason.clear();
+        punch.timed_out = false;
         return true;
     }
 

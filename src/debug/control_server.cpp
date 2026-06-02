@@ -1079,11 +1079,36 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
     }
     out << "],\"transport\":";
     if (state.net_transport) {
+        const network::RealnetPunchRuntime& punch = state.net_transport->realnet_punch;
         out << "{\"socket_port\":" << state.net_transport->socket.BoundPort()
             << ",\"join_request_pending\":"
             << (state.net_transport->join_request_pending ? "true" : "false")
             << ",\"pump_tick\":" << state.net_transport->pump_tick
             << ",\"remotes\":" << state.net_transport->remotes.size()
+            << ",\"realnet_punch\":{"
+            << "\"active\":" << (punch.active ? "true" : "false")
+            << ",\"is_host\":" << (punch.is_host ? "true" : "false")
+            << ",\"established\":" << (punch.established ? "true" : "false")
+            << ",\"timed_out\":" << (punch.timed_out ? "true" : "false")
+            << ",\"sent_join_request\":" << (punch.sent_join_request ? "true" : "false")
+            << ",\"status\":" << JsonString(punch.status)
+            << ",\"failure_reason\":" << JsonString(punch.failure_reason)
+            << ",\"punch_endpoint\":"
+            << JsonString(punch.punch_endpoint.address + ":" +
+                          std::to_string(punch.punch_endpoint.port))
+            << ",\"peer_endpoint\":"
+            << JsonString(punch.peer_endpoint.address + ":" +
+                          std::to_string(punch.peer_endpoint.port))
+            << ",\"have_peer_endpoint\":"
+            << (punch.have_peer_endpoint ? "true" : "false")
+            << ",\"hello_count\":" << punch.hello_count
+            << ",\"hint_count\":" << punch.hint_count
+            << ",\"probe_count\":" << punch.probe_count
+            << ",\"ack_count\":" << punch.ack_count
+            << ",\"hello_interval_ms\":" << punch.timing.hello_interval_ms
+            << ",\"probe_interval_ms\":" << punch.timing.probe_interval_ms
+            << ",\"punch_window_ms\":" << punch.timing.punch_window_ms
+            << "}"
             << ",\"remote_endpoints\":[";
         for (std::size_t i = 0; i < state.net_transport->remotes.size(); ++i) {
             const network::NetRemoteEndpoint& remote = state.net_transport->remotes[i];

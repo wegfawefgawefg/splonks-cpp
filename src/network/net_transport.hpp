@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include <gubsy/realnet/config.hpp>
+
 namespace splonks::network {
 
 struct NetEndpoint {
@@ -76,7 +78,7 @@ struct RealnetPunchRuntime {
     bool active = false;
     bool is_host = false;
     bool force = false;
-    NetEndpoint rendezvous_endpoint;
+    NetEndpoint punch_endpoint;
     NetEndpoint peer_endpoint;
     bool have_peer_endpoint = false;
     std::string room_code;
@@ -87,6 +89,16 @@ struct RealnetPunchRuntime {
     std::uint64_t next_hello_ms = 0;
     std::uint64_t next_probe_ms = 0;
     std::uint64_t seq = 1;
+    realnet::PunchTimingConfig timing;
+    bool timed_out = false;
+    bool established = false;
+    bool sent_join_request = false;
+    std::string status{"idle"};
+    std::string failure_reason;
+    std::uint64_t hello_count = 0;
+    std::uint64_t probe_count = 0;
+    std::uint64_t ack_count = 0;
+    std::uint64_t hint_count = 0;
 };
 
 struct NetTransportRuntime {
