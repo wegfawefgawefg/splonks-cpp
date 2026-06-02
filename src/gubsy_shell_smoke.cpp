@@ -1445,6 +1445,15 @@ bool LockstepHealthyInGameplay(const State& state) {
            !state.net_session.join_barrier_active;
 }
 
+bool RealnetSmokeGameplayReady(const State& state) {
+    return state.net_session.input_lockstep_enabled &&
+           state.net_session.lockstep_next_frame_to_step > 60 &&
+           state.net_session.lockstep_hash_mismatch_count == 0 &&
+           state.net_session.lockstep_last_desync_recovery_mode !=
+               network::LockstepDesyncRecoveryMode::FatalDesync &&
+           !state.net_session.join_barrier_active;
+}
+
 bool CheckRealnetLanHost(const char* server_url, int max_frames) {
     if (server_url == nullptr || *server_url == '\0') {
         std::cerr << "Realnet LAN host smoke failed: missing room server URL\n";
@@ -1495,7 +1504,8 @@ bool CheckRealnetLanHost(const char* server_url, int max_frames) {
             std::cout << "REALNET_LAN_HOST_STARTED\n";
             std::cout.flush();
         }
-        if (!healthy && started && LockstepHealthyInGameplay(host_state)) {
+        if (!healthy && started && HostHasRemotePeer(host_state) &&
+            RealnetSmokeGameplayReady(host_state)) {
             healthy = true;
         }
         if (healthy && started_frame >= 0 &&
@@ -1647,7 +1657,7 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
                 moved_under_input = true;
         }
 
-        if (moved_under_input && LockstepHealthyInGameplay(guest_state)) {
+        if (moved_under_input && RealnetSmokeGameplayReady(guest_state)) {
             std::cout << "REALNET_LAN_CLIENT_OK frame="
                       << guest_state.net_session.lockstep_next_frame_to_step << '\n';
             (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
