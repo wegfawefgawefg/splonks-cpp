@@ -46,8 +46,18 @@ float RandomSignedRange(NetTransportRuntime& transport, float magnitude) {
 }
 
 bool SendRawPacket(NetTransportRuntime& transport, const UdpPacket& packet) {
+    UdpPacket packet_to_send = packet;
+    UdpPacket relay_wrapped;
+    if (WrapRealnetRelayPacket(transport, packet, relay_wrapped)) {
+        if (relay_wrapped.size == 0)
+            return true;
+        packet_to_send = relay_wrapped;
+    }
     std::string error;
-    if (!transport.socket.Send(packet.endpoint, packet.bytes.data(), packet.size, &error)) {
+    if (!transport.socket.Send(packet_to_send.endpoint,
+                               packet_to_send.bytes.data(),
+                               packet_to_send.size,
+                               &error)) {
         transport.last_error = error;
         return false;
     }

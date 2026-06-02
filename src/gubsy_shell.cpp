@@ -423,6 +423,13 @@ bool RealnetPunchForced() {
     return false;
 }
 
+bool RealnetRelayForced() {
+    if (const char* value = std::getenv("SPLONKS_REALNET_FORCE_RELAY")) {
+        return *value != '\0' && std::string(value) != "0";
+    }
+    return false;
+}
+
 std::uint64_t DirectJoinTimeoutMs() {
     if (const char* value = std::getenv("SPLONKS_REALNET_DIRECT_TIMEOUT_MS")) {
         if (*value != '\0') {
@@ -505,6 +512,7 @@ bool RealnetRelayEndpoint(const GubsyLobbyState& lobby, network::NetEndpoint& en
     if (!ParseHttpEndpoint(lobby.room_server_url, host, http_port))
         return false;
     int relay_port = static_cast<int>(http_port) + 2;
+    bool relay_available = false;
     RoomServerMatchmaking matchmaking;
     RoomServerCapabilities capabilities;
     std::string err;
@@ -513,6 +521,7 @@ bool RealnetRelayEndpoint(const GubsyLobbyState& lobby, network::NetEndpoint& en
         capabilities.relay_udp.port > 0 &&
         capabilities.relay_udp.port <= 65535 &&
         capabilities.relay_udp.protocol == "gubsy-relay-v1") {
+        relay_available = true;
         relay_port = capabilities.relay_udp.port;
         if (!capabilities.relay_udp.host.empty() &&
             capabilities.relay_udp.host != "0.0.0.0" &&
@@ -524,11 +533,14 @@ bool RealnetRelayEndpoint(const GubsyLobbyState& lobby, network::NetEndpoint& en
         if (*value != '\0') {
             try {
                 relay_port = std::stoi(value);
+                relay_available = true;
             } catch (...) {
                 return false;
             }
         }
     }
+    if (!relay_available)
+        return false;
     if (relay_port <= 0 || relay_port > 65535)
         return false;
     endpoint = network::NetEndpoint{.address = host,
@@ -578,6 +590,7 @@ realnet::ConnectionPlan BuildRealnetConnectionPlan(const GubsyLobbyState& lobby,
     input.relay_supported = relay_supported;
     input.steam_supported = false;
     input.force_nat_punch = RealnetPunchForced();
+    input.force_relay = RealnetRelayForced();
     input.local_network = realnet::detect_local_network_info();
     return realnet::build_connection_plan(input);
 }
@@ -648,9 +661,20 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
 
             if (candidate.candidate.kind == ConnectionCandidateKind::Relay &&
                 has_relay_join) {
-                std::cerr << "Skipping Realnet candidate relay: Splonks relay transport is not wired yet"
-                          << " via " << network::EndpointToString(relay_endpoint) << "\n";
-                continue;
+                result.ok = network::JoinHostSessionViaRealnetRelay(*shell->state,
+                                                                    relay_endpoint,
+                                                                    realnet_room_code,
+                                                                    lobby.pending_join_attempt_id,
+                                                                    lobby.pending_relay_allocation_id,
+                                                                    lobby.pending_relay_secret,
+                                                                    {},
+                                                                    &result.status);
+                if (result.ok) {
+                    use_realnet_first = true;
+                    shell->direct_join_endpoint = "Realnet relay " +
+                                                 network::EndpointToString(relay_endpoint);
+                }
+                break;
             }
 
             std::cerr << "Skipping Realnet candidate "
@@ -733,6 +757,7 @@ void SyncLobbySessionPhase(Shell& shell) {
     if (lobby.is_host && !lobby.room_code.empty() && !lobby.host_secret.empty() &&
         shell.realnet_host_room_code != lobby.room_code) {
         network::NetEndpoint punch_endpoint;
+        bool configured_realnet = false;
         if (RealnetPunchEndpoint(lobby, punch_endpoint)) {
             std::string status;
             if (network::ConfigureHostRealnetPunch(state,
@@ -740,10 +765,24 @@ void SyncLobbySessionPhase(Shell& shell) {
                                                    lobby.room_code,
                                                    lobby.host_secret,
                                                    &status)) {
-                shell.realnet_host_room_code = lobby.room_code;
+                configured_realnet = true;
                 std::cerr << status << '\n';
             }
         }
+        network::NetEndpoint relay_endpoint;
+        if (RealnetRelayEndpoint(lobby, relay_endpoint)) {
+            std::string status;
+            if (network::ConfigureHostRealnetRelay(state,
+                                                   relay_endpoint,
+                                                   lobby.room_code,
+                                                   lobby.host_secret,
+                                                   &status)) {
+                configured_realnet = true;
+                std::cerr << status << '\n';
+            }
+        }
+        if (configured_realnet)
+            shell.realnet_host_room_code = lobby.room_code;
     }
     if (!lobby.room_code.empty() && !lobby.is_host) {
         if (state.net_session.role != network::NetRole::Peer) {
@@ -828,6 +867,35 @@ void SyncDirectJoinStatus(Shell& shell) {
             shell.realnet_fallback_started = true;
             shell.direct_join_endpoint = "Realnet NAT punch " +
                                          network::EndpointToString(punch_endpoint);
+            shell.direct_join_started_ms = SDL_GetTicks();
+            std::cerr << status << '\n';
+            return;
+        }
+    }
+    network::NetEndpoint relay_endpoint;
+    if (!shell.realnet_fallback_started &&
+        lobby.room_join_pending &&
+        !lobby.pending_join_room.room_code.empty() &&
+        !lobby.pending_join_attempt_id.empty() &&
+        !lobby.pending_relay_allocation_id.empty() &&
+        !lobby.pending_relay_secret.empty() &&
+        RealnetRelayEndpoint(lobby, relay_endpoint)) {
+        std::string status;
+        network::DisconnectSession(*shell.state, &status);
+        const bool started = network::JoinHostSessionViaRealnetRelay(
+            *shell.state,
+            relay_endpoint,
+            lobby.pending_join_room.room_code,
+            lobby.pending_join_attempt_id,
+            lobby.pending_relay_allocation_id,
+            lobby.pending_relay_secret,
+            {},
+            &status
+        );
+        if (started) {
+            shell.realnet_fallback_started = true;
+            shell.direct_join_endpoint = "Realnet relay " +
+                                         network::EndpointToString(relay_endpoint);
             shell.direct_join_started_ms = SDL_GetTicks();
             std::cerr << status << '\n';
             return;

@@ -2896,6 +2896,7 @@ void MaintainInputLockstepTransport(State& state, Graphics& graphics) {
     NetTransportRuntime& transport = *state.net_transport;
     transport.fuzzer_config = state.net_session.fuzzer_config;
     MaintainRealnetPunch(state, transport);
+    MaintainRealnetRelay(state, transport);
     PumpInputLockstepPackets(state, graphics, transport);
     SendPendingRunRestart(state, transport);
     if (ApplyDueRunRestart(state)) {

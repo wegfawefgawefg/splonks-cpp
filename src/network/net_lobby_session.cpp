@@ -72,6 +72,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::uint32_t input_dela
     transport.join_request_waiting_for_host = false;
     transport.join_pending_reason = JoinPendingReason::None;
     transport.realnet_punch = RealnetPunchRuntime{};
+    transport.realnet_relay = RealnetRelayRuntime{};
     if (status_out != nullptr) {
         *status_out = "Hosting UDP on port " + std::to_string(transport.socket.BoundPort()) + ".";
         const std::vector<std::string> lan_addresses = GetLocalLanIpv4Addresses();
@@ -112,6 +113,7 @@ bool JoinHostSession(State& state, const std::string& host, std::uint16_t port,
     transport.join_pending_reason = JoinPendingReason::None;
     transport.join_request_retry_frames = 0;
     transport.realnet_punch = RealnetPunchRuntime{};
+    transport.realnet_relay = RealnetRelayRuntime{};
     ResetInputLockstepState(state);
     SendJoinRequest(state);
     if (status_out != nullptr) {
@@ -156,6 +158,7 @@ bool JoinHostSessionViaRealnetPunch(
     transport.join_pending_reason = JoinPendingReason::None;
     transport.join_request_retry_frames = 0;
     transport.realnet_punch = RealnetPunchRuntime{};
+    transport.realnet_relay = RealnetRelayRuntime{};
     transport.realnet_punch.timing = realnet::default_config().punch;
     transport.realnet_punch.active = true;
     transport.realnet_punch.is_host = false;
@@ -168,6 +171,54 @@ bool JoinHostSessionViaRealnetPunch(
     ResetInputLockstepState(state);
     if (status_out != nullptr)
         *status_out = "Joining with Realnet NAT punch via " + EndpointToString(punch_endpoint) + ".";
+    return true;
+}
+
+bool JoinHostSessionViaRealnetRelay(
+    State& state,
+    const NetEndpoint& relay_endpoint,
+    const std::string& room_code,
+    const std::string& join_attempt_id,
+    const std::string& relay_allocation_id,
+    const std::string& relay_secret,
+    const std::vector<PlayerId>& preferred_player_ids,
+    std::string* status_out
+) {
+    NetTransportRuntime& transport = EnsureTransport(state);
+    std::string error;
+    if (!transport.socket.Open(0, &error)) {
+        if (status_out != nullptr)
+            *status_out = "Join failed: " + error;
+        return false;
+    }
+
+    state.net_session = NetSessionState::NewOffline();
+    state.net_session.role = NetRole::Peer;
+    state.net_session.input_lockstep_enabled = true;
+    state.net_session.local_player_id = kPrimaryLocalPlayerId;
+    state.net_session.host_player_id = kPrimaryLocalPlayerId;
+    transport.preferred_player_ids = preferred_player_ids;
+    transport.host_endpoint = relay_endpoint;
+    transport.remotes.clear();
+    transport.pending_join_endpoints.clear();
+    transport.join_request_pending = true;
+    transport.join_request_waiting_for_host = false;
+    transport.join_pending_reason = JoinPendingReason::None;
+    transport.join_request_retry_frames = 0;
+    transport.realnet_punch = RealnetPunchRuntime{};
+    transport.realnet_relay = RealnetRelayRuntime{};
+    transport.realnet_relay.timing = realnet::default_config().relay.timing;
+    transport.realnet_relay.active = true;
+    transport.realnet_relay.is_host = false;
+    transport.realnet_relay.relay_endpoint = relay_endpoint;
+    transport.realnet_relay.room_code = room_code;
+    transport.realnet_relay.join_attempt_id = join_attempt_id;
+    transport.realnet_relay.relay_allocation_id = relay_allocation_id;
+    transport.realnet_relay.relay_secret = relay_secret;
+    transport.realnet_relay.status = "starting_joiner_relay";
+    ResetInputLockstepState(state);
+    if (status_out != nullptr)
+        *status_out = "Joining with Realnet relay via " + EndpointToString(relay_endpoint) + ".";
     return true;
 }
 
@@ -196,6 +247,31 @@ bool ConfigureHostRealnetPunch(
     return true;
 }
 
+bool ConfigureHostRealnetRelay(
+    State& state,
+    const NetEndpoint& relay_endpoint,
+    const std::string& room_code,
+    const std::string& host_secret,
+    std::string* status_out
+) {
+    if (!state.net_transport || !state.net_transport->socket.IsOpen()) {
+        if (status_out != nullptr)
+            *status_out = "Realnet relay host failed: transport is closed.";
+        return false;
+    }
+    state.net_transport->realnet_relay = RealnetRelayRuntime{};
+    state.net_transport->realnet_relay.timing = realnet::default_config().relay.timing;
+    state.net_transport->realnet_relay.active = true;
+    state.net_transport->realnet_relay.is_host = true;
+    state.net_transport->realnet_relay.relay_endpoint = relay_endpoint;
+    state.net_transport->realnet_relay.room_code = room_code;
+    state.net_transport->realnet_relay.host_secret = host_secret;
+    state.net_transport->realnet_relay.status = "starting_host_relay";
+    if (status_out != nullptr)
+        *status_out = "Realnet relay host enabled via " + EndpointToString(relay_endpoint) + ".";
+    return true;
+}
+
 void DisconnectSession(State& state, std::string* status_out) {
     if (state.net_transport) {
         SendLeaveNotice(state);
@@ -206,6 +282,7 @@ void DisconnectSession(State& state, std::string* status_out) {
         state.net_transport->join_request_waiting_for_host = false;
         state.net_transport->join_pending_reason = JoinPendingReason::None;
         state.net_transport->realnet_punch = RealnetPunchRuntime{};
+        state.net_transport->realnet_relay = RealnetRelayRuntime{};
     }
     state.net_session = NetSessionState::NewOffline();
     if (status_out != nullptr) {

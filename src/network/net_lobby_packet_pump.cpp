@@ -169,35 +169,43 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
-        MarkRemoteEndpointHeard(transport, packet->endpoint);
+        UdpPacket decoded_packet = *packet;
+        UdpPacket relay_unwrapped;
+        if (TryHandleRealnetRelayPacket(state, transport, *packet, relay_unwrapped)) {
+            if (relay_unwrapped.size == 0)
+                continue;
+            decoded_packet = relay_unwrapped;
+        }
+
+        MarkRemoteEndpointHeard(transport, decoded_packet.endpoint);
 
         if (const std::optional<JoinRequestPacket> request =
-                TryDecodeJoinRequest(packet->bytes.data(), packet->size)) {
-            HandleJoinRequestAsHost(state, graphics, transport, *packet, *request);
+                TryDecodeJoinRequest(decoded_packet.bytes.data(), decoded_packet.size)) {
+            HandleJoinRequestAsHost(state, graphics, transport, decoded_packet, *request);
             continue;
         }
 
         if (const std::optional<LeaveNoticePacket> leave =
-                TryDecodeLeaveNotice(packet->bytes.data(), packet->size)) {
+                TryDecodeLeaveNotice(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleLeaveNoticeAsHost(state, transport, *leave);
             continue;
         }
 
         if (const std::optional<PingPacket> ping =
-                TryDecodePing(packet->bytes.data(), packet->size)) {
-            ReplyToPing(state, transport, packet->endpoint, *ping);
+                TryDecodePing(decoded_packet.bytes.data(), decoded_packet.size)) {
+            ReplyToPing(state, transport, decoded_packet.endpoint, *ping);
             continue;
         }
 
         if (const std::optional<PongPacket> pong =
-                TryDecodePong(packet->bytes.data(), packet->size)) {
-            HandlePong(state, packet->endpoint, *pong);
+                TryDecodePong(decoded_packet.bytes.data(), decoded_packet.size)) {
+            HandlePong(state, decoded_packet.endpoint, *pong);
             continue;
         }
 
         if (const std::optional<InputFrameRecordsPacket> input_frames =
-                TryDecodeInputFrameRecords(packet->bytes.data(), packet->size)) {
-            if (!InputFrameRecordsBelongToEndpoint(transport, packet->endpoint, *input_frames)) {
+                TryDecodeInputFrameRecords(decoded_packet.bytes.data(), decoded_packet.size)) {
+            if (!InputFrameRecordsBelongToEndpoint(transport, decoded_packet.endpoint, *input_frames)) {
                 continue;
             }
             HandleInputFrameRecords(state, *input_frames);
@@ -205,56 +213,56 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
         }
 
         if (const std::optional<LockstepSettingsPacket> settings =
-                TryDecodeLockstepSettings(packet->bytes.data(), packet->size)) {
+                TryDecodeLockstepSettings(decoded_packet.bytes.data(), decoded_packet.size)) {
             // Settings are host-owned. Ignore peer-originated settings packets.
             continue;
         }
 
         if (const std::optional<LockstepHashNetPacket> hash =
-                TryDecodeLockstepHash(packet->bytes.data(), packet->size)) {
+                TryDecodeLockstepHash(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleLockstepHashPacket(state, *hash);
-            RelayLockstepHashToOtherRemotes(transport, packet->endpoint, *hash);
+            RelayLockstepHashToOtherRemotes(transport, decoded_packet.endpoint, *hash);
             continue;
         }
 
         if (const std::optional<SnapshotResyncRequestPacket> request =
-                TryDecodeSnapshotResyncRequest(packet->bytes.data(), packet->size)) {
-            HandleSnapshotResyncRequest(state, graphics, transport, packet->endpoint, *request);
+                TryDecodeSnapshotResyncRequest(decoded_packet.bytes.data(), decoded_packet.size)) {
+            HandleSnapshotResyncRequest(state, graphics, transport, decoded_packet.endpoint, *request);
             continue;
         }
 
         if (const std::optional<SnapshotResyncAckPacket> ack =
-                TryDecodeSnapshotResyncAck(packet->bytes.data(), packet->size)) {
+                TryDecodeSnapshotResyncAck(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleSnapshotResyncAck(state, *ack);
             continue;
         }
 
         if (const std::optional<JoinBarrierTopologyAckPacket> ack =
-                TryDecodeJoinBarrierTopologyAck(packet->bytes.data(), packet->size)) {
+                TryDecodeJoinBarrierTopologyAck(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleJoinBarrierTopologyAck(state, *ack);
             continue;
         }
 
         if (const std::optional<JoinBarrierStatusPacket> status =
-                TryDecodeJoinBarrierStatus(packet->bytes.data(), packet->size)) {
+                TryDecodeJoinBarrierStatus(decoded_packet.bytes.data(), decoded_packet.size)) {
             // Host owns join barriers. Ignore peer-originated status packets.
             continue;
         }
 
         if (const std::optional<JoinBarrierResumePacket> resume =
-                TryDecodeJoinBarrierResume(packet->bytes.data(), packet->size)) {
+                TryDecodeJoinBarrierResume(decoded_packet.bytes.data(), decoded_packet.size)) {
             // Host owns join barriers. Ignore peer-originated resume packets.
             continue;
         }
 
         if (const std::optional<JoinBarrierTopologyPacket> topology =
-                TryDecodeJoinBarrierTopology(packet->bytes.data(), packet->size)) {
+                TryDecodeJoinBarrierTopology(decoded_packet.bytes.data(), decoded_packet.size)) {
             // Host owns topology deltas. Ignore peer-originated topology packets.
             continue;
         }
 
         if (const std::optional<RunRestartPacket> restart =
-                TryDecodeRunRestart(packet->bytes.data(), packet->size)) {
+                TryDecodeRunRestart(decoded_packet.bytes.data(), decoded_packet.size)) {
             // Host owns run restart. Ignore peer-originated restart packets.
             continue;
         }
@@ -291,80 +299,88 @@ void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& tran
             continue;
         }
 
+        UdpPacket decoded_packet = *packet;
+        UdpPacket relay_unwrapped;
+        if (TryHandleRealnetRelayPacket(state, transport, *packet, relay_unwrapped)) {
+            if (relay_unwrapped.size == 0)
+                continue;
+            decoded_packet = relay_unwrapped;
+        }
+
         if (const std::optional<LeaveNoticePacket> leave =
-                TryDecodeLeaveNotice(packet->bytes.data(), packet->size)) {
+                TryDecodeLeaveNotice(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleLeaveNoticeAsHost(state, transport, *leave);
             continue;
         }
 
         if (const std::optional<PingPacket> ping =
-                TryDecodePing(packet->bytes.data(), packet->size)) {
-            ReplyToPing(state, transport, packet->endpoint, *ping);
+                TryDecodePing(decoded_packet.bytes.data(), decoded_packet.size)) {
+            ReplyToPing(state, transport, decoded_packet.endpoint, *ping);
             continue;
         }
 
         if (const std::optional<PongPacket> pong =
-                TryDecodePong(packet->bytes.data(), packet->size)) {
-            HandlePong(state, packet->endpoint, *pong);
+                TryDecodePong(decoded_packet.bytes.data(), decoded_packet.size)) {
+            HandlePong(state, decoded_packet.endpoint, *pong);
             continue;
         }
 
         if (const std::optional<JoinAcceptPacket> accept =
-                TryDecodeJoinAccept(packet->bytes.data(), packet->size)) {
+                TryDecodeJoinAccept(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleJoinAcceptAsPeer(state, graphics, transport, *accept);
             continue;
         }
 
         if (const std::optional<JoinPendingPacket> pending =
-                TryDecodeJoinPending(packet->bytes.data(), packet->size)) {
+                TryDecodeJoinPending(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleJoinPendingAsPeer(state, transport, *pending);
             continue;
         }
 
         if (const std::optional<InputFrameRecordsPacket> input_frames =
-                TryDecodeInputFrameRecords(packet->bytes.data(), packet->size)) {
+                TryDecodeInputFrameRecords(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleInputFrameRecords(state, *input_frames);
             continue;
         }
 
         if (const std::optional<LockstepSettingsPacket> settings =
-                TryDecodeLockstepSettings(packet->bytes.data(), packet->size)) {
+                TryDecodeLockstepSettings(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleLockstepSettingsPacket(state, *settings);
             continue;
         }
 
         if (const std::optional<LockstepHashNetPacket> hash =
-                TryDecodeLockstepHash(packet->bytes.data(), packet->size)) {
+                TryDecodeLockstepHash(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleLockstepHashPacket(state, *hash);
             continue;
         }
 
         if (const std::optional<JoinBarrierStatusPacket> status =
-                TryDecodeJoinBarrierStatus(packet->bytes.data(), packet->size)) {
+                TryDecodeJoinBarrierStatus(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleJoinBarrierStatus(state, *status);
             continue;
         }
 
         if (const std::optional<JoinBarrierTopologyPacket> topology =
-                TryDecodeJoinBarrierTopology(packet->bytes.data(), packet->size)) {
+                TryDecodeJoinBarrierTopology(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleJoinBarrierTopology(state, graphics, transport, *topology);
             continue;
         }
 
         if (const std::optional<JoinBarrierResumePacket> resume =
-                TryDecodeJoinBarrierResume(packet->bytes.data(), packet->size)) {
+                TryDecodeJoinBarrierResume(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleJoinBarrierResume(state, *resume);
             continue;
         }
 
         if (const std::optional<SnapshotResyncChunkPacket> chunk =
-                TryDecodeSnapshotResyncChunk(packet->bytes.data(), packet->size)) {
+                TryDecodeSnapshotResyncChunk(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleSnapshotResyncChunk(state, graphics, transport, *chunk);
             continue;
         }
 
         if (const std::optional<RunRestartPacket> restart =
-                TryDecodeRunRestart(packet->bytes.data(), packet->size)) {
+                TryDecodeRunRestart(decoded_packet.bytes.data(), decoded_packet.size)) {
             HandleRunRestartPacket(state, *restart);
             continue;
         }

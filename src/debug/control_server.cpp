@@ -1080,6 +1080,7 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
     out << "],\"transport\":";
     if (state.net_transport) {
         const network::RealnetPunchRuntime& punch = state.net_transport->realnet_punch;
+        const network::RealnetRelayRuntime& relay = state.net_transport->realnet_relay;
         out << "{\"socket_port\":" << state.net_transport->socket.BoundPort()
             << ",\"join_request_pending\":"
             << (state.net_transport->join_request_pending ? "true" : "false")
@@ -1109,6 +1110,26 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
             << ",\"hello_interval_ms\":" << punch.timing.hello_interval_ms
             << ",\"probe_interval_ms\":" << punch.timing.probe_interval_ms
             << ",\"punch_window_ms\":" << punch.timing.punch_window_ms
+            << "}"
+            << ",\"realnet_relay\":{"
+            << "\"active\":" << (relay.active ? "true" : "false")
+            << ",\"is_host\":" << (relay.is_host ? "true" : "false")
+            << ",\"ready\":" << (relay.ready ? "true" : "false")
+            << ",\"status\":" << JsonString(relay.status)
+            << ",\"failure_reason\":" << JsonString(relay.failure_reason)
+            << ",\"relay_endpoint\":"
+            << JsonString(relay.relay_endpoint.address + ":" +
+                          std::to_string(relay.relay_endpoint.port))
+            << ",\"room_code\":" << JsonString(relay.room_code)
+            << ",\"join_attempt_id\":" << JsonString(relay.join_attempt_id)
+            << ",\"allocation_id\":" << JsonString(relay.relay_allocation_id)
+            << ",\"hello_count\":" << relay.hello_count
+            << ",\"ready_count\":" << relay.ready_count
+            << ",\"keepalive_count\":" << relay.keepalive_count
+            << ",\"data_sent_count\":" << relay.data_sent_count
+            << ",\"data_received_count\":" << relay.data_received_count
+            << ",\"hello_interval_ms\":" << relay.timing.hello_interval_ms
+            << ",\"keepalive_interval_ms\":" << relay.timing.keepalive_interval_ms
             << "}"
             << ",\"remote_endpoints\":[";
         for (std::size_t i = 0; i < state.net_transport->remotes.size(); ++i) {

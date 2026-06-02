@@ -46,10 +46,22 @@ void SendEncodedPacket(
 );
 void FlushFuzzedOutgoingPackets(NetTransportRuntime& transport);
 void MaintainRealnetPunch(State& state, NetTransportRuntime& transport);
+void MaintainRealnetRelay(State& state, NetTransportRuntime& transport);
+bool WrapRealnetRelayPacket(
+    NetTransportRuntime& transport,
+    const UdpPacket& packet,
+    UdpPacket& out
+);
 bool TryHandleRealnetPunchPacket(
     State& state,
     NetTransportRuntime& transport,
     const UdpPacket& packet
+);
+bool TryHandleRealnetRelayPacket(
+    State& state,
+    NetTransportRuntime& transport,
+    const UdpPacket& packet,
+    UdpPacket& unwrapped
 );
 
 void SendJoinRequest(State& state);

@@ -4,9 +4,12 @@
 #include "state.hpp"
 
 #include <chrono>
+#include <algorithm>
 #include <gubsy/realnet/config.hpp>
 #include <gubsy/realnet/rendezvous.hpp>
+#include <gubsy/realnet/relay.hpp>
 #include <string>
+#include <vector>
 
 namespace splonks::network {
 namespace {
@@ -40,12 +43,34 @@ bool SendRealnetPacket(NetTransportRuntime& transport, const NetEndpoint& endpoi
     return true;
 }
 
+bool SendRelayPacket(NetTransportRuntime& transport, realnet::RelayPacket packet,
+                     const std::string& key) {
+    RealnetRelayRuntime& relay = transport.realnet_relay;
+    packet.ts_ms = realnet::unix_time_ms();
+    packet.seq = relay.seq++;
+    realnet::sign_relay_packet(packet, key);
+    const std::string encoded = realnet::encode_relay_packet(packet);
+    std::string error;
+    if (!transport.socket.Send(relay.relay_endpoint,
+                               reinterpret_cast<const std::uint8_t*>(encoded.data()),
+                               encoded.size(),
+                               &error)) {
+        transport.last_error = error;
+        return false;
+    }
+    return true;
+}
+
 const std::string& PacketKey(const RealnetPunchRuntime& punch, const realnet::Packet& packet) {
     if (packet.kind == realnet::PacketKind::EndpointHint && packet.role == "host")
         return punch.host_secret;
     if (punch.is_host)
         return punch.host_secret;
     return punch.punch_secret;
+}
+
+const std::string& RelayPacketKey(const RealnetRelayRuntime& relay) {
+    return relay.is_host ? relay.host_secret : relay.relay_secret;
 }
 
 void SendHello(NetTransportRuntime& transport) {
@@ -60,6 +85,36 @@ void SendHello(NetTransportRuntime& transport) {
     (void)SendRealnetPacket(transport, punch.punch_endpoint, packet, key);
     punch.hello_count += 1;
     punch.status = punch.is_host ? "sent_host_hello" : "sent_joiner_hello";
+}
+
+void SendRelayHello(NetTransportRuntime& transport) {
+    RealnetRelayRuntime& relay = transport.realnet_relay;
+    realnet::RelayPacket packet;
+    packet.kind = realnet::RelayPacketKind::Hello;
+    packet.role = relay.is_host ? realnet::RelayRole::Host : realnet::RelayRole::Joiner;
+    packet.room_code = relay.room_code;
+    packet.join_attempt_id = relay.join_attempt_id;
+    packet.allocation_id = relay.relay_allocation_id;
+    const std::string& key = RelayPacketKey(relay);
+    (void)SendRelayPacket(transport, packet, key);
+    relay.hello_count += 1;
+    relay.status = relay.is_host ? "sent_host_relay_hello" : "sent_joiner_relay_hello";
+}
+
+void SendRelayKeepalive(NetTransportRuntime& transport) {
+    RealnetRelayRuntime& relay = transport.realnet_relay;
+    if (!relay.ready)
+        return;
+    realnet::RelayPacket packet;
+    packet.kind = realnet::RelayPacketKind::Keepalive;
+    packet.role = relay.is_host ? realnet::RelayRole::Host : realnet::RelayRole::Joiner;
+    packet.room_code = relay.room_code;
+    packet.join_attempt_id = relay.join_attempt_id;
+    packet.allocation_id = relay.relay_allocation_id;
+    const std::string& key = RelayPacketKey(relay);
+    (void)SendRelayPacket(transport, packet, key);
+    relay.keepalive_count += 1;
+    relay.status = "sent_relay_keepalive";
 }
 
 void SendProbe(NetTransportRuntime& transport) {
@@ -103,6 +158,14 @@ bool PacketLooksLikeJson(const UdpPacket& packet) {
     return packet.size > 0 && packet.bytes[0] == static_cast<std::uint8_t>('{');
 }
 
+bool PacketLooksLikeRelay(const UdpPacket& packet) {
+    return packet.size >= 4 &&
+           packet.bytes[0] == static_cast<std::uint8_t>('G') &&
+           packet.bytes[1] == static_cast<std::uint8_t>('R') &&
+           packet.bytes[2] == static_cast<std::uint8_t>('L') &&
+           packet.bytes[3] == static_cast<std::uint8_t>('Y');
+}
+
 } // namespace
 
 void MaintainRealnetPunch(State& state, NetTransportRuntime& transport) {
@@ -129,6 +192,64 @@ void MaintainRealnetPunch(State& state, NetTransportRuntime& transport) {
                                    ? "punch_probe_timeout"
                                    : "endpoint_hint_timeout";
     }
+}
+
+void MaintainRealnetRelay(State& state, NetTransportRuntime& transport) {
+    RealnetRelayRuntime& relay = transport.realnet_relay;
+    if (!relay.active)
+        return;
+
+    const std::uint64_t now_ms = NowMilliseconds();
+    if (relay.next_hello_ms <= now_ms && !relay.ready) {
+        SendRelayHello(transport);
+        relay.next_hello_ms = now_ms + relay.timing.hello_interval_ms;
+    }
+    if (relay.next_keepalive_ms <= now_ms && relay.ready) {
+        SendRelayKeepalive(transport);
+        relay.next_keepalive_ms = now_ms + relay.timing.keepalive_interval_ms;
+    }
+    if (!relay.is_host && relay.ready && transport.join_request_pending &&
+        transport.join_request_retry_frames == 0) {
+        transport.host_endpoint = relay.relay_endpoint;
+        SendJoinRequest(state);
+        relay.status = "relay_join_request_sent";
+    }
+}
+
+bool WrapRealnetRelayPacket(NetTransportRuntime& transport,
+                            const UdpPacket& packet,
+                            UdpPacket& out) {
+    RealnetRelayRuntime& relay = transport.realnet_relay;
+    if (!relay.active || !EndpointsEqual(packet.endpoint, relay.relay_endpoint))
+        return false;
+    if (!relay.ready) {
+        relay.status = "relay_waiting_ready";
+        out = UdpPacket{};
+        return true;
+    }
+
+    realnet::RelayPacket relay_packet;
+    relay_packet.kind = realnet::RelayPacketKind::Data;
+    relay_packet.role = relay.is_host ? realnet::RelayRole::Host : realnet::RelayRole::Joiner;
+    relay_packet.room_code = relay.room_code;
+    relay_packet.join_attempt_id = relay.join_attempt_id;
+    relay_packet.allocation_id = relay.relay_allocation_id;
+    relay_packet.payload.assign(packet.bytes.begin(),
+                                packet.bytes.begin() + static_cast<std::ptrdiff_t>(packet.size));
+    const std::string& key = RelayPacketKey(relay);
+    realnet::sign_relay_packet(relay_packet, key);
+    const std::string encoded = realnet::encode_relay_packet(relay_packet);
+    if (encoded.empty() || encoded.size() > out.bytes.size()) {
+        relay.failure_reason = "relay_packet_too_large";
+        out = UdpPacket{};
+        return true;
+    }
+
+    out.endpoint = relay.relay_endpoint;
+    out.size = encoded.size();
+    std::copy(encoded.begin(), encoded.end(), out.bytes.begin());
+    relay.data_sent_count += 1;
+    return true;
 }
 
 bool TryHandleRealnetPunchPacket(State& state, NetTransportRuntime& transport,
@@ -196,6 +317,65 @@ bool TryHandleRealnetPunchPacket(State& state, NetTransportRuntime& transport,
         return true;
     }
 
+    return true;
+}
+
+bool TryHandleRealnetRelayPacket(State& state,
+                                 NetTransportRuntime& transport,
+                                 const UdpPacket& packet,
+                                 UdpPacket& unwrapped) {
+    RealnetRelayRuntime& relay = transport.realnet_relay;
+    if (!relay.active || !EndpointsEqual(packet.endpoint, relay.relay_endpoint) ||
+        !PacketLooksLikeRelay(packet)) {
+        return false;
+    }
+
+    realnet::RelayPacket decoded;
+    std::string err;
+    const std::string bytes(reinterpret_cast<const char*>(packet.bytes.data()), packet.size);
+    if (!realnet::decode_relay_packet(bytes, decoded, err)) {
+        relay.failure_reason = err;
+        return true;
+    }
+    if (decoded.room_code != relay.room_code)
+        return true;
+
+    const std::string& key = RelayPacketKey(relay);
+    if (key.empty() || !realnet::verify_relay_packet(decoded, key)) {
+        relay.failure_reason = "relay_mac";
+        return true;
+    }
+
+    if (decoded.kind == realnet::RelayPacketKind::Ready) {
+        if (!decoded.allocation_id.empty())
+            relay.relay_allocation_id = decoded.allocation_id;
+        relay.ready = true;
+        relay.ready_count += 1;
+        relay.status = "relay_ready";
+        relay.failure_reason.clear();
+        if (!relay.is_host) {
+            transport.host_endpoint = relay.relay_endpoint;
+            SendJoinRequest(state);
+        }
+        unwrapped = UdpPacket{};
+        return true;
+    }
+
+    if (decoded.kind == realnet::RelayPacketKind::Data) {
+        if (decoded.payload.size() > kNetPacketMaxBytes) {
+            relay.failure_reason = "relay_payload_too_large";
+            return true;
+        }
+        unwrapped.endpoint = relay.relay_endpoint;
+        unwrapped.size = decoded.payload.size();
+        std::copy(decoded.payload.begin(), decoded.payload.end(), unwrapped.bytes.begin());
+        relay.data_received_count += 1;
+        relay.status = "relay_data_received";
+        relay.failure_reason.clear();
+        return true;
+    }
+
+    unwrapped = UdpPacket{};
     return true;
 }
 

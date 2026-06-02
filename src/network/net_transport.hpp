@@ -23,7 +23,7 @@ struct NetEndpoint {
 
 struct UdpPacket {
     NetEndpoint endpoint;
-    std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
+    std::array<std::uint8_t, kNetTransportDatagramMaxBytes> bytes{};
     std::size_t size = 0;
 };
 
@@ -102,6 +102,29 @@ struct RealnetPunchRuntime {
     std::uint64_t join_request_count = 0;
 };
 
+struct RealnetRelayRuntime {
+    bool active = false;
+    bool is_host = false;
+    bool ready = false;
+    NetEndpoint relay_endpoint;
+    std::string room_code;
+    std::string host_secret;
+    std::string join_attempt_id;
+    std::string relay_allocation_id;
+    std::string relay_secret;
+    std::uint64_t next_hello_ms = 0;
+    std::uint64_t next_keepalive_ms = 0;
+    std::uint64_t seq = 1;
+    realnet::RelayTimingConfig timing;
+    std::string status{"idle"};
+    std::string failure_reason;
+    std::uint64_t hello_count = 0;
+    std::uint64_t ready_count = 0;
+    std::uint64_t keepalive_count = 0;
+    std::uint64_t data_sent_count = 0;
+    std::uint64_t data_received_count = 0;
+};
+
 struct NetTransportRuntime {
     UdpSocket socket;
     std::vector<NetRemoteEndpoint> remotes;
@@ -124,6 +147,7 @@ struct NetTransportRuntime {
     std::uint64_t pump_tick = 0;
     std::string last_error;
     RealnetPunchRuntime realnet_punch;
+    RealnetRelayRuntime realnet_relay;
     bool capture_outgoing_packets = false;
     std::vector<UdpPacket> captured_packets;
 

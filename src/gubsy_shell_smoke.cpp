@@ -1460,6 +1460,7 @@ void AppendRealnetPunchDiagnostics(std::ostream& out, const State& state) {
         return;
     }
     const network::RealnetPunchRuntime& punch = state.net_transport->realnet_punch;
+    const network::RealnetRelayRuntime& relay = state.net_transport->realnet_relay;
     out << " realnet_active=" << (punch.active ? "true" : "false")
         << " realnet_established=" << (punch.established ? "true" : "false")
         << " realnet_timed_out=" << (punch.timed_out ? "true" : "false")
@@ -1471,7 +1472,22 @@ void AppendRealnetPunchDiagnostics(std::ostream& out, const State& state) {
         << " realnet_hints=" << punch.hint_count
         << " realnet_probes=" << punch.probe_count
         << " realnet_acks=" << punch.ack_count
-        << " realnet_join_requests=" << punch.join_request_count;
+        << " realnet_join_requests=" << punch.join_request_count
+        << " relay_active=" << (relay.active ? "true" : "false")
+        << " relay_is_host=" << (relay.is_host ? "true" : "false")
+        << " relay_ready=" << (relay.ready ? "true" : "false")
+        << " relay_status=\"" << relay.status << "\""
+        << " relay_failure=\"" << relay.failure_reason << "\""
+        << " relay_endpoint=" << relay.relay_endpoint.address << ":"
+        << relay.relay_endpoint.port
+        << " relay_room=" << relay.room_code
+        << " relay_join_attempt=" << relay.join_attempt_id
+        << " relay_allocation=" << relay.relay_allocation_id
+        << " relay_hellos=" << relay.hello_count
+        << " relay_ready_count=" << relay.ready_count
+        << " relay_keepalives=" << relay.keepalive_count
+        << " relay_data_sent=" << relay.data_sent_count
+        << " relay_data_received=" << relay.data_received_count;
 }
 
 bool CheckRealnetLanHost(const char* server_url, int max_frames) {

@@ -49,6 +49,23 @@ bool ConfigureHostRealnetPunch(
     const std::string& host_secret,
     std::string* status_out
 );
+bool JoinHostSessionViaRealnetRelay(
+    State& state,
+    const NetEndpoint& relay_endpoint,
+    const std::string& room_code,
+    const std::string& join_attempt_id,
+    const std::string& relay_allocation_id,
+    const std::string& relay_secret,
+    const std::vector<PlayerId>& preferred_player_ids,
+    std::string* status_out
+);
+bool ConfigureHostRealnetRelay(
+    State& state,
+    const NetEndpoint& relay_endpoint,
+    const std::string& room_code,
+    const std::string& host_secret,
+    std::string* status_out
+);
 void DisconnectSession(State& state, std::string* status_out);
 bool KickRemoteEndpoint(State& state, const std::string& address, std::uint16_t port,
                         std::string* status_out);
