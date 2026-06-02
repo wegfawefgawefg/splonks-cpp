@@ -16,6 +16,8 @@ namespace splonks::network {
 namespace {
 
 constexpr PlayerId kFirstRemotePlayerId = 2;
+constexpr std::uint64_t kNetworkPumpTicksPerSecond = 60;
+constexpr std::uint64_t kMinimumRelayRemoteTimeoutPumpTicks = 60 * kNetworkPumpTicksPerSecond;
 
 NetTransportRuntime& EnsureTransport(State& state) {
     if (!state.net_transport) {
@@ -32,6 +34,16 @@ PlayerId NextAvailablePlayerIdAfterExisting(const PlayerRegistry& players) {
         }
     }
     return next;
+}
+
+std::uint64_t RelayRemoteTimeoutPumpTicks(realnet::RelayTimingConfig timing) {
+    const std::uint64_t idle_timeout_ms =
+        timing.idle_timeout_ms > 0
+            ? timing.idle_timeout_ms
+            : realnet::default_config().relay.timing.idle_timeout_ms;
+    const std::uint64_t idle_timeout_ticks =
+        ((idle_timeout_ms + 999) / 1000) * kNetworkPumpTicksPerSecond;
+    return std::max(kMinimumRelayRemoteTimeoutPumpTicks, idle_timeout_ticks * 6);
 }
 
 } // namespace
@@ -208,6 +220,8 @@ bool JoinHostSessionViaRealnetRelay(
     transport.realnet_punch = RealnetPunchRuntime{};
     transport.realnet_relay = RealnetRelayRuntime{};
     transport.realnet_relay.timing = realnet::default_config().relay.timing;
+    transport.realnet_relay.remote_timeout_pump_ticks =
+        RelayRemoteTimeoutPumpTicks(transport.realnet_relay.timing);
     transport.realnet_relay.active = true;
     transport.realnet_relay.is_host = false;
     transport.realnet_relay.relay_endpoint = relay_endpoint;
@@ -261,6 +275,8 @@ bool ConfigureHostRealnetRelay(
     }
     state.net_transport->realnet_relay = RealnetRelayRuntime{};
     state.net_transport->realnet_relay.timing = realnet::default_config().relay.timing;
+    state.net_transport->realnet_relay.remote_timeout_pump_ticks =
+        RelayRemoteTimeoutPumpTicks(state.net_transport->realnet_relay.timing);
     state.net_transport->realnet_relay.active = true;
     state.net_transport->realnet_relay.is_host = true;
     state.net_transport->realnet_relay.relay_endpoint = relay_endpoint;

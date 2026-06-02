@@ -14,12 +14,7 @@ namespace splonks::network {
 namespace {
 
 constexpr std::uint64_t kRemoteEndpointTimeoutPumpTicks = 180;
-constexpr std::uint64_t kRelayRemoteEndpointTimeoutPumpTicks = 3600;
 constexpr std::uint64_t kPendingJoinTimeoutPumpTicks = 360;
-
-bool IsRealnetRelayEndpoint(const NetEndpoint& endpoint) {
-    return endpoint.address == "realnet-relay";
-}
 
 void DeactivateDepartingAttachedEnt(State& state, std::optional<VID> attached_vid) {
     if (!attached_vid.has_value()) {
@@ -242,8 +237,8 @@ void CleanupTimedOutRemoteEndpoints(State& state, NetTransportRuntime& transport
 
     std::vector<NetEndpoint> timed_out;
     for (const NetRemoteEndpoint& remote : transport.remotes) {
-        const std::uint64_t timeout_ticks = IsRealnetRelayEndpoint(remote.endpoint)
-            ? kRelayRemoteEndpointTimeoutPumpTicks
+        const std::uint64_t timeout_ticks = IsRealnetRelayVirtualEndpoint(remote.endpoint)
+            ? transport.realnet_relay.remote_timeout_pump_ticks
             : kRemoteEndpointTimeoutPumpTicks;
         if (transport.pump_tick > remote.last_heard_pump_tick &&
             transport.pump_tick - remote.last_heard_pump_tick > timeout_ticks) {

@@ -1844,7 +1844,9 @@ bool RunJoinBarrierProtocolSmoke() {
     relay_timeout_transport.pump_tick = 220;
     relay_timeout_transport.remotes.push_back(network::NetRemoteEndpoint{
         .player_ids = {2},
-        .endpoint = network::NetEndpoint{.address = "realnet-relay", .port = 60000},
+        .endpoint = network::NetEndpoint{.address = "realnet-relay",
+                                         .port = 60000,
+                                         .kind = network::NetEndpointKind::RealnetRelayVirtual},
         .last_heard_frame = 0,
         .last_heard_pump_tick = 0,
     });

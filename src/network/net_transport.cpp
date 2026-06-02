@@ -207,6 +207,12 @@ bool UdpSocket::Send(
     std::size_t size,
     std::string* error_out
 ) {
+    if (endpoint.kind != NetEndpointKind::Udp) {
+        if (error_out != nullptr) {
+            *error_out = "cannot send raw UDP to virtual endpoint " + EndpointToString(endpoint);
+        }
+        return false;
+    }
     if (fd_ == kInvalidSocket) {
         if (error_out != nullptr) {
             *error_out = "socket is closed";
@@ -270,10 +276,16 @@ NetTransportRuntime NetTransportRuntime::New() {
 }
 
 bool EndpointsEqual(const NetEndpoint& a, const NetEndpoint& b) {
-    return a.address == b.address && a.port == b.port;
+    return a.kind == b.kind && a.address == b.address && a.port == b.port;
+}
+
+bool IsRealnetRelayVirtualEndpoint(const NetEndpoint& endpoint) {
+    return endpoint.kind == NetEndpointKind::RealnetRelayVirtual;
 }
 
 std::string EndpointToString(const NetEndpoint& endpoint) {
+    if (endpoint.kind == NetEndpointKind::RealnetRelayVirtual)
+        return "realnet-relay:" + std::to_string(endpoint.port);
     return endpoint.address + ":" + std::to_string(endpoint.port);
 }
 

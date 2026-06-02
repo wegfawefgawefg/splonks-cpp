@@ -174,7 +174,8 @@ NetEndpoint RelayEndpointForAllocation(RealnetRelayRuntime& relay,
     }
 
     const NetEndpoint endpoint{.address = "realnet-relay",
-                               .port = relay.next_virtual_port++};
+                               .port = relay.next_virtual_port++,
+                               .kind = NetEndpointKind::RealnetRelayVirtual};
     relay.routes.push_back(RealnetRelayRoute{.allocation_id = allocation_id,
                                              .endpoint = endpoint});
     return endpoint;

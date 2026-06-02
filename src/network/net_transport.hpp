@@ -16,9 +16,15 @@
 
 namespace splonks::network {
 
+enum class NetEndpointKind {
+    Udp,
+    RealnetRelayVirtual,
+};
+
 struct NetEndpoint {
     std::string address = "127.0.0.1";
     std::uint16_t port = 0;
+    NetEndpointKind kind = NetEndpointKind::Udp;
 };
 
 struct UdpPacket {
@@ -128,6 +134,7 @@ struct RealnetRelayRuntime {
     std::uint64_t keepalive_count = 0;
     std::uint64_t data_sent_count = 0;
     std::uint64_t data_received_count = 0;
+    std::uint64_t remote_timeout_pump_ticks = 3600;
     std::uint16_t next_virtual_port = 60000;
     std::vector<RealnetRelayRoute> routes;
 };
@@ -162,6 +169,7 @@ struct NetTransportRuntime {
 };
 
 bool EndpointsEqual(const NetEndpoint& a, const NetEndpoint& b);
+bool IsRealnetRelayVirtualEndpoint(const NetEndpoint& endpoint);
 std::string EndpointToString(const NetEndpoint& endpoint);
 std::vector<std::string> GetLocalLanIpv4Addresses();
 
