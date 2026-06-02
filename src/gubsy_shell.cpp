@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
+#include <gubsy/lobby/room_matchmaking.hpp>
 #include <iostream>
 #include <iterator>
 #include <string>
@@ -466,6 +467,21 @@ bool RealnetRendezvousEndpoint(const GubsyLobbyState& lobby, network::NetEndpoin
     if (!ParseHttpEndpoint(lobby.room_server_url, host, http_port))
         return false;
     int rendezvous_port = static_cast<int>(http_port) + 1;
+    RoomServerMatchmaking matchmaking;
+    RoomServerCapabilities capabilities;
+    std::string err;
+    if (matchmaking.fetch_capabilities(lobby.room_server_url, capabilities, err) &&
+        capabilities.rendezvous_udp.enabled &&
+        capabilities.rendezvous_udp.port > 0 &&
+        capabilities.rendezvous_udp.port <= 65535 &&
+        capabilities.rendezvous_udp.protocol == "gubsy-rendezvous-v1") {
+        rendezvous_port = capabilities.rendezvous_udp.port;
+        if (!capabilities.rendezvous_udp.host.empty() &&
+            capabilities.rendezvous_udp.host != "0.0.0.0" &&
+            capabilities.rendezvous_udp.host != "::") {
+            host = capabilities.rendezvous_udp.host;
+        }
+    }
     if (const char* value = std::getenv("SPLONKS_REALNET_RENDEZVOUS_PORT")) {
         if (*value != '\0') {
             try {

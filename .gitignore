@@ -54,3 +54,4 @@ logs/realnet_lan_audit.json
 logs/realnet_lan_verdict.json
 logs/lockstep_churn/
 .codex
+.env*.local
