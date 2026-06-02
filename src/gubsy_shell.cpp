@@ -499,6 +499,43 @@ bool RealnetPunchEndpoint(const GubsyLobbyState& lobby, network::NetEndpoint& en
     return true;
 }
 
+bool RealnetRelayEndpoint(const GubsyLobbyState& lobby, network::NetEndpoint& endpoint) {
+    std::string host;
+    std::uint16_t http_port = 0;
+    if (!ParseHttpEndpoint(lobby.room_server_url, host, http_port))
+        return false;
+    int relay_port = static_cast<int>(http_port) + 2;
+    RoomServerMatchmaking matchmaking;
+    RoomServerCapabilities capabilities;
+    std::string err;
+    if (matchmaking.fetch_capabilities(lobby.room_server_url, capabilities, err) &&
+        capabilities.relay_udp.enabled &&
+        capabilities.relay_udp.port > 0 &&
+        capabilities.relay_udp.port <= 65535 &&
+        capabilities.relay_udp.protocol == "gubsy-relay-v1") {
+        relay_port = capabilities.relay_udp.port;
+        if (!capabilities.relay_udp.host.empty() &&
+            capabilities.relay_udp.host != "0.0.0.0" &&
+            capabilities.relay_udp.host != "::") {
+            host = capabilities.relay_udp.host;
+        }
+    }
+    if (const char* value = std::getenv("SPLONKS_REALNET_RELAY_PORT")) {
+        if (*value != '\0') {
+            try {
+                relay_port = std::stoi(value);
+            } catch (...) {
+                return false;
+            }
+        }
+    }
+    if (relay_port <= 0 || relay_port > 65535)
+        return false;
+    endpoint = network::NetEndpoint{.address = host,
+                                    .port = static_cast<std::uint16_t>(relay_port)};
+    return true;
+}
+
 GubsyLobbyHostResult HostSplonksFromGubsy(void* user_data, const GubsyLobbyState& lobby,
                                           std::uint16_t port) {
     GubsyLobbyHostResult result;
@@ -529,7 +566,8 @@ bool IsDirectConnectionCandidate(ConnectionCandidateKind kind) {
 }
 
 realnet::ConnectionPlan BuildRealnetConnectionPlan(const GubsyLobbyState& lobby,
-                                                   bool nat_punch_supported) {
+                                                   bool nat_punch_supported,
+                                                   bool relay_supported) {
     realnet::ConnectionPlanInput input;
     input.room = lobby.pending_join_room;
     if (input.room.room_code.empty())
@@ -537,7 +575,7 @@ realnet::ConnectionPlan BuildRealnetConnectionPlan(const GubsyLobbyState& lobby,
     input.join_attempt_id = lobby.pending_join_attempt_id;
     input.punch_secret = lobby.pending_punch_secret;
     input.nat_punch_supported = nat_punch_supported;
-    input.relay_supported = false;
+    input.relay_supported = relay_supported;
     input.steam_supported = false;
     input.force_nat_punch = RealnetPunchForced();
     input.local_network = realnet::detect_local_network_info();
@@ -552,6 +590,7 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
         return result;
     ApplyLobbyConfigToSplonks(*shell, lobby, true);
     network::NetEndpoint punch_endpoint;
+    network::NetEndpoint relay_endpoint;
     const std::string realnet_room_code = !lobby.pending_join_room.room_code.empty()
         ? lobby.pending_join_room.room_code
         : lobby.room_code;
@@ -559,10 +598,16 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
                                   !lobby.pending_join_attempt_id.empty() &&
                                   !lobby.pending_punch_secret.empty() &&
                                   RealnetPunchEndpoint(lobby, punch_endpoint);
+    const bool has_relay_join = !realnet_room_code.empty() &&
+                                !lobby.pending_join_attempt_id.empty() &&
+                                !lobby.pending_relay_allocation_id.empty() &&
+                                !lobby.pending_relay_secret.empty() &&
+                                RealnetRelayEndpoint(lobby, relay_endpoint);
     bool use_realnet_first = false;
     const bool has_room_plan = !lobby.pending_join_room.contract.connection_candidates.empty();
     if (has_room_plan) {
-        const realnet::ConnectionPlan plan = BuildRealnetConnectionPlan(lobby, has_realnet_join);
+        const realnet::ConnectionPlan plan =
+            BuildRealnetConnectionPlan(lobby, has_realnet_join, has_relay_join);
         for (const realnet::PlannedConnectionCandidate& candidate : plan.candidates) {
             if (candidate.decision != realnet::CandidateDecision::Try) {
                 std::cerr << "Skipping Realnet candidate "
@@ -599,6 +644,13 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
                                                  network::EndpointToString(punch_endpoint);
                 }
                 break;
+            }
+
+            if (candidate.candidate.kind == ConnectionCandidateKind::Relay &&
+                has_relay_join) {
+                std::cerr << "Skipping Realnet candidate relay: Splonks relay transport is not wired yet"
+                          << " via " << network::EndpointToString(relay_endpoint) << "\n";
+                continue;
             }
 
             std::cerr << "Skipping Realnet candidate "
