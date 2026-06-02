@@ -102,6 +102,11 @@ struct RealnetPunchRuntime {
     std::uint64_t join_request_count = 0;
 };
 
+struct RealnetRelayRoute {
+    std::string allocation_id;
+    NetEndpoint endpoint;
+};
+
 struct RealnetRelayRuntime {
     bool active = false;
     bool is_host = false;
@@ -123,6 +128,8 @@ struct RealnetRelayRuntime {
     std::uint64_t keepalive_count = 0;
     std::uint64_t data_sent_count = 0;
     std::uint64_t data_received_count = 0;
+    std::uint16_t next_virtual_port = 60000;
+    std::vector<RealnetRelayRoute> routes;
 };
 
 struct NetTransportRuntime {

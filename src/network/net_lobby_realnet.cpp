@@ -166,6 +166,31 @@ bool PacketLooksLikeRelay(const UdpPacket& packet) {
            packet.bytes[3] == static_cast<std::uint8_t>('Y');
 }
 
+NetEndpoint RelayEndpointForAllocation(RealnetRelayRuntime& relay,
+                                       const std::string& allocation_id) {
+    for (const RealnetRelayRoute& route : relay.routes) {
+        if (route.allocation_id == allocation_id)
+            return route.endpoint;
+    }
+
+    const NetEndpoint endpoint{.address = "realnet-relay",
+                               .port = relay.next_virtual_port++};
+    relay.routes.push_back(RealnetRelayRoute{.allocation_id = allocation_id,
+                                             .endpoint = endpoint});
+    return endpoint;
+}
+
+std::string RelayAllocationForEndpoint(const RealnetRelayRuntime& relay,
+                                       const NetEndpoint& endpoint) {
+    if (!relay.is_host)
+        return relay.relay_allocation_id;
+    for (const RealnetRelayRoute& route : relay.routes) {
+        if (EndpointsEqual(route.endpoint, endpoint))
+            return route.allocation_id;
+    }
+    return {};
+}
+
 } // namespace
 
 void MaintainRealnetPunch(State& state, NetTransportRuntime& transport) {
@@ -220,7 +245,11 @@ bool WrapRealnetRelayPacket(NetTransportRuntime& transport,
                             const UdpPacket& packet,
                             UdpPacket& out) {
     RealnetRelayRuntime& relay = transport.realnet_relay;
-    if (!relay.active || !EndpointsEqual(packet.endpoint, relay.relay_endpoint))
+    if (!relay.active)
+        return false;
+    const bool to_relay_server = EndpointsEqual(packet.endpoint, relay.relay_endpoint);
+    const std::string allocation_id = RelayAllocationForEndpoint(relay, packet.endpoint);
+    if (!to_relay_server && allocation_id.empty())
         return false;
     if (!relay.ready) {
         relay.status = "relay_waiting_ready";
@@ -233,7 +262,12 @@ bool WrapRealnetRelayPacket(NetTransportRuntime& transport,
     relay_packet.role = relay.is_host ? realnet::RelayRole::Host : realnet::RelayRole::Joiner;
     relay_packet.room_code = relay.room_code;
     relay_packet.join_attempt_id = relay.join_attempt_id;
-    relay_packet.allocation_id = relay.relay_allocation_id;
+    relay_packet.allocation_id = allocation_id.empty() ? relay.relay_allocation_id : allocation_id;
+    if (relay_packet.allocation_id.empty()) {
+        relay.failure_reason = "relay_allocation_missing";
+        out = UdpPacket{};
+        return true;
+    }
     relay_packet.payload.assign(packet.bytes.begin(),
                                 packet.bytes.begin() + static_cast<std::ptrdiff_t>(packet.size));
     const std::string& key = RelayPacketKey(relay);
@@ -347,8 +381,11 @@ bool TryHandleRealnetRelayPacket(State& state,
     }
 
     if (decoded.kind == realnet::RelayPacketKind::Ready) {
-        if (!decoded.allocation_id.empty())
+        if (!decoded.allocation_id.empty()) {
             relay.relay_allocation_id = decoded.allocation_id;
+            if (relay.is_host)
+                (void)RelayEndpointForAllocation(relay, decoded.allocation_id);
+        }
         relay.ready = true;
         relay.ready_count += 1;
         relay.status = "relay_ready";
@@ -366,7 +403,9 @@ bool TryHandleRealnetRelayPacket(State& state,
             relay.failure_reason = "relay_payload_too_large";
             return true;
         }
-        unwrapped.endpoint = relay.relay_endpoint;
+        unwrapped.endpoint = relay.is_host
+            ? RelayEndpointForAllocation(relay, decoded.allocation_id)
+            : relay.relay_endpoint;
         unwrapped.size = decoded.payload.size();
         std::copy(decoded.payload.begin(), decoded.payload.end(), unwrapped.bytes.begin());
         relay.data_received_count += 1;
