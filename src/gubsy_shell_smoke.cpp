@@ -1454,6 +1454,26 @@ bool RealnetSmokeGameplayReady(const State& state) {
            !state.net_session.join_barrier_active;
 }
 
+void AppendRealnetPunchDiagnostics(std::ostream& out, const State& state) {
+    if (!state.net_transport) {
+        out << " realnet_transport=false";
+        return;
+    }
+    const network::RealnetPunchRuntime& punch = state.net_transport->realnet_punch;
+    out << " realnet_active=" << (punch.active ? "true" : "false")
+        << " realnet_established=" << (punch.established ? "true" : "false")
+        << " realnet_timed_out=" << (punch.timed_out ? "true" : "false")
+        << " realnet_status=\"" << punch.status << "\""
+        << " realnet_failure=\"" << punch.failure_reason << "\""
+        << " realnet_peer=" << punch.peer_endpoint.address << ":" << punch.peer_endpoint.port
+        << " realnet_have_peer=" << (punch.have_peer_endpoint ? "true" : "false")
+        << " realnet_hellos=" << punch.hello_count
+        << " realnet_hints=" << punch.hint_count
+        << " realnet_probes=" << punch.probe_count
+        << " realnet_acks=" << punch.ack_count
+        << " realnet_join_requests=" << punch.join_request_count;
+}
+
 bool CheckRealnetLanHost(const char* server_url, int max_frames) {
     if (server_url == nullptr || *server_url == '\0') {
         std::cerr << "Realnet LAN host smoke failed: missing room server URL\n";
@@ -1537,7 +1557,9 @@ bool CheckRealnetLanHost(const char* server_url, int max_frames) {
               << "/" << host_state.net_session.join_barrier_total_bytes
               << " barrier_queue=" << host_state.net_session.join_barrier_queue.size()
               << " barrier_acks=" << host_state.net_session.join_barrier_topology_ack_peers.size()
-              << " mismatches=" << host_state.net_session.lockstep_hash_mismatch_count << '\n';
+              << " mismatches=" << host_state.net_session.lockstep_hash_mismatch_count;
+    AppendRealnetPunchDiagnostics(std::cerr, host_state);
+    std::cerr << '\n';
     (void)gubsy_leave_lobby_room(host_shell.runtime, message);
     gubsy_shell::Shutdown(host_shell);
     return false;
@@ -1698,8 +1720,9 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
               << " online=" << (gubsy_get_lobby_state(guest_shell.runtime).online ? "true" : "false")
               << " is_host=" << (gubsy_get_lobby_state(guest_shell.runtime).is_host ? "true" : "false")
               << " phase=" << gubsy_get_lobby_state(guest_shell.runtime).contract.session_phase
-              << " status=\"" << gubsy_get_lobby_state(guest_shell.runtime).status_message << "\""
-              << '\n';
+              << " status=\"" << gubsy_get_lobby_state(guest_shell.runtime).status_message << "\"";
+    AppendRealnetPunchDiagnostics(std::cerr, guest_state);
+    std::cerr << '\n';
     (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
     gubsy_shell::Shutdown(guest_shell);
     return false;

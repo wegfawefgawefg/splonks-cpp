@@ -1105,6 +1105,7 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
             << ",\"hint_count\":" << punch.hint_count
             << ",\"probe_count\":" << punch.probe_count
             << ",\"ack_count\":" << punch.ack_count
+            << ",\"join_request_count\":" << punch.join_request_count
             << ",\"hello_interval_ms\":" << punch.timing.hello_interval_ms
             << ",\"probe_interval_ms\":" << punch.timing.probe_interval_ms
             << ",\"punch_window_ms\":" << punch.timing.punch_window_ms

@@ -99,6 +99,7 @@ struct RealnetPunchRuntime {
     std::uint64_t probe_count = 0;
     std::uint64_t ack_count = 0;
     std::uint64_t hint_count = 0;
+    std::uint64_t join_request_count = 0;
 };
 
 struct NetTransportRuntime {

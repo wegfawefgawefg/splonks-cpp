@@ -88,6 +88,17 @@ void SendAck(NetTransportRuntime& transport, const NetEndpoint& endpoint) {
     punch.status = "sent_punch_ack";
 }
 
+void SendPunchJoinRequest(State& state, NetTransportRuntime& transport) {
+    RealnetPunchRuntime& punch = transport.realnet_punch;
+    if (punch.is_host || !punch.have_peer_endpoint)
+        return;
+    transport.host_endpoint = punch.peer_endpoint;
+    SendJoinRequest(state);
+    punch.sent_join_request = true;
+    punch.join_request_count += 1;
+    punch.status = "join_request_sent";
+}
+
 bool PacketLooksLikeJson(const UdpPacket& packet) {
     return packet.size > 0 && packet.bytes[0] == static_cast<std::uint8_t>('{');
 }
@@ -108,14 +119,8 @@ void MaintainRealnetPunch(State& state, NetTransportRuntime& transport) {
     }
     if (punch.have_peer_endpoint && punch.next_probe_ms <= now_ms && now_ms <= punch.deadline_ms) {
         SendProbe(transport);
+        SendPunchJoinRequest(state, transport);
         punch.next_probe_ms = now_ms + punch.timing.probe_interval_ms;
-    }
-    if (!punch.is_host && punch.have_peer_endpoint && transport.host_endpoint.port == 0) {
-        transport.host_endpoint = punch.peer_endpoint;
-        SendJoinRequest(state);
-        punch.sent_join_request = true;
-        punch.established = true;
-        punch.status = "join_request_sent";
     }
     if (!punch.timed_out && now_ms > punch.deadline_ms && !punch.established) {
         punch.timed_out = true;
@@ -155,11 +160,7 @@ bool TryHandleRealnetPunchPacket(State& state, NetTransportRuntime& transport,
         punch.failure_reason.clear();
         punch.timed_out = false;
         if (!punch.is_host && punch.have_peer_endpoint) {
-            transport.host_endpoint = punch.peer_endpoint;
-            SendJoinRequest(state);
-            punch.sent_join_request = true;
-            punch.established = true;
-            punch.status = "join_request_sent";
+            SendPunchJoinRequest(state, transport);
         }
         return true;
     }
@@ -183,9 +184,9 @@ bool TryHandleRealnetPunchPacket(State& state, NetTransportRuntime& transport,
             punch.have_peer_endpoint = true;
         }
         if (!punch.is_host) {
-            transport.host_endpoint = packet.endpoint;
-            SendJoinRequest(state);
-            punch.sent_join_request = true;
+            punch.peer_endpoint = packet.endpoint;
+            punch.have_peer_endpoint = true;
+            SendPunchJoinRequest(state, transport);
             punch.established = true;
         }
         punch.status = "punch_ack_received";
