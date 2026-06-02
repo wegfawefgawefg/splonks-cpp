@@ -7,10 +7,10 @@
 #include "stage_progression.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cstdlib>
 #include <filesystem>
 #include <gubsy/lobby/room_matchmaking.hpp>
+#include <gubsy/realnet/connection_plan.hpp>
 #include <iostream>
 #include <iterator>
 #include <string>
@@ -423,57 +423,6 @@ bool RealnetPunchForced() {
     return false;
 }
 
-bool ParseIpv4Address(const std::string& address, std::array<int, 4>& octets) {
-    std::size_t start = 0;
-    for (int i = 0; i < 4; ++i) {
-        const std::size_t dot = i == 3 ? std::string::npos : address.find('.', start);
-        if (i < 3 && dot == std::string::npos)
-            return false;
-        const std::size_t end = i == 3 ? address.size() : dot;
-        if (end <= start)
-            return false;
-        try {
-            const std::string segment = address.substr(start, end - start);
-            std::size_t parsed_chars = 0;
-            const int octet = std::stoi(segment, &parsed_chars);
-            if (parsed_chars != segment.size())
-                return false;
-            if (octet < 0 || octet > 255)
-                return false;
-            octets[static_cast<std::size_t>(i)] = octet;
-        } catch (...) {
-            return false;
-        }
-        start = end + 1;
-    }
-    return start == address.size() + 1;
-}
-
-bool IsPrivateIpv4(const std::array<int, 4>& octets) {
-    return octets[0] == 10 ||
-           (octets[0] == 172 && octets[1] >= 16 && octets[1] <= 31) ||
-           (octets[0] == 192 && octets[1] == 168);
-}
-
-bool SameIpv4Slash24(const std::array<int, 4>& a, const std::array<int, 4>& b) {
-    return a[0] == b[0] && a[1] == b[1] && a[2] == b[2];
-}
-
-bool PrivateDirectHostLooksLocal(const std::string& host) {
-    std::array<int, 4> host_octets{};
-    if (!ParseIpv4Address(host, host_octets) || !IsPrivateIpv4(host_octets))
-        return true;
-
-    for (const std::string& local_address : network::GetLocalLanIpv4Addresses()) {
-        std::array<int, 4> local_octets{};
-        if (ParseIpv4Address(local_address, local_octets) &&
-            SameIpv4Slash24(host_octets, local_octets)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 std::uint64_t DirectJoinTimeoutMs() {
     if (const char* value = std::getenv("SPLONKS_REALNET_DIRECT_TIMEOUT_MS")) {
         if (*value != '\0') {
@@ -523,15 +472,16 @@ bool RealnetRendezvousEndpoint(const GubsyLobbyState& lobby, network::NetEndpoin
     RoomServerCapabilities capabilities;
     std::string err;
     if (matchmaking.fetch_capabilities(lobby.room_server_url, capabilities, err) &&
-        capabilities.rendezvous_udp.enabled &&
-        capabilities.rendezvous_udp.port > 0 &&
-        capabilities.rendezvous_udp.port <= 65535 &&
-        capabilities.rendezvous_udp.protocol == "gubsy-rendezvous-v1") {
-        rendezvous_port = capabilities.rendezvous_udp.port;
-        if (!capabilities.rendezvous_udp.host.empty() &&
-            capabilities.rendezvous_udp.host != "0.0.0.0" &&
-            capabilities.rendezvous_udp.host != "::") {
-            host = capabilities.rendezvous_udp.host;
+        capabilities.punch_udp.enabled &&
+        capabilities.punch_udp.port > 0 &&
+        capabilities.punch_udp.port <= 65535 &&
+        (capabilities.punch_udp.protocol == "gubsy-punch-v1" ||
+         capabilities.punch_udp.protocol == "gubsy-rendezvous-v1")) {
+        rendezvous_port = capabilities.punch_udp.port;
+        if (!capabilities.punch_udp.host.empty() &&
+            capabilities.punch_udp.host != "0.0.0.0" &&
+            capabilities.punch_udp.host != "::") {
+            host = capabilities.punch_udp.host;
         }
     }
     if (const char* value = std::getenv("SPLONKS_REALNET_RENDEZVOUS_PORT")) {
@@ -573,6 +523,28 @@ GubsyLobbyHostResult HostSplonksFromGubsy(void* user_data, const GubsyLobbyState
     return result;
 }
 
+bool IsDirectConnectionCandidate(ConnectionCandidateKind kind) {
+    return kind == ConnectionCandidateKind::Loopback ||
+           kind == ConnectionCandidateKind::LanDirect ||
+           kind == ConnectionCandidateKind::PublicDirect;
+}
+
+realnet::ConnectionPlan BuildRealnetConnectionPlan(const GubsyLobbyState& lobby,
+                                                   bool nat_punch_supported) {
+    realnet::ConnectionPlanInput input;
+    input.room = lobby.pending_join_room;
+    if (input.room.room_code.empty())
+        input.room.room_code = lobby.room_code;
+    input.join_attempt_id = lobby.pending_join_attempt_id;
+    input.punch_secret = lobby.pending_punch_secret;
+    input.nat_punch_supported = nat_punch_supported;
+    input.relay_supported = false;
+    input.steam_supported = false;
+    input.force_nat_punch = RealnetPunchForced();
+    input.local_network = realnet::detect_local_network_info();
+    return realnet::build_connection_plan(input);
+}
+
 GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState& lobby,
                                           const char* host, std::uint16_t port) {
     GubsyLobbyJoinResult result;
@@ -588,27 +560,64 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
                                   !lobby.pending_join_attempt_id.empty() &&
                                   !lobby.pending_punch_secret.empty() &&
                                   RealnetRendezvousEndpoint(lobby, rendezvous_endpoint);
-    const bool use_realnet_first = has_realnet_join &&
-                                   (RealnetPunchForced() ||
-                                    !PrivateDirectHostLooksLocal(host));
-    if (use_realnet_first) {
-        result.ok = network::JoinHostSessionViaRealnetPunch(*shell->state,
-                                                            rendezvous_endpoint,
-                                                            realnet_room_code,
-                                                            lobby.pending_join_attempt_id,
-                                                            lobby.pending_punch_secret,
-                                                            {},
-                                                            &result.status);
-    } else {
+    bool use_realnet_first = false;
+    const bool has_room_plan = !lobby.pending_join_room.contract.connection_candidates.empty();
+    if (has_room_plan) {
+        const realnet::ConnectionPlan plan = BuildRealnetConnectionPlan(lobby, has_realnet_join);
+        for (const realnet::PlannedConnectionCandidate& candidate : plan.candidates) {
+            if (candidate.decision != realnet::CandidateDecision::Try) {
+                std::cerr << "Skipping Realnet candidate "
+                          << connection_candidate_kind_id(candidate.candidate.kind)
+                          << ": " << realnet::candidate_decision_id(candidate.decision)
+                          << " (" << candidate.reason << ")\n";
+                continue;
+            }
+
+            if (IsDirectConnectionCandidate(candidate.candidate.kind)) {
+                result.ok = network::JoinHostSession(*shell->state,
+                                                     candidate.host.c_str(),
+                                                     candidate.port,
+                                                     &result.status);
+                if (result.ok) {
+                    shell->direct_join_endpoint = candidate.host + ":" +
+                                                  std::to_string(candidate.port);
+                }
+                break;
+            }
+
+            if (candidate.candidate.kind == ConnectionCandidateKind::NatPunch &&
+                has_realnet_join) {
+                result.ok = network::JoinHostSessionViaRealnetPunch(*shell->state,
+                                                                    rendezvous_endpoint,
+                                                                    realnet_room_code,
+                                                                    lobby.pending_join_attempt_id,
+                                                                    lobby.pending_punch_secret,
+                                                                    {},
+                                                                    &result.status);
+                if (result.ok) {
+                    use_realnet_first = true;
+                    shell->direct_join_endpoint = "Realnet NAT punch " +
+                                                 network::EndpointToString(rendezvous_endpoint);
+                }
+                break;
+            }
+
+            std::cerr << "Skipping Realnet candidate "
+                      << connection_candidate_kind_id(candidate.candidate.kind)
+                      << ": no Splonks transport is available yet\n";
+        }
+        if (!result.ok && result.status.empty())
+            result.status = "No eligible connection path for this room.";
+    }
+    if (!has_room_plan) {
         result.ok = network::JoinHostSession(*shell->state, host, port, &result.status);
+        if (result.ok)
+            shell->direct_join_endpoint = std::string(host) + ":" + std::to_string(port);
     }
     if (result.ok) {
         result.pending = true;
         shell->direct_join_pending = true;
         shell->realnet_fallback_started = use_realnet_first;
-        shell->direct_join_endpoint = use_realnet_first
-            ? "Realnet NAT punch " + network::EndpointToString(rendezvous_endpoint)
-            : std::string(host) + ":" + std::to_string(port);
         shell->direct_join_started_ms = SDL_GetTicks();
     }
     std::cerr << result.status << '\n';
