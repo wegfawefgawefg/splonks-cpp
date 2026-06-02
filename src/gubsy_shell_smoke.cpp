@@ -1519,6 +1519,14 @@ bool CheckRealnetLanHost(const char* server_url, int max_frames) {
               << " sent_hash=" << (host_state.net_session.lockstep_has_sent_hash ? "true" : "false")
               << " sent_hash_frame=" << host_state.net_session.lockstep_last_sent_hash_frame
               << " barrier=" << (host_state.net_session.join_barrier_active ? "true" : "false")
+              << " barrier_phase=" << static_cast<int>(host_state.net_session.join_barrier_phase)
+              << " barrier_peer=" << host_state.net_session.join_barrier_active_peer_id
+              << " barrier_chunks=" << host_state.net_session.join_barrier_chunks_done
+              << "/" << host_state.net_session.join_barrier_chunk_count
+              << " barrier_bytes=" << host_state.net_session.join_barrier_bytes_done
+              << "/" << host_state.net_session.join_barrier_total_bytes
+              << " barrier_queue=" << host_state.net_session.join_barrier_queue.size()
+              << " barrier_acks=" << host_state.net_session.join_barrier_topology_ack_peers.size()
               << " mismatches=" << host_state.net_session.lockstep_hash_mismatch_count << '\n';
     (void)gubsy_leave_lobby_room(host_shell.runtime, message);
     gubsy_shell::Shutdown(host_shell);
@@ -1661,6 +1669,12 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
               << " sent_hash=" << (guest_state.net_session.lockstep_has_sent_hash ? "true" : "false")
               << " sent_hash_frame=" << guest_state.net_session.lockstep_last_sent_hash_frame
               << " barrier=" << (guest_state.net_session.join_barrier_active ? "true" : "false")
+              << " barrier_phase=" << static_cast<int>(guest_state.net_session.join_barrier_phase)
+              << " barrier_peer=" << guest_state.net_session.join_barrier_active_peer_id
+              << " barrier_chunks=" << guest_state.net_session.join_barrier_chunks_done
+              << "/" << guest_state.net_session.join_barrier_chunk_count
+              << " barrier_bytes=" << guest_state.net_session.join_barrier_bytes_done
+              << "/" << guest_state.net_session.join_barrier_total_bytes
               << " mismatches=" << guest_state.net_session.lockstep_hash_mismatch_count
               << " local_player=" << last_local_player_id
               << " start_x=" << (start_x.has_value() ? std::to_string(*start_x) : "none")
