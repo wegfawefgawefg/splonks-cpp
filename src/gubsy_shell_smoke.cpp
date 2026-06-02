@@ -1514,6 +1514,10 @@ bool CheckRealnetLanHost(const char* server_url, int max_frames) {
               << " started=" << (started ? "true" : "false")
               << " remotes=" << (host_state.net_transport ? host_state.net_transport->remotes.size() : 0)
               << " frame=" << host_state.net_session.lockstep_next_frame_to_step
+              << " has_hash=" << (host_state.net_session.lockstep_has_confirmed_hash ? "true" : "false")
+              << " hash_frame=" << host_state.net_session.lockstep_last_confirmed_hash_frame
+              << " sent_hash=" << (host_state.net_session.lockstep_has_sent_hash ? "true" : "false")
+              << " sent_hash_frame=" << host_state.net_session.lockstep_last_sent_hash_frame
               << " barrier=" << (host_state.net_session.join_barrier_active ? "true" : "false")
               << " mismatches=" << host_state.net_session.lockstep_hash_mismatch_count << '\n';
     (void)gubsy_leave_lobby_room(host_shell.runtime, message);
@@ -1652,6 +1656,10 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
               << " mode=" << static_cast<int>(guest_state.mode)
               << " frame=" << guest_state.net_session.lockstep_next_frame_to_step
               << " local_input_frame=" << guest_state.net_session.lockstep_next_local_input_frame
+              << " has_hash=" << (guest_state.net_session.lockstep_has_confirmed_hash ? "true" : "false")
+              << " hash_frame=" << guest_state.net_session.lockstep_last_confirmed_hash_frame
+              << " sent_hash=" << (guest_state.net_session.lockstep_has_sent_hash ? "true" : "false")
+              << " sent_hash_frame=" << guest_state.net_session.lockstep_last_sent_hash_frame
               << " barrier=" << (guest_state.net_session.join_barrier_active ? "true" : "false")
               << " mismatches=" << guest_state.net_session.lockstep_hash_mismatch_count
               << " local_player=" << last_local_player_id

@@ -340,10 +340,20 @@ SPLONKS_REALNET_DIRECT_TIMEOUT_MS=1 \
 ./scripts/validate_gubsy_roomd_live.sh
 ```
 
-When unset, Splonks assumes the roomd rendezvous UDP port is `HTTP_PORT + 1`,
-matching the current `gubsy-roomd` default. The next step is to read the exact
-rendezvous endpoint from Gubsy room-server capabilities instead of relying on
-that default.
+When unset, Splonks reads the rendezvous UDP endpoint from Gubsy room-server
+capabilities. If the server does not advertise capabilities, it falls back to
+`HTTP_PORT + 1`, matching the current `gubsy-roomd` default.
+
+Normal browser joins use a connection cascade:
+
+1. Use direct UDP first for public endpoints and private endpoints that look
+   local to the client.
+2. Skip direct for private IPv4 endpoints that are not on the client's local
+   `/24`, because those are usually another player's LAN address and cannot be
+   reached from a phone hotspot or public internet client.
+3. Use Realnet UDP rendezvous/NAT punch when punch credentials are present.
+4. Fall back to direct-timeout failure handling when no Realnet credentials are
+   available.
 
 Current proof:
 
@@ -353,6 +363,7 @@ Current proof:
    `./scripts/validate_gubsy_roomd_live.sh --lan-interface`.
 4. Two-machine same-LAN forced-punch proof passes with desktop host and laptop
    client using the headless commands in `docs/realnet_lan_validation.md`.
-5. Real NAT traversal still requires host/client on different public networks,
-   for example desktop on home internet and laptop on phone hotspot, with a
-   reachable roomd.
+5. Real NAT traversal passes with desktop host on home internet, laptop client
+   on phone hotspot, and Tokyo VPS roomd as the public rendezvous coordinator.
+   The unforced path skips the desktop's private LAN endpoint on the hotspot
+   client and connects through Realnet NAT punch.

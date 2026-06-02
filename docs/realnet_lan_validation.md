@@ -90,6 +90,12 @@ Use forced NAT punch when validating Realnet rendezvous itself. This makes the
 game skip the advertised direct candidate and connect through the UDP
 rendezvous endpoint.
 
+For normal unforced joins, Splonks still prefers direct UDP for public
+endpoints and private endpoints that appear to be on the client's local `/24`.
+If the room advertises a private IPv4 endpoint that is not local to the client,
+Splonks skips that unreachable direct candidate and starts Realnet NAT punch
+immediately.
+
 On the host machine:
 
 ```sh

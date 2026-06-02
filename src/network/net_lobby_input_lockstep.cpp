@@ -2772,6 +2772,7 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_has_recorded_hash = false;
     state.net_session.lockstep_last_sent_hash_frame = 0;
     state.net_session.lockstep_has_sent_hash = false;
+    state.net_session.lockstep_hash_ignore_through_frame = 0;
     state.net_session.lockstep_hash_mismatch_count = 0;
     state.net_session.lockstep_last_mismatch_peer_id = kInvalidPlayerId;
     state.net_session.lockstep_last_mismatch_frame = 0;

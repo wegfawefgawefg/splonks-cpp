@@ -7,6 +7,7 @@
 #include "stage_progression.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <filesystem>
 #include <gubsy/lobby/room_matchmaking.hpp>
@@ -422,6 +423,57 @@ bool RealnetPunchForced() {
     return false;
 }
 
+bool ParseIpv4Address(const std::string& address, std::array<int, 4>& octets) {
+    std::size_t start = 0;
+    for (int i = 0; i < 4; ++i) {
+        const std::size_t dot = i == 3 ? std::string::npos : address.find('.', start);
+        if (i < 3 && dot == std::string::npos)
+            return false;
+        const std::size_t end = i == 3 ? address.size() : dot;
+        if (end <= start)
+            return false;
+        try {
+            const std::string segment = address.substr(start, end - start);
+            std::size_t parsed_chars = 0;
+            const int octet = std::stoi(segment, &parsed_chars);
+            if (parsed_chars != segment.size())
+                return false;
+            if (octet < 0 || octet > 255)
+                return false;
+            octets[static_cast<std::size_t>(i)] = octet;
+        } catch (...) {
+            return false;
+        }
+        start = end + 1;
+    }
+    return start == address.size() + 1;
+}
+
+bool IsPrivateIpv4(const std::array<int, 4>& octets) {
+    return octets[0] == 10 ||
+           (octets[0] == 172 && octets[1] >= 16 && octets[1] <= 31) ||
+           (octets[0] == 192 && octets[1] == 168);
+}
+
+bool SameIpv4Slash24(const std::array<int, 4>& a, const std::array<int, 4>& b) {
+    return a[0] == b[0] && a[1] == b[1] && a[2] == b[2];
+}
+
+bool PrivateDirectHostLooksLocal(const std::string& host) {
+    std::array<int, 4> host_octets{};
+    if (!ParseIpv4Address(host, host_octets) || !IsPrivateIpv4(host_octets))
+        return true;
+
+    for (const std::string& local_address : network::GetLocalLanIpv4Addresses()) {
+        std::array<int, 4> local_octets{};
+        if (ParseIpv4Address(local_address, local_octets) &&
+            SameIpv4Slash24(host_octets, local_octets)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::uint64_t DirectJoinTimeoutMs() {
     if (const char* value = std::getenv("SPLONKS_REALNET_DIRECT_TIMEOUT_MS")) {
         if (*value != '\0') {
@@ -532,12 +584,14 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
     const std::string realnet_room_code = !lobby.pending_join_room.room_code.empty()
         ? lobby.pending_join_room.room_code
         : lobby.room_code;
-    const bool force_realnet = RealnetPunchForced() &&
-                               !realnet_room_code.empty() &&
-                               !lobby.pending_join_attempt_id.empty() &&
-                               !lobby.pending_punch_secret.empty() &&
-                               RealnetRendezvousEndpoint(lobby, rendezvous_endpoint);
-    if (force_realnet) {
+    const bool has_realnet_join = !realnet_room_code.empty() &&
+                                  !lobby.pending_join_attempt_id.empty() &&
+                                  !lobby.pending_punch_secret.empty() &&
+                                  RealnetRendezvousEndpoint(lobby, rendezvous_endpoint);
+    const bool use_realnet_first = has_realnet_join &&
+                                   (RealnetPunchForced() ||
+                                    !PrivateDirectHostLooksLocal(host));
+    if (use_realnet_first) {
         result.ok = network::JoinHostSessionViaRealnetPunch(*shell->state,
                                                             rendezvous_endpoint,
                                                             realnet_room_code,
@@ -551,8 +605,8 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
     if (result.ok) {
         result.pending = true;
         shell->direct_join_pending = true;
-        shell->realnet_fallback_started = force_realnet;
-        shell->direct_join_endpoint = force_realnet
+        shell->realnet_fallback_started = use_realnet_first;
+        shell->direct_join_endpoint = use_realnet_first
             ? "Realnet NAT punch " + network::EndpointToString(rendezvous_endpoint)
             : std::string(host) + ":" + std::to_string(port);
         shell->direct_join_started_ms = SDL_GetTicks();
