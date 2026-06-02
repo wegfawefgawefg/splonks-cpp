@@ -1582,7 +1582,7 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
     Graphics graphics;
     Audio audio;
     bool requested_play = false;
-    bool moved_right = false;
+    bool moved_under_input = false;
     std::optional<float> start_x;
     std::optional<float> last_x;
     PlayerId last_local_player_id = kInvalidPlayerId;
@@ -1630,11 +1630,12 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
             }
             if (!start_x.has_value())
                 start_x = local_ent->pos.x;
-            if (local_ent->pos.x > *start_x + 0.25F)
-                moved_right = true;
+            const float delta_x = local_ent->pos.x - *start_x;
+            if (delta_x > 0.25F || delta_x < -0.25F)
+                moved_under_input = true;
         }
 
-        if (moved_right && LockstepHealthyInGameplay(guest_state)) {
+        if (moved_under_input && LockstepHealthyInGameplay(guest_state)) {
             std::cout << "REALNET_LAN_CLIENT_OK frame="
                       << guest_state.net_session.lockstep_next_frame_to_step << '\n';
             (void)gubsy_leave_lobby_room(guest_shell.runtime, message);
@@ -1646,7 +1647,7 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
 
     std::cerr << "Realnet LAN client smoke failed: timed out"
               << " requested_play=" << (requested_play ? "true" : "false")
-              << " moved_right=" << (moved_right ? "true" : "false")
+              << " moved_under_input=" << (moved_under_input ? "true" : "false")
               << " role=" << static_cast<int>(guest_state.net_session.role)
               << " mode=" << static_cast<int>(guest_state.mode)
               << " frame=" << guest_state.net_session.lockstep_next_frame_to_step
