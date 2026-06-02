@@ -1836,6 +1836,32 @@ bool RunJoinBarrierProtocolSmoke() {
         return false;
     }
 
+    State relay_timeout_host = State::New();
+    relay_timeout_host.net_session.role = network::NetRole::Host;
+    relay_timeout_host.net_session.local_player_id = 1;
+    relay_timeout_host.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    network::NetTransportRuntime relay_timeout_transport = network::NetTransportRuntime::New();
+    relay_timeout_transport.pump_tick = 220;
+    relay_timeout_transport.remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {2},
+        .endpoint = network::NetEndpoint{.address = "realnet-relay", .port = 60000},
+        .last_heard_frame = 0,
+        .last_heard_pump_tick = 0,
+    });
+    network::CleanupTimedOutRemoteEndpoints(relay_timeout_host, relay_timeout_transport);
+    if (relay_timeout_transport.remotes.size() != 1 ||
+        relay_timeout_transport.remotes[0].player_ids.size() != 1 ||
+        relay_timeout_transport.remotes[0].player_ids[0] != 2) {
+        std::cerr << "join barrier protocol smoke failed: relay peer used direct timeout\n";
+        return false;
+    }
+    relay_timeout_transport.pump_tick = 4000;
+    network::CleanupTimedOutRemoteEndpoints(relay_timeout_host, relay_timeout_transport);
+    if (!relay_timeout_transport.remotes.empty()) {
+        std::cerr << "join barrier protocol smoke failed: relay peer never timed out\n";
+        return false;
+    }
+
     State transition_host = State::New();
     Graphics transition_graphics;
     InitCliSmokeRuntimeTables(transition_graphics);
