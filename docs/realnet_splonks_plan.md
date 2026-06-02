@@ -294,6 +294,10 @@ Later validation:
 2. Add Steam transport when Steamworks access is available.
 3. Keep Splonks protocol unchanged across backend choices.
 
+The Gubsy-owned relay implementation plan lives in the Gubsy repo at
+`docs/realnet_relayd_plan.md`. Splonks should consume relay as another Realnet
+transport and keep lockstep packet schemas unchanged.
+
 ## Open Questions
 
 1. Should Splonks expose "allow relay" as a player setting, or should it be a
