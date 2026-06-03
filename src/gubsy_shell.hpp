@@ -27,7 +27,8 @@ struct Shell {
     bool direct_join_pending = false;
     bool joined_room_host_in_game = false;
     bool realnet_fallback_started = false;
-    std::string realnet_host_room_code;
+    std::string realnet_host_punch_room_code;
+    std::string realnet_host_relay_room_code;
     std::string direct_join_endpoint;
     std::uint64_t direct_join_started_ms = 0;
 };

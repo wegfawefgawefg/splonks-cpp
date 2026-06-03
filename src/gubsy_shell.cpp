@@ -558,7 +558,8 @@ GubsyLobbyHostResult HostSplonksFromGubsy(void* user_data, const GubsyLobbyState
     shell->direct_join_endpoint.clear();
     shell->direct_join_started_ms = 0;
     shell->realnet_fallback_started = false;
-    shell->realnet_host_room_code.clear();
+    shell->realnet_host_punch_room_code.clear();
+    shell->realnet_host_relay_room_code.clear();
     ApplyLobbyConfigToSplonks(*shell, lobby, true);
     result.ok = network::StartHostSession(*shell->state, port, &result.status);
     if (result.ok) {
@@ -748,41 +749,40 @@ void SyncLobbySessionPhase(Shell& shell) {
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
     if (!lobby.online) {
         shell.joined_room_host_in_game = false;
-        shell.realnet_host_room_code.clear();
+        shell.realnet_host_punch_room_code.clear();
+        shell.realnet_host_relay_room_code.clear();
         (void)gubsy_set_lobby_player_roster_locked(shell.runtime, false);
         return;
     }
 
     State& state = *shell.state;
-    if (lobby.is_host && !lobby.room_code.empty() && !lobby.host_secret.empty() &&
-        shell.realnet_host_room_code != lobby.room_code) {
+    if (lobby.is_host && !lobby.room_code.empty() && !lobby.host_secret.empty()) {
         network::NetEndpoint punch_endpoint;
-        bool configured_realnet = false;
-        if (RealnetPunchEndpoint(lobby, punch_endpoint)) {
+        if (shell.realnet_host_punch_room_code != lobby.room_code &&
+            RealnetPunchEndpoint(lobby, punch_endpoint)) {
             std::string status;
             if (network::ConfigureHostRealnetPunch(state,
                                                    punch_endpoint,
                                                    lobby.room_code,
                                                    lobby.host_secret,
                                                    &status)) {
-                configured_realnet = true;
+                shell.realnet_host_punch_room_code = lobby.room_code;
                 std::cerr << status << '\n';
             }
         }
         network::NetEndpoint relay_endpoint;
-        if (RealnetRelayEndpoint(lobby, relay_endpoint)) {
+        if (shell.realnet_host_relay_room_code != lobby.room_code &&
+            RealnetRelayEndpoint(lobby, relay_endpoint)) {
             std::string status;
             if (network::ConfigureHostRealnetRelay(state,
                                                    relay_endpoint,
                                                    lobby.room_code,
                                                    lobby.host_secret,
                                                    &status)) {
-                configured_realnet = true;
+                shell.realnet_host_relay_room_code = lobby.room_code;
                 std::cerr << status << '\n';
             }
         }
-        if (configured_realnet)
-            shell.realnet_host_room_code = lobby.room_code;
     }
     if (!lobby.room_code.empty() && !lobby.is_host) {
         if (state.net_session.role != network::NetRole::Peer) {
