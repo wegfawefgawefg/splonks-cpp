@@ -2382,6 +2382,132 @@ bool RunJoinBarrierChunkImpairmentSmoke() {
     return true;
 }
 
+bool RunJoinBarrierNextStageRestartSmoke() {
+    Graphics host_graphics;
+    Graphics peer_graphics;
+    InitCliSmokeRuntimeTables(host_graphics);
+    InitCliSmokeRuntimeTables(peer_graphics);
+
+    State host = State::New();
+    State peer = State::New();
+    const char* failed_step = nullptr;
+    if (!PrepareLockstepSmokeState(host, host_graphics, {1}, failed_step) ||
+        !PrepareLockstepSmokeState(peer, peer_graphics, {2}, failed_step)) {
+        std::cerr << "join barrier next-stage restart smoke failed during setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+
+    host.net_session.role = network::NetRole::Host;
+    host.net_session.local_player_id = 1;
+    host.net_session.host_player_id = 1;
+    host.net_session.stage_instance_id = 101;
+    host.net_session.stage_seed = host.stage.generation_seed.value_or(1U);
+    host.net_session.lockstep_next_frame_to_step = 0;
+    host.net_session.join_barrier_active = true;
+    host.net_session.join_barrier_id = 18;
+    host.net_session.join_barrier_phase = network::JoinBarrierPhase::WaitingForAck;
+    host.net_session.join_barrier_active_peer_id = 2;
+    host.net_session.join_barrier_transfer_id = 909;
+
+    peer.net_session.role = network::NetRole::Peer;
+    peer.net_session.local_player_id = 2;
+    peer.net_session.host_player_id = 1;
+    peer.net_session.stage_instance_id = host.net_session.stage_instance_id - 1;
+    peer.net_session.run_restart_pending = true;
+    peer.net_session.run_restart_transition_queued = true;
+    peer.net_session.run_restart_applied_locally = false;
+    peer.net_session.run_restart_last_sequence = 1;
+    peer.net_session.run_restart_last_packet_stage_instance_id = host.net_session.stage_instance_id;
+    peer.net_session.run_restart_stage_seed = host.net_session.stage_seed;
+    peer.net_session.run_restart_quest_id = host.stage.quest_id;
+    peer.net_session.run_restart_quest_stage_id = host.stage.quest_stage_id;
+    peer.net_session.join_barrier_active = true;
+    peer.net_session.join_barrier_id = host.net_session.join_barrier_id;
+    peer.net_session.join_barrier_phase = network::JoinBarrierPhase::WaitingForCatchup;
+    peer.net_session.join_barrier_active_peer_id = 2;
+
+    network::JoinBarrierStatusPacket status;
+    status.stage_instance_id = host.net_session.stage_instance_id;
+    status.sender_peer_id = 1;
+    status.barrier_id = host.net_session.join_barrier_id;
+    status.active = 1;
+    status.phase = static_cast<std::uint8_t>(network::JoinBarrierPhase::SendingSnapshot);
+    status.active_player_id = 2;
+    status.transfer_id = host.net_session.join_barrier_transfer_id;
+    status.snapshot_frame = host.net_session.lockstep_next_frame_to_step;
+    network::HandleJoinBarrierStatus(peer, status);
+    if (peer.net_session.join_barrier_transfer_id != host.net_session.join_barrier_transfer_id) {
+        std::cerr << "join barrier next-stage restart smoke failed: peer rejected next-stage status\n";
+        return false;
+    }
+
+    network::NetTransportRuntime peer_transport = network::NetTransportRuntime::New();
+    peer_transport.capture_outgoing_packets = true;
+    peer_transport.host_endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39001};
+
+    const std::vector<network::SnapshotResyncChunkPacket> chunks =
+        BuildSnapshotChunksForSmoke(
+            host,
+            host_graphics,
+            host.net_session.join_barrier_transfer_id,
+            host.net_session.lockstep_next_frame_to_step
+        );
+    for (const network::SnapshotResyncChunkPacket& chunk : chunks) {
+        network::HandleSnapshotResyncChunk(peer, peer_graphics, peer_transport, chunk);
+    }
+
+    const std::optional<network::SnapshotResyncAckPacket> ack =
+        LastCapturedSnapshotAck(peer_transport);
+    if (!ack.has_value() ||
+        ack->stage_instance_id != host.net_session.stage_instance_id ||
+        ack->transfer_id != host.net_session.join_barrier_transfer_id ||
+        ack->success == 0 ||
+        peer.net_session.stage_instance_id != host.net_session.stage_instance_id ||
+        peer.net_session.stage_seed != host.net_session.stage_seed ||
+        peer.net_session.run_restart_pending ||
+        peer.net_session.run_restart_transition_queued ||
+        peer.net_session.join_barrier_phase != network::JoinBarrierPhase::WaitingForResume) {
+        std::cerr << "join barrier next-stage restart smoke failed: next-stage snapshot did not restore/ack\n"
+                  << "  ack=" << (ack.has_value() ? "yes" : "no")
+                  << " peer_stage=" << peer.net_session.stage_instance_id
+                  << " host_stage=" << host.net_session.stage_instance_id
+                  << " peer_seed=" << peer.net_session.stage_seed
+                  << " host_seed=" << host.net_session.stage_seed
+                  << " pending=" << (peer.net_session.run_restart_pending ? "true" : "false")
+                  << " queued=" << (peer.net_session.run_restart_transition_queued ? "true" : "false")
+                  << " applied=" << (peer.net_session.run_restart_applied_locally ? "true" : "false")
+                  << " barrier_phase=" << static_cast<int>(peer.net_session.join_barrier_phase)
+                  << '\n';
+        return false;
+    }
+
+    network::HandleSnapshotResyncAck(host, *ack);
+    if (host.net_session.join_barrier_phase != network::JoinBarrierPhase::ReadyToResume) {
+        std::cerr << "join barrier next-stage restart smoke failed: host did not accept next-stage ack\n";
+        return false;
+    }
+
+    network::JoinBarrierResumePacket resume;
+    resume.stage_instance_id = host.net_session.stage_instance_id;
+    resume.sender_peer_id = 1;
+    resume.barrier_id = host.net_session.join_barrier_id;
+    resume.resume_frame = host.net_session.lockstep_next_frame_to_step;
+    network::HandleJoinBarrierResume(peer, resume);
+    if (peer.net_session.join_barrier_active) {
+        std::cerr << "join barrier next-stage restart smoke failed: resume did not clear peer barrier\n";
+        return false;
+    }
+
+    if (!CompareCanonicalFingerprints(host, peer, "join barrier next-stage restart final")) {
+        std::cerr << "  first simple diff: " << DescribeFirstStateDifference(host, peer) << '\n';
+        return false;
+    }
+
+    std::cout << "join barrier next-stage restart smoke ok\n";
+    return true;
+}
+
 bool AddSmokePlayer(State& state, Graphics& graphics, PlayerId player_id, Vec2 offset) {
     (void)state.players.EnsureLocalPlayer(
         player_id,
@@ -3566,6 +3692,10 @@ bool RunHostWaitsForMissingInputSmoke() {
 
 } // namespace
 
+bool CheckJoinBarrierNextStageRestartSmoke() {
+    return RunJoinBarrierNextStageRestartSmoke();
+}
+
 bool CheckStateFingerprintSmoke() {
     try {
         Graphics graphics;
@@ -4295,6 +4425,9 @@ bool CheckInputLockstepSmoke() {
             return false;
         }
         if (!RunJoinBarrierChunkImpairmentSmoke()) {
+            return false;
+        }
+        if (!RunJoinBarrierNextStageRestartSmoke()) {
             return false;
         }
         if (!RunSimSnapshotMultiLocalOverlaySmoke()) {

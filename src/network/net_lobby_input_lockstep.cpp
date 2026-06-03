@@ -623,6 +623,17 @@ bool IsJoinBarrierBlocking(const State& state) {
            state.net_session.join_barrier_phase != JoinBarrierPhase::None;
 }
 
+bool PacketMatchesCurrentOrAcceptedNextStage(const State& state, StageInstanceId stage_instance_id) {
+    if (stage_instance_id == state.net_session.stage_instance_id) {
+        return true;
+    }
+    return state.net_session.role == NetRole::Peer &&
+           state.net_session.run_restart_pending &&
+           !state.net_session.run_restart_applied_locally &&
+           stage_instance_id == state.net_session.stage_instance_id + 1 &&
+           stage_instance_id == state.net_session.run_restart_last_packet_stage_instance_id;
+}
+
 void QueueJoinBarrierPeer(State& state, PlayerId target_peer_id) {
     if (target_peer_id == kInvalidPlayerId ||
         target_peer_id == state.net_session.local_player_id) {
@@ -2272,7 +2283,7 @@ void BeginJoinBarrierTopologyRemoval(
 
 void HandleJoinBarrierStatus(State& state, const JoinBarrierStatusPacket& packet) {
     if (state.net_session.role != NetRole::Peer ||
-        packet.stage_instance_id != state.net_session.stage_instance_id ||
+        !PacketMatchesCurrentOrAcceptedNextStage(state, packet.stage_instance_id) ||
         packet.barrier_id < state.net_session.join_barrier_id) {
         return;
     }
@@ -2341,7 +2352,7 @@ void HandleJoinBarrierTopology(
     const JoinBarrierTopologyPacket& packet
 ) {
     if (state.net_session.role != NetRole::Peer ||
-        packet.stage_instance_id != state.net_session.stage_instance_id ||
+        !PacketMatchesCurrentOrAcceptedNextStage(state, packet.stage_instance_id) ||
         packet.barrier_id < state.net_session.join_barrier_id) {
         return;
     }
@@ -2432,10 +2443,11 @@ void HandleJoinBarrierTopologyAck(State& state, const JoinBarrierTopologyAckPack
 
 void HandleJoinBarrierResume(State& state, const JoinBarrierResumePacket& packet) {
     if (state.net_session.role != NetRole::Peer ||
-        packet.stage_instance_id != state.net_session.stage_instance_id ||
+        !PacketMatchesCurrentOrAcceptedNextStage(state, packet.stage_instance_id) ||
         packet.barrier_id < state.net_session.join_barrier_id) {
         return;
     }
+    state.net_session.stage_instance_id = packet.stage_instance_id;
     state.net_session.lockstep_next_frame_to_step = packet.resume_frame;
     state.net_session.lockstep_next_local_input_frame = packet.resume_frame;
     state.net_session.join_barrier_id = packet.barrier_id;
@@ -2499,7 +2511,7 @@ void HandleSnapshotResyncChunk(
     const SnapshotResyncChunkPacket& packet
 ) {
     if (state.net_session.role != NetRole::Peer ||
-        packet.stage_instance_id != state.net_session.stage_instance_id ||
+        !PacketMatchesCurrentOrAcceptedNextStage(state, packet.stage_instance_id) ||
         packet.chunk_count == 0 ||
         packet.chunk_index >= packet.chunk_count ||
         packet.total_bytes == 0) {
@@ -2596,6 +2608,11 @@ void HandleSnapshotResyncChunk(
             RestoreEntRuntimeCallbacksFromSpec(ent);
         }
         RelinkPlayerNetEnts(state);
+        state.net_session.stage_instance_id = packet.stage_instance_id;
+        state.net_session.quest_id = state.stage.quest_id;
+        state.net_session.quest_stage_id = state.stage.quest_stage_id;
+        state.net_session.stage_seed = state.stage.generation_seed.value_or(state.net_session.stage_seed);
+        NotifyRunRestartStageLoaded(state);
         state.net_session.lockstep_next_frame_to_step = packet.snapshot_frame;
         state.net_session.lockstep_next_local_input_frame = packet.snapshot_frame;
         state.net_session.lockstep_input_buffer = LockstepInputBuffer{};

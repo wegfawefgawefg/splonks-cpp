@@ -7,5 +7,6 @@ bool CheckStateEqualitySmoke();
 bool CheckDetReplaySmoke();
 bool CheckNetworkFreshReloadOwnershipSmoke();
 bool CheckInputLockstepSmoke();
+bool CheckJoinBarrierNextStageRestartSmoke();
 
 } // namespace splonks

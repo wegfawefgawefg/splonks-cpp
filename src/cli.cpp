@@ -1091,6 +1091,10 @@ bool RunCliCommand(int argc, char** argv) {
         std::exit(CheckInputLockstepSmoke() ? 0 : 1);
     }
 
+    if (command == "--check-join-barrier-next-stage-restart-smoke") {
+        std::exit(CheckJoinBarrierNextStageRestartSmoke() ? 0 : 1);
+    }
+
     if (command == "--check-gubsy-shell-smoke") {
         std::exit(CheckGubsyShellSmoke() ? 0 : 1);
     }
