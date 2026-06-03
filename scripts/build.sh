@@ -26,7 +26,11 @@ case "${preset}" in
 esac
 
 configure() {
-    cmake --preset "${preset}" "${configure_args[@]}"
+    if [ "${#configure_args[@]}" -gt 0 ]; then
+        cmake --preset "${preset}" "${configure_args[@]}"
+    else
+        cmake --preset "${preset}"
+    fi
 }
 
 if ! configure; then
