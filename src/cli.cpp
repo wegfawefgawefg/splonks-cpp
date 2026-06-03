@@ -1079,6 +1079,10 @@ bool RunCliCommand(int argc, char** argv) {
         std::exit(CheckStateEqualitySmoke() ? 0 : 1);
     }
 
+    if (command == "--check-gameplay-snapshot-callback-rebind-smoke") {
+        std::exit(CheckGameplaySnapshotCallbackRebindSmoke() ? 0 : 1);
+    }
+
     if (command == "--check-det-replay-smoke") {
         std::exit(CheckDetReplaySmoke() ? 0 : 1);
     }

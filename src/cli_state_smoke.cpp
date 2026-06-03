@@ -3860,6 +3860,82 @@ bool CheckStateEqualitySmoke() {
     }
 }
 
+// Regression: a GameplaySnapshot loaded from a debug recording carries raw
+// function-pointer bytes that are stale in this process (different ASLR base or
+// build). RestoreGameplaySnapshot must re-derive every ent callback from the
+// build-local type spec, never trust the restored bytes -- otherwise the next
+// StepEnts dereferences a wild pointer and crashes. We simulate stale bytes by
+// poisoning the snapshot's callbacks to nullptr and assert they come back equal
+// to the spec after restore.
+bool CheckGameplaySnapshotCallbackRebindSmoke() {
+    try {
+        Graphics graphics;
+        InitCliSmokeRuntimeTables(graphics);
+
+        State state = State::New();
+        if (!LoadQuestStage(state, "classic", "classic_mines_1", false, 12345)) {
+            std::cerr << "snapshot callback rebind smoke failed: could not load stage\n";
+            return false;
+        }
+
+        GameplaySnapshot snapshot = MakeGameplaySnapshot(state, graphics);
+
+        // Simulate stale/garbage pointers from a loaded recording.
+        for (Ent& ent : snapshot.ents.ents) {
+            ent.on_death = nullptr;
+            ent.on_damage = nullptr;
+            ent.on_use = nullptr;
+            ent.on_area_enter = nullptr;
+            ent.on_area_exit = nullptr;
+            ent.on_area_tile_changed = nullptr;
+            ent.control_logic = nullptr;
+            ent.step_logic = nullptr;
+            ent.step_physics = nullptr;
+        }
+
+        RestoreGameplaySnapshot(snapshot, state, graphics);
+
+        std::size_t checked_with_callbacks = 0;
+        for (const Ent& ent : state.ents.ents) {
+            if (!ent.active) {
+                continue;
+            }
+            const EntSpec& spec = GetEntSpec(ent.type_);
+            const bool spec_has_callback =
+                spec.on_death != nullptr || spec.on_damage != nullptr ||
+                spec.on_use != nullptr || spec.on_area_enter != nullptr ||
+                spec.on_area_exit != nullptr || spec.on_area_tile_changed != nullptr ||
+                spec.control_logic != nullptr || spec.step_logic != nullptr ||
+                spec.step_physics != nullptr;
+            if (spec_has_callback) {
+                ++checked_with_callbacks;
+            }
+            if (ent.on_death != spec.on_death || ent.on_damage != spec.on_damage ||
+                ent.on_use != spec.on_use || ent.on_area_enter != spec.on_area_enter ||
+                ent.on_area_exit != spec.on_area_exit ||
+                ent.on_area_tile_changed != spec.on_area_tile_changed ||
+                ent.control_logic != spec.control_logic ||
+                ent.step_logic != spec.step_logic ||
+                ent.step_physics != spec.step_physics) {
+                std::cerr << "snapshot callback rebind smoke failed: ent id "
+                          << ent.vid.id << " callbacks not rebound from spec\n";
+                return false;
+            }
+        }
+
+        if (checked_with_callbacks == 0) {
+            std::cerr << "snapshot callback rebind smoke failed: no active ents "
+                         "with spec callbacks to verify (test would be vacuous)\n";
+            return false;
+        }
+
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "snapshot callback rebind smoke failed: " << e.what() << '\n';
+        return false;
+    }
+}
+
 bool CheckDetReplaySmoke() {
     try {
         Graphics graphics;

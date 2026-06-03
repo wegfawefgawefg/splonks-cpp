@@ -41,6 +41,9 @@ void RestoreEntRuntimeCallbacksFromSpec(Ent& ent) {
     ent.on_death = spec.on_death;
     ent.on_damage = spec.on_damage;
     ent.on_use = spec.on_use;
+    ent.on_area_enter = spec.on_area_enter;
+    ent.on_area_exit = spec.on_area_exit;
+    ent.on_area_tile_changed = spec.on_area_tile_changed;
     ent.control_logic = spec.control_logic;
     ent.step_logic = spec.step_logic;
     ent.step_physics = spec.step_physics;

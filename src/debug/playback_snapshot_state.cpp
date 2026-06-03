@@ -152,6 +152,12 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.frame_pause = snapshot.frame_pause;
     state.debug_level = snapshot.debug_level;
     state.ents = snapshot.ents;
+    // Snapshots restored from a recording carry raw function-pointer bytes that
+    // are stale in this process (different build / ASLR base). Re-derive every
+    // ent callback from the build-local type spec; never trust the bytes.
+    for (Ent& ent : state.ents.ents) {
+        RestoreEntRuntimeCallbacksFromSpec(ent);
+    }
     state.particles = snapshot.particles;
     state.audio_emitters = snapshot.audio_emitters;
     state.area_listener_vids = snapshot.area_listener_vids;
