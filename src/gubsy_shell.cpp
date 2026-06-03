@@ -846,6 +846,12 @@ void SyncDirectJoinStatus(Shell& shell) {
     }
 
     const std::uint64_t now_ms = SDL_GetTicks();
+    if (shell.state->net_transport &&
+        shell.state->net_transport->join_request_pending &&
+        shell.state->net_transport->join_request_waiting_for_host) {
+        shell.direct_join_started_ms = now_ms;
+        return;
+    }
     if (now_ms - shell.direct_join_started_ms < DirectJoinTimeoutMs())
         return;
 

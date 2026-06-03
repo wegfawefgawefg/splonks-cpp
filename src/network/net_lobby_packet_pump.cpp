@@ -148,6 +148,19 @@ bool InputFrameRecordsBelongToEndpoint(
     return true;
 }
 
+void MarkRealnetPunchEstablishedFromPeerTraffic(NetTransportRuntime& transport,
+                                                const NetEndpoint& endpoint) {
+    RealnetPunchRuntime& punch = transport.realnet_punch;
+    if (!punch.active || !punch.is_host || !punch.have_peer_endpoint ||
+        !EndpointsEqual(endpoint, punch.peer_endpoint)) {
+        return;
+    }
+    punch.established = true;
+    punch.timed_out = false;
+    punch.failure_reason.clear();
+    punch.status = "peer_traffic_received";
+}
+
 } // namespace
 
 void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
@@ -177,6 +190,7 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             decoded_packet = relay_unwrapped;
         }
 
+        MarkRealnetPunchEstablishedFromPeerTraffic(transport, decoded_packet.endpoint);
         MarkRemoteEndpointHeard(transport, decoded_packet.endpoint);
 
         if (const std::optional<JoinRequestPacket> request =
