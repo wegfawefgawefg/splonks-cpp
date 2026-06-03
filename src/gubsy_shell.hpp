@@ -15,6 +15,13 @@ struct LobbyConfig {
     std::vector<EntType> character_by_player;
 };
 
+enum class DirectJoinAttemptKind {
+    None,
+    Direct,
+    NatPunch,
+    Relay,
+};
+
 struct Shell {
     GubsyRuntime runtime;
     State* state = nullptr;
@@ -26,7 +33,7 @@ struct Shell {
     bool block_menu_input_until_release = false;
     bool direct_join_pending = false;
     bool joined_room_host_in_game = false;
-    bool realnet_fallback_started = false;
+    DirectJoinAttemptKind direct_join_attempt_kind = DirectJoinAttemptKind::None;
     std::string realnet_host_punch_room_code;
     std::string realnet_host_relay_room_code;
     std::string direct_join_endpoint;

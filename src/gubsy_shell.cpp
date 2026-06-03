@@ -557,7 +557,7 @@ GubsyLobbyHostResult HostSplonksFromGubsy(void* user_data, const GubsyLobbyState
     shell->direct_join_pending = false;
     shell->direct_join_endpoint.clear();
     shell->direct_join_started_ms = 0;
-    shell->realnet_fallback_started = false;
+    shell->direct_join_attempt_kind = DirectJoinAttemptKind::None;
     shell->realnet_host_punch_room_code.clear();
     shell->realnet_host_relay_room_code.clear();
     ApplyLobbyConfigToSplonks(*shell, lobby, true);
@@ -617,7 +617,7 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
                                 !lobby.pending_relay_allocation_id.empty() &&
                                 !lobby.pending_relay_secret.empty() &&
                                 RealnetRelayEndpoint(lobby, relay_endpoint);
-    bool use_realnet_first = false;
+    DirectJoinAttemptKind started_attempt = DirectJoinAttemptKind::None;
     const bool has_room_plan = !lobby.pending_join_room.contract.connection_candidates.empty();
     if (has_room_plan) {
         const realnet::ConnectionPlan plan =
@@ -639,6 +639,7 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
                 if (result.ok) {
                     shell->direct_join_endpoint = candidate.host + ":" +
                                                   std::to_string(candidate.port);
+                    started_attempt = DirectJoinAttemptKind::Direct;
                 }
                 break;
             }
@@ -653,9 +654,9 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
                                                                     {},
                                                                     &result.status);
                 if (result.ok) {
-                    use_realnet_first = true;
                     shell->direct_join_endpoint = "Realnet NAT punch " +
                                                  network::EndpointToString(punch_endpoint);
+                    started_attempt = DirectJoinAttemptKind::NatPunch;
                 }
                 break;
             }
@@ -671,9 +672,9 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
                                                                     {},
                                                                     &result.status);
                 if (result.ok) {
-                    use_realnet_first = true;
                     shell->direct_join_endpoint = "Realnet relay " +
                                                  network::EndpointToString(relay_endpoint);
+                    started_attempt = DirectJoinAttemptKind::Relay;
                 }
                 break;
             }
@@ -687,13 +688,15 @@ GubsyLobbyJoinResult JoinSplonksFromGubsy(void* user_data, const GubsyLobbyState
     }
     if (!has_room_plan) {
         result.ok = network::JoinHostSession(*shell->state, host, port, &result.status);
-        if (result.ok)
+        if (result.ok) {
             shell->direct_join_endpoint = std::string(host) + ":" + std::to_string(port);
+            started_attempt = DirectJoinAttemptKind::Direct;
+        }
     }
     if (result.ok) {
         result.pending = true;
         shell->direct_join_pending = true;
-        shell->realnet_fallback_started = use_realnet_first;
+        shell->direct_join_attempt_kind = started_attempt;
         shell->direct_join_started_ms = SDL_GetTicks();
     }
     std::cerr << result.status << '\n';
@@ -836,7 +839,7 @@ void SyncDirectJoinStatus(Shell& shell) {
         if (gubsy_get_lobby_state(shell.runtime).online)
             (void)gubsy_show_lobby_menu(shell.runtime);
         shell.direct_join_pending = false;
-        shell.realnet_fallback_started = false;
+        shell.direct_join_attempt_kind = DirectJoinAttemptKind::None;
         shell.direct_join_endpoint.clear();
         shell.direct_join_started_ms = 0;
         return;
@@ -848,7 +851,8 @@ void SyncDirectJoinStatus(Shell& shell) {
 
     const GubsyLobbyState& lobby = gubsy_get_lobby_state(shell.runtime);
     network::NetEndpoint punch_endpoint;
-    if (!shell.realnet_fallback_started &&
+    if (shell.direct_join_attempt_kind == DirectJoinAttemptKind::Direct &&
+        !RealnetRelayForced() &&
         lobby.room_join_pending &&
         !lobby.pending_join_room.room_code.empty() &&
         !lobby.pending_join_attempt_id.empty() &&
@@ -864,7 +868,7 @@ void SyncDirectJoinStatus(Shell& shell) {
                                                                      {},
                                                                      &status);
         if (started) {
-            shell.realnet_fallback_started = true;
+            shell.direct_join_attempt_kind = DirectJoinAttemptKind::NatPunch;
             shell.direct_join_endpoint = "Realnet NAT punch " +
                                          network::EndpointToString(punch_endpoint);
             shell.direct_join_started_ms = SDL_GetTicks();
@@ -873,7 +877,8 @@ void SyncDirectJoinStatus(Shell& shell) {
         }
     }
     network::NetEndpoint relay_endpoint;
-    if (!shell.realnet_fallback_started &&
+    if (shell.direct_join_attempt_kind != DirectJoinAttemptKind::Relay &&
+        !RealnetPunchForced() &&
         lobby.room_join_pending &&
         !lobby.pending_join_room.room_code.empty() &&
         !lobby.pending_join_attempt_id.empty() &&
@@ -893,7 +898,7 @@ void SyncDirectJoinStatus(Shell& shell) {
             &status
         );
         if (started) {
-            shell.realnet_fallback_started = true;
+            shell.direct_join_attempt_kind = DirectJoinAttemptKind::Relay;
             shell.direct_join_endpoint = "Realnet relay " +
                                          network::EndpointToString(relay_endpoint);
             shell.direct_join_started_ms = SDL_GetTicks();
@@ -907,7 +912,7 @@ void SyncDirectJoinStatus(Shell& shell) {
     std::string message = "No server found at " + shell.direct_join_endpoint;
     gubsy_fail_lobby_direct_join(shell.runtime, message);
     shell.direct_join_pending = false;
-    shell.realnet_fallback_started = false;
+    shell.direct_join_attempt_kind = DirectJoinAttemptKind::None;
     shell.direct_join_endpoint.clear();
     shell.direct_join_started_ms = 0;
 }
