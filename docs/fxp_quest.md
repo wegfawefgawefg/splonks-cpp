@@ -493,15 +493,19 @@ This happens only after the isolated library is proven.
 - [ ] Validate Linux host/macOS peer determinism with the same recorded input
       session.
 
-## Vendor-Only Scope
+## Splonks First Integration Scope
 
-The next Splonks step should be vendor-only. It should make `gfxp` available to
-Splonks code without changing gameplay simulation behavior.
+The next Splonks step should not stop at vendoring. It should vendor `gfxp`,
+define the local fixed-point vocabulary, and migrate one narrow authoritative
+physics path far enough to prove the API shape.
 
-Do:
+The goal is not to convert every entity and every gameplay float in one pass.
+The goal is to establish the correct boundary and prove one meaningful path.
+
+### Vendor gfxp
 
 - [ ] Copy the upstream `gfxp/include/gfxp` header tree into Splonks.
-- [ ] Put the vendored copy under an explicit vendor path, likely:
+- [ ] Put the vendored copy under an explicit vendor path:
 
   ```text
   src/vendor/gfxp/include/gfxp/
@@ -517,24 +521,102 @@ Do:
   ```
 
 - [ ] Add the vendor include path to Splonks CMake.
-- [ ] Add a tiny compile smoke that includes `<gfxp/gfxp.hpp>` and verifies the
-      default scale/aliases compile.
-- [ ] Run the normal Splonks build.
-- [ ] Commit and push the vendoring-only change.
-
-Do not:
-
-- [ ] Do not migrate `Ent::pos`, `vel`, `acc`, `size`, or physics code yet.
-- [ ] Do not change networking hashes yet.
-- [ ] Do not change SDRP/replay formats yet.
 - [ ] Do not introduce a runtime or build dependency on `../gfxp`.
 - [ ] Do not vendor `gfxp` into Gubsy in this step.
 
-Success condition:
+### Define Splonks Fixed-Point Vocabulary
 
-- Splonks builds with the copied `gfxp` headers available.
-- No gameplay behavior changes are made.
-- The vendored commit is recorded clearly so future updates are traceable.
+Add a thin Splonks-owned header that gives gameplay code domain names instead of
+using upstream aliases everywhere:
+
+```text
+src/sim/fxp.hpp
+```
+
+Proposed contents:
+
+```cpp
+namespace splonks::sim {
+using Scalar = gfxp::Fixed12;
+using Vec2 = gfxp::BasicVec2<Scalar>;
+}
+```
+
+This keeps upstream `gfxp` generic while giving Splonks room to later choose a
+different scalar or add game-specific helpers without editing the vendored copy.
+
+Tasks:
+
+- [ ] Add `src/sim/fxp.hpp`.
+- [ ] Define `splonks::sim::Scalar` and `splonks::sim::Vec2`.
+- [ ] Add conversion helpers between current `splonks::Vec2` and
+      `splonks::sim::Vec2`.
+- [ ] Keep conversion names explicit, such as `ToSimVec2` and `ToRenderVec2`,
+      so render-boundary float conversion is visible.
+
+### First Migration Target
+
+The first meaningful target should be the generic entity movement step, because
+that is where the desync suspicion points:
+
+- `src/ent.hpp`: `Ent::pos`, `Ent::vel`, `Ent::acc`
+- `src/ents/common/physics.cpp`
+- `src/state_fingerprint.cpp`
+
+But converting `Ent::pos/vel/acc` directly will touch a large amount of code.
+So the first pass should use a bridge strategy:
+
+1. Keep public `Ent::pos`, `Ent::vel`, and `Ent::acc` as `splonks::Vec2` for
+   now.
+2. Add fixed-point conversion inside the generic movement/physics path.
+3. Run the current float values through fixed-point stepping in
+   `ents/common/physics.cpp`, then write the result back to the existing float
+   fields.
+4. Update state fingerprints for movement fields to hash the fixed-point
+   quantized representation rather than raw float bits where that path is
+   authoritative.
+
+This deliberately tests whether quantized deterministic movement removes
+cross-platform drift without forcing a whole-codebase type migration on day one.
+
+Tasks:
+
+- [ ] Add helpers for quantizing `Vec2` to `sim::Vec2`.
+- [ ] Add fixed-point versions of the movement helpers currently based around
+      `GetIntegerStepDistance`.
+- [ ] Convert generic `PrePartialEulerStep`/movement stepping to use
+      fixed-point intermediates for `pos`, `vel`, and `acc`.
+- [ ] Keep render and non-authoritative visual code float.
+- [ ] Update movement-related fingerprinting to hash fixed raw integers for
+      quantized movement fields.
+- [ ] Build and run local play to confirm no obvious feel breakage.
+- [ ] Re-run a two-machine Linux/macOS or Linux/Linux multiplayer check before
+      expanding the migration.
+
+### What Not To Migrate First
+
+Do not start with these unless they block the movement path:
+
+- [ ] Particle simulation.
+- [ ] Camera/group camera.
+- [ ] UI/menu layout.
+- [ ] Audio emitters.
+- [ ] Lighting visuals.
+- [ ] Stage generation.
+- [ ] Fluid simulation.
+- [ ] Trig-heavy gameplay.
+- [ ] Full `Ent` field type conversion.
+- [ ] SDRP format changes beyond any hash visibility needed for this step.
+
+### Success Condition
+
+- Splonks contains a traceable vendored `gfxp` copy.
+- Splonks has a local `sim::Scalar` / `sim::Vec2` vocabulary.
+- One authoritative movement path uses fixed-point or fixed-point quantized
+  intermediates.
+- State hashes for that path no longer depend on raw float bits.
+- Normal Splonks build passes.
+- The game still feels plausibly the same in a quick local run.
 
 ## Open Questions
 
