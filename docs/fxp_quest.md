@@ -479,7 +479,9 @@ the gameplay simulation can diverge across machines.
 
 This happens only after the isolated library is proven.
 
-- [ ] Decide whether Splonks vendors `gfxp` directly or receives a copied subset.
+- [x] Decide whether Splonks vendors `gfxp` directly or receives a copied subset.
+      Decision: vendor the small header-only include tree directly into
+      Splonks. Do not make Splonks depend on a sibling `../gfxp` checkout.
 - [ ] Decide whether Gubsy should also vendor it for future game/tooling use.
 - [ ] Identify first Splonks gameplay fields to migrate: likely `pos`, `vel`,
       `acc`, and collision movement helpers.
@@ -490,6 +492,49 @@ This happens only after the isolated library is proven.
 - [ ] Migrate one narrow physics path first and validate local behavior.
 - [ ] Validate Linux host/macOS peer determinism with the same recorded input
       session.
+
+## Vendor-Only Scope
+
+The next Splonks step should be vendor-only. It should make `gfxp` available to
+Splonks code without changing gameplay simulation behavior.
+
+Do:
+
+- [ ] Copy the upstream `gfxp/include/gfxp` header tree into Splonks.
+- [ ] Put the vendored copy under an explicit vendor path, likely:
+
+  ```text
+  src/vendor/gfxp/include/gfxp/
+  ```
+
+- [ ] Add a vendoring note:
+
+  ```text
+  src/vendor/gfxp/README.md
+  upstream: https://github.com/wegfawefgawefg/gfxp
+  vendored commit: fb10177
+  update method: copy include/gfxp from upstream
+  ```
+
+- [ ] Add the vendor include path to Splonks CMake.
+- [ ] Add a tiny compile smoke that includes `<gfxp/gfxp.hpp>` and verifies the
+      default scale/aliases compile.
+- [ ] Run the normal Splonks build.
+- [ ] Commit and push the vendoring-only change.
+
+Do not:
+
+- [ ] Do not migrate `Ent::pos`, `vel`, `acc`, `size`, or physics code yet.
+- [ ] Do not change networking hashes yet.
+- [ ] Do not change SDRP/replay formats yet.
+- [ ] Do not introduce a runtime or build dependency on `../gfxp`.
+- [ ] Do not vendor `gfxp` into Gubsy in this step.
+
+Success condition:
+
+- Splonks builds with the copied `gfxp` headers available.
+- No gameplay behavior changes are made.
+- The vendored commit is recorded clearly so future updates are traceable.
 
 ## Open Questions
 
