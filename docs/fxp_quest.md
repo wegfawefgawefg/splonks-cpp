@@ -395,10 +395,10 @@ This happens only after the isolated library is proven.
 - [ ] Decide whether Gubsy should also vendor it for future game/tooling use.
 - [x] Identify the current Splonks float inputs inside fingerprint/hash domains.
 - [ ] Keep render conversion explicit at the render boundary.
-- [ ] Keep network hashes over raw fixed-point integers.
+- [x] Keep network hashes over raw fixed-point integers.
 - [ ] Update SDRP/desync captures to include enough final local state to compare
       exact entity field differences.
-- [ ] Remove raw float bit hashing from authoritative hash domains by migrating
+- [x] Remove raw float bit hashing from authoritative hash domains by migrating
       values to fixed-point/integer state or hashing an explicit fixed-point
       quantized representation.
 - [ ] Validate Linux host/macOS peer determinism with the same recorded input
@@ -423,14 +423,14 @@ feed authoritative hashes.
 
 ### Vendor gfxp
 
-- [ ] Copy the upstream `gfxp/include/gfxp` header tree into Splonks.
+- [x] Copy the upstream `gfxp/include/gfxp` header tree into Splonks.
 - [ ] Put the vendored copy under an explicit vendor path:
 
   ```text
   src/vendor/gfxp/include/gfxp/
   ```
 
-- [ ] Add a vendoring note:
+- [x] Add a vendoring note:
 
   ```text
   src/vendor/gfxp/README.md
@@ -439,7 +439,7 @@ feed authoritative hashes.
   update method: copy include/gfxp from upstream
   ```
 
-- [ ] Add the vendor include path to Splonks CMake.
+- [x] Add the vendor include path to Splonks CMake.
 - [ ] Do not introduce a runtime or build dependency on `../gfxp`.
 - [ ] Do not vendor `gfxp` into Gubsy in this step.
 
@@ -466,20 +466,21 @@ different scalar or add game-specific helpers without editing the vendored copy.
 
 Tasks:
 
-- [ ] Add `src/sim/fxp.hpp`.
-- [ ] Define `splonks::sim::Scalar` and `splonks::sim::Vec2`.
-- [ ] Add conversion helpers between current `splonks::Vec2` and
+- [x] Add `src/sim/fxp.hpp`.
+- [x] Define `splonks::sim::Scalar` and `splonks::sim::Vec2`.
+- [x] Add conversion helpers between current `splonks::Vec2` and
       `splonks::sim::Vec2`.
-- [ ] Keep conversion names explicit, such as `ToSimVec2` and `ToRenderVec2`,
+- [x] Keep conversion names explicit, such as `ToSimVec2` and `ToRenderVec2`,
       so render-boundary float conversion is visible.
 
 ### Hash Domain Float Audit
 
-Current audit source: `src/state_fingerprint.cpp`.
+Original audit source: `src/state_fingerprint.cpp`.
 
-`FingerprintWriter::AddFloat(float)` currently copies the raw IEEE float bits
-into the hash. `FingerprintWriter::AddVec2(const Vec2&)` calls `AddFloat` for
-`x` and `y`. These are the current float inputs:
+Before the first implementation pass, `FingerprintWriter::AddFloat(float)`
+copied the raw IEEE float bits into the hash. `FingerprintWriter::AddVec2(const
+Vec2&)` called `AddFloat` for `x` and `y`. These were the float inputs that had
+to be removed from raw bit hashing:
 
 Stage fingerprints:
 
@@ -571,25 +572,76 @@ but the bridge must be explicit and temporary.
 
 Tasks:
 
-- [ ] Add helpers for quantizing float `Vec2` and scalar floats to `sim::Vec2`
+- [x] Add helpers for quantizing float `Vec2` and scalar floats to `sim::Vec2`
       / `sim::Scalar`.
-- [ ] Replace raw `AddFloat` hashing for authoritative fields with fixed raw
+- [x] Replace raw `AddFloat` hashing for authoritative fields with fixed raw
       integer hashing.
 - [ ] Prefer migrating storage to fixed-point for P0 gameplay fields over
       leaving long-term float storage with hash-only quantization.
 - [ ] Convert generic movement/physics stepping for `pos`, `vel`, and `acc` to
       fixed-point state or fixed-point intermediates.
-- [ ] Audit each use of `counter_a` through `counter_d` and classify it as
+- [x] Audit each use of `counter_a` through `counter_d` and classify it as
       fixed-point, integer tick/state, or non-authoritative.
-- [ ] Audit `effect.value` definitions and classify each effect as gameplay or
+- [x] Audit `effect.value` definitions and classify each effect as gameplay or
       cosmetic.
-- [ ] Audit `stage.fluid_amount` and decide whether it is gameplay or cosmetic.
-- [ ] Audit `aframe_animator` usage and decide whether animation time is
+- [x] Audit `stage.fluid_amount` and decide whether it is gameplay or cosmetic.
+- [x] Audit `aframe_animator` usage and decide whether animation time is
       gameplay state or render-only state.
 - [ ] Keep render and non-authoritative visual code float.
 - [ ] Build and run local play to confirm no obvious feel breakage.
 - [ ] Re-run a two-machine Linux/macOS or Linux/Linux multiplayer check before
       expanding the migration.
+
+### First Implementation Notes
+
+Current implementation status:
+
+- `src/vendor/gfxp/include/gfxp` contains the vendored header-only library from
+  upstream commit `fb10177`.
+- `src/sim/fxp.hpp` defines `splonks::sim::Scalar` as `gfxp::Fixed12`,
+  `splonks::sim::Vec2`, `ToSimScalar`, `ToSimVec2`, and `ToRenderVec2`.
+- `src/state_fingerprint.cpp` no longer hashes raw IEEE float bits. All
+  previously audited float inputs now hash the raw `Fixed12` value produced by
+  the explicit Splonks conversion boundary.
+
+Classification result:
+
+- `counter_a` through `counter_d`: gameplay-authoritative. Most current uses
+  are frame counters, state enums/flags stored as floats, ammo/value buckets, or
+  cooldowns. Some uses are distance/phase accumulators, such as trail intervals,
+  moving-platform phase, and debug moving lights. Short term: quantized hash.
+  Longer term: migrate each counter use to typed integer state or fixed-point
+  fields based on meaning.
+- `effect.value`: gameplay-authoritative when effects modify stats, tuning, or
+  player state. Current effect specs include scalar modifier values, so it stays
+  in the authoritative hash through fixed-point quantization. Pure render effect
+  values should eventually move out of authoritative effect state.
+- `stage.fluid_amount`: gameplay-authoritative stage state. It is simulated in
+  `stage_fluids.cpp`, queried from stage data, rotated/wrapped with stage
+  geometry, and should remain in stage/network fingerprints. Short term:
+  quantized hash. Longer term: migrate stage fluid amount storage to fixed-point
+  or a compact integer unit.
+- `aframe_animator.current_time` and `aframe_animator.speed`:
+  gameplay-authoritative for ents whose animation frame gates actions, contact,
+  strikes, or state transitions. Short term: quantized hash. Longer term: use
+  integer frame/subframe counters for gameplay animations and leave purely
+  visual sprite timing outside gameplay hashes.
+- `light_strength` and `light_color`: cosmetic for network lockstep and already
+  absent from network entity hashes. They remain quantized in canonical/debug
+  hashes until canonical hash modes are split more explicitly.
+
+Validation so far:
+
+- [x] `./scripts/build.sh`
+- [x] `./build/splonks-cpp --check-state-fingerprint-smoke --project-root ...`
+- [x] `./build/splonks-cpp --check-join-barrier-next-stage-restart-smoke --project-root ...`
+- [ ] `python3 scripts/validate_lockstep_live.py --launch-pair --profile same-house ...`
+      did not pass. It reported no confirmed hash exchange on either endpoint
+      (`hash_frame=0`, mismatch count `0`). This keeps the full FXP integration
+      goal open until the live two-client determinism gate is understood and
+      passing.
+- [ ] `./build/splonks-cpp --check-input-lockstep-smoke --project-root ...`
+      was stopped after running silently for about two minutes.
 
 ### What Not To Migrate First
 

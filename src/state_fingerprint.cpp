@@ -2,10 +2,11 @@
 
 #include "ent.hpp"
 #include "network/net_session.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 
 #include <algorithm>
-#include <cstring>
+#include <cstdint>
 #include <sstream>
 #include <vector>
 
@@ -36,11 +37,12 @@ struct FingerprintWriter {
         AddPod(byte);
     }
 
-    void AddFloat(float value_) {
-        std::uint32_t bits = 0;
-        static_assert(sizeof(bits) == sizeof(value_));
-        std::memcpy(&bits, &value_, sizeof(bits));
-        AddPod(bits);
+    void AddFixedScalar(sim::Scalar value_) {
+        AddPod(value_.raw_value());
+    }
+
+    void AddQuantizedFloat(float value_) {
+        AddFixedScalar(sim::ToSimScalar(value_));
     }
 
     void AddString(const std::string& text) {
@@ -49,8 +51,9 @@ struct FingerprintWriter {
     }
 
     void AddVec2(const Vec2& vec) {
-        AddFloat(vec.x);
-        AddFloat(vec.y);
+        const sim::Vec2 fixed = sim::ToSimVec2(vec);
+        AddFixedScalar(fixed.x);
+        AddFixedScalar(fixed.y);
     }
 
     void AddIVec2(const IVec2& vec) {
@@ -81,7 +84,7 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
         writer.AddPod(*stage.generation_seed);
     }
     writer.AddPod(static_cast<int>(stage.stage_type));
-    writer.AddFloat(stage.gravity);
+    writer.AddQuantizedFloat(stage.gravity);
     if (include_cache_generation) {
         writer.AddPod(stage.tile_change_generation);
     }
@@ -120,7 +123,7 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
             writer.AddPod(
                 static_cast<std::uint16_t>(read_tile_grid(stage.backwall_tiles, Tile::Air)));
             writer.AddPod(static_cast<std::uint16_t>(read_tile_grid(stage.fluid_tiles, Tile::Air)));
-            writer.AddFloat(read_float_grid(stage.fluid_amount, row_y, col_x));
+            writer.AddQuantizedFloat(read_float_grid(stage.fluid_amount, row_y, col_x));
 
             EmbeddedTreasure embedded{};
             if (row_y < stage.embedded_treasures.size() &&
@@ -160,7 +163,7 @@ void AddEffectFingerprint(FingerprintWriter& writer, const BoxedEntEffects& effe
         const EffectInstance& effect = effects->effects[i];
         writer.AddPod(static_cast<std::uint16_t>(effect.id));
         writer.AddPod(effect.count);
-        writer.AddFloat(effect.value);
+        writer.AddQuantizedFloat(effect.value);
         writer.AddPod(effect.frames_remaining);
     }
 }
@@ -183,7 +186,7 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddVec2(ent.vel);
     writer.AddVec2(ent.acc);
     writer.AddVec2(ent.size);
-    writer.AddFloat(ent.rotation);
+    writer.AddQuantizedFloat(ent.rotation);
     writer.AddPod(ent.coyote_time);
     writer.AddPod(ent.stun_timer);
     writer.AddPod(ent.fall_timer);
@@ -203,14 +206,14 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddOptionalVid(ent.ent_d);
     writer.AddPod(ent.stage_exit_id);
     writer.AddPod(ent.money);
-    writer.AddFloat(ent.counter_a);
-    writer.AddFloat(ent.counter_b);
-    writer.AddFloat(ent.counter_c);
-    writer.AddFloat(ent.counter_d);
-    writer.AddFloat(ent.light_strength);
-    writer.AddFloat(ent.light_color.r);
-    writer.AddFloat(ent.light_color.g);
-    writer.AddFloat(ent.light_color.b);
+    writer.AddQuantizedFloat(ent.counter_a);
+    writer.AddQuantizedFloat(ent.counter_b);
+    writer.AddQuantizedFloat(ent.counter_c);
+    writer.AddQuantizedFloat(ent.counter_d);
+    writer.AddQuantizedFloat(ent.light_strength);
+    writer.AddQuantizedFloat(ent.light_color.r);
+    writer.AddQuantizedFloat(ent.light_color.g);
+    writer.AddQuantizedFloat(ent.light_color.b);
     writer.AddPod(ent.light_radius);
     writer.AddIVec2(ent.point_a);
     writer.AddIVec2(ent.point_b);
@@ -218,8 +221,8 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddIVec2(ent.point_d);
     writer.AddPod(ent.aframe_animator.anim_id);
     writer.AddPod(ent.aframe_animator.current_frame);
-    writer.AddFloat(ent.aframe_animator.current_time);
-    writer.AddFloat(ent.aframe_animator.speed);
+    writer.AddQuantizedFloat(ent.aframe_animator.current_time);
+    writer.AddQuantizedFloat(ent.aframe_animator.speed);
     writer.AddBool(ent.aframe_animator.animate);
     writer.AddBool(ent.aframe_animator.loop);
     writer.AddBool(ent.aframe_animator.finished);
@@ -360,7 +363,7 @@ void AddNetworkEntFingerprint(FingerprintWriter& writer, const State& state, con
     writer.AddVec2(ent.vel);
     writer.AddVec2(ent.acc);
     writer.AddVec2(ent.size);
-    writer.AddFloat(ent.rotation);
+    writer.AddQuantizedFloat(ent.rotation);
     writer.AddPod(ent.coyote_time);
     writer.AddPod(ent.stun_timer);
     writer.AddPod(ent.fall_timer);
@@ -379,10 +382,10 @@ void AddNetworkEntFingerprint(FingerprintWriter& writer, const State& state, con
     AddNetworkOptionalVid(writer, state, ent.ent_d);
     writer.AddPod(ent.stage_exit_id);
     writer.AddPod(ent.money);
-    writer.AddFloat(ent.counter_a);
-    writer.AddFloat(ent.counter_b);
-    writer.AddFloat(ent.counter_c);
-    writer.AddFloat(ent.counter_d);
+    writer.AddQuantizedFloat(ent.counter_a);
+    writer.AddQuantizedFloat(ent.counter_b);
+    writer.AddQuantizedFloat(ent.counter_c);
+    writer.AddQuantizedFloat(ent.counter_d);
     writer.AddIVec2(ent.point_a);
     writer.AddIVec2(ent.point_b);
     writer.AddIVec2(ent.point_c);

@@ -480,6 +480,7 @@ target_include_directories(
     splonks-cpp
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/gfxp/include"
         "${CMAKE_CURRENT_SOURCE_DIR}/../gubsy"
         "${CMAKE_CURRENT_SOURCE_DIR}/../gubsy/third_party"
         "${imgui_SOURCE_DIR}"
@@ -602,6 +603,7 @@ target_include_directories(
     gubsy_binds_smoke
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/gfxp/include"
         "${imgui_SOURCE_DIR}"
         "${imgui_SOURCE_DIR}/backends"
 )
