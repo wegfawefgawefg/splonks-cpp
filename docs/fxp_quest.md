@@ -635,11 +635,9 @@ Validation so far:
 - [x] `./scripts/build.sh`
 - [x] `./build/splonks-cpp --check-state-fingerprint-smoke --project-root ...`
 - [x] `./build/splonks-cpp --check-join-barrier-next-stage-restart-smoke --project-root ...`
-- [ ] `python3 scripts/validate_lockstep_live.py --launch-pair --profile same-house ...`
-      did not pass. It reported no confirmed hash exchange on either endpoint
-      (`hash_frame=0`, mismatch count `0`). This keeps the full FXP integration
-      goal open until the live two-client determinism gate is understood and
-      passing.
+- [x] `python3 scripts/validate_lockstep_live.py --launch-pair --profile same-house ...`
+      passed with confirmed hash frame `330`, zero hash mismatches, and no
+      reported problems.
 - [ ] `./build/splonks-cpp --check-input-lockstep-smoke --project-root ...`
       was stopped after running silently for about two minutes.
 
