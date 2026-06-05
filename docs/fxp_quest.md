@@ -42,8 +42,9 @@ gameplay math.
 - Most authored gameplay decimal constants in source are low precision:
   one or two decimal places dominate, three decimal places appear, and only a
   small number of gameplay-ish constants go beyond that.
-- A binary fixed-point scale such as `1 pixel = 1024 subpixels` gives about
-  `0.00098` pixel precision, which is enough for the values we normally author.
+- A binary fixed-point scale such as `1 pixel = 4096 subpixels` gives about
+  `0.00024` pixel precision, which is enough for the values we normally author
+  and gives velocity/acceleration more room than the first `1/1024 px` pass.
 - The main cost of fixed-point is migration and API discipline, not raw CPU time.
 - We still need actual benchmarks before committing Splonks physics to it.
 
@@ -103,7 +104,7 @@ namespace gfxp {
 struct Fixed {
     int32_t raw = 0;
 
-    static constexpr int frac_bits = 10;
+    static constexpr int frac_bits = 12;
     static constexpr int scale = 1 << frac_bits;
 };
 
@@ -133,11 +134,11 @@ Likely operations:
 The first candidate scale is:
 
 ```cpp
-1 pixel = 1024 subpixels
+1 pixel = 4096 subpixels
 ```
 
-That is binary fixed point with 10 fractional bits. It is precise enough for
-roughly three decimal places while still allowing cheap shifts and enough world
+That is binary fixed point with 12 fractional bits. It is precise enough for
+roughly four decimal places while still allowing cheap shifts and enough world
 range with `int32_t` raw storage. Multiplication should use `int64_t`
 intermediates.
 
@@ -285,6 +286,194 @@ Interpretation:
 - The representative movement loop is close enough to justify deeper testing.
   Collision/map queries are likely to dominate more than scalar arithmetic in
   Splonks.
+
+## Current gfxp Direction
+
+The second `gfxp` pass changed the default to `Fixed12`:
+
+```cpp
+using gfxp::Fixed; // int32_t raw, 12 fractional bits, 1/4096 px
+```
+
+Scale-specific aliases now exist for comparison:
+
+```cpp
+gfxp::Fixed8;
+gfxp::Fixed10;
+gfxp::Fixed12;
+gfxp::Fixed16;
+```
+
+Latest pushed `gfxp` commit:
+
+```text
+ef0116e Use 12-bit fixed scale and benchmark variants
+```
+
+The fixed multiply path now uses a shift instead of division:
+
+```cpp
+raw = (int64_t(lhs.raw) * rhs.raw) >> frac_bits;
+```
+
+The optimized x86_64 release assembly for `Fixed12` is:
+
+- Add: single `lea`.
+- Multiply: sign-extend inputs, `imul`, `sar $0xc`.
+- Divide: `shl $0xc`, `idiv`.
+
+Linux release benchmark from that pass:
+
+```text
+entities: 20000, ticks: 2000
+default fixed scale: 4096 subpixels/pixel
+float:   0.890038 ns/entity-tick
+double:  0.799296 ns/entity-tick
+fixed8:  0.630493 ns/entity-tick
+fixed10: 0.985434 ns/entity-tick
+fixed12: 0.984826 ns/entity-tick
+fixed16: 0.932477 ns/entity-tick
+
+primitive ops: 67108864
+float add:  0.339631 ns/op
+double add: 0.339721 ns/op
+fixed add:  0.0520846 ns/op
+float mul:  0.511959 ns/op
+double mul: 0.513509 ns/op
+fixed mul:  0.524354 ns/op
+float div:  1.75691 ns/op
+double div: 2.35218 ns/op
+fixed div:  1.32789 ns/op
+```
+
+Current conclusion: `Fixed12` is a good default candidate for Splonks
+experiments. It has much more precision than position strictly needs, enough
+range for huge Splonks stages, and fixed multiply is now essentially tied with
+float multiply in the primitive benchmark.
+
+## gfxp Ergonomics Plan
+
+Before Splonks integration, `gfxp` needs a small API ergonomics pass so using it
+does not become tedious or error-prone.
+
+- [ ] Add a templated `BasicVec2<FixedT>` so experiments can use `Fixed8`,
+      `Fixed10`, `Fixed12`, or `Fixed16` vectors without rewriting vector code.
+- [ ] Keep `Vec2` as the default `BasicVec2<Fixed>`.
+- [ ] Add explicit fixed-to-fixed conversion helpers, such as
+      `fixed_cast<ToFixed>(value)`, with named rounding.
+- [ ] Add named pixel helpers, such as `from_pixels`, `checked_from_pixels`,
+      `to_pixels_floor`, `to_pixels_ceil`, and `to_pixels_round`, while keeping
+      raw integer access for hashes.
+- [ ] Add checked and unchecked hot-path helpers where the distinction matters.
+      Debug builds should make overflow policy easy to audit.
+- [ ] Add deterministic vector helpers needed by physics migration:
+      `dot`, `length_sq`, `manhattan_length`, component min/max/clamp, and
+      sign helpers.
+- [ ] Do not add `sqrt`, `sin`, `cos`, `atan2`, or normalize casually. Gameplay
+      trig/length needs a separate deterministic design.
+- [ ] Keep render-boundary float conversion explicit.
+- [ ] Keep the core header-only unless a real reason appears not to.
+
+## Splonks Determinism Audit Plan
+
+Fixed-point math reduces one large source of desyncs, but it is not a full
+determinism guarantee by itself. Splonks also needs an audit for every other way
+the gameplay simulation can diverge across machines.
+
+### Gameplay Float Audit
+
+- [ ] Find all gameplay-affecting uses of `float` and `double`.
+- [ ] Classify each use as simulation, render-only, UI-only, audio-only, debug,
+      or data loading.
+- [ ] Prioritize fields currently hashed in network fingerprints:
+      position, velocity, acceleration, size, rotation, and gameplay timers.
+- [ ] Replace or quantize simulation floats that affect branches, collision,
+      spawning, damage, pickups, hazards, AI, or world mutation.
+- [ ] Keep render/camera/UI/audio/effects float unless they feed back into
+      gameplay state.
+
+### Math Function Audit
+
+- [ ] Find gameplay uses of `std::sin`, `std::cos`, `std::tan`, `std::atan2`,
+      `std::sqrt`, `std::hypot`, `std::pow`, `std::fmod`, `std::round`,
+      `std::floor`, and `std::ceil`.
+- [ ] Decide which uses can remain render-only.
+- [ ] Replace gameplay-affecting trig with deterministic tables, discrete
+      direction vectors, or fixed/integer approximations.
+- [ ] Replace gameplay-affecting length/normalize code with deterministic
+      alternatives or avoid normalization in authoritative state.
+
+### Container And Iteration Order Audit
+
+- [ ] Search deterministic simulation code for unordered containers.
+- [ ] Ensure entity iteration order is stable.
+- [ ] Ensure contact/collision pair ordering is stable when multiple candidates
+      tie.
+- [ ] Ensure maps keyed by pointers, addresses, or allocation order do not affect
+      gameplay results.
+- [ ] Avoid sorting by non-stable values or platform-dependent comparisons.
+
+### RNG Audit
+
+- [ ] Identify every RNG stream.
+- [ ] Separate deterministic gameplay RNG from visual/debug/UI randomness.
+- [ ] Ensure all gameplay RNG is seeded from synchronized state.
+- [ ] Ensure joining peers receive exact RNG state in snapshots.
+- [ ] Remove or quarantine process-global RNG use from gameplay.
+
+### Serialization And Snapshot Audit
+
+- [ ] Ensure deterministic snapshots use explicit integer sizes and endian rules.
+- [ ] Avoid serializing `size_t`, `long`, pointers, enum storage assumptions, or
+      padding bytes.
+- [ ] Ensure all gameplay fields that affect simulation are included in
+      snapshots/resync state.
+- [ ] Ensure desync replay files include enough final local state to diff entity
+      fields, not just hashes.
+
+### Undefined And Uninitialized Behavior Audit
+
+- [ ] Run sanitizers locally where practical.
+- [ ] Audit constructors/default initialization for gameplay structs.
+- [ ] Avoid reading padding/uninitialized bytes in hashes.
+- [ ] Avoid signed overflow in deterministic code.
+- [ ] Avoid shift undefined behavior.
+- [ ] Avoid aliasing assumptions that can differ by compiler.
+
+### Platform-Sized Type Audit
+
+- [ ] Avoid `long`, `size_t`, pointer values, and address-derived order in
+      deterministic gameplay state.
+- [ ] Use explicit types: `int32_t`, `uint32_t`, `int64_t`, `uint64_t`.
+- [ ] Audit hashes for platform-sized values.
+- [ ] Audit save/snapshot/replay formats for platform-sized values.
+
+### Asset And Config Consistency Audit
+
+- [ ] Ensure gameplay-affecting config data is identical across peers.
+- [ ] Hash or version gameplay specs loaded from data files.
+- [ ] Ensure generated data and default profiles do not differ by platform.
+- [ ] Keep local user settings out of authoritative simulation unless explicitly
+      synchronized.
+
+### Time/Input/UI Boundary Audit
+
+- [ ] Ensure wall-clock time never directly affects gameplay simulation.
+- [ ] Ensure render frame rate does not affect fixed simulation ticks.
+- [ ] Ensure UI/menu state does not leak into simulation state except through
+      explicit synchronized commands.
+- [ ] Ensure local input capture is converted into deterministic input frames
+      before simulation.
+
+### Networking/Topology Determinism Audit
+
+- [ ] Ensure join/leave/topology changes are applied at deterministic frame
+      barriers.
+- [ ] Ensure player-slot ordering is stable across host and peers.
+- [ ] Ensure late inputs trigger rollback/resimulation consistently.
+- [ ] Ensure resync snapshots restore every gameplay-affecting field.
+- [ ] Keep Realnet/Gubsy transport metadata outside authoritative gameplay
+      state unless explicitly synchronized.
 
 ## Splonks Integration Task List
 
