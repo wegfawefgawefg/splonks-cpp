@@ -376,104 +376,14 @@ does not become tedious or error-prone.
 
 ## Splonks Determinism Audit Plan
 
+The broader post-FXP determinism audit now lives in
+`docs/plans/determinism_audit_plan.md`.
+
 Fixed-point math reduces one large source of desyncs, but it is not a full
-determinism guarantee by itself. Splonks also needs an audit for every other way
-the gameplay simulation can diverge across machines.
-
-### Gameplay Float Audit
-
-- [ ] Find all gameplay-affecting uses of `float` and `double`.
-- [ ] Classify each use as simulation, render-only, UI-only, audio-only, debug,
-      or data loading.
-- [ ] Prioritize fields currently hashed in network fingerprints:
-      position, velocity, acceleration, size, rotation, and gameplay timers.
-- [ ] Replace or quantize simulation floats that affect branches, collision,
-      spawning, damage, pickups, hazards, AI, or world mutation.
-- [ ] Keep render/camera/UI/audio/effects float unless they feed back into
-      gameplay state.
-
-### Math Function Audit
-
-- [ ] Find gameplay uses of `std::sin`, `std::cos`, `std::tan`, `std::atan2`,
-      `std::sqrt`, `std::hypot`, `std::pow`, `std::fmod`, `std::round`,
-      `std::floor`, and `std::ceil`.
-- [ ] Decide which uses can remain render-only.
-- [ ] Replace gameplay-affecting trig with deterministic tables, discrete
-      direction vectors, or fixed/integer approximations.
-- [ ] Replace gameplay-affecting length/normalize code with deterministic
-      alternatives or avoid normalization in authoritative state.
-
-### Container And Iteration Order Audit
-
-- [ ] Search deterministic simulation code for unordered containers.
-- [ ] Ensure entity iteration order is stable.
-- [ ] Ensure contact/collision pair ordering is stable when multiple candidates
-      tie.
-- [ ] Ensure maps keyed by pointers, addresses, or allocation order do not affect
-      gameplay results.
-- [ ] Avoid sorting by non-stable values or platform-dependent comparisons.
-
-### RNG Audit
-
-- [ ] Identify every RNG stream.
-- [ ] Separate deterministic gameplay RNG from visual/debug/UI randomness.
-- [ ] Ensure all gameplay RNG is seeded from synchronized state.
-- [ ] Ensure joining peers receive exact RNG state in snapshots.
-- [ ] Remove or quarantine process-global RNG use from gameplay.
-
-### Serialization And Snapshot Audit
-
-- [ ] Ensure deterministic snapshots use explicit integer sizes and endian rules.
-- [ ] Avoid serializing `size_t`, `long`, pointers, enum storage assumptions, or
-      padding bytes.
-- [ ] Ensure all gameplay fields that affect simulation are included in
-      snapshots/resync state.
-- [ ] Ensure desync replay files include enough final local state to diff entity
-      fields, not just hashes.
-
-### Undefined And Uninitialized Behavior Audit
-
-- [ ] Run sanitizers locally where practical.
-- [ ] Audit constructors/default initialization for gameplay structs.
-- [ ] Avoid reading padding/uninitialized bytes in hashes.
-- [ ] Avoid signed overflow in deterministic code.
-- [ ] Avoid shift undefined behavior.
-- [ ] Avoid aliasing assumptions that can differ by compiler.
-
-### Platform-Sized Type Audit
-
-- [ ] Avoid `long`, `size_t`, pointer values, and address-derived order in
-      deterministic gameplay state.
-- [ ] Use explicit types: `int32_t`, `uint32_t`, `int64_t`, `uint64_t`.
-- [ ] Audit hashes for platform-sized values.
-- [ ] Audit save/snapshot/replay formats for platform-sized values.
-
-### Asset And Config Consistency Audit
-
-- [ ] Ensure gameplay-affecting config data is identical across peers.
-- [ ] Hash or version gameplay specs loaded from data files.
-- [ ] Ensure generated data and default profiles do not differ by platform.
-- [ ] Keep local user settings out of authoritative simulation unless explicitly
-      synchronized.
-
-### Time/Input/UI Boundary Audit
-
-- [ ] Ensure wall-clock time never directly affects gameplay simulation.
-- [ ] Ensure render frame rate does not affect fixed simulation ticks.
-- [ ] Ensure UI/menu state does not leak into simulation state except through
-      explicit synchronized commands.
-- [ ] Ensure local input capture is converted into deterministic input frames
-      before simulation.
-
-### Networking/Topology Determinism Audit
-
-- [ ] Ensure join/leave/topology changes are applied at deterministic frame
-      barriers.
-- [ ] Ensure player-slot ordering is stable across host and peers.
-- [ ] Ensure late inputs trigger rollback/resimulation consistently.
-- [ ] Ensure resync snapshots restore every gameplay-affecting field.
-- [ ] Keep Realnet/Gubsy transport metadata outside authoritative gameplay
-      state unless explicitly synchronized.
+determinism guarantee by itself. The dedicated audit plan tracks the remaining
+risks: gameplay floats, math functions, iteration order, RNG, serialization,
+undefined behavior, platform-sized types, data consistency, time/input
+boundaries, and networking topology barriers.
 
 ## Splonks Integration Task List
 
