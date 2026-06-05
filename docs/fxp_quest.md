@@ -587,7 +587,7 @@ Tasks:
 - [x] Audit `stage.fluid_amount` and decide whether it is gameplay or cosmetic.
 - [x] Audit `aframe_animator` usage and decide whether animation time is
       gameplay state or render-only state.
-- [ ] Keep render and non-authoritative visual code float.
+- [x] Keep render and non-authoritative visual code float.
 - [ ] Build and run local play to confirm no obvious feel breakage.
 - [ ] Re-run a two-machine Linux/macOS or Linux/Linux multiplayer check before
       expanding the migration.
