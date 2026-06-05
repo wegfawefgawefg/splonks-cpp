@@ -483,24 +483,33 @@ This happens only after the isolated library is proven.
       Decision: vendor the small header-only include tree directly into
       Splonks. Do not make Splonks depend on a sibling `../gfxp` checkout.
 - [ ] Decide whether Gubsy should also vendor it for future game/tooling use.
-- [ ] Identify first Splonks gameplay fields to migrate: likely `pos`, `vel`,
-      `acc`, and collision movement helpers.
+- [x] Identify the current Splonks float inputs inside fingerprint/hash domains.
 - [ ] Keep render conversion explicit at the render boundary.
 - [ ] Keep network hashes over raw fixed-point integers.
 - [ ] Update SDRP/desync captures to include enough final local state to compare
       exact entity field differences.
-- [ ] Migrate one narrow physics path first and validate local behavior.
+- [ ] Remove raw float bit hashing from authoritative hash domains by migrating
+      values to fixed-point/integer state or hashing an explicit fixed-point
+      quantized representation.
 - [ ] Validate Linux host/macOS peer determinism with the same recorded input
       session.
 
 ## Splonks First Integration Scope
 
 The next Splonks step should not stop at vendoring. It should vendor `gfxp`,
-define the local fixed-point vocabulary, and migrate one narrow authoritative
-physics path far enough to prove the API shape.
+define the local fixed-point vocabulary, and start removing raw floats from the
+lockstep/hash domain.
 
-The goal is not to convert every entity and every gameplay float in one pass.
-The goal is to establish the correct boundary and prove one meaningful path.
+The goal is not "one narrow movement path." That was too small. The real target
+is every gameplay-authoritative float that currently contributes to canonical,
+gameplay determinism, or network fingerprints. Implementation can still be
+phased by category, but the scope is the full hashed domain.
+
+Rule: any gameplay-authoritative value included in lockstep/network/canonical
+hashes must be fixed-point, integer/discrete, or intentionally quantized before
+hashing. Raw float bit hashing is the thing this project is eliminating. Pure
+render, camera, UI, audio, and cosmetic values can stay float if they do not
+feed authoritative hashes.
 
 ### Vendor gfxp
 
@@ -554,73 +563,155 @@ Tasks:
 - [ ] Keep conversion names explicit, such as `ToSimVec2` and `ToRenderVec2`,
       so render-boundary float conversion is visible.
 
-### First Migration Target
+### Hash Domain Float Audit
 
-The first meaningful target should be the generic entity movement step, because
-that is where the desync suspicion points:
+Current audit source: `src/state_fingerprint.cpp`.
 
-- `src/ent.hpp`: `Ent::pos`, `Ent::vel`, `Ent::acc`
-- `src/ents/common/physics.cpp`
-- `src/state_fingerprint.cpp`
+`FingerprintWriter::AddFloat(float)` currently copies the raw IEEE float bits
+into the hash. `FingerprintWriter::AddVec2(const Vec2&)` calls `AddFloat` for
+`x` and `y`. These are the current float inputs:
 
-But converting `Ent::pos/vel/acc` directly will touch a large amount of code.
-So the first pass should use a bridge strategy:
+Stage fingerprints:
 
-1. Keep public `Ent::pos`, `Ent::vel`, and `Ent::acc` as `splonks::Vec2` for
-   now.
-2. Add fixed-point conversion inside the generic movement/physics path.
-3. Run the current float values through fixed-point stepping in
-   `ents/common/physics.cpp`, then write the result back to the existing float
-   fields.
-4. Update state fingerprints for movement fields to hash the fixed-point
-   quantized representation rather than raw float bits where that path is
-   authoritative.
+- `stage.gravity`
+- `stage.fluid_amount[y][x]`
 
-This deliberately tests whether quantized deterministic movement removes
-cross-platform drift without forcing a whole-codebase type migration on day one.
+Entity effect fingerprints:
+
+- `effect.value`
+
+Canonical/gameplay entity fingerprints:
+
+- `ent.pos.x`, `ent.pos.y`
+- `ent.vel.x`, `ent.vel.y`
+- `ent.acc.x`, `ent.acc.y`
+- `ent.size.x`, `ent.size.y`
+- `ent.rotation`
+- `ent.counter_a`
+- `ent.counter_b`
+- `ent.counter_c`
+- `ent.counter_d`
+- `ent.light_strength`
+- `ent.light_color.r`
+- `ent.light_color.g`
+- `ent.light_color.b`
+- `ent.aframe_animator.current_time`
+- `ent.aframe_animator.speed`
+- every `effect.value` on `ent.effects`
+
+Network entity fingerprints:
+
+- For normal entities:
+  - `ent.pos.x`, `ent.pos.y`
+  - `ent.vel.x`, `ent.vel.y`
+  - `ent.acc.x`, `ent.acc.y`
+  - `ent.size.x`, `ent.size.y`
+  - `ent.rotation`
+  - `ent.counter_a`
+  - `ent.counter_b`
+  - `ent.counter_c`
+  - `ent.counter_d`
+  - every `effect.value` on `ent.effects`
+- For entities whose motion is ignored for player ownership/held-object sync:
+  - motion, size, rotation, and counters are skipped
+  - `effect.value` is still hashed
+
+Non-float but related audit note:
+
+- `FingerprintWriter::AddString` hashes `std::string::size()` directly. That is
+  not the float determinism problem, but a later cross-platform hash cleanup
+  should replace platform-sized fields with explicit-width values.
+
+### Migration Classification
+
+P0: authoritative gameplay values that should become fixed-point state or
+fixed-point hash representations first:
+
+- Entity motion and shape: `pos`, `vel`, `acc`, `size`, and gameplay-affecting
+  `rotation`.
+- World physics fields: `stage.gravity`.
+- Fluid amount if fluid affects movement, collision, damage, or spawning.
+- `effect.value` when the effect changes gameplay.
+- `counter_a` through `counter_d` where they drive AI, timers, movement,
+  damage, spawning, or contact behavior.
+
+P1: values that may be better converted to integer/tick state rather than fixed
+point:
+
+- `aframe_animator.current_time` and `aframe_animator.speed` if animation state
+  affects gameplay, hitboxes, contact, or spawn timing.
+- Generic counters whose actual meaning is a frame count, cooldown, state age,
+  or phase index.
+
+P2: visual-only values that should not participate in network lockstep hashes:
+
+- `light_strength`
+- `light_color.r`, `light_color.g`, `light_color.b`
+
+These are already absent from `AddNetworkEntFingerprint`, but they remain in
+canonical/gameplay hashes. Either keep them only in debug/canonical hashes with
+explicit quantization or remove them from gameplay determinism hashes if they
+are truly cosmetic.
+
+### Hash-Domain Migration Strategy
+
+The first implementation pass should cover the hash boundary and the highest
+risk gameplay fields. It can bridge from the existing float storage where needed,
+but the bridge must be explicit and temporary.
 
 Tasks:
 
-- [ ] Add helpers for quantizing `Vec2` to `sim::Vec2`.
-- [ ] Add fixed-point versions of the movement helpers currently based around
-      `GetIntegerStepDistance`.
-- [ ] Convert generic `PrePartialEulerStep`/movement stepping to use
-      fixed-point intermediates for `pos`, `vel`, and `acc`.
+- [ ] Add helpers for quantizing float `Vec2` and scalar floats to `sim::Vec2`
+      / `sim::Scalar`.
+- [ ] Replace raw `AddFloat` hashing for authoritative fields with fixed raw
+      integer hashing.
+- [ ] Prefer migrating storage to fixed-point for P0 gameplay fields over
+      leaving long-term float storage with hash-only quantization.
+- [ ] Convert generic movement/physics stepping for `pos`, `vel`, and `acc` to
+      fixed-point state or fixed-point intermediates.
+- [ ] Audit each use of `counter_a` through `counter_d` and classify it as
+      fixed-point, integer tick/state, or non-authoritative.
+- [ ] Audit `effect.value` definitions and classify each effect as gameplay or
+      cosmetic.
+- [ ] Audit `stage.fluid_amount` and decide whether it is gameplay or cosmetic.
+- [ ] Audit `aframe_animator` usage and decide whether animation time is
+      gameplay state or render-only state.
 - [ ] Keep render and non-authoritative visual code float.
-- [ ] Update movement-related fingerprinting to hash fixed raw integers for
-      quantized movement fields.
 - [ ] Build and run local play to confirm no obvious feel breakage.
 - [ ] Re-run a two-machine Linux/macOS or Linux/Linux multiplayer check before
       expanding the migration.
 
 ### What Not To Migrate First
 
-Do not start with these unless they block the movement path:
+Do not start with these unless they block the hashed authoritative domain:
 
 - [ ] Particle simulation.
 - [ ] Camera/group camera.
 - [ ] UI/menu layout.
 - [ ] Audio emitters.
-- [ ] Lighting visuals.
-- [ ] Stage generation.
-- [ ] Fluid simulation.
+- [ ] Lighting visuals, except for deciding whether they belong in
+      canonical/gameplay hashes.
+- [ ] Stage generation internals, except for seed and generated authoritative
+      state that already lands in hashes.
 - [ ] Trig-heavy gameplay.
-- [ ] Full `Ent` field type conversion.
+- [ ] Non-hashed render-only entity fields.
 - [ ] SDRP format changes beyond any hash visibility needed for this step.
 
 ### Success Condition
 
 - Splonks contains a traceable vendored `gfxp` copy.
 - Splonks has a local `sim::Scalar` / `sim::Vec2` vocabulary.
-- One authoritative movement path uses fixed-point or fixed-point quantized
-  intermediates.
-- State hashes for that path no longer depend on raw float bits.
+- Every current raw float hash input is either migrated to fixed-point/integer
+  state, hashed through an explicit fixed-point quantization, or documented as
+  non-authoritative and removed from the relevant gameplay/network hash.
+- No gameplay-authoritative network/lockstep hash depends on raw float bits.
 - Normal Splonks build passes.
 - The game still feels plausibly the same in a quick local run.
 
 ## Open Questions
 
-- Is `1/1024 px` the final scale, or should we test `1/256` and `1/4096` too?
+- Is `1/4096 px` the final Splonks scale, or should specific domains use
+  smaller fixed formats such as `Fixed8` for compact storage?
 - Should decimal constants be parsed from strings for exact authoring behavior,
   or is controlled compile-time conversion enough for hardcoded constants?
 - Should `Fixed` allow implicit construction from integers, or should all
