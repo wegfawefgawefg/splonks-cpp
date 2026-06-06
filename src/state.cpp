@@ -26,8 +26,7 @@ void AddShake(State& state, const Vec2& world_pos, float foreground_tile_amount,
         return;
     }
 
-    const IVec2 world_pixel = IVec2::New(static_cast<int>(std::floor(world_pos.x)),
-                                         static_cast<int>(std::floor(world_pos.y)));
+    const IVec2 world_pixel = IVec2::New(FloorToInt(world_pos.x), FloorToInt(world_pos.y));
     const IVec2 tile_pos = state.stage.GetTileCoordAtWc(world_pixel);
 
     if (foreground_tile_amount > 0.0F) {

@@ -94,8 +94,17 @@ The expected end state is:
   division for integer world-pixel bounds instead of converting to float and
   calling `std::floor`. This removes a float/libm boundary from broad tile
   collision and world geometry queries.
-- Deferred risk: shared world/tile query boundaries still use `std::floor` /
-  `std::fmod` over float positions and need a fixed-point boundary pass.
+- Fixed in shared gameplay boundary helpers: world wrap deltas, spatial-index
+  cells, shake tile lookup, blocking-contact tile probes, ground-friction
+  support probes, climb/hang probes, mattock tile probes, web-cannon tile snap,
+  meat-slime surface keys, and trap-block sensor distances now use local
+  `FloorToInt` / `RoundToInt` helpers instead of platform libm
+  `std::floor`, `std::round`, or `std::fmod`.
+- Deferred risk: those helpers make the float-to-integer conversion rule
+  explicit, but the source positions are still authoritative floats. Two peers
+  can still diverge if prior float math crosses a grid/branch threshold
+  differently. The fixed-point migration must move these source values or their
+  threshold decisions to fixed/integer state.
 - Fixed in network fingerprints: `Ent::rotation` is treated as cosmetic/render
   state and no longer participates in the network lockstep hash. This removes
   render-only `std::atan2` / `std::fmod` rotation drift from desync detection

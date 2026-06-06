@@ -3,8 +3,6 @@
 #include "tile.hpp"
 
 #include <algorithm>
-#include <cmath>
-
 namespace splonks {
 
 namespace {
@@ -12,7 +10,7 @@ namespace {
 constexpr float kSidCellSize = static_cast<float>(kTileSize);
 
 int GetCellCoord(float value) {
-    return static_cast<int>(std::floor(value / kSidCellSize));
+    return FloorToInt(value / kSidCellSize);
 }
 
 std::int64_t MakeCellKey(int x, int y) {

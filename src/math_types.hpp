@@ -148,6 +148,18 @@ inline IVec2 ToIVec2(const Vec2& value) {
     return IVec2::New(static_cast<int>(value.x), static_cast<int>(value.y));
 }
 
+inline int FloorToInt(float value) {
+    const int truncated = static_cast<int>(value);
+    return static_cast<float>(truncated) > value ? truncated - 1 : truncated;
+}
+
+inline int RoundToInt(float value) {
+    if (value >= 0.0F) {
+        return FloorToInt(value + 0.5F);
+    }
+    return -FloorToInt((-value) + 0.5F);
+}
+
 inline IVec2 ToIVec2(const UVec2& value) {
     return IVec2::New(static_cast<int>(value.x), static_cast<int>(value.y));
 }

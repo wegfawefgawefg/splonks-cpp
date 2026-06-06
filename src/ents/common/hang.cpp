@@ -218,11 +218,11 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
         ToIVec2(probes.center),
         ToIVec2(probes.right),
     };
-    const int probe_y = static_cast<int>(std::floor(aabb.br.y + 1.0F));
+    const int probe_y = FloorToInt(aabb.br.y + 1.0F);
     const std::array<IVec2, 3> probe_points = {
-        IVec2::New(static_cast<int>(std::floor(probes.left.x)), probe_y),
-        IVec2::New(static_cast<int>(std::floor(probes.center.x)), probe_y),
-        IVec2::New(static_cast<int>(std::floor(probes.right.x)), probe_y),
+        IVec2::New(FloorToInt(probes.left.x), probe_y),
+        IVec2::New(FloorToInt(probes.center.x), probe_y),
+        IVec2::New(FloorToInt(probes.right.x), probe_y),
     };
 
     std::optional<ClimbAnchor> climb_anchor =
@@ -235,8 +235,8 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
     }
 
     const std::array<IVec2, 2> edge_probe_points = {
-        IVec2::New(static_cast<int>(std::floor(aabb.tl.x - 1.0F)), probe_y),
-        IVec2::New(static_cast<int>(std::floor(aabb.br.x + 1.0F)), probe_y),
+        IVec2::New(FloorToInt(aabb.tl.x - 1.0F), probe_y),
+        IVec2::New(FloorToInt(aabb.br.x + 1.0F), probe_y),
     };
     for (const IVec2& edge_probe_point : edge_probe_points) {
         AddClimbDebugRect(state, ToVec2(edge_probe_point), DebugAnnotationColor{255, 240, 64, 255});
@@ -524,7 +524,7 @@ bool CanCornerHangOnSide(
     const float side_x = left_side ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
     const float upper_probe_y_a = aabb.tl.y + 2.0F;
     const float upper_probe_y_b = aabb.tl.y + 3.0F;
-    const float center_x = aabb.tl.x + std::floor(ent.size.x / 2.0F);
+    const float center_x = aabb.tl.x + static_cast<float>(FloorToInt(ent.size.x / 2.0F));
     const float below_probe_y = aabb.br.y + 1.0F;
 
     const bool upper_probe_blocked =
@@ -547,8 +547,8 @@ bool CanGloveHangBelowCorner(
 ) {
     const AABB aabb = ent.GetAABB();
     const float side_x = left_side ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
-    const int start_y = static_cast<int>(std::floor(aabb.tl.y)) - 1;
-    const int end_y = static_cast<int>(std::floor(aabb.br.y));
+    const int start_y = FloorToInt(aabb.tl.y) - 1;
+    const int end_y = FloorToInt(aabb.br.y);
 
     for (int y = start_y; y <= end_y; ++y) {
         if (IsHdHangProbeBlocked(
@@ -786,7 +786,7 @@ bool TryCaptureHdHang(
     }
 
     const bool has_gloves = EntHasHangGloves(ent);
-    const float center_x = aabb.tl.x + std::floor(ent.size.x / 2.0F);
+    const float center_x = aabb.tl.x + static_cast<float>(FloorToInt(ent.size.x / 2.0F));
     const float upper_probe_y_a = aabb.tl.y + 2.0F;
     const float upper_probe_y_b = aabb.tl.y + 3.0F;
     const float below_probe_y = aabb.br.y + 1.0F;
@@ -795,8 +795,8 @@ bool TryCaptureHdHang(
         const float side_x = aabb.tl.x - 1.0F;
         if (has_gloves) {
             if (CanCornerHangOnSide(ent, state, true, check_tiles, check_ents)) {
-                ent.pos.y =
-                    std::round(ent.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
+                ent.pos.y = static_cast<float>(RoundToInt(ent.pos.y / static_cast<float>(kTileSize))) *
+                            static_cast<float>(kTileSize);
                 ent.hang_side = Side::Left;
                 SetMovementFlag(ent, EntMovementFlag::Hanging, true);
                 ent.facing = Side::Left;
@@ -833,8 +833,8 @@ bool TryCaptureHdHang(
             return false;
         }
 
-        ent.pos.y =
-            std::round(ent.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
+        ent.pos.y = static_cast<float>(RoundToInt(ent.pos.y / static_cast<float>(kTileSize))) *
+                    static_cast<float>(kTileSize);
         ent.hang_side = Side::Left;
         SetMovementFlag(ent, EntMovementFlag::Hanging, true);
         ent.facing = Side::Left;
@@ -848,8 +848,8 @@ bool TryCaptureHdHang(
         const float side_x = aabb.br.x + 1.0F;
         if (has_gloves) {
             if (CanCornerHangOnSide(ent, state, false, check_tiles, check_ents)) {
-                ent.pos.y =
-                    std::round(ent.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
+                ent.pos.y = static_cast<float>(RoundToInt(ent.pos.y / static_cast<float>(kTileSize))) *
+                            static_cast<float>(kTileSize);
                 ent.hang_side = Side::Right;
                 SetMovementFlag(ent, EntMovementFlag::Hanging, true);
                 ent.facing = Side::Right;
@@ -886,8 +886,8 @@ bool TryCaptureHdHang(
             return false;
         }
 
-        ent.pos.y =
-            std::round(ent.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
+        ent.pos.y = static_cast<float>(RoundToInt(ent.pos.y / static_cast<float>(kTileSize))) *
+                    static_cast<float>(kTileSize);
         ent.hang_side = Side::Right;
         SetMovementFlag(ent, EntMovementFlag::Hanging, true);
         ent.facing = Side::Right;

@@ -97,8 +97,8 @@ WebGunAim GetWebGunAim(const Ent& weapon, const Ent* holder, const State& state)
 }
 
 IVec2 SnapWorldPointToTile(const Vec2& point, const Stage& stage) {
-    const int tile_x = static_cast<int>(std::floor(point.x / static_cast<float>(kTileSize)));
-    const int tile_y = static_cast<int>(std::floor(point.y / static_cast<float>(kTileSize)));
+    const int tile_x = FloorToInt(point.x / static_cast<float>(kTileSize));
+    const int tile_y = FloorToInt(point.y / static_cast<float>(kTileSize));
     return stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
 }
 

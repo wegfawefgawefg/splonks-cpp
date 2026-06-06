@@ -209,7 +209,7 @@ int GetEntBlockedOpenSensorDistance(
         blocked_distance = std::min(blocked_distance, *distance);
     }
 
-    return std::clamp(static_cast<int>(std::floor(blocked_distance)), 0, open_distance);
+    return std::clamp(FloorToInt(blocked_distance), 0, open_distance);
 }
 
 AABB GetSensorAabb(

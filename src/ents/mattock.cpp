@@ -16,7 +16,6 @@
 #include "utils.hpp"
 #include "world_query.hpp"
 
-#include <cmath>
 #include <memory>
 #include <string>
 
@@ -164,11 +163,11 @@ StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& aud
 MattockTileTargets GetMattockTileTargets(const Ent& holder, const Stage& stage) {
     const auto [holder_tl, holder_br] = holder.GetBounds();
     const int front_world_x = holder.facing == Side::Left
-                                  ? static_cast<int>(std::floor(holder_tl.x)) - 1 -
+                                  ? FloorToInt(holder_tl.x) - 1 -
                                         kMattockForwardProbeBiasPixels
-                                  : static_cast<int>(std::floor(holder_br.x)) + 1 +
+                                  : FloorToInt(holder_br.x) + 1 +
                                         kMattockForwardProbeBiasPixels;
-    const int strike_world_y = static_cast<int>(std::floor(holder_br.y)) -
+    const int strike_world_y = FloorToInt(holder_br.y) -
                                kMattockVerticalProbeOffsetPixels;
     const Vec2 primary_probe_world = Vec2::New(
         static_cast<float>(front_world_x),

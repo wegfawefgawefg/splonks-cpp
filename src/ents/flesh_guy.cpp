@@ -59,7 +59,7 @@ struct MeatSlimeSurface {
 };
 
 int FloorToTileCoord(float value) {
-    return static_cast<int>(std::floor(value / static_cast<float>(kTileSize)));
+    return FloorToInt(value / static_cast<float>(kTileSize));
 }
 
 IVec2 WorldPosToUnwrappedTileCoord(const Vec2& world_pos) {

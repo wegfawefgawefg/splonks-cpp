@@ -3,8 +3,6 @@
 #include "tile.hpp"
 #include "world_query.hpp"
 
-#include <cmath>
-
 namespace splonks::ents::common {
 
 namespace {
@@ -96,12 +94,12 @@ BlockingContactSet GatherBlockingContactsForAabb(
         contacts.touches_stage_bounds = TouchesStageBounds(aabb, state.stage);
 
         const IVec2 tile_tl = IVec2::New(
-            FloorDiv(static_cast<int>(std::floor(aabb.tl.x)), static_cast<int>(kTileSize)),
-            FloorDiv(static_cast<int>(std::floor(aabb.tl.y)), static_cast<int>(kTileSize))
+            FloorDiv(FloorToInt(aabb.tl.x), static_cast<int>(kTileSize)),
+            FloorDiv(FloorToInt(aabb.tl.y), static_cast<int>(kTileSize))
         );
         const IVec2 tile_br = IVec2::New(
-            FloorDiv(static_cast<int>(std::floor(aabb.br.x)), static_cast<int>(kTileSize)),
-            FloorDiv(static_cast<int>(std::floor(aabb.br.y)), static_cast<int>(kTileSize))
+            FloorDiv(FloorToInt(aabb.br.x), static_cast<int>(kTileSize)),
+            FloorDiv(FloorToInt(aabb.br.y), static_cast<int>(kTileSize))
         );
         for (const WorldTileQueryResult& tile_query : QueryTilesInRect(state.stage, tile_tl, tile_br)) {
             contacts.tile_contacts.push_back(TileContact{

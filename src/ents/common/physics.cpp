@@ -109,7 +109,7 @@ bool TrySnapToDownwardBlockingSurface(
     if (contacts.touches_stage_bounds &&
         stage.IsBorderSideBlocking(StageBorderSideKind::Bottom) &&
         next_bottom > static_cast<float>(stage.GetHeight() - 1)) {
-        ent.pos.y = std::round(static_cast<float>(stage.GetHeight()) - ent.size.y);
+        ent.pos.y = static_cast<float>(RoundToInt(static_cast<float>(stage.GetHeight()) - ent.size.y));
         return true;
     }
 
@@ -137,7 +137,7 @@ bool TrySnapToDownwardBlockingSurface(
         return false;
     }
 
-    ent.pos.y = std::round(*nearest_floor_top - ent.size.y);
+    ent.pos.y = static_cast<float>(RoundToInt(*nearest_floor_top - ent.size.y));
     return true;
 }
 
@@ -198,10 +198,10 @@ BlockingContactSet GatherBlockingContactsForMovement(
 
 int GetIntegerStepDistance(float distance, unsigned int time) {
     const float abs_distance = std::abs(distance);
-    int integer_distance = static_cast<int>(std::floor(abs_distance));
+    int integer_distance = FloorToInt(abs_distance);
     const float fractional_distance = abs_distance - static_cast<float>(integer_distance);
     if (fractional_distance != 0.0F) {
-        const int fractional_period = static_cast<int>(std::round(1.0F / fractional_distance));
+        const int fractional_period = RoundToInt(1.0F / fractional_distance);
         if (fractional_period != 0 && (time % static_cast<unsigned int>(fractional_period)) == 0U) {
             integer_distance += 1;
         }
@@ -225,9 +225,9 @@ float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
     constexpr float kDefaultGroundFriction = 0.85F;
     const Ent& ent = state.ents.ents[ent_idx];
     const auto [ent_tl, ent_br] = ent.GetBounds();
-    const int support_y = static_cast<int>(std::floor(ent_br.y + 1.0F));
-    const int min_tile_x = FloorDiv(static_cast<int>(std::floor(ent_tl.x)), static_cast<int>(kTileSize));
-    const int max_tile_x = FloorDiv(static_cast<int>(std::floor(ent_br.x)), static_cast<int>(kTileSize));
+    const int support_y = FloorToInt(ent_br.y + 1.0F);
+    const int min_tile_x = FloorDiv(FloorToInt(ent_tl.x), static_cast<int>(kTileSize));
+    const int max_tile_x = FloorDiv(FloorToInt(ent_br.x), static_cast<int>(kTileSize));
     const int support_tile_y = FloorDiv(support_y, static_cast<int>(kTileSize));
 
     float friction = 0.0F;

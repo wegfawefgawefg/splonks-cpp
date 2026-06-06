@@ -6,7 +6,6 @@
 
 
 #include <algorithm>
-#include <cmath>
 #include <vector>
 
 namespace splonks {
@@ -26,7 +25,7 @@ float GetNearestWrappedDelta(float from, float to, float span, bool wraps) {
         return delta;
     }
 
-    delta = std::fmod(delta, span);
+    delta -= static_cast<float>(static_cast<int>(delta / span)) * span;
     if (delta > span * 0.5F) {
         delta -= span;
     }
@@ -51,7 +50,7 @@ int FloorDivBySpan(float value, float span) {
     if (span <= 0.0F) {
         return 0;
     }
-    return static_cast<int>(std::floor(value / span));
+    return FloorToInt(value / span);
 }
 
 int FloorDiv(int value, int divisor) {
