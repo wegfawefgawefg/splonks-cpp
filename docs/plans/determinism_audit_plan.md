@@ -585,6 +585,17 @@ The expected end state is:
   The suggested delay is network configuration, not direct gameplay state, but
   keeping it under the same rounding rules avoids cross-platform drift in
   validation and developer tuning.
+- Fixed in CLI lockstep validation: the in-process packet fuzzer now uses local
+  `CeilToInt` for delay tick conversion instead of platform libm `std::ceil`.
+  This keeps stress/replay validation behavior aligned with runtime net fuzzer
+  rounding.
+- Audited mouse input boundary: mouse coordinates remain serialized in input
+  records and included in full canonical/debug fingerprints, but the live
+  network lockstep fingerprint uses `AddNetworkPlayerRegistryFingerprint` and
+  does not hash input frames. Current non-debug gameplay reads only button
+  inputs; mouse position reads are debug/playback/editor tooling. If mouse aim
+  becomes authoritative gameplay later, it must be quantized intentionally and
+  included in the network fingerprint with explicit semantics.
 
 ## Networking/Topology Determinism Audit
 

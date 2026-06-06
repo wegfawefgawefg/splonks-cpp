@@ -8,6 +8,7 @@
 #include "aframe.hpp"
 #include "graphics.hpp"
 #include "inputs.hpp"
+#include "math_types.hpp"
 #include "network/input_lockstep.hpp"
 #include "network/net_ent_links.hpp"
 #include "network/net_fuzzer.hpp"
@@ -27,7 +28,6 @@
 
 #include <array>
 #include <algorithm>
-#include <cmath>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -945,7 +945,8 @@ struct FakeLockstepNetwork {
         delay_ms = std::max(0.0F, delay_ms);
 
         constexpr float kTickMs = 1000.0F / static_cast<float>(kFramesPerSecond);
-        std::uint64_t delay_ticks = static_cast<std::uint64_t>(std::ceil(delay_ms / kTickMs));
+        std::uint64_t delay_ticks =
+            static_cast<std::uint64_t>(CeilToInt(delay_ms / kTickMs));
         if (fuzzer.reorder_window_packets > 0) {
             const int reorder_window = static_cast<int>(fuzzer.reorder_window_packets);
             delay_ticks += static_cast<std::uint64_t>(rng.RandomIntInclusive(0, reorder_window));
