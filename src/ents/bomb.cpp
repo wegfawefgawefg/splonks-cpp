@@ -4,9 +4,8 @@
 #include "ent/spec.hpp"
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
+#include "math_types.hpp"
 #include "state.hpp"
-
-#include <cmath>
 
 namespace splonks::ents::bomb {
 
@@ -205,8 +204,8 @@ common::ContactResult OnEntContactAsBomb(
 
     bomb.ent_a = other.vid;
     bomb.point_a = IVec2::New(
-        static_cast<int>(std::lround(bomb.pos.x - other.pos.x)),
-        static_cast<int>(std::lround(bomb.pos.y - other.pos.y))
+        RoundToInt(bomb.pos.x - other.pos.x),
+        RoundToInt(bomb.pos.y - other.pos.y)
     );
     StickBombInPlace(bomb);
     return {};

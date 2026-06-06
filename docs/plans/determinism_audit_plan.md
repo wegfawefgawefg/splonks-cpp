@@ -112,8 +112,9 @@ The expected end state is:
   platform-sensitive.
 - Fixed in gameplay snap-to-pixel boundaries: blocking-bottom grounding,
   detached carry placement, stage-rotation entity placement, arrow-trap stored
-  offsets, bow arrow spawn centers, and teleporter holder destinations now use
-  local `RoundToInt` instead of platform libm `std::round`.
+  offsets, bow arrow spawn centers, sticky-bomb entity attachment offsets, and
+  teleporter holder destinations now use local `RoundToInt` instead of platform
+  libm `std::round` / `std::lround`.
 - Fixed in gameplay branch/timer conversions: climb probe pixel limits, player
   fall-timer rate increments, and craps dice roll resolution now use local
   `CeilToInt` / `RoundToInt` instead of platform libm `std::ceil` /
