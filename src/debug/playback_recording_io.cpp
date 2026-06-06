@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 94;
+constexpr std::uint32_t kRecordingVersion = 95;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -604,6 +604,14 @@ bool ReadFloat(std::istream& in, float& value) {
     return ReadPod(in, value);
 }
 
+void WriteDouble(std::ostream& out, double value) {
+    WritePod(out, value);
+}
+
+bool ReadDouble(std::istream& in, double& value) {
+    return ReadPod(in, value);
+}
+
 void WriteInt32(std::ostream& out, int value) {
     const std::int32_t stored = static_cast<std::int32_t>(value);
     WritePod(out, stored);
@@ -644,6 +652,22 @@ bool ReadOptionalInt32(std::istream& in, std::optional<int>& value) {
     }
     value = loaded;
     return true;
+}
+
+void WriteSigned32(std::ostream& out, std::int32_t value) {
+    WritePod(out, value);
+}
+
+bool ReadSigned32(std::istream& in, std::int32_t& value) {
+    return ReadPod(in, value);
+}
+
+void WriteUint32(std::ostream& out, std::uint32_t value) {
+    WritePod(out, value);
+}
+
+bool ReadUint32(std::istream& in, std::uint32_t& value) {
+    return ReadPod(in, value);
 }
 
 void WriteUnsigned32(std::ostream& out, unsigned int value) {
@@ -2899,11 +2923,11 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteDebugFluidBrushState(out, snapshot.debug_fluid_brush);
     WriteStageRotationState(out, snapshot.stage_rotation);
     WritePlayerTuningState(out, snapshot.player_tuning);
-    WritePod(out, snapshot.now);
-    WritePod(out, snapshot.time_since_last_update);
-    WritePod(out, snapshot.scene_frame);
-    WritePod(out, snapshot.frame);
-    WritePod(out, snapshot.stage_frame);
+    WriteDouble(out, snapshot.now);
+    WriteFloat(out, snapshot.time_since_last_update);
+    WriteUint32(out, snapshot.scene_frame);
+    WriteUint32(out, snapshot.frame);
+    WriteUint32(out, snapshot.stage_frame);
     WriteDetRng(out, snapshot.drng);
     WriteDetRng(out, snapshot.stagegen_drng);
     WriteMode(out, snapshot.menu_return_to);
@@ -2913,14 +2937,14 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteStageLoadTarget(out, snapshot.respawn_target);
     WriteOptionalStageTransitionTarget(out, snapshot.pending_stage_transition);
     WriteMultiplayerRespawnMode(out, snapshot.multiplayer_respawn_mode);
-    WritePod(out, snapshot.points);
-    WritePod(out, snapshot.deaths);
-    WritePod(out, snapshot.depth);
-    WritePod(out, snapshot.sac_altar_favor);
-    WritePod(out, snapshot.sac_altar_reward_tier);
+    WriteUint32(out, snapshot.points);
+    WriteUint32(out, snapshot.deaths);
+    WriteUint32(out, snapshot.depth);
+    WriteSigned32(out, snapshot.sac_altar_favor);
+    WriteUint32(out, snapshot.sac_altar_reward_tier);
     WriteQuestState(out, snapshot.quest_state);
     WritePlayerRegistry(out, snapshot.players);
-    WritePod(out, snapshot.frame_pause);
+    WriteUint32(out, snapshot.frame_pause);
     WriteDebugLevelConfig(out, snapshot.debug_level);
     WriteEntPool(out, snapshot.ents);
     WriteStage(out, snapshot.stage);
@@ -2961,11 +2985,11 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadDebugFluidBrushState(in, snapshot.debug_fluid_brush) &&
            ReadStageRotationState(in, snapshot.stage_rotation) &&
            ReadPlayerTuningState(in, snapshot.player_tuning) &&
-           ReadPod(in, snapshot.now) &&
-           ReadPod(in, snapshot.time_since_last_update) &&
-           ReadPod(in, snapshot.scene_frame) &&
-           ReadPod(in, snapshot.frame) &&
-           ReadPod(in, snapshot.stage_frame) &&
+           ReadDouble(in, snapshot.now) &&
+           ReadFloat(in, snapshot.time_since_last_update) &&
+           ReadUint32(in, snapshot.scene_frame) &&
+           ReadUint32(in, snapshot.frame) &&
+           ReadUint32(in, snapshot.stage_frame) &&
            ReadDetRng(in, snapshot.drng) &&
            ReadDetRng(in, snapshot.stagegen_drng) &&
            ReadMode(in, snapshot.menu_return_to) &&
@@ -2975,14 +2999,14 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadStageLoadTarget(in, snapshot.respawn_target) &&
            ReadOptionalStageTransitionTarget(in, snapshot.pending_stage_transition) &&
            ReadMultiplayerRespawnMode(in, snapshot.multiplayer_respawn_mode) &&
-           ReadPod(in, snapshot.points) &&
-           ReadPod(in, snapshot.deaths) &&
-           ReadPod(in, snapshot.depth) &&
-           ReadPod(in, snapshot.sac_altar_favor) &&
-           ReadPod(in, snapshot.sac_altar_reward_tier) &&
+           ReadUint32(in, snapshot.points) &&
+           ReadUint32(in, snapshot.deaths) &&
+           ReadUint32(in, snapshot.depth) &&
+           ReadSigned32(in, snapshot.sac_altar_favor) &&
+           ReadUint32(in, snapshot.sac_altar_reward_tier) &&
            ReadQuestState(in, snapshot.quest_state) &&
            ReadPlayerRegistry(in, snapshot.players) &&
-           ReadPod(in, snapshot.frame_pause) &&
+           ReadUint32(in, snapshot.frame_pause) &&
            ReadDebugLevelConfig(in, snapshot.debug_level) &&
            ReadEntPool(in, snapshot.ents) &&
            ReadStage(in, snapshot.stage) &&
@@ -3113,11 +3137,11 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WriteStageRotationState(out, snapshot.stage_rotation);
     WritePlayerTuningState(out, snapshot.player_tuning);
     WriteBoolByte(out, snapshot.running);
-    WritePod(out, snapshot.now);
-    WritePod(out, snapshot.time_since_last_update);
-    WritePod(out, snapshot.scene_frame);
-    WritePod(out, snapshot.frame);
-    WritePod(out, snapshot.stage_frame);
+    WriteDouble(out, snapshot.now);
+    WriteFloat(out, snapshot.time_since_last_update);
+    WriteUint32(out, snapshot.scene_frame);
+    WriteUint32(out, snapshot.frame);
+    WriteUint32(out, snapshot.stage_frame);
     WriteDetRng(out, snapshot.drng);
     WriteDetRng(out, snapshot.stagegen_drng);
     WriteMode(out, snapshot.menu_return_to);
@@ -3127,15 +3151,15 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WriteStageLoadTarget(out, snapshot.respawn_target);
     WriteOptionalStageTransitionTarget(out, snapshot.pending_stage_transition);
     WriteMultiplayerRespawnMode(out, snapshot.multiplayer_respawn_mode);
-    WritePod(out, snapshot.points);
-    WritePod(out, snapshot.deaths);
-    WritePod(out, snapshot.depth);
-    WritePod(out, snapshot.sac_altar_favor);
-    WritePod(out, snapshot.sac_altar_reward_tier);
+    WriteUint32(out, snapshot.points);
+    WriteUint32(out, snapshot.deaths);
+    WriteUint32(out, snapshot.depth);
+    WriteSigned32(out, snapshot.sac_altar_favor);
+    WriteUint32(out, snapshot.sac_altar_reward_tier);
     WriteVidVector(out, snapshot.interact_claimed_vids_this_frame);
     WriteQuestState(out, snapshot.quest_state);
     WriteSimPlayerSlots(out, snapshot.players);
-    WritePod(out, snapshot.frame_pause);
+    WriteUint32(out, snapshot.frame_pause);
     WriteDebugLevelConfig(out, snapshot.debug_level);
     WriteEntPool(out, snapshot.ents);
     WriteVidVector(out, snapshot.area_listener_vids);
@@ -3158,11 +3182,11 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadStageRotationState(in, snapshot.stage_rotation) &&
            ReadPlayerTuningState(in, snapshot.player_tuning) &&
            ReadBoolByte(in, snapshot.running) &&
-           ReadPod(in, snapshot.now) &&
-           ReadPod(in, snapshot.time_since_last_update) &&
-           ReadPod(in, snapshot.scene_frame) &&
-           ReadPod(in, snapshot.frame) &&
-           ReadPod(in, snapshot.stage_frame) &&
+           ReadDouble(in, snapshot.now) &&
+           ReadFloat(in, snapshot.time_since_last_update) &&
+           ReadUint32(in, snapshot.scene_frame) &&
+           ReadUint32(in, snapshot.frame) &&
+           ReadUint32(in, snapshot.stage_frame) &&
            ReadDetRng(in, snapshot.drng) &&
            ReadDetRng(in, snapshot.stagegen_drng) &&
            ReadMode(in, snapshot.menu_return_to) &&
@@ -3172,15 +3196,15 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadStageLoadTarget(in, snapshot.respawn_target) &&
            ReadOptionalStageTransitionTarget(in, snapshot.pending_stage_transition) &&
            ReadMultiplayerRespawnMode(in, snapshot.multiplayer_respawn_mode) &&
-           ReadPod(in, snapshot.points) &&
-           ReadPod(in, snapshot.deaths) &&
-           ReadPod(in, snapshot.depth) &&
-           ReadPod(in, snapshot.sac_altar_favor) &&
-           ReadPod(in, snapshot.sac_altar_reward_tier) &&
+           ReadUint32(in, snapshot.points) &&
+           ReadUint32(in, snapshot.deaths) &&
+           ReadUint32(in, snapshot.depth) &&
+           ReadSigned32(in, snapshot.sac_altar_favor) &&
+           ReadUint32(in, snapshot.sac_altar_reward_tier) &&
            ReadVidVector(in, snapshot.interact_claimed_vids_this_frame) &&
            ReadQuestState(in, snapshot.quest_state) &&
            ReadSimPlayerSlots(in, snapshot.players) &&
-           ReadPod(in, snapshot.frame_pause) &&
+           ReadUint32(in, snapshot.frame_pause) &&
            ReadDebugLevelConfig(in, snapshot.debug_level) &&
            ReadEntPool(in, snapshot.ents) &&
            ReadVidVector(in, snapshot.area_listener_vids) &&

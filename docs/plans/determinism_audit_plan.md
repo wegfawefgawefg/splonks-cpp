@@ -301,6 +301,12 @@ The expected end state is:
   writers instead of generic raw optional payloads. Dead raw vector/optional/
   grid helper paths were removed from the recording writer. Recording format
   version is now 94.
+- Fixed in shared gameplay/simulation snapshot serialization: top-level
+  gameplay/simulation scalar fields now route through named fixed-width scalar
+  writers instead of generic POD calls. This covers `now`,
+  `time_since_last_update`, `scene_frame`, `frame`, `stage_frame`, points,
+  deaths, depth, sac altar favor/reward tier, and `frame_pause`. Recording
+  format version is now 95.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -378,6 +384,9 @@ The expected end state is:
   stage-transition target optionals, stage generation seed optionals, and
   stage void-death boundary optionals now use typed optional encoders rather
   than raw optional payloads.
+- Fixed in shared snapshot/replay format: top-level frame/time/score/depth/
+  altar/pause scalar fields now use named fixed-width helpers rather than raw
+  POD snapshot calls.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 
