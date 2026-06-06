@@ -191,6 +191,11 @@ The expected end state is:
   linked spawn indices and `Stage::next_light_vid` now use explicit
   optional/single `uint32_t` values instead of raw host `size_t`. Recording
   format version is now 75.
+- Fixed in network fingerprints and shared gameplay/simulation snapshot
+  serialization: `AFrameAnimator::current_frame` still uses `std::size_t` in
+  runtime state, but fingerprints and snapshot bytes now encode it as an
+  explicit `uint32_t` instead of raw host `size_t`. Recording format version is
+  now 76.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -238,6 +243,10 @@ The expected end state is:
   spawn-link indices and `Stage::next_light_vid` still use `std::size_t` in
   runtime state because they index local arrays / id counters, but the snapshot
   byte format now stores them as explicit `uint32_t` values.
+- Fixed in fingerprints and shared gameplay/simulation snapshot serialization:
+  `AFrameAnimator::current_frame` still uses `std::size_t` in runtime state
+  because it indexes local animation frame arrays, but fingerprints and snapshot
+  bytes now store it as an explicit `uint32_t` value.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

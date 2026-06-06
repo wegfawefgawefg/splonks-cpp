@@ -224,7 +224,7 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddIVec2(ent.point_c);
     writer.AddIVec2(ent.point_d);
     writer.AddPod(ent.aframe_animator.anim_id);
-    writer.AddPod(ent.aframe_animator.current_frame);
+    writer.AddPod(static_cast<std::uint32_t>(ent.aframe_animator.current_frame));
     writer.AddQuantizedFloat(ent.aframe_animator.current_time);
     writer.AddQuantizedFloat(ent.aframe_animator.speed);
     writer.AddBool(ent.aframe_animator.animate);

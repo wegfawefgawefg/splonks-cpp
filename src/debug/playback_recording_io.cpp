@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 75;
+constexpr std::uint32_t kRecordingVersion = 76;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -200,6 +200,38 @@ bool ReadEntEffects(std::istream& in, BoxedEntEffects& effects_box) {
     return true;
 }
 
+void WriteAFrameAnimator(std::ostream& out, const AFrameAnimator& animator) {
+    WritePod(out, animator.anim_id);
+    WriteSizeIndex(out, animator.current_frame);
+    WritePod(out, animator.current_time);
+    WritePod(out, animator.scale);
+    WritePod(out, animator.speed);
+    WritePod(out, animator.animate);
+    WritePod(out, animator.loop);
+    WritePod(out, animator.finished);
+    WritePod(out, animator.playback_mode);
+    WritePod(out, animator.play_count);
+    WritePod(out, animator.plays_completed);
+    WritePod(out, animator.playback_dirty);
+    WritePod(out, animator.ping_pong_forward);
+}
+
+bool ReadAFrameAnimator(std::istream& in, AFrameAnimator& animator) {
+    return ReadPod(in, animator.anim_id) &&
+           ReadSizeIndex(in, animator.current_frame) &&
+           ReadPod(in, animator.current_time) &&
+           ReadPod(in, animator.scale) &&
+           ReadPod(in, animator.speed) &&
+           ReadPod(in, animator.animate) &&
+           ReadPod(in, animator.loop) &&
+           ReadPod(in, animator.finished) &&
+           ReadPod(in, animator.playback_mode) &&
+           ReadPod(in, animator.play_count) &&
+           ReadPod(in, animator.plays_completed) &&
+           ReadPod(in, animator.playback_dirty) &&
+           ReadPod(in, animator.ping_pong_forward);
+}
+
 template <typename T>
 void WriteOptionalVectorPod(std::ostream& out, const std::optional<std::vector<T>>& values) {
     const bool has_value = values.has_value();
@@ -272,7 +304,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WritePod(out, ent.vertical_flip);
     WritePod(out, ent.draw_layer);
     WritePod(out, ent.render_enabled);
-    WritePod(out, ent.aframe_animator);
+    WriteAFrameAnimator(out, ent.aframe_animator);
     WritePod(out, ent.jump_delay_frame_count);
     WritePod(out, ent.jumped_this_frame);
     WritePod(out, ent.climb_detach_cooldown);
@@ -400,7 +432,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadPod(in, ent.vertical_flip) &&
            ReadPod(in, ent.draw_layer) &&
            ReadPod(in, ent.render_enabled) &&
-           ReadPod(in, ent.aframe_animator) &&
+           ReadAFrameAnimator(in, ent.aframe_animator) &&
            ReadPod(in, ent.jump_delay_frame_count) &&
            ReadPod(in, ent.jumped_this_frame) &&
            ReadPod(in, ent.climb_detach_cooldown) &&
