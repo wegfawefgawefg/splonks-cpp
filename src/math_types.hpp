@@ -217,6 +217,10 @@ inline float Length(const Vec2& value) {
     return std::sqrt((value.x * value.x) + (value.y * value.y));
 }
 
+inline float LengthSquared(const Vec2& value) {
+    return (value.x * value.x) + (value.y * value.y);
+}
+
 inline Vec2 NormalizeOrZero(const Vec2& value) {
     const float length = Length(value);
     if (length == 0.0F) {

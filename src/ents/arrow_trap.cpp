@@ -20,9 +20,13 @@ constexpr int kArrowTrapMaxSensorDistance = 96;
 constexpr int kArrowTrapMaxSensorTileSteps = kArrowTrapMaxSensorDistance / static_cast<int>(kTileSize);
 constexpr float kArrowTrapSensorHalfHeight = 3.0F;
 constexpr float kArrowTrapMovingEntSpeed = 0.05F;
+constexpr float kArrowTrapMovingEntSpeedSq =
+    kArrowTrapMovingEntSpeed * kArrowTrapMovingEntSpeed;
 constexpr float kArrowTrapArrowSpeed = 8.0F;
 constexpr float kArrowGravity = 0.10F;
 constexpr float kArrowRotationVelocityEpsilon = 0.01F;
+constexpr float kArrowRotationVelocityEpsilonSq =
+    kArrowRotationVelocityEpsilon * kArrowRotationVelocityEpsilon;
 constexpr float kArrowImpactVelocityScale = 0.18F;
 constexpr unsigned int kArrowDamage = 2;
 
@@ -40,7 +44,7 @@ Vec2 GetSensorStart(const Ent& trap) {
 }
 
 bool ShouldTriggerOnEnt(const Ent& ent) {
-    return Length(ent.vel) > kArrowTrapMovingEntSpeed;
+    return LengthSquared(ent.vel) > kArrowTrapMovingEntSpeedSq;
 }
 
 void SnapArrowPositionToPixels(Ent& arrow) {
@@ -277,7 +281,7 @@ void StepEntLogicAsArrow(
         return;
     }
 
-    if (Length(arrow.vel) > kArrowRotationVelocityEpsilon) {
+    if (LengthSquared(arrow.vel) > kArrowRotationVelocityEpsilonSq) {
         if (arrow.proj_contact_timer > 0) {
             arrow.proj_contact_damage_amount = kArrowDamage;
         }

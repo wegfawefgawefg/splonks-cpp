@@ -123,6 +123,10 @@ The expected end state is:
   discrete direction vectors and angle lookup instead of runtime
   `NormalizeOrZero` / `std::atan2`. This removes libm `sqrt` / `atan2` from
   player-controlled projectile velocity and stored weapon rotation.
+- Fixed in gameplay distance thresholds: arrow-trap movement detection, arrow
+  rotation velocity gating, piranha target/bite range checks, projectile-contact
+  activation, and spike high-speed override checks now compare squared lengths
+  instead of calling `Length` / platform libm `std::sqrt`.
 - Deferred risk: those helpers make the float-to-integer conversion rule
   explicit, but the source positions are still authoritative floats. Two peers
   can still diverge if prior float math crosses a grid/branch threshold

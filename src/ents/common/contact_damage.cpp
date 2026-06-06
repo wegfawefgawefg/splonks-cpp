@@ -15,6 +15,8 @@ constexpr std::uint32_t kHarmContactCooldownFrames = 8;
 constexpr std::uint32_t kProjBodyImpactCooldownFrames = 60;
 constexpr std::uint32_t kTileOverlapEffectRefreshFrames = 2;
 constexpr float kProjContactVelocityScale = 0.35F;
+constexpr float kProjContactMinVelocitySq = 1.0F;
+constexpr float kSpikeOverrideVelocitySq = 16.0F;
 
 bool HasContactHarmAlignment(const Ent& source, const Ent& target) {
     return (source.alignment == Alignment::Ally && target.alignment == Alignment::Enemy) ||
@@ -24,7 +26,7 @@ bool HasContactHarmAlignment(const Ent& source, const Ent& target) {
 
 bool CanApplyProjContact(const Ent& ent) {
     return ent.can_apply_proj_contact && ent.proj_contact_timer > 0 &&
-           Length(ent.vel) >= 1.0F;
+           LengthSquared(ent.vel) >= kProjContactMinVelocitySq;
 }
 
 void ApplyTileOverlapEffects(std::size_t ent_idx, State& state) {
@@ -282,7 +284,7 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
     {
         const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
         const IAABB iaabb = ent_aabb.AsIAABB();
-        const bool override_tile_portion_check = Length(ent.vel) > 4.0F;
+        const bool override_tile_portion_check = LengthSquared(ent.vel) > kSpikeOverrideVelocitySq;
         const bool in_top_portion_of_tile = (iaabb.br.y % static_cast<int>(kTileSize)) < 4;
         for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, iaabb.tl, iaabb.br)) {
             if (tile_query.tile == nullptr || *tile_query.tile != Tile::Spikes) {
