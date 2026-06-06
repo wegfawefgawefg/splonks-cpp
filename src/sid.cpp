@@ -142,6 +142,12 @@ std::vector<VID> SID::Query(const Vec2& top_left, const Vec2& bottom_right) cons
             }
         }
     }
+    std::sort(result.begin(), result.end(), [](const VID& left, const VID& right) {
+        if (left.id != right.id) {
+            return left.id < right.id;
+        }
+        return left.version < right.version;
+    });
     return result;
 }
 

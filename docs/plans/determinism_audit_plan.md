@@ -113,8 +113,10 @@ The expected end state is:
   stable network entity id, falling back to VID. Stage lights are sorted by VID
   before hashing.
 - `Sid` uses `std::unordered_map`, but it is an index/query cache keyed by
-  integer bucket and should not decide simulation order unless callers iterate
-  buckets/results without a stable sort. That call surface still needs review.
+  integer bucket and query traversal is by explicit coordinate loops, not
+  unordered-map iteration. Fixed: `SID::Query` now sorts returned VIDs by
+  `id` / `version` before callers consume the result, so per-bucket insertion
+  order cannot leak into collision/contact ordering.
 - Deferred risk: contact/collision tie ordering is not yet fully audited.
 
 ## RNG Audit
