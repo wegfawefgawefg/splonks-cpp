@@ -868,7 +868,7 @@ void RenderEntLabels(
             float text_y = pbox_rect.y + (pbox_rect.h * 0.5F) - 5.0F;
             if (state.debug_overlay.show_ent_ids) {
                 char label[32];
-                std::snprintf(label, sizeof(label), "%zu", ent.vid.id);
+                std::snprintf(label, sizeof(label), "%u", static_cast<unsigned>(ent.vid.id));
                 DrawText(
                     renderer,
                     graphics,
@@ -1423,7 +1423,7 @@ void RenderAreaOverlay(
             float text_y = area_rect.y + 2.0F;
             if (state.debug_overlay.show_area_ids) {
                 char label[32];
-                std::snprintf(label, sizeof(label), "shop %zu", ent.vid.id);
+                std::snprintf(label, sizeof(label), "shop %u", static_cast<unsigned>(ent.vid.id));
                 DrawText(
                     renderer,
                     graphics,
@@ -1569,8 +1569,8 @@ void RenderAudioEmitterOverlay(
             std::snprintf(
                 label,
                 sizeof(label),
-                "em %zu %s %s own:%d src:%d %s miss:%s",
-                emitter.vid.id,
+                "em %u %s %s own:%d src:%d %s miss:%s",
+                static_cast<unsigned>(emitter.vid.id),
                 audio.GetAudioAssetNameCStr(emitter.audio_asset_id),
                 AudioEmitterPlaybackModeToString(emitter.playback_mode),
                 owner_id,

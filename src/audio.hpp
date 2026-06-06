@@ -26,8 +26,8 @@ struct LoadedAudioAsset {
     MIX_Audio* audio = nullptr;
 };
 
-inline constexpr std::size_t kInvalidAudioInstanceId =
-    std::numeric_limits<std::size_t>::max();
+inline constexpr std::uint32_t kInvalidAudioInstanceId =
+    std::numeric_limits<std::uint32_t>::max();
 inline constexpr VID kInvalidAudioInstanceVID{
     kInvalidAudioInstanceId,
     0,

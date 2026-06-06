@@ -196,6 +196,11 @@ The expected end state is:
   runtime state, but fingerprints and snapshot bytes now encode it as an
   explicit `uint32_t` instead of raw host `size_t`. Recording format version is
   now 76.
+- Fixed in runtime fingerprints and shared gameplay/simulation snapshot
+  serialization: `VID::id` now uses explicit `uint32_t` storage instead of raw
+  host `size_t`. Entity, audio-emitter, audio-instance, light, optional VID, and
+  vector-of-VID snapshot fields no longer carry platform-width ids by raw
+  struct layout. Recording format version is now 77.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -247,6 +252,10 @@ The expected end state is:
   `AFrameAnimator::current_frame` still uses `std::size_t` in runtime state
   because it indexes local animation frame arrays, but fingerprints and snapshot
   bytes now store it as an explicit `uint32_t` value.
+- Fixed in runtime deterministic state: `VID::id` now uses `uint32_t` rather
+  than `std::size_t`. This removes a broad platform-sized value from entity,
+  light, audio-emitter, and audio-instance hashes/snapshots without changing
+  gameplay identity semantics.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

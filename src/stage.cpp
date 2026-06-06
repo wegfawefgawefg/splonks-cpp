@@ -470,7 +470,7 @@ EmbeddedTreasure Stage::TakeEmbeddedTreasure(const IVec2& pos) {
 }
 
 VID Stage::AddLight(const IVec2& tile_pos, int radius) {
-    const VID vid = VID{next_light_vid++};
+    const VID vid = VID{static_cast<std::uint32_t>(next_light_vid++)};
     return AddLightWithVid(vid, tile_pos, radius);
 }
 
@@ -481,7 +481,7 @@ VID Stage::AddLightWithVid(VID vid, const IVec2& tile_pos, int radius) {
         .tile_pos = tile_pos,
         .radius = radius,
     });
-    next_light_vid = std::max(next_light_vid, vid.id + 1);
+    next_light_vid = std::max(next_light_vid, static_cast<std::size_t>(vid.id) + 1);
     return vid;
 }
 

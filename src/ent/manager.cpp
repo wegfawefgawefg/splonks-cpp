@@ -11,7 +11,7 @@ EntPool EntPool::New() {
 
     for (std::size_t i = 0; i < kMaxNumEnts; ++i) {
         Ent new_ent = Ent::New();
-        new_ent.vid.id = i;
+        new_ent.vid.id = static_cast<std::uint32_t>(i);
         manager.ents.push_back(new_ent);
         manager.available_ids.insert(manager.available_ids.begin(), i);
     }

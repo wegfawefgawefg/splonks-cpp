@@ -128,7 +128,7 @@ AudioEmitterManager AudioEmitterManager::New() {
     manager.available_ids.reserve(kMaxNumAudioEmitters);
     for (std::size_t i = 0; i < kMaxNumAudioEmitters; ++i) {
         AudioEmitter emitter;
-        emitter.vid = VID{i, 0};
+        emitter.vid = VID{static_cast<std::uint32_t>(i), 0};
         manager.emitters.push_back(emitter);
         manager.available_ids.insert(manager.available_ids.begin(), i);
     }

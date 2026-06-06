@@ -15,7 +15,7 @@ struct Ent;
 struct Graphics;
 struct State;
 
-constexpr std::size_t kInvalidAudioEmitterId = std::numeric_limits<std::size_t>::max();
+constexpr std::uint32_t kInvalidAudioEmitterId = std::numeric_limits<std::uint32_t>::max();
 inline constexpr VID kInvalidAudioEmitterVID{kInvalidAudioEmitterId, 0};
 
 inline bool IsValidAudioEmitterVID(const VID& vid) {
