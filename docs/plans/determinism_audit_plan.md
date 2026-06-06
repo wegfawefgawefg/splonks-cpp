@@ -205,6 +205,12 @@ The expected end state is:
   both `id` and `version`. Entity pool version is part of stale-reference
   identity, so canonical hashes must distinguish a live reference from a reused
   id with a different generation.
+- Fixed in shared gameplay/simulation snapshot serialization: VID-bearing
+  fields now use explicit `id` / `version` writers instead of generic raw POD
+  helpers. This covers entity VIDs, optional/vector VID links, stage lights,
+  player-slot entity VIDs, contact cooldown/dispatch VIDs, tool owner VIDs,
+  interact/area listener VID vectors, and net entity link local VIDs. Recording
+  format version is now 78.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -260,6 +266,9 @@ The expected end state is:
   than `std::size_t`. This removes a broad platform-sized value from entity,
   light, audio-emitter, and audio-instance hashes/snapshots without changing
   gameplay identity semantics.
+- Fixed in shared snapshot/replay format: VID-bearing vectors and structs now
+  serialize VIDs field-by-field instead of relying on host raw layout for
+  vector payloads or optional payloads.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

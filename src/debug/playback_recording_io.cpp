@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 77;
+constexpr std::uint32_t kRecordingVersion = 78;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -149,6 +149,84 @@ bool ReadSizeIndexVector(std::istream& in, std::vector<std::size_t>& values) {
     return true;
 }
 
+void WriteVid(std::ostream& out, const VID& vid) {
+    WritePod(out, vid.id);
+    WritePod(out, vid.version);
+}
+
+bool ReadVid(std::istream& in, VID& vid) {
+    return ReadPod(in, vid.id) &&
+           ReadPod(in, vid.version);
+}
+
+void WriteOptionalVid(std::ostream& out, const std::optional<VID>& value) {
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (value.has_value()) {
+        WriteVid(out, *value);
+    }
+}
+
+bool ReadOptionalVid(std::istream& in, std::optional<VID>& value) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        value.reset();
+        return true;
+    }
+    VID loaded{};
+    if (!ReadVid(in, loaded)) {
+        return false;
+    }
+    value = loaded;
+    return true;
+}
+
+void WriteVidVector(std::ostream& out, const std::vector<VID>& values) {
+    const std::uint32_t count = static_cast<std::uint32_t>(values.size());
+    WritePod(out, count);
+    for (const VID& value : values) {
+        WriteVid(out, value);
+    }
+}
+
+bool ReadVidVector(std::istream& in, std::vector<VID>& values) {
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    values.resize(count);
+    for (VID& value : values) {
+        if (!ReadVid(in, value)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void WriteOptionalVidVector(std::ostream& out, const std::optional<std::vector<VID>>& values) {
+    const std::uint8_t has_value = values.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (values.has_value()) {
+        WriteVidVector(out, *values);
+    }
+}
+
+bool ReadOptionalVidVector(std::istream& in, std::optional<std::vector<VID>>& values) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        values.reset();
+        return true;
+    }
+    values.emplace();
+    return ReadVidVector(in, *values);
+}
+
 void WriteString(std::ostream& out, const std::string& value) {
     const std::uint32_t count = static_cast<std::uint32_t>(value.size());
     WritePod(out, count);
@@ -259,7 +337,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WritePod(out, ent.active);
     WritePod(out, ent.marked_for_destruction);
     WritePod(out, ent.type_);
-    WritePod(out, ent.vid);
+    WriteVid(out, ent.vid);
     WritePod(out, ent.has_physics);
     WritePod(out, ent.can_collide);
     WritePod(out, ent.can_be_hit);
@@ -317,7 +395,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WritePod(out, ent.money);
     WritePod(out, ent.buyable);
     WriteOptionalSizeIndex(out, ent.stage_spawn_index);
-    WriteOptionalPod(out, ent.back_vid);
+    WriteOptionalVid(out, ent.back_vid);
     WritePod(out, ent.attach_mode);
     WritePod(out, ent.use_state);
     WritePod(out, ent.travel_sound_countdown);
@@ -345,7 +423,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WritePod(out, ent.rope_throw_delay_countdown);
     WritePod(out, ent.attack_delay_countdown);
     WritePod(out, ent.equip_delay_countdown);
-    WriteOptionalPod(out, ent.thrown_by);
+    WriteOptionalVid(out, ent.thrown_by);
     WritePod(out, ent.thrown_immunity_timer);
     WritePod(out, ent.proj_contact_damage_type);
     WritePod(out, ent.proj_contact_damage_amount);
@@ -364,15 +442,15 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WritePod(out, ent.point_label_b);
     WritePod(out, ent.point_label_c);
     WritePod(out, ent.point_label_d);
-    WriteOptionalPod(out, ent.holding_vid);
-    WriteOptionalPod(out, ent.held_by_vid);
+    WriteOptionalVid(out, ent.holding_vid);
+    WriteOptionalVid(out, ent.held_by_vid);
     WritePod(out, ent.holding_timer);
-    WriteOptionalPod(out, ent.ent_a);
-    WriteOptionalPod(out, ent.ent_b);
-    WriteOptionalPod(out, ent.ent_c);
-    WriteOptionalPod(out, ent.ent_d);
-    WriteOptionalVectorPod(out, ent.child_vids);
-    WriteOptionalVectorPod(out, ent.inside_vids);
+    WriteOptionalVid(out, ent.ent_a);
+    WriteOptionalVid(out, ent.ent_b);
+    WriteOptionalVid(out, ent.ent_c);
+    WriteOptionalVid(out, ent.ent_d);
+    WriteOptionalVidVector(out, ent.child_vids);
+    WriteOptionalVidVector(out, ent.inside_vids);
     WritePod(out, ent.ent_label_a);
     WritePod(out, ent.alignment);
     WritePod(out, ent.counter_a);
@@ -387,7 +465,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
     return ReadPod(in, ent.active) &&
            ReadPod(in, ent.marked_for_destruction) &&
            ReadPod(in, ent.type_) &&
-           ReadPod(in, ent.vid) &&
+           ReadVid(in, ent.vid) &&
            ReadPod(in, ent.has_physics) &&
            ReadPod(in, ent.can_collide) &&
            ReadPod(in, ent.can_be_hit) &&
@@ -445,7 +523,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadPod(in, ent.money) &&
            ReadPod(in, ent.buyable) &&
            ReadOptionalSizeIndex(in, ent.stage_spawn_index) &&
-           ReadOptionalPod(in, ent.back_vid) &&
+           ReadOptionalVid(in, ent.back_vid) &&
            ReadPod(in, ent.attach_mode) &&
            ReadPod(in, ent.use_state) &&
            ReadPod(in, ent.travel_sound_countdown) &&
@@ -473,7 +551,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadPod(in, ent.rope_throw_delay_countdown) &&
            ReadPod(in, ent.attack_delay_countdown) &&
            ReadPod(in, ent.equip_delay_countdown) &&
-           ReadOptionalPod(in, ent.thrown_by) &&
+           ReadOptionalVid(in, ent.thrown_by) &&
            ReadPod(in, ent.thrown_immunity_timer) &&
            ReadPod(in, ent.proj_contact_damage_type) &&
            ReadPod(in, ent.proj_contact_damage_amount) &&
@@ -492,15 +570,15 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadPod(in, ent.point_label_b) &&
            ReadPod(in, ent.point_label_c) &&
            ReadPod(in, ent.point_label_d) &&
-           ReadOptionalPod(in, ent.holding_vid) &&
-           ReadOptionalPod(in, ent.held_by_vid) &&
+           ReadOptionalVid(in, ent.holding_vid) &&
+           ReadOptionalVid(in, ent.held_by_vid) &&
            ReadPod(in, ent.holding_timer) &&
-           ReadOptionalPod(in, ent.ent_a) &&
-           ReadOptionalPod(in, ent.ent_b) &&
-           ReadOptionalPod(in, ent.ent_c) &&
-           ReadOptionalPod(in, ent.ent_d) &&
-           ReadOptionalVectorPod(in, ent.child_vids) &&
-           ReadOptionalVectorPod(in, ent.inside_vids) &&
+           ReadOptionalVid(in, ent.ent_a) &&
+           ReadOptionalVid(in, ent.ent_b) &&
+           ReadOptionalVid(in, ent.ent_c) &&
+           ReadOptionalVid(in, ent.ent_d) &&
+           ReadOptionalVidVector(in, ent.child_vids) &&
+           ReadOptionalVidVector(in, ent.inside_vids) &&
            ReadPod(in, ent.ent_label_a) &&
            ReadPod(in, ent.alignment) &&
            ReadPod(in, ent.counter_a) &&
@@ -692,6 +770,40 @@ bool ReadStageGenAnnotation(std::istream& in, StageGenAnnotation& annotation) {
            ReadString(in, annotation.text);
 }
 
+void WriteStageLight(std::ostream& out, const StageLight& light) {
+    WriteVid(out, light.vid);
+    WritePod(out, light.tile_pos);
+    WritePod(out, light.radius);
+}
+
+bool ReadStageLight(std::istream& in, StageLight& light) {
+    return ReadVid(in, light.vid) &&
+           ReadPod(in, light.tile_pos) &&
+           ReadPod(in, light.radius);
+}
+
+void WriteStageLights(std::ostream& out, const std::vector<StageLight>& lights) {
+    const std::uint32_t count = static_cast<std::uint32_t>(lights.size());
+    WritePod(out, count);
+    for (const StageLight& light : lights) {
+        WriteStageLight(out, light);
+    }
+}
+
+bool ReadStageLights(std::istream& in, std::vector<StageLight>& lights) {
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    lights.resize(count);
+    for (StageLight& light : lights) {
+        if (!ReadStageLight(in, light)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 template <typename T>
 void WriteGridPod(std::ostream& out, const std::vector<std::vector<T>>& grid) {
     const std::uint32_t rows = static_cast<std::uint32_t>(grid.size());
@@ -771,7 +883,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     for (const StageGenAnnotation& annotation : stage.stagegen_annotations) {
         WriteStageGenAnnotation(out, annotation);
     }
-    WriteVectorPod(out, stage.lights);
+    WriteStageLights(out, stage.lights);
     WritePod(out, stage.block_anim_id);
     WriteSizeIndex(out, stage.next_light_vid);
     WritePod(out, stage.tile_change_generation);
@@ -860,7 +972,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         }
     }
 
-    return ReadVectorPod(in, stage.lights) &&
+    return ReadStageLights(in, stage.lights) &&
            ReadPod(in, stage.block_anim_id) &&
            ReadSizeIndex(in, stage.next_light_vid) &&
            ReadPod(in, stage.tile_change_generation);
@@ -896,7 +1008,7 @@ void WritePlayerRegistry(std::ostream& out, const PlayerRegistry& players) {
     WritePod(out, count);
     for (const PlayerSlot& slot : players.slots) {
         WritePod(out, slot.player_id);
-        WriteOptionalPod(out, slot.ent_vid);
+        WriteOptionalVid(out, slot.ent_vid);
         WritePod(out, slot.connection_kind);
         WritePod(out, slot.connected);
         WritePod(out, slot.primary_local);
@@ -916,7 +1028,7 @@ bool ReadPlayerRegistry(std::istream& in, PlayerRegistry& players) {
     players.slots.resize(count);
     for (PlayerSlot& slot : players.slots) {
         if (!ReadPod(in, slot.player_id) ||
-            !ReadOptionalPod(in, slot.ent_vid) ||
+            !ReadOptionalVid(in, slot.ent_vid) ||
             !ReadPod(in, slot.connection_kind) ||
             !ReadPod(in, slot.connected) ||
             !ReadPod(in, slot.primary_local) ||
@@ -932,17 +1044,177 @@ bool ReadPlayerRegistry(std::istream& in, PlayerRegistry& players) {
 }
 
 void WriteContactBookkeeping(std::ostream& out, const ContactBookkeeping& contact) {
-    WriteVectorPod(out, contact.contact_cooldowns);
-    WriteVectorPod(out, contact.interaction_cooldowns);
-    WriteVectorPod(out, contact.ent_contact_dispatches_this_tick);
-    WriteVectorPod(out, contact.proj_body_impact_cooldowns);
+    const auto write_contact_cooldowns = [&](const std::vector<ContactCooldownEntry>& entries) {
+        const std::uint32_t count = static_cast<std::uint32_t>(entries.size());
+        WritePod(out, count);
+        for (const ContactCooldownEntry& entry : entries) {
+            WriteVid(out, entry.source_vid);
+            WriteVid(out, entry.target_vid);
+            WritePod(out, entry.expires_on_stage_frame);
+        }
+    };
+    const auto write_interaction_cooldowns =
+        [&](const std::vector<InteractionCooldownEntry>& entries) {
+            const std::uint32_t count = static_cast<std::uint32_t>(entries.size());
+            WritePod(out, count);
+            for (const InteractionCooldownEntry& entry : entries) {
+                WriteVid(out, entry.source_vid);
+                WriteVid(out, entry.target_vid);
+                WritePod(out, static_cast<std::uint8_t>(entry.kind));
+                WritePod(out, entry.expires_on_stage_frame);
+            }
+        };
+    const auto write_ent_dispatches = [&](const std::vector<EntContactDispatchEntry>& entries) {
+        const std::uint32_t count = static_cast<std::uint32_t>(entries.size());
+        WritePod(out, count);
+        for (const EntContactDispatchEntry& entry : entries) {
+            WriteVid(out, entry.first_vid);
+            WriteVid(out, entry.second_vid);
+        }
+    };
+    const auto write_proj_body_cooldowns =
+        [&](const std::vector<ProjBodyImpactCooldownEntry>& entries) {
+            const std::uint32_t count = static_cast<std::uint32_t>(entries.size());
+            WritePod(out, count);
+            for (const ProjBodyImpactCooldownEntry& entry : entries) {
+                WriteVid(out, entry.first_vid);
+                WriteVid(out, entry.second_vid);
+                WritePod(out, entry.expires_on_stage_frame);
+            }
+        };
+
+    write_contact_cooldowns(contact.contact_cooldowns);
+    write_interaction_cooldowns(contact.interaction_cooldowns);
+    write_ent_dispatches(contact.ent_contact_dispatches_this_tick);
+    write_proj_body_cooldowns(contact.proj_body_impact_cooldowns);
 }
 
 bool ReadContactBookkeeping(std::istream& in, ContactBookkeeping& contact) {
-    return ReadVectorPod(in, contact.contact_cooldowns) &&
-           ReadVectorPod(in, contact.interaction_cooldowns) &&
-           ReadVectorPod(in, contact.ent_contact_dispatches_this_tick) &&
-           ReadVectorPod(in, contact.proj_body_impact_cooldowns);
+    const auto read_count = [&](std::uint32_t& count) {
+        return ReadPod(in, count);
+    };
+    const auto read_contact_cooldowns = [&]() {
+        std::uint32_t count = 0;
+        if (!read_count(count)) {
+            return false;
+        }
+        contact.contact_cooldowns.resize(count);
+        for (ContactCooldownEntry& entry : contact.contact_cooldowns) {
+            if (!ReadVid(in, entry.source_vid) ||
+                !ReadVid(in, entry.target_vid) ||
+                !ReadPod(in, entry.expires_on_stage_frame)) {
+                return false;
+            }
+        }
+        return true;
+    };
+    const auto read_interaction_cooldowns = [&]() {
+        std::uint32_t count = 0;
+        if (!read_count(count)) {
+            return false;
+        }
+        contact.interaction_cooldowns.resize(count);
+        for (InteractionCooldownEntry& entry : contact.interaction_cooldowns) {
+            std::uint8_t kind = 0;
+            if (!ReadVid(in, entry.source_vid) ||
+                !ReadVid(in, entry.target_vid) ||
+                !ReadPod(in, kind) ||
+                !ReadPod(in, entry.expires_on_stage_frame)) {
+                return false;
+            }
+            entry.kind = static_cast<InteractionCooldownKind>(kind);
+        }
+        return true;
+    };
+    const auto read_ent_dispatches = [&]() {
+        std::uint32_t count = 0;
+        if (!read_count(count)) {
+            return false;
+        }
+        contact.ent_contact_dispatches_this_tick.resize(count);
+        for (EntContactDispatchEntry& entry : contact.ent_contact_dispatches_this_tick) {
+            if (!ReadVid(in, entry.first_vid) ||
+                !ReadVid(in, entry.second_vid)) {
+                return false;
+            }
+        }
+        return true;
+    };
+    const auto read_proj_body_cooldowns = [&]() {
+        std::uint32_t count = 0;
+        if (!read_count(count)) {
+            return false;
+        }
+        contact.proj_body_impact_cooldowns.resize(count);
+        for (ProjBodyImpactCooldownEntry& entry : contact.proj_body_impact_cooldowns) {
+            if (!ReadVid(in, entry.first_vid) ||
+                !ReadVid(in, entry.second_vid) ||
+                !ReadPod(in, entry.expires_on_stage_frame)) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    return read_contact_cooldowns() &&
+           read_interaction_cooldowns() &&
+           read_ent_dispatches() &&
+           read_proj_body_cooldowns();
+}
+
+void WriteToolSlot(std::ostream& out, const ToolSlot& slot) {
+    WritePod(out, slot.kind);
+    WritePod(out, slot.count);
+    WritePod(out, slot.cooldown);
+    WritePod(out, slot.active);
+}
+
+bool ReadToolSlot(std::istream& in, ToolSlot& slot) {
+    return ReadPod(in, slot.kind) &&
+           ReadPod(in, slot.count) &&
+           ReadPod(in, slot.cooldown) &&
+           ReadPod(in, slot.active);
+}
+
+void WriteEntToolState(std::ostream& out, const EntToolState& state) {
+    WriteVid(out, state.owner_vid);
+    for (const ToolSlot& slot : state.slots) {
+        WriteToolSlot(out, slot);
+    }
+}
+
+bool ReadEntToolState(std::istream& in, EntToolState& state) {
+    if (!ReadVid(in, state.owner_vid)) {
+        return false;
+    }
+    for (ToolSlot& slot : state.slots) {
+        if (!ReadToolSlot(in, slot)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void WriteEntToolStates(std::ostream& out, const std::vector<EntToolState>& states) {
+    const std::uint32_t count = static_cast<std::uint32_t>(states.size());
+    WritePod(out, count);
+    for (const EntToolState& state : states) {
+        WriteEntToolState(out, state);
+    }
+}
+
+bool ReadEntToolStates(std::istream& in, std::vector<EntToolState>& states) {
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    states.resize(count);
+    for (EntToolState& state : states) {
+        if (!ReadEntToolState(in, state)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
@@ -999,11 +1271,11 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.debug_level);
     WriteEntPool(out, snapshot.ents);
     WriteStage(out, snapshot.stage);
-    WriteOptionalPod(out, snapshot.controlled_ent_vid);
+    WriteOptionalVid(out, snapshot.controlled_ent_vid);
     WriteOptionalPod(out, snapshot.spectator_target_player_id);
-    WriteOptionalPod(out, snapshot.mouse_trailer_vid);
+    WriteOptionalVid(out, snapshot.mouse_trailer_vid);
     WriteContactBookkeeping(out, snapshot.contact);
-    WriteVectorPod(out, snapshot.ent_tool_states);
+    WriteEntToolStates(out, snapshot.ent_tool_states);
     WritePod(out, snapshot.play_cam_pos);
 }
 
@@ -1061,17 +1333,17 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.debug_level) &&
            ReadEntPool(in, snapshot.ents) &&
            ReadStage(in, snapshot.stage) &&
-           ReadOptionalPod(in, snapshot.controlled_ent_vid) &&
+           ReadOptionalVid(in, snapshot.controlled_ent_vid) &&
            ReadOptionalPod(in, snapshot.spectator_target_player_id) &&
-           ReadOptionalPod(in, snapshot.mouse_trailer_vid) &&
+           ReadOptionalVid(in, snapshot.mouse_trailer_vid) &&
            ReadContactBookkeeping(in, snapshot.contact) &&
-           ReadVectorPod(in, snapshot.ent_tool_states) &&
+           ReadEntToolStates(in, snapshot.ent_tool_states) &&
            ReadPod(in, snapshot.play_cam_pos);
 }
 
 void WriteSimPlayerSlotSnapshot(std::ostream& out, const SimPlayerSlotSnapshot& slot) {
     WritePod(out, slot.player_id);
-    WriteOptionalPod(out, slot.ent_vid);
+    WriteOptionalVid(out, slot.ent_vid);
     WritePod(out, slot.connected);
     WriteString(out, slot.display_name);
     WritePod(out, slot.input_frame);
@@ -1082,7 +1354,7 @@ void WriteSimPlayerSlotSnapshot(std::ostream& out, const SimPlayerSlotSnapshot& 
 
 bool ReadSimPlayerSlotSnapshot(std::istream& in, SimPlayerSlotSnapshot& slot) {
     return ReadPod(in, slot.player_id) &&
-           ReadOptionalPod(in, slot.ent_vid) &&
+           ReadOptionalVid(in, slot.ent_vid) &&
            ReadPod(in, slot.connected) &&
            ReadString(in, slot.display_name) &&
            ReadPod(in, slot.input_frame) &&
@@ -1117,14 +1389,34 @@ void WriteSimNetEntLinks(
     std::ostream& out,
     const std::vector<SimNetEntLinkSnapshot>& links
 ) {
-    WriteVectorPod(out, links);
+    const std::uint32_t count = static_cast<std::uint32_t>(links.size());
+    WritePod(out, count);
+    for (const SimNetEntLinkSnapshot& link : links) {
+        WritePod(out, link.net_id);
+        WriteVid(out, link.local_vid);
+        WritePod(out, link.has_input_owner);
+        WritePod(out, link.input_owner_player_id);
+    }
 }
 
 bool ReadSimNetEntLinks(
     std::istream& in,
     std::vector<SimNetEntLinkSnapshot>& links
 ) {
-    return ReadVectorPod(in, links);
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    links.resize(count);
+    for (SimNetEntLinkSnapshot& link : links) {
+        if (!ReadPod(in, link.net_id) ||
+            !ReadVid(in, link.local_vid) ||
+            !ReadPod(in, link.has_input_owner) ||
+            !ReadPod(in, link.input_owner_player_id)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void WriteSimNetEntIdAliases(
@@ -1171,16 +1463,16 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WritePod(out, snapshot.depth);
     WritePod(out, snapshot.sac_altar_favor);
     WritePod(out, snapshot.sac_altar_reward_tier);
-    WriteVectorPod(out, snapshot.interact_claimed_vids_this_frame);
+    WriteVidVector(out, snapshot.interact_claimed_vids_this_frame);
     WritePod(out, snapshot.quest_state);
     WriteSimPlayerSlots(out, snapshot.players);
     WritePod(out, snapshot.frame_pause);
     WritePod(out, snapshot.debug_level);
     WriteEntPool(out, snapshot.ents);
-    WriteVectorPod(out, snapshot.area_listener_vids);
+    WriteVidVector(out, snapshot.area_listener_vids);
     WriteStage(out, snapshot.stage);
     WriteContactBookkeeping(out, snapshot.contact);
-    WriteVectorPod(out, snapshot.ent_tool_states);
+    WriteEntToolStates(out, snapshot.ent_tool_states);
     WritePod(out, snapshot.net_next_local_ent_id);
     WriteSimNetEntLinks(out, snapshot.net_ent_links);
     WriteSimNetEntIdAliases(out, snapshot.net_ent_id_aliases);
@@ -1216,16 +1508,16 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadPod(in, snapshot.depth) &&
            ReadPod(in, snapshot.sac_altar_favor) &&
            ReadPod(in, snapshot.sac_altar_reward_tier) &&
-           ReadVectorPod(in, snapshot.interact_claimed_vids_this_frame) &&
+           ReadVidVector(in, snapshot.interact_claimed_vids_this_frame) &&
            ReadPod(in, snapshot.quest_state) &&
            ReadSimPlayerSlots(in, snapshot.players) &&
            ReadPod(in, snapshot.frame_pause) &&
            ReadPod(in, snapshot.debug_level) &&
            ReadEntPool(in, snapshot.ents) &&
-           ReadVectorPod(in, snapshot.area_listener_vids) &&
+           ReadVidVector(in, snapshot.area_listener_vids) &&
            ReadStage(in, snapshot.stage) &&
            ReadContactBookkeeping(in, snapshot.contact) &&
-           ReadVectorPod(in, snapshot.ent_tool_states) &&
+           ReadEntToolStates(in, snapshot.ent_tool_states) &&
            ReadPod(in, snapshot.net_next_local_ent_id) &&
            ReadSimNetEntLinks(in, snapshot.net_ent_links) &&
            ReadSimNetEntIdAliases(in, snapshot.net_ent_id_aliases);
