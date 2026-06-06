@@ -188,10 +188,10 @@ bool TryApplyBatContactToEnt(
         );
         switch (damage_result) {
         case common::DamageResult::Died: {
-            const int random_number = rng::RandomIntInclusive(0, 10);
+            const int random_number = state.drng.RandomIntInclusive(0, 10);
             std::optional<AudioAssetId> sound_effect;
             if (random_number <= 8) {
-                const int another_random_number = rng::RandomIntInclusive(0, 2);
+                const int another_random_number = state.drng.RandomIntInclusive(0, 2);
                 switch (another_random_number) {
                 case 0:
                     sound_effect = audio_asset_ids::BaseballBatKillHit1;

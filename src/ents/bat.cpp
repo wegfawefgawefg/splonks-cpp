@@ -18,10 +18,6 @@ namespace splonks::ents::bat {
 
 namespace {
 
-bool RandomBool() {
-    return rng::RandomIntInclusive(0, 1) == 0;
-}
-
 IAABB GetAreaAbove(const Ent& bat) {
     const auto [tl, br] = bat.GetBounds();
     return IAABB{
@@ -215,7 +211,8 @@ void StepEntLogicAsBat(
             if (mutable_bat.ai_state == EntAiState::Idle) {
                 //  squeak
                 const AudioAssetId sound_effect =
-                    RandomBool() ? audio_asset_ids::BatSqueak : audio_asset_ids::BatFlap1;
+                    state.drng.RandomIntInclusive(0, 1) == 0 ? audio_asset_ids::BatSqueak
+                                                              : audio_asset_ids::BatFlap1;
                 (void)PlayEntSoundEmitter(state, mutable_bat, sound_effect);
             }
             //  go to the target

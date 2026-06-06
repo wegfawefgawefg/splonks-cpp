@@ -149,6 +149,9 @@ The expected end state is:
   The chosen popup center is also used for world sound emitters, and audio
   emitters are part of rollback/resync snapshots, so this cannot safely use the
   process-global presentation RNG.
+- Fixed: bat pursuit squeak/flap selection and baseball-bat kill sound
+  selection now use synchronized `state.drng`. These choices create audio
+  emitters, and audio emitters are part of rollback/resync snapshots.
 - Deferred risk: audit every remaining `rng::` call and either prove it is
   non-authoritative or move it to `state.drng`.
 
