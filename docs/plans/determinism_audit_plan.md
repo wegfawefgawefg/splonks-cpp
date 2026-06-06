@@ -172,6 +172,9 @@ The expected end state is:
   serialized. They are runtime metadata, not authoritative state, and
   `RestoreGameplaySnapshot` / `RestoreSimSnapshot` rebind callbacks from the
   local entity specs after restore.
+- Fixed in debug recordings: `GameplaySnapshot` video menu target indices are
+  serialized as optional `uint32_t` values instead of raw
+  `std::optional<std::size_t>`. Recording format version is now 73.
 - Deferred risk: `SerializeSimSnapshotToBytes` / `DeserializeSimSnapshotFromBytes`
   still write many trivially-copyable structs by raw host layout. That means
   endian, enum storage, bool representation, float bit representation, and
@@ -200,10 +203,12 @@ The expected end state is:
 
 - Partially fixed. Gameplay/network fingerprints no longer include direct
   `size_t` count representations.
-- Deferred risk: local debug/playback snapshots still include
-  `std::optional<std::size_t>` menu-selection fields in `GameplaySnapshot`.
-  Those are not part of `SimSnapshot` network state, but should be made explicit
-  before treating recordings as portable artifacts.
+- Fixed in the local debug/playback recording format: `GameplaySnapshot`
+  menu-selection indices still use `std::optional<std::size_t>` in runtime
+  state because they index local option arrays, but the on-disk recording format
+  now stores them as explicit optional `uint32_t` values.
+- Deferred risk: continue auditing snapshot/replay formats for any remaining
+  platform-sized values before treating recordings as portable artifacts.
 
 ## Asset And Config Consistency Audit
 

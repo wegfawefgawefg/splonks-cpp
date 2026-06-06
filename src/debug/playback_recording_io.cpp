@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 72;
+constexpr std::uint32_t kRecordingVersion = 73;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -81,6 +81,32 @@ bool ReadOptionalPod(std::istream& in, std::optional<T>& value) {
         return false;
     }
     value = loaded;
+    return true;
+}
+
+void WriteOptionalSizeIndex(std::ostream& out, const std::optional<std::size_t>& value) {
+    const bool has_value = value.has_value();
+    WritePod(out, has_value);
+    if (has_value) {
+        const std::uint32_t stored = static_cast<std::uint32_t>(*value);
+        WritePod(out, stored);
+    }
+}
+
+bool ReadOptionalSizeIndex(std::istream& in, std::optional<std::size_t>& value) {
+    bool has_value = false;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (!has_value) {
+        value.reset();
+        return true;
+    }
+    std::uint32_t loaded = 0;
+    if (!ReadPod(in, loaded)) {
+        return false;
+    }
+    value = static_cast<std::size_t>(loaded);
     return true;
 }
 
@@ -866,8 +892,8 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.ui_settings_menu_selection);
     WritePod(out, snapshot.post_fx_settings_menu_selection);
     WritePod(out, snapshot.lighting_settings_menu_selection);
-    WriteOptionalPod(out, snapshot.video_settings_target_window_size_index);
-    WriteOptionalPod(out, snapshot.video_settings_target_resolution_index);
+    WriteOptionalSizeIndex(out, snapshot.video_settings_target_window_size_index);
+    WriteOptionalSizeIndex(out, snapshot.video_settings_target_resolution_index);
     WriteOptionalPod(out, snapshot.video_settings_target_fullscreen);
     WritePod(out, snapshot.rebuild_render_texture);
     WritePod(out, snapshot.choosing_control_binding);
@@ -928,8 +954,8 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.ui_settings_menu_selection) &&
            ReadPod(in, snapshot.post_fx_settings_menu_selection) &&
            ReadPod(in, snapshot.lighting_settings_menu_selection) &&
-           ReadOptionalPod(in, snapshot.video_settings_target_window_size_index) &&
-           ReadOptionalPod(in, snapshot.video_settings_target_resolution_index) &&
+           ReadOptionalSizeIndex(in, snapshot.video_settings_target_window_size_index) &&
+           ReadOptionalSizeIndex(in, snapshot.video_settings_target_resolution_index) &&
            ReadOptionalPod(in, snapshot.video_settings_target_fullscreen) &&
            ReadPod(in, snapshot.rebuild_render_texture) &&
            ReadPod(in, snapshot.choosing_control_binding) &&
