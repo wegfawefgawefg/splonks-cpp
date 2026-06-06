@@ -6,11 +6,16 @@
 #include "world_query.hpp"
 
 #include <algorithm>
-#include <cmath>
 
 namespace splonks {
 
 namespace {
+
+constexpr int kEntShakeDistanceScale = 1024;
+
+int AbsInt(int value) {
+    return value < 0 ? -value : value;
+}
 
 bool HasAnyAreaListenerCallback(const Ent& ent) {
     return ent.on_area_enter != nullptr || ent.on_area_exit != nullptr ||
@@ -50,12 +55,25 @@ void AddShake(State& state, const Vec2& world_pos, float foreground_tile_amount,
 
         const Vec2 nearest_center = GetNearestWorldPoint(state.stage, world_pos, ent->GetCenter());
         const Vec2 delta = nearest_center - world_pos;
-        const float distance = std::sqrt((delta.x * delta.x) + (delta.y * delta.y));
         if (radius_world > 0.0F) {
-            if (distance > radius_world) {
+            const int radius_scaled =
+                std::max(1, RoundToInt(radius_world * static_cast<float>(kEntShakeDistanceScale)));
+            const int dx_int = RoundToInt(delta.x * static_cast<float>(kEntShakeDistanceScale));
+            const int dy_int = RoundToInt(delta.y * static_cast<float>(kEntShakeDistanceScale));
+            const std::uint64_t dx_scaled = static_cast<std::uint64_t>(AbsInt(dx_int));
+            const std::uint64_t dy_scaled = static_cast<std::uint64_t>(AbsInt(dy_int));
+            const std::uint64_t distance_squared =
+                (dx_scaled * dx_scaled) + (dy_scaled * dy_scaled);
+            const int distance_scaled = static_cast<int>(IntegerSqrtFloor(distance_squared));
+            if (distance_scaled > radius_scaled) {
                 continue;
             }
-            AddEntShake(*ent, ent_amount * (1.0F - (distance / radius_world)));
+            const int falloff_scaled = radius_scaled - distance_scaled;
+            AddEntShake(
+                *ent,
+                ent_amount *
+                    (static_cast<float>(falloff_scaled) / static_cast<float>(radius_scaled))
+            );
             continue;
         }
 

@@ -105,6 +105,11 @@ The expected end state is:
   plus `IntegerSqrtFloor` instead of platform libm `std::ceil` / `std::sqrt`.
   Tile shake is presentation state, but it is snapshot/replay state, so this
   keeps local replay and resync bytes less platform-sensitive.
+- Fixed in entity-shake propagation: per-entity radial falloff now uses
+  fixed-scale integer distance plus `IntegerSqrtFloor` instead of platform
+  libm `std::sqrt`. Entity shake is presentation state, but it is also
+  serialized in local snapshots/replays, so this keeps that path less
+  platform-sensitive.
 - Fixed in gameplay snap-to-pixel boundaries: blocking-bottom grounding,
   detached carry placement, stage-rotation entity placement, arrow-trap stored
   offsets, bow arrow spawn centers, and teleporter holder destinations now use
