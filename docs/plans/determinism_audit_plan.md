@@ -274,6 +274,11 @@ The expected end state is:
   velocity/gravity `Vec2` grids, room id grids, stage path `IVec2` vectors,
   camera clamp margin, wrap padding, and wrap core `UVec2` values. Recording
   format version is now 89.
+- Fixed in shared gameplay/simulation snapshot serialization: player and net
+  entity topology ids now use explicit fixed-width writers instead of raw
+  struct/vector layout. This covers player-registry ids, simulation player-slot
+  ids, spectator target ids, network entity ids, network input-owner player ids,
+  and network entity id aliases. Recording format version is now 90.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -334,6 +339,9 @@ The expected end state is:
   vector payloads or optional payloads.
 - Fixed in shared snapshot/replay format: optional presence flags now use an
   explicit one-byte representation instead of raw `bool`.
+- Fixed in shared snapshot/replay format: player ids remain `uint32_t` in
+  runtime, but snapshot bytes now route them through explicit fixed-width
+  writers, including optional spectator targets and network input-owner ids.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

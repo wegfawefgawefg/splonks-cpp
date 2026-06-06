@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 89;
+constexpr std::uint32_t kRecordingVersion = 90;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -597,6 +597,62 @@ bool ReadUnsigned32(std::istream& in, unsigned int& value) {
         return false;
     }
     value = static_cast<unsigned int>(stored);
+    return true;
+}
+
+void WritePlayerId(std::ostream& out, PlayerId player_id) {
+    const std::uint32_t stored = static_cast<std::uint32_t>(player_id);
+    WritePod(out, stored);
+}
+
+bool ReadPlayerId(std::istream& in, PlayerId& player_id) {
+    std::uint32_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    player_id = static_cast<PlayerId>(stored);
+    return true;
+}
+
+void WriteOptionalPlayerId(std::ostream& out, const std::optional<PlayerId>& value) {
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (value.has_value()) {
+        WritePlayerId(out, *value);
+    }
+}
+
+bool ReadOptionalPlayerId(std::istream& in, std::optional<PlayerId>& value) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        value.reset();
+        return true;
+    }
+    if (has_value != 1) {
+        return false;
+    }
+    PlayerId loaded = kInvalidPlayerId;
+    if (!ReadPlayerId(in, loaded)) {
+        return false;
+    }
+    value = loaded;
+    return true;
+}
+
+void WriteNetEntId(std::ostream& out, network::NetEntId net_id) {
+    const std::uint64_t stored = static_cast<std::uint64_t>(net_id);
+    WritePod(out, stored);
+}
+
+bool ReadNetEntId(std::istream& in, network::NetEntId& net_id) {
+    std::uint64_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    net_id = static_cast<network::NetEntId>(stored);
     return true;
 }
 
@@ -1800,7 +1856,7 @@ void WritePlayerRegistry(std::ostream& out, const PlayerRegistry& players) {
     const std::uint32_t count = static_cast<std::uint32_t>(players.slots.size());
     WritePod(out, count);
     for (const PlayerSlot& slot : players.slots) {
-        WritePod(out, slot.player_id);
+        WritePlayerId(out, slot.player_id);
         WriteOptionalVid(out, slot.ent_vid);
         WritePlayerConnectionKind(out, slot.connection_kind);
         WriteBoolByte(out, slot.connected);
@@ -1820,7 +1876,7 @@ bool ReadPlayerRegistry(std::istream& in, PlayerRegistry& players) {
     }
     players.slots.resize(count);
     for (PlayerSlot& slot : players.slots) {
-        if (!ReadPod(in, slot.player_id) ||
+        if (!ReadPlayerId(in, slot.player_id) ||
             !ReadOptionalVid(in, slot.ent_vid) ||
             !ReadPlayerConnectionKind(in, slot.connection_kind) ||
             !ReadBoolByte(in, slot.connected) ||
@@ -2080,7 +2136,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteEntPool(out, snapshot.ents);
     WriteStage(out, snapshot.stage);
     WriteOptionalVid(out, snapshot.controlled_ent_vid);
-    WriteOptionalPod(out, snapshot.spectator_target_player_id);
+    WriteOptionalPlayerId(out, snapshot.spectator_target_player_id);
     WriteOptionalVid(out, snapshot.mouse_trailer_vid);
     WriteContactBookkeeping(out, snapshot.contact);
     WriteEntToolStates(out, snapshot.ent_tool_states);
@@ -2142,7 +2198,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadEntPool(in, snapshot.ents) &&
            ReadStage(in, snapshot.stage) &&
            ReadOptionalVid(in, snapshot.controlled_ent_vid) &&
-           ReadOptionalPod(in, snapshot.spectator_target_player_id) &&
+           ReadOptionalPlayerId(in, snapshot.spectator_target_player_id) &&
            ReadOptionalVid(in, snapshot.mouse_trailer_vid) &&
            ReadContactBookkeeping(in, snapshot.contact) &&
            ReadEntToolStates(in, snapshot.ent_tool_states) &&
@@ -2150,7 +2206,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
 }
 
 void WriteSimPlayerSlotSnapshot(std::ostream& out, const SimPlayerSlotSnapshot& slot) {
-    WritePod(out, slot.player_id);
+    WritePlayerId(out, slot.player_id);
     WriteOptionalVid(out, slot.ent_vid);
     WriteBoolByte(out, slot.connected);
     WriteString(out, slot.display_name);
@@ -2161,7 +2217,7 @@ void WriteSimPlayerSlotSnapshot(std::ostream& out, const SimPlayerSlotSnapshot& 
 }
 
 bool ReadSimPlayerSlotSnapshot(std::istream& in, SimPlayerSlotSnapshot& slot) {
-    return ReadPod(in, slot.player_id) &&
+    return ReadPlayerId(in, slot.player_id) &&
            ReadOptionalVid(in, slot.ent_vid) &&
            ReadBoolByte(in, slot.connected) &&
            ReadString(in, slot.display_name) &&
@@ -2200,10 +2256,10 @@ void WriteSimNetEntLinks(
     const std::uint32_t count = static_cast<std::uint32_t>(links.size());
     WritePod(out, count);
     for (const SimNetEntLinkSnapshot& link : links) {
-        WritePod(out, link.net_id);
+        WriteNetEntId(out, link.net_id);
         WriteVid(out, link.local_vid);
         WriteBoolByte(out, link.has_input_owner);
-        WritePod(out, link.input_owner_player_id);
+        WritePlayerId(out, link.input_owner_player_id);
     }
 }
 
@@ -2217,10 +2273,10 @@ bool ReadSimNetEntLinks(
     }
     links.resize(count);
     for (SimNetEntLinkSnapshot& link : links) {
-        if (!ReadPod(in, link.net_id) ||
+        if (!ReadNetEntId(in, link.net_id) ||
             !ReadVid(in, link.local_vid) ||
             !ReadBoolByte(in, link.has_input_owner) ||
-            !ReadPod(in, link.input_owner_player_id)) {
+            !ReadPlayerId(in, link.input_owner_player_id)) {
             return false;
         }
     }
@@ -2231,14 +2287,30 @@ void WriteSimNetEntIdAliases(
     std::ostream& out,
     const std::vector<SimNetEntIdAliasSnapshot>& aliases
 ) {
-    WriteVectorPod(out, aliases);
+    const std::uint32_t count = static_cast<std::uint32_t>(aliases.size());
+    WritePod(out, count);
+    for (const SimNetEntIdAliasSnapshot& alias : aliases) {
+        WriteNetEntId(out, alias.from_id);
+        WriteNetEntId(out, alias.to_id);
+    }
 }
 
 bool ReadSimNetEntIdAliases(
     std::istream& in,
     std::vector<SimNetEntIdAliasSnapshot>& aliases
 ) {
-    return ReadVectorPod(in, aliases);
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    aliases.resize(count);
+    for (SimNetEntIdAliasSnapshot& alias : aliases) {
+        if (!ReadNetEntId(in, alias.from_id) ||
+            !ReadNetEntId(in, alias.to_id)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
@@ -2281,7 +2353,7 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WriteStage(out, snapshot.stage);
     WriteContactBookkeeping(out, snapshot.contact);
     WriteEntToolStates(out, snapshot.ent_tool_states);
-    WritePod(out, snapshot.net_next_local_ent_id);
+    WriteNetEntId(out, snapshot.net_next_local_ent_id);
     WriteSimNetEntLinks(out, snapshot.net_ent_links);
     WriteSimNetEntIdAliases(out, snapshot.net_ent_id_aliases);
 }
@@ -2326,7 +2398,7 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadStage(in, snapshot.stage) &&
            ReadContactBookkeeping(in, snapshot.contact) &&
            ReadEntToolStates(in, snapshot.ent_tool_states) &&
-           ReadPod(in, snapshot.net_next_local_ent_id) &&
+           ReadNetEntId(in, snapshot.net_next_local_ent_id) &&
            ReadSimNetEntLinks(in, snapshot.net_ent_links) &&
            ReadSimNetEntIdAliases(in, snapshot.net_ent_id_aliases);
 }
