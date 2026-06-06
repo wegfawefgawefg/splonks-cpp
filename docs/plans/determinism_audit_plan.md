@@ -235,6 +235,11 @@ The expected end state is:
   requirement expectations, spawn buyable flags, stage wrap/clamp flags,
   optional fullscreen targets, gameplay/simulation running and game-over/pause/
   win flags. Recording format version is now 83.
+- Fixed in shared gameplay/simulation snapshot serialization: high-level mode
+  and type enums now use explicit `uint8_t` values with decode validation
+  instead of raw host enum storage. This covers game/menu modes, menu return
+  modes, multiplayer respawn mode, settings mode, post-process effect, and
+  stage type. Recording format version is now 84.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
