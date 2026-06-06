@@ -571,6 +571,16 @@ The expected end state is:
 - [ ] Ensure local input capture is converted into deterministic input frames
       before simulation.
 
+### Status 2026-06-06
+
+- In progress. Gameplay advances through fixed simulation ticks, while wall-clock
+  time remains in frame accumulation, rendering, UI, debug, and transport
+  scheduling boundaries.
+- Fixed in network validation timing: packet-fuzzer delay and bandwidth pacing
+  now use local `RoundToInt` / `CeilToInt` instead of platform libm
+  `std::lround` / `std::ceil`. This is not authoritative gameplay state, but it
+  keeps simulated network conditions more reproducible across platforms.
+
 ## Networking/Topology Determinism Audit
 
 - [ ] Ensure join/leave/topology changes are applied at deterministic frame

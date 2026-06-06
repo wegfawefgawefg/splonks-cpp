@@ -1,8 +1,9 @@
 #include "network/net_lobby_internal.hpp"
 
+#include "math_types.hpp"
+
 #include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <string>
 
 namespace splonks::network {
@@ -101,14 +102,14 @@ std::uint64_t FuzzedDueTimeMilliseconds(
         delay_ms += static_cast<float>(NextFuzzerRandom(transport) % 4U);
     }
 
-    std::uint64_t due_ms = now_ms + static_cast<std::uint64_t>(std::lround(delay_ms));
+    std::uint64_t due_ms = now_ms + static_cast<std::uint64_t>(RoundToInt(delay_ms));
     if (config.bandwidth_cap_bytes_per_second > 0U) {
         due_ms = std::max(due_ms, transport.fuzzer_next_bandwidth_send_time_ms);
         const float packet_ms =
             (static_cast<float>(packet_size) * 1000.0F) /
             static_cast<float>(config.bandwidth_cap_bytes_per_second);
         transport.fuzzer_next_bandwidth_send_time_ms =
-            due_ms + std::max<std::uint64_t>(1U, static_cast<std::uint64_t>(std::ceil(packet_ms)));
+            due_ms + std::max<std::uint64_t>(1U, static_cast<std::uint64_t>(CeilToInt(packet_ms)));
     }
     return due_ms;
 }
