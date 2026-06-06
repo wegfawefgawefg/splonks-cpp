@@ -81,12 +81,16 @@ The expected end state is:
   `std::cos` in gameplay movement. Ball-and-chain uses `std::sqrt` for
   authoritative pull direction. These should be converted to deterministic
   lookup/fixed-point math or discrete approximations.
-- Fixed for circular moving platforms: runtime `std::sin` / `std::cos` was
+- Fixed for circular moving platforms: runtime `std::sin` / `std::cos` were
   replaced with a fixed 80-step integer unit-circle table. The platform still
   writes float `pos` / `vel` for the current physics pipeline, but its path
   selection and pixel offset generation no longer depend on platform libm.
-- Deferred risk: ball-and-chain still uses `std::sqrt` for authoritative pull
-  direction. Shared world/tile query boundaries also still use `std::floor` /
+- Fixed for ball-and-chain: runtime `std::sqrt` was replaced with fixed-scale
+  integer length/direction math for catchup, taut-chain pull, and player
+  pullback. The entity still reads/writes float `pos`, `vel`, and `acc` at the
+  current physics boundary, but the pull direction no longer depends on
+  platform libm.
+- Deferred risk: shared world/tile query boundaries still use `std::floor` /
   `std::fmod` over float positions and need a fixed-point boundary pass.
 - Fixed in network fingerprints: `Ent::rotation` is treated as cosmetic/render
   state and no longer participates in the network lockstep hash. This removes
