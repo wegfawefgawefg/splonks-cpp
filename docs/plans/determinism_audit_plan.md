@@ -119,6 +119,10 @@ The expected end state is:
   fall-timer rate increments, and craps dice roll resolution now use local
   `CeilToInt` / `RoundToInt` instead of platform libm `std::ceil` /
   `std::round`.
+- Fixed in 8-way weapon aim: bow and web-cannon projectile aim now use explicit
+  discrete direction vectors and angle lookup instead of runtime
+  `NormalizeOrZero` / `std::atan2`. This removes libm `sqrt` / `atan2` from
+  player-controlled projectile velocity and stored weapon rotation.
 - Deferred risk: those helpers make the float-to-integer conversion rule
   explicit, but the source positions are still authoritative floats. Two peers
   can still diverge if prior float math crosses a grid/branch threshold

@@ -36,6 +36,7 @@ constexpr float kCobwebVerticalDamping = 0.25F;
 constexpr float kCobwebAccelerationDamping = 0.0F;
 constexpr float kCobwebJumpEscapeVelocity = -1.7F;
 constexpr float kCobwebOccupantSpeedThreshold = 0.05F;
+constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct WebGunAim {
     Vec2 direction = Vec2::New(1.0F, 0.0F);
@@ -51,6 +52,44 @@ float NormalizeDegrees(float degrees) {
         degrees += 360.0F;
     }
     return degrees;
+}
+
+Vec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
+    if (aim_x == 0 && aim_y == 0) {
+        return facing == Side::Left ? Vec2::New(-1.0F, 0.0F) : Vec2::New(1.0F, 0.0F);
+    }
+    if (aim_x != 0 && aim_y != 0) {
+        return Vec2::New(
+            static_cast<float>(aim_x) * kDiagonalAimComponent,
+            static_cast<float>(aim_y) * kDiagonalAimComponent
+        );
+    }
+    return Vec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
+}
+
+float DiscreteAimWorldAngle(int aim_x, int aim_y, Side facing) {
+    if (aim_x == 0 && aim_y == 0) {
+        return facing == Side::Left ? 180.0F : 0.0F;
+    }
+    if (aim_x > 0) {
+        if (aim_y < 0) {
+            return -45.0F;
+        }
+        if (aim_y > 0) {
+            return 45.0F;
+        }
+        return 0.0F;
+    }
+    if (aim_x < 0) {
+        if (aim_y < 0) {
+            return -135.0F;
+        }
+        if (aim_y > 0) {
+            return 135.0F;
+        }
+        return 180.0F;
+    }
+    return aim_y < 0 ? -90.0F : 90.0F;
 }
 
 WebGunAim GetWebGunAim(const Ent& weapon, const Ent* holder, const State& state) {
@@ -77,17 +116,8 @@ WebGunAim GetWebGunAim(const Ent& weapon, const Ent* holder, const State& state)
         facing = Side::Right;
     }
 
-    Vec2 direction = Vec2::New(
-        static_cast<float>(aim_x),
-        static_cast<float>(aim_y)
-    );
-    if (direction == Vec2::New(0.0F, 0.0F)) {
-        direction = facing == Side::Left ? Vec2::New(-1.0F, 0.0F) : Vec2::New(1.0F, 0.0F);
-    } else {
-        direction = NormalizeOrZero(direction);
-    }
-
-    const float world_angle = std::atan2(direction.y, direction.x) * (180.0F / 3.14159265F);
+    const Vec2 direction = DiscreteAimDirection(aim_x, aim_y, facing);
+    const float world_angle = DiscreteAimWorldAngle(aim_x, aim_y, facing);
     const float base_angle = facing == Side::Left ? 180.0F : 0.0F;
     return WebGunAim{
         .direction = direction,
