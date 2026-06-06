@@ -255,6 +255,13 @@ The expected end state is:
   `EntLabel`, `Alignment`, and optional enum fields. Snapshot optional
   presence markers now reject invalid nonzero values instead of accepting any
   byte as present. Recording format version is now 86.
+- Fixed in shared gameplay/simulation snapshot serialization: authored entity
+  spawn records, background stamps, and pending stage-transition targets are now
+  encoded field-by-field instead of through raw optional/enum struct layout.
+  This removes raw `std::optional<Vec2>`,
+  `std::optional<StageTransitionTarget>`, `EntSpawn` enum fields, and
+  `BackgroundStamp` enum storage from replay/resync bytes. Recording format
+  version is now 87.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,

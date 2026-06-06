@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 86;
+constexpr std::uint32_t kRecordingVersion = 87;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -523,6 +523,133 @@ bool ReadEntType(std::istream& in, EntType& type) {
         return false;
     }
     type = static_cast<EntType>(stored);
+    return true;
+}
+
+void WriteVec2(std::ostream& out, const Vec2& value) {
+    WritePod(out, value.x);
+    WritePod(out, value.y);
+}
+
+bool ReadVec2(std::istream& in, Vec2& value) {
+    return ReadPod(in, value.x) &&
+           ReadPod(in, value.y);
+}
+
+void WriteOptionalVec2(std::ostream& out, const std::optional<Vec2>& value) {
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (value.has_value()) {
+        WriteVec2(out, *value);
+    }
+}
+
+bool ReadOptionalVec2(std::istream& in, std::optional<Vec2>& value) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        value.reset();
+        return true;
+    }
+    if (has_value != 1) {
+        return false;
+    }
+    Vec2 loaded{};
+    if (!ReadVec2(in, loaded)) {
+        return false;
+    }
+    value = loaded;
+    return true;
+}
+
+void WriteStageLoadTargetKind(std::ostream& out, StageLoadTargetKind kind) {
+    WriteEnumByte(out, kind);
+}
+
+bool ReadStageLoadTargetKind(std::istream& in, StageLoadTargetKind& kind) {
+    return ReadEnumByte(in, kind, StageLoadTargetKind::QuestStage);
+}
+
+void WriteDebugLevelKind(std::ostream& out, DebugLevelKind kind) {
+    WriteEnumByte(out, kind);
+}
+
+bool ReadDebugLevelKind(std::istream& in, DebugLevelKind& kind) {
+    return ReadEnumByte(in, kind, DebugLevelKind::LightingStressTest);
+}
+
+void WriteFixedCharArray(std::ostream& out, const char* data, std::size_t size) {
+    out.write(data, static_cast<std::streamsize>(size));
+}
+
+bool ReadFixedCharArray(std::istream& in, char* data, std::size_t size) {
+    in.read(data, static_cast<std::streamsize>(size));
+    return in.good();
+}
+
+void WriteStageLoadTarget(std::ostream& out, const StageLoadTarget& target) {
+    WriteStageLoadTargetKind(out, target.kind);
+    WriteStageType(out, target.stage_type);
+    WriteDebugLevelKind(out, target.debug_level);
+    WritePod(out, target.debug_variant);
+    WriteFixedCharArray(out, target.quest_id.data(), target.quest_id.size());
+    WriteFixedCharArray(out, target.quest_stage_id.data(), target.quest_stage_id.size());
+}
+
+bool ReadStageLoadTarget(std::istream& in, StageLoadTarget& target) {
+    return ReadStageLoadTargetKind(in, target.kind) &&
+           ReadStageType(in, target.stage_type) &&
+           ReadDebugLevelKind(in, target.debug_level) &&
+           ReadPod(in, target.debug_variant) &&
+           ReadFixedCharArray(in, target.quest_id.data(), target.quest_id.size()) &&
+           ReadFixedCharArray(in, target.quest_stage_id.data(), target.quest_stage_id.size());
+}
+
+void WriteStageTransitionTarget(std::ostream& out, const StageTransitionTarget& target) {
+    WriteStageLoadTarget(out, target.destination);
+    WriteBoolByte(out, target.preserve_player_state);
+    WriteOptionalPod(out, target.seed);
+}
+
+bool ReadStageTransitionTarget(std::istream& in, StageTransitionTarget& target) {
+    return ReadStageLoadTarget(in, target.destination) &&
+           ReadBoolByte(in, target.preserve_player_state) &&
+           ReadOptionalPod(in, target.seed);
+}
+
+void WriteOptionalStageTransitionTarget(
+    std::ostream& out,
+    const std::optional<StageTransitionTarget>& value
+) {
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (value.has_value()) {
+        WriteStageTransitionTarget(out, *value);
+    }
+}
+
+bool ReadOptionalStageTransitionTarget(
+    std::istream& in,
+    std::optional<StageTransitionTarget>& value
+) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        value.reset();
+        return true;
+    }
+    if (has_value != 1) {
+        return false;
+    }
+    StageTransitionTarget loaded{};
+    if (!ReadStageTransitionTarget(in, loaded)) {
+        return false;
+    }
+    value = loaded;
     return true;
 }
 
@@ -1155,11 +1282,11 @@ bool ReadStageExit(std::istream& in, StageExit& exit) {
 }
 
 void WriteEntSpawn(std::ostream& out, const EntSpawn& spawn) {
-    WritePod(out, spawn.type_);
-    WritePod(out, spawn.pos);
-    WriteOptionalPod(out, spawn.size_override);
-    WritePod(out, spawn.facing);
-    WriteOptionalPod(out, spawn.ai_state_override);
+    WriteEntType(out, spawn.type_);
+    WriteVec2(out, spawn.pos);
+    WriteOptionalVec2(out, spawn.size_override);
+    WriteEnumByte(out, spawn.facing);
+    WriteOptionalEnumByte(out, spawn.ai_state_override);
     WritePod(out, spawn.anim_id);
     WriteOptionalSizeIndex(out, spawn.ent_a_spawn_index);
     WriteOptionalSizeIndex(out, spawn.ent_b_spawn_index);
@@ -1172,11 +1299,11 @@ void WriteEntSpawn(std::ostream& out, const EntSpawn& spawn) {
 }
 
 bool ReadEntSpawn(std::istream& in, EntSpawn& spawn) {
-    return ReadPod(in, spawn.type_) &&
-           ReadPod(in, spawn.pos) &&
-           ReadOptionalPod(in, spawn.size_override) &&
-           ReadPod(in, spawn.facing) &&
-           ReadOptionalPod(in, spawn.ai_state_override) &&
+    return ReadEntType(in, spawn.type_) &&
+           ReadVec2(in, spawn.pos) &&
+           ReadOptionalVec2(in, spawn.size_override) &&
+           ReadEnumByte(in, spawn.facing, Side::Right) &&
+           ReadOptionalEnumByte(in, spawn.ai_state_override, EntAiState::Returning) &&
            ReadPod(in, spawn.anim_id) &&
            ReadOptionalSizeIndex(in, spawn.ent_a_spawn_index) &&
            ReadOptionalSizeIndex(in, spawn.ent_b_spawn_index) &&
@@ -1208,6 +1335,40 @@ bool ReadStageLight(std::istream& in, StageLight& light) {
     return ReadVid(in, light.vid) &&
            ReadPod(in, light.tile_pos) &&
            ReadPod(in, light.radius);
+}
+
+void WriteBackgroundStamp(std::ostream& out, const BackgroundStamp& stamp) {
+    WritePod(out, stamp.anim_id);
+    WriteVec2(out, stamp.pos);
+    WriteEnumByte(out, stamp.condition);
+}
+
+bool ReadBackgroundStamp(std::istream& in, BackgroundStamp& stamp) {
+    return ReadPod(in, stamp.anim_id) &&
+           ReadVec2(in, stamp.pos) &&
+           ReadEnumByte(in, stamp.condition, BackgroundStampCondition::Wanted);
+}
+
+void WriteBackgroundStamps(std::ostream& out, const std::vector<BackgroundStamp>& stamps) {
+    const std::uint32_t count = static_cast<std::uint32_t>(stamps.size());
+    WritePod(out, count);
+    for (const BackgroundStamp& stamp : stamps) {
+        WriteBackgroundStamp(out, stamp);
+    }
+}
+
+bool ReadBackgroundStamps(std::istream& in, std::vector<BackgroundStamp>& stamps) {
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    stamps.resize(count);
+    for (BackgroundStamp& stamp : stamps) {
+        if (!ReadBackgroundStamp(in, stamp)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void WriteStageLights(std::ostream& out, const std::vector<StageLight>& lights) {
@@ -1304,7 +1465,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     for (const EntSpawn& spawn : stage.ent_spawns) {
         WriteEntSpawn(out, spawn);
     }
-    WriteVectorPod(out, stage.background_stamps);
+    WriteBackgroundStamps(out, stage.background_stamps);
     const std::uint32_t annotation_count =
         static_cast<std::uint32_t>(stage.stagegen_annotations.size());
     WritePod(out, annotation_count);
@@ -1386,7 +1547,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         }
     }
 
-    if (!ReadVectorPod(in, stage.background_stamps)) {
+    if (!ReadBackgroundStamps(in, stage.background_stamps)) {
         return false;
     }
     std::uint32_t annotation_count = 0;
@@ -1701,7 +1862,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteBoolByte(out, snapshot.pause);
     WriteBoolByte(out, snapshot.win);
     WritePod(out, snapshot.respawn_target);
-    WriteOptionalPod(out, snapshot.pending_stage_transition);
+    WriteOptionalStageTransitionTarget(out, snapshot.pending_stage_transition);
     WriteMultiplayerRespawnMode(out, snapshot.multiplayer_respawn_mode);
     WritePod(out, snapshot.points);
     WritePod(out, snapshot.deaths);
@@ -1763,7 +1924,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadBoolByte(in, snapshot.pause) &&
            ReadBoolByte(in, snapshot.win) &&
            ReadPod(in, snapshot.respawn_target) &&
-           ReadOptionalPod(in, snapshot.pending_stage_transition) &&
+           ReadOptionalStageTransitionTarget(in, snapshot.pending_stage_transition) &&
            ReadMultiplayerRespawnMode(in, snapshot.multiplayer_respawn_mode) &&
            ReadPod(in, snapshot.points) &&
            ReadPod(in, snapshot.deaths) &&
@@ -1899,7 +2060,7 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WriteBoolByte(out, snapshot.pause);
     WriteBoolByte(out, snapshot.win);
     WritePod(out, snapshot.respawn_target);
-    WriteOptionalPod(out, snapshot.pending_stage_transition);
+    WriteOptionalStageTransitionTarget(out, snapshot.pending_stage_transition);
     WriteMultiplayerRespawnMode(out, snapshot.multiplayer_respawn_mode);
     WritePod(out, snapshot.points);
     WritePod(out, snapshot.deaths);
@@ -1944,7 +2105,7 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadBoolByte(in, snapshot.pause) &&
            ReadBoolByte(in, snapshot.win) &&
            ReadPod(in, snapshot.respawn_target) &&
-           ReadOptionalPod(in, snapshot.pending_stage_transition) &&
+           ReadOptionalStageTransitionTarget(in, snapshot.pending_stage_transition) &&
            ReadMultiplayerRespawnMode(in, snapshot.multiplayer_respawn_mode) &&
            ReadPod(in, snapshot.points) &&
            ReadPod(in, snapshot.deaths) &&
