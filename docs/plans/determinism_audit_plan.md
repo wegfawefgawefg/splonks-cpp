@@ -105,6 +105,10 @@ The expected end state is:
   plus `IntegerSqrtFloor` instead of platform libm `std::ceil` / `std::sqrt`.
   Tile shake is presentation state, but it is snapshot/replay state, so this
   keeps local replay and resync bytes less platform-sensitive.
+- Fixed in gameplay snap-to-pixel boundaries: blocking-bottom grounding,
+  detached carry placement, stage-rotation entity placement, arrow-trap stored
+  offsets, bow arrow spawn centers, and teleporter holder destinations now use
+  local `RoundToInt` instead of platform libm `std::round`.
 - Deferred risk: those helpers make the float-to-integer conversion rule
   explicit, but the source positions are still authoritative floats. Two peers
   can still diverge if prior float math crosses a grid/branch threshold

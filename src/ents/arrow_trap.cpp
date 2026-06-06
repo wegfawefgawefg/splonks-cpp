@@ -44,11 +44,13 @@ bool ShouldTriggerOnEnt(const Ent& ent) {
 }
 
 void SnapArrowPositionToPixels(Ent& arrow) {
-    arrow.pos = Vec2::New(std::round(arrow.pos.x), std::round(arrow.pos.y));
+    arrow.pos = Vec2::New(static_cast<float>(RoundToInt(arrow.pos.x)),
+                          static_cast<float>(RoundToInt(arrow.pos.y)));
 }
 
 Vec2 ToStoredArrowOffset(const Vec2& offset) {
-    return Vec2::New(std::round(offset.x), std::round(offset.y));
+    return Vec2::New(static_cast<float>(RoundToInt(offset.x)),
+                     static_cast<float>(RoundToInt(offset.y)));
 }
 
 IVec2 ToStoredArrowOffsetPoint(const Vec2& offset) {

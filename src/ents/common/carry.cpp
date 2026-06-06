@@ -61,7 +61,8 @@ void RestoreDetachedCarryEnt(Ent& ent) {
 }
 
 void SnapPlacedAttachToPixels(Ent& ent) {
-    ent.pos = Vec2::New(std::round(ent.pos.x), std::round(ent.pos.y));
+    ent.pos = Vec2::New(static_cast<float>(RoundToInt(ent.pos.x)),
+                        static_cast<float>(RoundToInt(ent.pos.y)));
 }
 
 bool IsAttachDriven(const Ent& ent) {

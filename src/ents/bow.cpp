@@ -137,7 +137,8 @@ void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
     (void)world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         const Vec2 direction = aim.direction;
         const Vec2 spawn_center = bow.GetCenter() + direction * 12.0F;
-        arrow.SetCenter(Vec2::New(std::round(spawn_center.x), std::round(spawn_center.y)));
+        arrow.SetCenter(Vec2::New(static_cast<float>(RoundToInt(spawn_center.x)),
+                                  static_cast<float>(RoundToInt(spawn_center.y))));
         arrow.vel = direction * kBowArrowSpeed;
         arrow.acc = Vec2::New(0.0F, 0.0F);
         arrow.facing = aim.facing;

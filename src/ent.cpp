@@ -9,7 +9,6 @@
 #include "world_query.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <vector>
 
 namespace splonks {
@@ -279,7 +278,7 @@ bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
         return false;
     }
 
-    pos.y = std::round(static_cast<float>(stage.GetHeight()) - size.y);
+    pos.y = static_cast<float>(RoundToInt(static_cast<float>(stage.GetHeight()) - size.y));
     return true;
 }
 

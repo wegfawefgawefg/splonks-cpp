@@ -450,7 +450,8 @@ void MoveTeleportHolderToDestination(
     const Graphics& graphics
 ) {
     common::SetVisualCenterForEnt(holder, graphics, destination_center);
-    holder.pos = Vec2::New(std::round(holder.pos.x), std::round(holder.pos.y));
+    holder.pos = Vec2::New(static_cast<float>(RoundToInt(holder.pos.x)),
+                           static_cast<float>(RoundToInt(holder.pos.y)));
     holder.grounded = false;
     holder.hang_side.reset();
     SetMovementFlag(holder, EntMovementFlag::Climbing, false);

@@ -11,7 +11,6 @@
 #include "state.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <vector>
 
@@ -241,7 +240,8 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
             continue;
         }
         ent.SetCenter(RotatePoint(ent.GetCenter(), old_dims, quarter_turns));
-        ent.pos = Vec2::New(std::round(ent.pos.x), std::round(ent.pos.y));
+        ent.pos = Vec2::New(static_cast<float>(RoundToInt(ent.pos.x)),
+                            static_cast<float>(RoundToInt(ent.pos.y)));
         ent.vel = Vec2::New(0.0F, 0.0F);
         ent.acc = Vec2::New(0.0F, 0.0F);
         ent.grounded = false;
