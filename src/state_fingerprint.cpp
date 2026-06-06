@@ -19,6 +19,13 @@ namespace {
 constexpr std::uint64_t kFnvOffsetBasis = 14695981039346656037ULL;
 constexpr std::uint64_t kFnvPrime = 1099511628211ULL;
 
+bool VidLess(const VID& lhs, const VID& rhs) {
+    if (lhs.id != rhs.id) {
+        return lhs.id < rhs.id;
+    }
+    return lhs.version < rhs.version;
+}
+
 struct FingerprintWriter {
     std::uint64_t value = kFnvOffsetBasis;
 
@@ -202,7 +209,9 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
 
     std::vector<StageLight> lights = stage.lights;
     std::sort(lights.begin(), lights.end(),
-              [](const StageLight& lhs, const StageLight& rhs) { return lhs.vid.id < rhs.vid.id; });
+              [](const StageLight& lhs, const StageLight& rhs) {
+                  return VidLess(lhs.vid, rhs.vid);
+              });
     writer.AddCount(lights.size());
     for (const StageLight& light : lights) {
         writer.AddVid(light.vid);
@@ -485,8 +494,12 @@ void AddNetworkToolInventoryFingerprint(FingerprintWriter& writer, const State& 
     }
     std::sort(tool_states.begin(), tool_states.end(),
               [&state](const EntToolState* lhs, const EntToolState* rhs) {
-                  return NetEntIdForVid(state, lhs->owner_vid) <
-                         NetEntIdForVid(state, rhs->owner_vid);
+                  const network::NetEntId lhs_id = NetEntIdForVid(state, lhs->owner_vid);
+                  const network::NetEntId rhs_id = NetEntIdForVid(state, rhs->owner_vid);
+                  if (lhs_id != rhs_id) {
+                      return lhs_id < rhs_id;
+                  }
+                  return VidLess(lhs->owner_vid, rhs->owner_vid);
               });
 
     writer.AddCount(tool_states.size());
@@ -639,7 +652,7 @@ NetworkStateFingerprintComponents ComputeNetworkStateFingerprintComponents(const
         if (lhs_id != rhs_id) {
             return lhs_id < rhs_id;
         }
-        return lhs->vid.id < rhs->vid.id;
+        return VidLess(lhs->vid, rhs->vid);
     });
     FingerprintWriter ents;
     ents.AddCount(active_ents.size());
@@ -670,7 +683,7 @@ std::vector<NetworkEntFingerprint> ComputeNetworkEntFingerprints(const State& st
         if (lhs_id != rhs_id) {
             return lhs_id < rhs_id;
         }
-        return lhs->vid.id < rhs->vid.id;
+        return VidLess(lhs->vid, rhs->vid);
     });
 
     std::vector<NetworkEntFingerprint> result;
