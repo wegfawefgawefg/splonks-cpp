@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 87;
+constexpr std::uint32_t kRecordingVersion = 88;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -532,6 +532,16 @@ void WriteVec2(std::ostream& out, const Vec2& value) {
 }
 
 bool ReadVec2(std::istream& in, Vec2& value) {
+    return ReadPod(in, value.x) &&
+           ReadPod(in, value.y);
+}
+
+void WriteIVec2(std::ostream& out, const IVec2& value) {
+    WritePod(out, value.x);
+    WritePod(out, value.y);
+}
+
+bool ReadIVec2(std::istream& in, IVec2& value) {
     return ReadPod(in, value.x) &&
            ReadPod(in, value.y);
 }
@@ -1316,25 +1326,143 @@ bool ReadEntSpawn(std::istream& in, EntSpawn& spawn) {
 }
 
 void WriteStageGenAnnotation(std::ostream& out, const StageGenAnnotation& annotation) {
-    WritePod(out, annotation.world_pos);
+    WriteVec2(out, annotation.world_pos);
     WriteString(out, annotation.text);
 }
 
 bool ReadStageGenAnnotation(std::istream& in, StageGenAnnotation& annotation) {
-    return ReadPod(in, annotation.world_pos) &&
+    return ReadVec2(in, annotation.world_pos) &&
            ReadString(in, annotation.text);
 }
 
 void WriteStageLight(std::ostream& out, const StageLight& light) {
     WriteVid(out, light.vid);
-    WritePod(out, light.tile_pos);
+    WriteIVec2(out, light.tile_pos);
     WritePod(out, light.radius);
 }
 
 bool ReadStageLight(std::istream& in, StageLight& light) {
     return ReadVid(in, light.vid) &&
-           ReadPod(in, light.tile_pos) &&
+           ReadIVec2(in, light.tile_pos) &&
            ReadPod(in, light.radius);
+}
+
+void WriteTile(std::ostream& out, Tile tile) {
+    const std::uint16_t stored = static_cast<std::uint16_t>(tile);
+    WritePod(out, stored);
+}
+
+bool ReadTile(std::istream& in, Tile& tile) {
+    std::uint16_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    if (stored > static_cast<std::uint16_t>(Tile::Exit)) {
+        return false;
+    }
+    tile = static_cast<Tile>(stored);
+    return true;
+}
+
+void WriteTileRotation(std::ostream& out, TileRotation rotation) {
+    WritePod(out, rotation);
+}
+
+bool ReadTileRotation(std::istream& in, TileRotation& rotation) {
+    if (!ReadPod(in, rotation)) {
+        return false;
+    }
+    return (rotation & ~kTileRotationMask) == 0;
+}
+
+template <typename T, typename WriteOne>
+void WriteGridExplicit(std::ostream& out, const std::vector<std::vector<T>>& grid, WriteOne write_one) {
+    const std::uint32_t rows = static_cast<std::uint32_t>(grid.size());
+    WritePod(out, rows);
+    for (const std::vector<T>& row : grid) {
+        const std::uint32_t count = static_cast<std::uint32_t>(row.size());
+        WritePod(out, count);
+        for (const T& value : row) {
+            write_one(out, value);
+        }
+    }
+}
+
+template <typename T, typename ReadOne>
+bool ReadGridExplicit(std::istream& in, std::vector<std::vector<T>>& grid, ReadOne read_one) {
+    std::uint32_t rows = 0;
+    if (!ReadPod(in, rows)) {
+        return false;
+    }
+    grid.resize(rows);
+    for (std::vector<T>& row : grid) {
+        std::uint32_t count = 0;
+        if (!ReadPod(in, count)) {
+            return false;
+        }
+        row.resize(count);
+        for (T& value : row) {
+            if (!read_one(in, value)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void WriteTileVector(std::ostream& out, const std::vector<Tile>& tiles) {
+    const std::uint32_t count = static_cast<std::uint32_t>(tiles.size());
+    WritePod(out, count);
+    for (Tile tile : tiles) {
+        WriteTile(out, tile);
+    }
+}
+
+bool ReadTileVector(std::istream& in, std::vector<Tile>& tiles) {
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    tiles.resize(count);
+    for (Tile& tile : tiles) {
+        if (!ReadTile(in, tile)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void WriteEmbeddedTreasureDrop(std::ostream& out, const EmbeddedTreasureDrop& drop) {
+    WriteEntType(out, drop.type_);
+    WritePod(out, drop.count);
+}
+
+bool ReadEmbeddedTreasureDrop(std::istream& in, EmbeddedTreasureDrop& drop) {
+    return ReadEntType(in, drop.type_) &&
+           ReadPod(in, drop.count);
+}
+
+void WriteEmbeddedTreasure(std::ostream& out, const EmbeddedTreasure& treasure) {
+    WriteEnumByte(out, treasure.visibility);
+    WritePod(out, treasure.overlay_frame);
+    WritePod(out, treasure.break_sound);
+    for (const EmbeddedTreasureDrop& drop : treasure.drops) {
+        WriteEmbeddedTreasureDrop(out, drop);
+    }
+}
+
+bool ReadEmbeddedTreasure(std::istream& in, EmbeddedTreasure& treasure) {
+    if (!ReadEnumByte(in, treasure.visibility, EmbeddedTreasureVisibility::Visible) ||
+        !ReadPod(in, treasure.overlay_frame) ||
+        !ReadPod(in, treasure.break_sound)) {
+        return false;
+    }
+    for (EmbeddedTreasureDrop& drop : treasure.drops) {
+        if (!ReadEmbeddedTreasureDrop(in, drop)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void WriteBackgroundStamp(std::ostream& out, const BackgroundStamp& stamp) {
@@ -1431,10 +1559,10 @@ void WriteStage(std::ostream& out, const Stage& stage) {
         WriteStageExit(out, exit);
     }
     WritePod(out, stage.gravity);
-    WritePod(out, stage.border.left.tile);
-    WritePod(out, stage.border.right.tile);
-    WritePod(out, stage.border.top.tile);
-    WritePod(out, stage.border.bottom.tile);
+    WriteTile(out, stage.border.left.tile);
+    WriteTile(out, stage.border.right.tile);
+    WriteTile(out, stage.border.top.tile);
+    WriteTile(out, stage.border.bottom.tile);
     WriteBoolByte(out, stage.border.wrap_x);
     WriteBoolByte(out, stage.border.wrap_y);
     WriteOptionalPod(out, stage.border.void_death_y);
@@ -1444,9 +1572,9 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WritePod(out, stage.wrap_padding_tiles);
     WritePod(out, stage.wrap_core_origin_tiles);
     WritePod(out, stage.wrap_core_size_tiles);
-    WriteGridPod(out, stage.tiles);
-    WriteGridPod(out, stage.tile_rotations);
-    WriteGridPod(out, stage.fluid_tiles);
+    WriteGridExplicit(out, stage.tiles, WriteTile);
+    WriteGridExplicit(out, stage.tile_rotations, WriteTileRotation);
+    WriteGridExplicit(out, stage.fluid_tiles, WriteTile);
     WriteGridPod(out, stage.fluid_amount);
     WriteGridPod(out, stage.fluid_display_amount);
     WriteGridPod(out, stage.fluid_velocity);
@@ -1455,9 +1583,9 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteGridPod(out, stage.fluid_temp_gravity);
     WriteGridPod(out, stage.tile_shake);
     WriteGridPod(out, stage.backwall_tile_shake);
-    WriteGridPod(out, stage.backwall_tiles);
-    WriteVectorPod(out, stage.backwall_fill_tiles);
-    WriteGridPod(out, stage.embedded_treasures);
+    WriteGridExplicit(out, stage.backwall_tiles, WriteTile);
+    WriteTileVector(out, stage.backwall_fill_tiles);
+    WriteGridExplicit(out, stage.embedded_treasures, WriteEmbeddedTreasure);
     WriteGridPod(out, stage.rooms);
     WriteVectorPod(out, stage.path);
     const std::uint32_t spawn_count = static_cast<std::uint32_t>(stage.ent_spawns.size());
@@ -1501,10 +1629,10 @@ bool ReadStage(std::istream& in, Stage& stage) {
     }
 
     if (!ReadPod(in, stage.gravity) ||
-        !ReadPod(in, stage.border.left.tile) ||
-        !ReadPod(in, stage.border.right.tile) ||
-        !ReadPod(in, stage.border.top.tile) ||
-        !ReadPod(in, stage.border.bottom.tile) ||
+        !ReadTile(in, stage.border.left.tile) ||
+        !ReadTile(in, stage.border.right.tile) ||
+        !ReadTile(in, stage.border.top.tile) ||
+        !ReadTile(in, stage.border.bottom.tile) ||
         !ReadBoolByte(in, stage.border.wrap_x) ||
         !ReadBoolByte(in, stage.border.wrap_y) ||
         !ReadOptionalPod(in, stage.border.void_death_y) ||
@@ -1517,9 +1645,9 @@ bool ReadStage(std::istream& in, Stage& stage) {
         return false;
     }
 
-    if (!ReadGridPod(in, stage.tiles) ||
-        !ReadGridPod(in, stage.tile_rotations) ||
-        !ReadGridPod(in, stage.fluid_tiles) ||
+    if (!ReadGridExplicit(in, stage.tiles, ReadTile) ||
+        !ReadGridExplicit(in, stage.tile_rotations, ReadTileRotation) ||
+        !ReadGridExplicit(in, stage.fluid_tiles, ReadTile) ||
         !ReadGridPod(in, stage.fluid_amount) ||
         !ReadGridPod(in, stage.fluid_display_amount) ||
         !ReadGridPod(in, stage.fluid_velocity) ||
@@ -1528,9 +1656,9 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadGridPod(in, stage.fluid_temp_gravity) ||
         !ReadGridPod(in, stage.tile_shake) ||
         !ReadGridPod(in, stage.backwall_tile_shake) ||
-        !ReadGridPod(in, stage.backwall_tiles) ||
-        !ReadVectorPod(in, stage.backwall_fill_tiles) ||
-        !ReadGridPod(in, stage.embedded_treasures) ||
+        !ReadGridExplicit(in, stage.backwall_tiles, ReadTile) ||
+        !ReadTileVector(in, stage.backwall_fill_tiles) ||
+        !ReadGridExplicit(in, stage.embedded_treasures, ReadEmbeddedTreasure) ||
         !ReadGridPod(in, stage.rooms) ||
         !ReadVectorPod(in, stage.path)) {
         return false;

@@ -262,6 +262,12 @@ The expected end state is:
   `std::optional<StageTransitionTarget>`, `EntSpawn` enum fields, and
   `BackgroundStamp` enum storage from replay/resync bytes. Recording format
   version is now 87.
+- Fixed in shared gameplay/simulation snapshot serialization: stage tile grids,
+  border tiles, fluid tile grids, backwall tile grids, backwall fill tiles, and
+  embedded treasure grids now encode tile/entity/visibility enum fields
+  explicitly instead of depending on raw host enum struct layout. Stage
+  annotation positions and stage-light tile positions are also written
+  field-by-field. Recording format version is now 88.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
