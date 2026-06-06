@@ -334,6 +334,11 @@ The expected end state is:
   counts/audio ids, background stamp animation ids, and tool-slot count/
   cooldown fields. The emitted scalar bytes are unchanged for the current field
   types, so this remains within recording format version 95.
+- Fixed in shared gameplay/simulation snapshot serialization: tile and
+  tile-rotation grid elements now use explicit `uint16_t` / `uint8_t` helpers
+  instead of raw local POD variables. This is byte-compatible with recording
+  format version 95 and keeps the authoritative tile grids independent of enum
+  storage and alias typedef assumptions.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -427,6 +432,8 @@ The expected end state is:
   ids now use typed scalar helpers, removing raw VID, stage-load, buyable,
   use-state, effect, spawn, stage-light, embedded-treasure, background-stamp,
   and tool-slot member POD calls from the recording writer.
+- Fixed in shared snapshot/replay format: tile and tile-rotation grid elements
+  now route through typed fixed-width helpers.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

@@ -2335,12 +2335,12 @@ bool ReadStageLight(std::istream& in, StageLight& light) {
 
 void WriteTile(std::ostream& out, Tile tile) {
     const std::uint16_t stored = static_cast<std::uint16_t>(tile);
-    WritePod(out, stored);
+    WriteUint16(out, stored);
 }
 
 bool ReadTile(std::istream& in, Tile& tile) {
     std::uint16_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint16(in, stored)) {
         return false;
     }
     if (stored > static_cast<std::uint16_t>(Tile::Exit)) {
@@ -2351,11 +2351,11 @@ bool ReadTile(std::istream& in, Tile& tile) {
 }
 
 void WriteTileRotation(std::ostream& out, TileRotation rotation) {
-    WritePod(out, rotation);
+    WriteUint8(out, rotation);
 }
 
 bool ReadTileRotation(std::istream& in, TileRotation& rotation) {
-    if (!ReadPod(in, rotation)) {
+    if (!ReadUint8(in, rotation)) {
         return false;
     }
     return (rotation & ~kTileRotationMask) == 0;
