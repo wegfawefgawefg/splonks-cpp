@@ -283,6 +283,12 @@ The expected end state is:
   input state now encodes button bools, input snapshots, input frames, debounce
   timers, and mouse coordinates field-by-field instead of through raw input
   struct layout. Recording format version is now 91.
+- Fixed in shared gameplay/simulation snapshot serialization: `Settings` now
+  round-trips field-by-field instead of serializing a partial raw-layout subset.
+  This covers video resolution options, audio/acoustics config, controls, UI,
+  post-process/stage-lighting config, fluid simulation config, water movement
+  config, debug UI config, and player tuning. Recording format version is now
+  92.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -349,6 +355,10 @@ The expected end state is:
 - Fixed in shared snapshot/replay format: input structs still contain runtime
   `bool` fields, but the serialized bytes now use explicit one-byte bool
   markers and fixed-width `UVec2` mouse coordinates.
+- Fixed in shared snapshot/replay format: settings values now use explicit
+  scalar/vector writers, including full `UVec2` resolution option vectors,
+  `uint32_t` controls/debug ids, `int32_t` frame/count values, and one-byte
+  bool markers.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 
@@ -359,6 +369,16 @@ The expected end state is:
 - [ ] Ensure generated data and default profiles do not differ by platform.
 - [ ] Keep local user settings out of authoritative simulation unless explicitly
       synchronized.
+
+### Status 2026-06-06
+
+- Partially fixed. Gameplay-affecting runtime settings now round-trip through
+  simulation snapshots, including fluid simulation, water movement, stage
+  lighting, and player tuning settings.
+- Deferred risk: loaded quest/spec/profile files are not yet independently
+  hashed or versioned as part of connection admission, so mismatched assets
+  still rely on later state-fingerprint/desync detection rather than an early
+  compatibility gate.
 
 ## Time/Input/UI Boundary Audit
 

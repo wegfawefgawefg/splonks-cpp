@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 91;
+constexpr std::uint32_t kRecordingVersion = 92;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -561,6 +561,28 @@ bool ReadUVec2(std::istream& in, UVec2& value) {
     }
     value.x = static_cast<unsigned int>(x);
     value.y = static_cast<unsigned int>(y);
+    return true;
+}
+
+void WriteUVec2Vector(std::ostream& out, const std::vector<UVec2>& values) {
+    const std::uint32_t count = static_cast<std::uint32_t>(values.size());
+    WritePod(out, count);
+    for (const UVec2& value : values) {
+        WriteUVec2(out, value);
+    }
+}
+
+bool ReadUVec2Vector(std::istream& in, std::vector<UVec2>& values) {
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    values.resize(count);
+    for (UVec2& value : values) {
+        if (!ReadUVec2(in, value)) {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -1472,95 +1494,380 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadPod(in, ent.threshold_b);
 }
 
+void WriteVideoSettings(std::ostream& out, const VideoSettings& settings) {
+    WriteUVec2(out, settings.resolution);
+    WriteBoolByte(out, settings.fullscreen);
+    WriteBoolByte(out, settings.vsync);
+    WriteUVec2Vector(out, settings.resolution_options);
+}
+
+bool ReadVideoSettings(std::istream& in, VideoSettings& settings) {
+    return ReadUVec2(in, settings.resolution) &&
+           ReadBoolByte(in, settings.fullscreen) &&
+           ReadBoolByte(in, settings.vsync) &&
+           ReadUVec2Vector(in, settings.resolution_options);
+}
+
+void WriteAudioSettings(std::ostream& out, const AudioSettings& settings) {
+    WriteFloat(out, settings.music_volume);
+    WriteFloat(out, settings.sfx_volume);
+    WriteFloat(out, settings.pan_half_width_px);
+    WriteBoolByte(out, settings.acoustics_enabled);
+    WriteFloat(out, settings.acoustics_occlusion_listener_epsilon_px);
+    WriteBoolByte(out, settings.acoustics_reverb_enabled);
+    WriteFloat(out, settings.acoustics_listener_room_weight);
+    WriteFloat(out, settings.acoustics_direct_min_cutoff_hz);
+    WriteFloat(out, settings.acoustics_direct_max_cutoff_hz);
+    WriteFloat(out, settings.acoustics_occluded_cutoff_hz);
+    WriteFloat(out, settings.acoustics_occluded_direct_gain);
+    WriteFloat(out, settings.acoustics_reverb_send);
+    WriteFloat(out, settings.acoustics_reverb_delay_ms);
+    WriteFloat(out, settings.acoustics_reverb_feedback);
+    WriteFloat(out, settings.acoustics_reverb_min_cutoff_hz);
+    WriteFloat(out, settings.acoustics_reverb_max_cutoff_hz);
+}
+
+bool ReadAudioSettings(std::istream& in, AudioSettings& settings) {
+    return ReadFloat(in, settings.music_volume) &&
+           ReadFloat(in, settings.sfx_volume) &&
+           ReadFloat(in, settings.pan_half_width_px) &&
+           ReadBoolByte(in, settings.acoustics_enabled) &&
+           ReadFloat(in, settings.acoustics_occlusion_listener_epsilon_px) &&
+           ReadBoolByte(in, settings.acoustics_reverb_enabled) &&
+           ReadFloat(in, settings.acoustics_listener_room_weight) &&
+           ReadFloat(in, settings.acoustics_direct_min_cutoff_hz) &&
+           ReadFloat(in, settings.acoustics_direct_max_cutoff_hz) &&
+           ReadFloat(in, settings.acoustics_occluded_cutoff_hz) &&
+           ReadFloat(in, settings.acoustics_occluded_direct_gain) &&
+           ReadFloat(in, settings.acoustics_reverb_send) &&
+           ReadFloat(in, settings.acoustics_reverb_delay_ms) &&
+           ReadFloat(in, settings.acoustics_reverb_feedback) &&
+           ReadFloat(in, settings.acoustics_reverb_min_cutoff_hz) &&
+           ReadFloat(in, settings.acoustics_reverb_max_cutoff_hz);
+}
+
+void WriteControlsSettings(std::ostream& out, const ControlsSettings& settings) {
+    WriteUnsigned32(out, settings.jump);
+    WriteUnsigned32(out, settings.shoot);
+}
+
+bool ReadControlsSettings(std::istream& in, ControlsSettings& settings) {
+    return ReadUnsigned32(in, settings.jump) &&
+           ReadUnsigned32(in, settings.shoot);
+}
+
+void WriteUiSettings(std::ostream& out, const UiSettings& settings) {
+    WriteFloat(out, settings.icon_scale);
+    WriteFloat(out, settings.status_icon_scale);
+    WriteFloat(out, settings.tool_slot_scale);
+    WriteFloat(out, settings.tool_icon_scale);
+}
+
+bool ReadUiSettings(std::istream& in, UiSettings& settings) {
+    return ReadFloat(in, settings.icon_scale) &&
+           ReadFloat(in, settings.status_icon_scale) &&
+           ReadFloat(in, settings.tool_slot_scale) &&
+           ReadFloat(in, settings.tool_icon_scale);
+}
+
+void WritePostProcessSettings(std::ostream& out, const PostProcessSettings& settings) {
+    WritePostProcessEffect(out, settings.effect);
+    WriteBoolByte(out, settings.terrain_lighting);
+    WriteBoolByte(out, settings.terrain_seam_ao);
+    WriteBoolByte(out, settings.terrain_exposure_lighting);
+    WriteBoolByte(out, settings.backwall_lighting);
+    WriteFloat(out, settings.player_lamp_strength);
+    WriteFloat(out, settings.embedded_treasure_brightness);
+    WriteFloat(out, settings.openness_ambient_strength);
+    WriteFloat(out, settings.openness_ambient_gamma);
+    WriteBoolByte(out, settings.lighting_temporal_smoothing);
+    WriteFloat(out, settings.lighting_temporal_smoothing_response);
+    WriteFloat(out, settings.terrain_seam_ao_amount);
+    WriteFloat(out, settings.terrain_seam_ao_size);
+    WriteFloat(out, settings.terrain_exposure_amount);
+    WriteBoolByte(out, settings.terrain_exposure_remap_enabled);
+    WriteFloat(out, settings.terrain_exposure_input_min);
+    WriteFloat(out, settings.terrain_exposure_input_max);
+    WriteFloat(out, settings.terrain_exposure_gamma);
+    WriteBoolByte(out, settings.terrain_exposure_output_levels_enabled);
+    WriteFloat(out, settings.terrain_exposure_min_brightness);
+    WriteFloat(out, settings.terrain_exposure_max_brightness);
+    WriteFloat(out, settings.terrain_exposure_diagonal_weight);
+    WriteFloat(out, settings.terrain_exposure_smoothing);
+    WriteFloat(out, settings.backwall_brightness);
+    WriteBoolByte(out, settings.backwall_remap_enabled);
+    WriteFloat(out, settings.backwall_input_min);
+    WriteFloat(out, settings.backwall_input_max);
+    WriteFloat(out, settings.backwall_gamma);
+    WriteBoolByte(out, settings.backwall_output_levels_enabled);
+    WriteFloat(out, settings.backwall_min_brightness);
+    WriteFloat(out, settings.backwall_max_brightness);
+    WriteFloat(out, settings.backwall_smoothing);
+    WriteFloat(out, settings.crt_scanline_amount);
+    WriteFloat(out, settings.crt_scanline_edge_start);
+    WriteFloat(out, settings.crt_scanline_edge_falloff);
+    WriteFloat(out, settings.crt_scanline_edge_strength);
+    WriteFloat(out, settings.crt_zoom);
+    WriteFloat(out, settings.crt_warp_amount);
+    WriteFloat(out, settings.crt_vignette_amount);
+    WriteFloat(out, settings.crt_vignette_intensity);
+    WriteFloat(out, settings.crt_grille_amount);
+    WriteFloat(out, settings.crt_brightness_boost);
+}
+
+bool ReadPostProcessSettings(std::istream& in, PostProcessSettings& settings) {
+    return ReadPostProcessEffect(in, settings.effect) &&
+           ReadBoolByte(in, settings.terrain_lighting) &&
+           ReadBoolByte(in, settings.terrain_seam_ao) &&
+           ReadBoolByte(in, settings.terrain_exposure_lighting) &&
+           ReadBoolByte(in, settings.backwall_lighting) &&
+           ReadFloat(in, settings.player_lamp_strength) &&
+           ReadFloat(in, settings.embedded_treasure_brightness) &&
+           ReadFloat(in, settings.openness_ambient_strength) &&
+           ReadFloat(in, settings.openness_ambient_gamma) &&
+           ReadBoolByte(in, settings.lighting_temporal_smoothing) &&
+           ReadFloat(in, settings.lighting_temporal_smoothing_response) &&
+           ReadFloat(in, settings.terrain_seam_ao_amount) &&
+           ReadFloat(in, settings.terrain_seam_ao_size) &&
+           ReadFloat(in, settings.terrain_exposure_amount) &&
+           ReadBoolByte(in, settings.terrain_exposure_remap_enabled) &&
+           ReadFloat(in, settings.terrain_exposure_input_min) &&
+           ReadFloat(in, settings.terrain_exposure_input_max) &&
+           ReadFloat(in, settings.terrain_exposure_gamma) &&
+           ReadBoolByte(in, settings.terrain_exposure_output_levels_enabled) &&
+           ReadFloat(in, settings.terrain_exposure_min_brightness) &&
+           ReadFloat(in, settings.terrain_exposure_max_brightness) &&
+           ReadFloat(in, settings.terrain_exposure_diagonal_weight) &&
+           ReadFloat(in, settings.terrain_exposure_smoothing) &&
+           ReadFloat(in, settings.backwall_brightness) &&
+           ReadBoolByte(in, settings.backwall_remap_enabled) &&
+           ReadFloat(in, settings.backwall_input_min) &&
+           ReadFloat(in, settings.backwall_input_max) &&
+           ReadFloat(in, settings.backwall_gamma) &&
+           ReadBoolByte(in, settings.backwall_output_levels_enabled) &&
+           ReadFloat(in, settings.backwall_min_brightness) &&
+           ReadFloat(in, settings.backwall_max_brightness) &&
+           ReadFloat(in, settings.backwall_smoothing) &&
+           ReadFloat(in, settings.crt_scanline_amount) &&
+           ReadFloat(in, settings.crt_scanline_edge_start) &&
+           ReadFloat(in, settings.crt_scanline_edge_falloff) &&
+           ReadFloat(in, settings.crt_scanline_edge_strength) &&
+           ReadFloat(in, settings.crt_zoom) &&
+           ReadFloat(in, settings.crt_warp_amount) &&
+           ReadFloat(in, settings.crt_vignette_amount) &&
+           ReadFloat(in, settings.crt_vignette_intensity) &&
+           ReadFloat(in, settings.crt_grille_amount) &&
+           ReadFloat(in, settings.crt_brightness_boost);
+}
+
+void WriteFluidSettings(std::ostream& out, const FluidSettings& settings) {
+    WriteBoolByte(out, settings.simulation_enabled);
+    WriteInt32(out, settings.simulation_interval_frames);
+    WriteFloat(out, settings.transfer_per_step);
+    WriteFloat(out, settings.gravity_x);
+    WriteFloat(out, settings.gravity_y);
+    WriteFloat(out, settings.pressure_strength);
+    WriteFloat(out, settings.velocity_damping);
+    WriteFloat(out, settings.temp_gravity_decay);
+    WriteBoolByte(out, settings.temporal_smoothing_enabled);
+    WriteFloat(out, settings.temporal_smoothing_response);
+    WriteFloat(out, settings.render_cutoff_amount);
+    WriteFloat(out, settings.water_alpha);
+    WriteBoolByte(out, settings.lighting_enabled);
+    WriteFloat(out, settings.lighting_strength);
+}
+
+bool ReadFluidSettings(std::istream& in, FluidSettings& settings) {
+    return ReadBoolByte(in, settings.simulation_enabled) &&
+           ReadInt32(in, settings.simulation_interval_frames) &&
+           ReadFloat(in, settings.transfer_per_step) &&
+           ReadFloat(in, settings.gravity_x) &&
+           ReadFloat(in, settings.gravity_y) &&
+           ReadFloat(in, settings.pressure_strength) &&
+           ReadFloat(in, settings.velocity_damping) &&
+           ReadFloat(in, settings.temp_gravity_decay) &&
+           ReadBoolByte(in, settings.temporal_smoothing_enabled) &&
+           ReadFloat(in, settings.temporal_smoothing_response) &&
+           ReadFloat(in, settings.render_cutoff_amount) &&
+           ReadFloat(in, settings.water_alpha) &&
+           ReadBoolByte(in, settings.lighting_enabled) &&
+           ReadFloat(in, settings.lighting_strength);
+}
+
+void WriteWaterEffectSettings(std::ostream& out, const WaterEffectSettings& settings) {
+    WriteFloat(out, settings.gravity_scale);
+    WriteFloat(out, settings.velocity_damping_x);
+    WriteFloat(out, settings.velocity_damping_y);
+    WriteFloat(out, settings.move_speed_scale);
+    WriteFloat(out, settings.max_fall_speed);
+    WriteFloat(out, settings.buoyancy_strength);
+    WriteFloat(out, settings.fall_timer_rate);
+    WriteFloat(out, settings.stomp_damage_scale);
+    WriteFloat(out, settings.swim_impulse);
+}
+
+bool ReadWaterEffectSettings(std::istream& in, WaterEffectSettings& settings) {
+    return ReadFloat(in, settings.gravity_scale) &&
+           ReadFloat(in, settings.velocity_damping_x) &&
+           ReadFloat(in, settings.velocity_damping_y) &&
+           ReadFloat(in, settings.move_speed_scale) &&
+           ReadFloat(in, settings.max_fall_speed) &&
+           ReadFloat(in, settings.buoyancy_strength) &&
+           ReadFloat(in, settings.fall_timer_rate) &&
+           ReadFloat(in, settings.stomp_damage_scale) &&
+           ReadFloat(in, settings.swim_impulse);
+}
+
+void WriteDebugUiSettings(std::ostream& out, const DebugUiSettings& settings) {
+    WriteBoolByte(out, settings.menu_visible);
+    WriteBoolByte(out, settings.playback_visible);
+    WriteBoolByte(out, settings.level_visible);
+    WriteBoolByte(out, settings.ents_visible);
+    WriteBoolByte(out, settings.ent_annotations_visible);
+    WriteBoolByte(out, settings.shake_brush_visible);
+    WriteBoolByte(out, settings.audio_brush_visible);
+    WriteBoolByte(out, settings.fluid_brush_visible);
+    WriteBoolByte(out, settings.fluid_brush_enabled);
+    WriteBoolByte(out, settings.fluid_brush_replace_solid_tiles);
+    WriteInt32(out, settings.fluid_brush_mode);
+    WriteInt32(out, settings.fluid_brush_radius_tiles);
+    WriteFloat(out, settings.fluid_brush_paint_gravity_x);
+    WriteFloat(out, settings.fluid_brush_paint_gravity_y);
+    WriteBoolByte(out, settings.fluid_brush_show_flow_indicators);
+    WriteBoolByte(out, settings.audio_settings_visible);
+    WriteBoolByte(out, settings.ui_settings_visible);
+    WriteBoolByte(out, settings.post_fx_settings_visible);
+    WriteBoolByte(out, settings.lighting_settings_visible);
+    WriteBoolByte(out, settings.graphics_settings_visible);
+    WriteBoolByte(out, settings.camera_settings_visible);
+    WriteBoolByte(out, settings.performance_settings_visible);
+    WriteBoolByte(out, settings.player_tuning_visible);
+    WriteUnsigned32(out, settings.ent_swap_type);
+    WriteUnsigned32(out, settings.default_spawn_type);
+    WriteBoolByte(out, settings.default_spawn_enabled);
+    WriteBoolByte(out, settings.ent_swap_fresh);
+    WriteBoolByte(out, settings.ent_swap_keep_passives);
+    WriteBoolByte(out, settings.ent_swap_keep_money);
+    WriteBoolByte(out, settings.ent_swap_keep_health);
+    WriteBoolByte(out, settings.ent_swap_keep_tools);
+}
+
+bool ReadDebugUiSettings(std::istream& in, DebugUiSettings& settings) {
+    return ReadBoolByte(in, settings.menu_visible) &&
+           ReadBoolByte(in, settings.playback_visible) &&
+           ReadBoolByte(in, settings.level_visible) &&
+           ReadBoolByte(in, settings.ents_visible) &&
+           ReadBoolByte(in, settings.ent_annotations_visible) &&
+           ReadBoolByte(in, settings.shake_brush_visible) &&
+           ReadBoolByte(in, settings.audio_brush_visible) &&
+           ReadBoolByte(in, settings.fluid_brush_visible) &&
+           ReadBoolByte(in, settings.fluid_brush_enabled) &&
+           ReadBoolByte(in, settings.fluid_brush_replace_solid_tiles) &&
+           ReadInt32(in, settings.fluid_brush_mode) &&
+           ReadInt32(in, settings.fluid_brush_radius_tiles) &&
+           ReadFloat(in, settings.fluid_brush_paint_gravity_x) &&
+           ReadFloat(in, settings.fluid_brush_paint_gravity_y) &&
+           ReadBoolByte(in, settings.fluid_brush_show_flow_indicators) &&
+           ReadBoolByte(in, settings.audio_settings_visible) &&
+           ReadBoolByte(in, settings.ui_settings_visible) &&
+           ReadBoolByte(in, settings.post_fx_settings_visible) &&
+           ReadBoolByte(in, settings.lighting_settings_visible) &&
+           ReadBoolByte(in, settings.graphics_settings_visible) &&
+           ReadBoolByte(in, settings.camera_settings_visible) &&
+           ReadBoolByte(in, settings.performance_settings_visible) &&
+           ReadBoolByte(in, settings.player_tuning_visible) &&
+           ReadUnsigned32(in, settings.ent_swap_type) &&
+           ReadUnsigned32(in, settings.default_spawn_type) &&
+           ReadBoolByte(in, settings.default_spawn_enabled) &&
+           ReadBoolByte(in, settings.ent_swap_fresh) &&
+           ReadBoolByte(in, settings.ent_swap_keep_passives) &&
+           ReadBoolByte(in, settings.ent_swap_keep_money) &&
+           ReadBoolByte(in, settings.ent_swap_keep_health) &&
+           ReadBoolByte(in, settings.ent_swap_keep_tools);
+}
+
+void WritePlayerTuningState(std::ostream& out, const PlayerTuningState& tuning) {
+    WriteFloat(out, tuning.gravity_scale);
+    WriteFloat(out, tuning.max_fall_speed);
+    WriteFloat(out, tuning.jump_impulse);
+    WriteFloat(out, tuning.spring_shoes_jump_impulse_bonus);
+    WriteInt32(out, tuning.jump_hold_frames);
+    WriteInt32(out, tuning.coyote_frames);
+    WriteInt32(out, tuning.jump_delay_frames);
+    WriteInt32(out, tuning.fall_damage_light_frames);
+    WriteInt32(out, tuning.fall_damage_medium_frames);
+    WriteInt32(out, tuning.fall_damage_heavy_frames);
+    WriteFloat(out, tuning.walk_speed);
+    WriteFloat(out, tuning.run_speed);
+    WriteFloat(out, tuning.move_acc);
+    WriteFloat(out, tuning.run_acc);
+    WriteFloat(out, tuning.ground_friction_scale);
+    WriteFloat(out, tuning.air_friction);
+    WriteFloat(out, tuning.climb_speed);
+    WriteFloat(out, tuning.climb_depart_horizontal_speed);
+    WriteFloat(out, tuning.climb_probe_bias_pixels);
+    WriteFloat(out, tuning.climb_probe_x_scale);
+    WriteInt32(out, tuning.climb_required_probe_hits);
+    WriteInt32(out, tuning.climb_detach_cooldown);
+    WriteInt32(out, tuning.hang_drop_cooldown);
+    WriteInt32(out, tuning.glove_hang_drop_cooldown);
+    WriteInt32(out, tuning.hang_wall_release_cooldown);
+    WriteBoolByte(out, tuning.auto_ledge_grab);
+}
+
+bool ReadPlayerTuningState(std::istream& in, PlayerTuningState& tuning) {
+    return ReadFloat(in, tuning.gravity_scale) &&
+           ReadFloat(in, tuning.max_fall_speed) &&
+           ReadFloat(in, tuning.jump_impulse) &&
+           ReadFloat(in, tuning.spring_shoes_jump_impulse_bonus) &&
+           ReadInt32(in, tuning.jump_hold_frames) &&
+           ReadInt32(in, tuning.coyote_frames) &&
+           ReadInt32(in, tuning.jump_delay_frames) &&
+           ReadInt32(in, tuning.fall_damage_light_frames) &&
+           ReadInt32(in, tuning.fall_damage_medium_frames) &&
+           ReadInt32(in, tuning.fall_damage_heavy_frames) &&
+           ReadFloat(in, tuning.walk_speed) &&
+           ReadFloat(in, tuning.run_speed) &&
+           ReadFloat(in, tuning.move_acc) &&
+           ReadFloat(in, tuning.run_acc) &&
+           ReadFloat(in, tuning.ground_friction_scale) &&
+           ReadFloat(in, tuning.air_friction) &&
+           ReadFloat(in, tuning.climb_speed) &&
+           ReadFloat(in, tuning.climb_depart_horizontal_speed) &&
+           ReadFloat(in, tuning.climb_probe_bias_pixels) &&
+           ReadFloat(in, tuning.climb_probe_x_scale) &&
+           ReadInt32(in, tuning.climb_required_probe_hits) &&
+           ReadInt32(in, tuning.climb_detach_cooldown) &&
+           ReadInt32(in, tuning.hang_drop_cooldown) &&
+           ReadInt32(in, tuning.glove_hang_drop_cooldown) &&
+           ReadInt32(in, tuning.hang_wall_release_cooldown) &&
+           ReadBoolByte(in, tuning.auto_ledge_grab);
+}
+
 void WriteSettings(std::ostream& out, const Settings& settings) {
     WriteSettingsMode(out, settings.mode);
-    WritePod(out, settings.video.resolution);
-    WriteBoolByte(out, settings.video.fullscreen);
-    WriteBoolByte(out, settings.video.vsync);
-    WriteVectorPod(out, settings.video.resolution_options);
-    WritePod(out, settings.audio.music_volume);
-    WritePod(out, settings.audio.sfx_volume);
-    WritePod(out, settings.audio.pan_half_width_px);
-    WritePod(out, settings.controls.jump);
-    WritePod(out, settings.controls.shoot);
-    WritePod(out, settings.ui.icon_scale);
-    WritePod(out, settings.ui.status_icon_scale);
-    WritePod(out, settings.ui.tool_slot_scale);
-    WritePod(out, settings.ui.tool_icon_scale);
-    WritePostProcessEffect(out, settings.post_process.effect);
-    WriteBoolByte(out, settings.post_process.terrain_lighting);
-    WriteBoolByte(out, settings.post_process.terrain_seam_ao);
-    WriteBoolByte(out, settings.post_process.terrain_exposure_lighting);
-    WriteBoolByte(out, settings.post_process.backwall_lighting);
-    WritePod(out, settings.post_process.terrain_seam_ao_amount);
-    WritePod(out, settings.post_process.terrain_seam_ao_size);
-    WritePod(out, settings.post_process.terrain_exposure_amount);
-    WritePod(out, settings.post_process.terrain_exposure_min_brightness);
-    WritePod(out, settings.post_process.terrain_exposure_max_brightness);
-    WritePod(out, settings.post_process.terrain_exposure_diagonal_weight);
-    WritePod(out, settings.post_process.terrain_exposure_smoothing);
-    WritePod(out, settings.post_process.backwall_brightness);
-    WritePod(out, settings.post_process.backwall_min_brightness);
-    WritePod(out, settings.post_process.backwall_max_brightness);
-    WritePod(out, settings.post_process.backwall_smoothing);
-    WritePod(out, settings.post_process.crt_scanline_amount);
-    WritePod(out, settings.post_process.crt_scanline_edge_start);
-    WritePod(out, settings.post_process.crt_scanline_edge_falloff);
-    WritePod(out, settings.post_process.crt_scanline_edge_strength);
-    WritePod(out, settings.post_process.crt_zoom);
-    WritePod(out, settings.post_process.crt_warp_amount);
-    WritePod(out, settings.post_process.crt_vignette_amount);
-    WritePod(out, settings.post_process.crt_vignette_intensity);
-    WritePod(out, settings.post_process.crt_grille_amount);
-    WritePod(out, settings.post_process.crt_brightness_boost);
-    WritePod(out, settings.player_tuning);
+    WriteVideoSettings(out, settings.video);
+    WriteAudioSettings(out, settings.audio);
+    WriteControlsSettings(out, settings.controls);
+    WriteUiSettings(out, settings.ui);
+    WritePostProcessSettings(out, settings.post_process);
+    WriteFluidSettings(out, settings.fluid);
+    WriteWaterEffectSettings(out, settings.water_effect);
+    WriteDebugUiSettings(out, settings.debug_ui);
+    WritePlayerTuningState(out, settings.player_tuning);
 }
 
 bool ReadSettings(std::istream& in, Settings& settings) {
-    if (!ReadSettingsMode(in, settings.mode) ||
-        !ReadPod(in, settings.video.resolution) ||
-        !ReadBoolByte(in, settings.video.fullscreen) ||
-        !ReadBoolByte(in, settings.video.vsync) ||
-        !ReadVectorPod(in, settings.video.resolution_options) ||
-        !ReadPod(in, settings.audio.music_volume) ||
-        !ReadPod(in, settings.audio.sfx_volume) ||
-        !ReadPod(in, settings.audio.pan_half_width_px) ||
-        !ReadPod(in, settings.controls.jump) ||
-        !ReadPod(in, settings.controls.shoot) ||
-        !ReadPod(in, settings.ui.icon_scale) ||
-        !ReadPod(in, settings.ui.status_icon_scale) ||
-        !ReadPod(in, settings.ui.tool_slot_scale) ||
-        !ReadPod(in, settings.ui.tool_icon_scale) ||
-        !ReadPostProcessEffect(in, settings.post_process.effect) ||
-        !ReadBoolByte(in, settings.post_process.terrain_lighting) ||
-        !ReadBoolByte(in, settings.post_process.terrain_seam_ao) ||
-        !ReadBoolByte(in, settings.post_process.terrain_exposure_lighting) ||
-        !ReadBoolByte(in, settings.post_process.backwall_lighting) ||
-        !ReadPod(in, settings.post_process.terrain_seam_ao_amount) ||
-        !ReadPod(in, settings.post_process.terrain_seam_ao_size) ||
-        !ReadPod(in, settings.post_process.terrain_exposure_amount) ||
-        !ReadPod(in, settings.post_process.terrain_exposure_min_brightness) ||
-        !ReadPod(in, settings.post_process.terrain_exposure_max_brightness) ||
-        !ReadPod(in, settings.post_process.terrain_exposure_diagonal_weight) ||
-        !ReadPod(in, settings.post_process.terrain_exposure_smoothing) ||
-        !ReadPod(in, settings.post_process.backwall_brightness) ||
-        !ReadPod(in, settings.post_process.backwall_min_brightness) ||
-        !ReadPod(in, settings.post_process.backwall_max_brightness) ||
-        !ReadPod(in, settings.post_process.backwall_smoothing) ||
-        !ReadPod(in, settings.post_process.crt_scanline_amount) ||
-        !ReadPod(in, settings.post_process.crt_scanline_edge_start) ||
-        !ReadPod(in, settings.post_process.crt_scanline_edge_falloff) ||
-        !ReadPod(in, settings.post_process.crt_scanline_edge_strength) ||
-        !ReadPod(in, settings.post_process.crt_zoom) ||
-        !ReadPod(in, settings.post_process.crt_warp_amount) ||
-        !ReadPod(in, settings.post_process.crt_vignette_amount) ||
-        !ReadPod(in, settings.post_process.crt_vignette_intensity) ||
-        !ReadPod(in, settings.post_process.crt_grille_amount) ||
-        !ReadPod(in, settings.post_process.crt_brightness_boost) ||
-        !ReadPod(in, settings.player_tuning)) {
-        return false;
-    }
-    return true;
+    return ReadSettingsMode(in, settings.mode) &&
+           ReadVideoSettings(in, settings.video) &&
+           ReadAudioSettings(in, settings.audio) &&
+           ReadControlsSettings(in, settings.controls) &&
+           ReadUiSettings(in, settings.ui) &&
+           ReadPostProcessSettings(in, settings.post_process) &&
+           ReadFluidSettings(in, settings.fluid) &&
+           ReadWaterEffectSettings(in, settings.water_effect) &&
+           ReadDebugUiSettings(in, settings.debug_ui) &&
+           ReadPlayerTuningState(in, settings.player_tuning);
 }
 
 void WriteStageExitRequirement(std::ostream& out, const StageExitRequirement& requirement) {
