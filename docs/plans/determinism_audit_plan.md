@@ -81,6 +81,10 @@ The expected end state is:
   `std::cos` in gameplay movement. Ball-and-chain uses `std::sqrt` for
   authoritative pull direction. These should be converted to deterministic
   lookup/fixed-point math or discrete approximations.
+- Fixed in network fingerprints: `Ent::rotation` is treated as cosmetic/render
+  state and no longer participates in the network lockstep hash. This removes
+  render-only `std::atan2` / `std::fmod` rotation drift from desync detection
+  while preserving rotation in canonical/debug snapshots and rendering.
 
 ## Container And Iteration Order Audit
 
