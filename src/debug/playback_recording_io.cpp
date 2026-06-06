@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 81;
+constexpr std::uint32_t kRecordingVersion = 82;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -258,6 +258,23 @@ bool ReadBoolByte(std::istream& in, bool& value) {
         return false;
     }
     value = stored != 0;
+    return true;
+}
+
+void WritePlayerConnectionKind(std::ostream& out, PlayerConnectionKind kind) {
+    const std::uint8_t stored = static_cast<std::uint8_t>(kind);
+    WritePod(out, stored);
+}
+
+bool ReadPlayerConnectionKind(std::istream& in, PlayerConnectionKind& kind) {
+    std::uint8_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    if (stored > static_cast<std::uint8_t>(PlayerConnectionKind::Remote)) {
+        return false;
+    }
+    kind = static_cast<PlayerConnectionKind>(stored);
     return true;
 }
 
@@ -1071,9 +1088,9 @@ void WritePlayerRegistry(std::ostream& out, const PlayerRegistry& players) {
     for (const PlayerSlot& slot : players.slots) {
         WritePod(out, slot.player_id);
         WriteOptionalVid(out, slot.ent_vid);
-        WritePod(out, slot.connection_kind);
-        WritePod(out, slot.connected);
-        WritePod(out, slot.primary_local);
+        WritePlayerConnectionKind(out, slot.connection_kind);
+        WriteBoolByte(out, slot.connected);
+        WriteBoolByte(out, slot.primary_local);
         WriteString(out, slot.display_name);
         WritePod(out, slot.input_frame);
         WritePod(out, slot.previous_input_frame);
@@ -1091,9 +1108,9 @@ bool ReadPlayerRegistry(std::istream& in, PlayerRegistry& players) {
     for (PlayerSlot& slot : players.slots) {
         if (!ReadPod(in, slot.player_id) ||
             !ReadOptionalVid(in, slot.ent_vid) ||
-            !ReadPod(in, slot.connection_kind) ||
-            !ReadPod(in, slot.connected) ||
-            !ReadPod(in, slot.primary_local) ||
+            !ReadPlayerConnectionKind(in, slot.connection_kind) ||
+            !ReadBoolByte(in, slot.connected) ||
+            !ReadBoolByte(in, slot.primary_local) ||
             !ReadString(in, slot.display_name) ||
             !ReadPod(in, slot.input_frame) ||
             !ReadPod(in, slot.previous_input_frame) ||
@@ -1421,7 +1438,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
 void WriteSimPlayerSlotSnapshot(std::ostream& out, const SimPlayerSlotSnapshot& slot) {
     WritePod(out, slot.player_id);
     WriteOptionalVid(out, slot.ent_vid);
-    WritePod(out, slot.connected);
+    WriteBoolByte(out, slot.connected);
     WriteString(out, slot.display_name);
     WritePod(out, slot.input_frame);
     WritePod(out, slot.previous_input_frame);
@@ -1432,7 +1449,7 @@ void WriteSimPlayerSlotSnapshot(std::ostream& out, const SimPlayerSlotSnapshot& 
 bool ReadSimPlayerSlotSnapshot(std::istream& in, SimPlayerSlotSnapshot& slot) {
     return ReadPod(in, slot.player_id) &&
            ReadOptionalVid(in, slot.ent_vid) &&
-           ReadPod(in, slot.connected) &&
+           ReadBoolByte(in, slot.connected) &&
            ReadString(in, slot.display_name) &&
            ReadPod(in, slot.input_frame) &&
            ReadPod(in, slot.previous_input_frame) &&
@@ -1471,7 +1488,7 @@ void WriteSimNetEntLinks(
     for (const SimNetEntLinkSnapshot& link : links) {
         WritePod(out, link.net_id);
         WriteVid(out, link.local_vid);
-        WritePod(out, link.has_input_owner);
+        WriteBoolByte(out, link.has_input_owner);
         WritePod(out, link.input_owner_player_id);
     }
 }
@@ -1488,7 +1505,7 @@ bool ReadSimNetEntLinks(
     for (SimNetEntLinkSnapshot& link : links) {
         if (!ReadPod(in, link.net_id) ||
             !ReadVid(in, link.local_vid) ||
-            !ReadPod(in, link.has_input_owner) ||
+            !ReadBoolByte(in, link.has_input_owner) ||
             !ReadPod(in, link.input_owner_player_id)) {
             return false;
         }
