@@ -207,7 +207,8 @@ void AddAmbientIceEnts(Stage& stage, DetRng& det_rng) {
                 }
 
                 if (!IsOpenAmbientFloorSpot(stage, tile_x, tile_y) ||
-                    DistanceToNearestSpawnType(stage, EntType::BasicExit, tile_pos) <= 64.0F) {
+                    DistanceSqToNearestSpawnType(stage, EntType::BasicExit, tile_pos) <=
+                        64.0F * 64.0F) {
                     continue;
                 }
                 const Vec2 floor_spawn_pos =

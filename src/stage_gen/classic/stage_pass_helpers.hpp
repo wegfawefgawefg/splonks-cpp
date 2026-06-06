@@ -22,7 +22,7 @@ bool HasSpawnAtWorldPos(const Stage& stage, const Vec2& pos);
 std::optional<Vec2> FindEntrancePos(const Stage& stage);
 std::optional<Vec2> FindExitPos(const Stage& stage);
 bool HasSpawnType(const Stage& stage, EntType type_);
-float DistanceToNearestSpawnType(const Stage& stage, EntType type_, const Vec2& pos);
+float DistanceSqToNearestSpawnType(const Stage& stage, EntType type_, const Vec2& pos);
 bool HasExitSpawn(const Stage& stage, std::string_view exit_id);
 void AddAmbientSpawn(Stage& stage, EntType type_, const Vec2& pos,
                      Side facing = Side::Left);

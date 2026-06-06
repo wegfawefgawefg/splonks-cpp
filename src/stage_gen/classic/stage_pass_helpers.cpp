@@ -104,13 +104,13 @@ bool HasSpawnType(const Stage& stage, EntType type_) {
     return false;
 }
 
-float DistanceToNearestSpawnType(const Stage& stage, EntType type_, const Vec2& pos) {
+float DistanceSqToNearestSpawnType(const Stage& stage, EntType type_, const Vec2& pos) {
     float nearest = std::numeric_limits<float>::infinity();
     for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.type_ != type_) {
             continue;
         }
-        nearest = std::min(nearest, Length(spawn.pos - pos));
+        nearest = std::min(nearest, LengthSquared(spawn.pos - pos));
     }
     return nearest;
 }

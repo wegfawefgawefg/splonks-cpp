@@ -68,10 +68,11 @@ std::optional<Vec2> FindBranchExitSpawnPos(const Stage& stage, DetRng& det_rng) 
 
             const Vec2 pos = Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                                        static_cast<float>(tile_y * static_cast<int>(kTileSize)));
-            if (entrance_pos.has_value() && Length(pos - *entrance_pos) < 80.0F) {
+            if (entrance_pos.has_value() && LengthSquared(pos - *entrance_pos) < 80.0F * 80.0F) {
                 continue;
             }
-            if (default_exit_pos.has_value() && Length(pos - *default_exit_pos) < 80.0F) {
+            if (default_exit_pos.has_value() &&
+                LengthSquared(pos - *default_exit_pos) < 80.0F * 80.0F) {
                 continue;
             }
             if (HasSpawnAtWorldPos(stage, pos)) {
@@ -172,7 +173,8 @@ bool HasSpawnAtTile(const Stage& stage, EntType type_, int tile_x, int tile_y) {
             static_cast<int>(spawn.pos.y) / static_cast<int>(kTileSize) == tile_y) {
             return true;
         }
-        if (Length(spawn.pos - tile_pos) < static_cast<float>(kTileSize)) {
+        const float tile_size_f = static_cast<float>(kTileSize);
+        if (LengthSquared(spawn.pos - tile_pos) < tile_size_f * tile_size_f) {
             return true;
         }
     }
@@ -225,7 +227,7 @@ bool AddUdjatKeyChest(Stage& stage, DetRng& det_rng) {
         if (!IsTreasureSpawnType(spawn.type_)) {
             continue;
         }
-        if (Length(spawn.pos - *chest_pos) < 64.0F) {
+        if (LengthSquared(spawn.pos - *chest_pos) < 64.0F * 64.0F) {
             continue;
         }
         treasure_indices.push_back(i);
@@ -252,7 +254,8 @@ bool AddUdjatKeyChest(Stage& stage, DetRng& det_rng) {
 
             const Vec2 key_pos = Vec2::New(static_cast<float>(x * static_cast<int>(kTileSize) + 8),
                                            static_cast<float>(y * static_cast<int>(kTileSize) - 4));
-            if (Length(key_pos - *chest_pos) < 64.0F || HasSpawnAtWorldPos(stage, key_pos)) {
+            if (LengthSquared(key_pos - *chest_pos) < 64.0F * 64.0F ||
+                HasSpawnAtWorldPos(stage, key_pos)) {
                 continue;
             }
 
@@ -338,13 +341,15 @@ void AddMinesTreasure(Stage& stage, int level_number, DetRng& det_rng) {
                 Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                           static_cast<float>(tile_y * static_cast<int>(kTileSize)));
 
-            if (entrance_pos.has_value() && Length(tile_pos - *entrance_pos) < 32.0F) {
+            if (entrance_pos.has_value() &&
+                LengthSquared(tile_pos - *entrance_pos) < 32.0F * 32.0F) {
                 continue;
             }
-            if (exit_pos.has_value() && Length(tile_pos - *exit_pos) < 32.0F) {
+            if (exit_pos.has_value() && LengthSquared(tile_pos - *exit_pos) < 32.0F * 32.0F) {
                 continue;
             }
-            if (DistanceToNearestSpawnType(stage, EntType::GoldIdol, tile_pos) < 64.0F) {
+            if (DistanceSqToNearestSpawnType(stage, EntType::GoldIdol, tile_pos) <
+                64.0F * 64.0F) {
                 continue;
             }
 
@@ -388,7 +393,8 @@ void AddMinesTreasure(Stage& stage, int level_number, DetRng& det_rng) {
 
             if (ceiling_above && side_support) {
                 const int web_denominator =
-                    DistanceToNearestSpawnType(stage, EntType::GiantSpiderHang, tile_pos) < 100.0F
+                    DistanceSqToNearestSpawnType(stage, EntType::GiantSpiderHang, tile_pos) <
+                            100.0F * 100.0F
                         ? 5
                         : 60;
                 if (det_rng.RandomIntInclusive(1, web_denominator) == 1) {
@@ -424,7 +430,8 @@ void AddMinesTreasure(Stage& stage, int level_number, DetRng& det_rng) {
 
             if (tunnel_support) {
                 const int web_denominator =
-                    DistanceToNearestSpawnType(stage, EntType::GiantSpiderHang, tile_pos) < 100.0F
+                    DistanceSqToNearestSpawnType(stage, EntType::GiantSpiderHang, tile_pos) <
+                            100.0F * 100.0F
                         ? 10
                         : 60;
                 if (det_rng.RandomIntInclusive(1, web_denominator) == 1) {
@@ -481,12 +488,12 @@ void ConvertBlocksToArrowTraps(Stage& stage, int chance_denominator, DetRng& det
         }
 
         if (entrance_pos.has_value()) {
-            const float dist = Length(pos - *entrance_pos);
-            if (dist <= 48.0F) {
+            const float dist_sq = LengthSquared(pos - *entrance_pos);
+            if (dist_sq <= 48.0F * 48.0F) {
                 return true;
             }
             if (static_cast<int>(pos.y) == static_cast<int>(entrance_pos->y) &&
-                dist < 144.0F) {
+                dist_sq < 144.0F * 144.0F) {
                 return true;
             }
         }

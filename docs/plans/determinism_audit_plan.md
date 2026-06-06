@@ -128,6 +128,11 @@ The expected end state is:
   activation, spike high-speed override checks, monkey sight checks, spider
   aggro/drop checks, and cobweb occupant movement checks now compare squared
   lengths instead of calling `Length` / platform libm `std::sqrt`.
+- Fixed in stage-generation distance thresholds: branch-exit placement,
+  spawn-overlap checks, key/chest spacing, mines treasure/ambient spawn
+  spacing, and arrow-trap entrance spacing now compare squared lengths. The
+  shared nearest-spawn helper now returns squared distance so callers do not
+  reintroduce a `sqrt` boundary for radius checks.
 - Deferred risk: those helpers make the float-to-integer conversion rule
   explicit, but the source positions are still authoritative floats. Two peers
   can still diverge if prior float math crosses a grid/branch threshold
