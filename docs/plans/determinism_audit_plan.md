@@ -147,14 +147,16 @@ The expected end state is:
   explicit `uint32_t` counts.
 - Fixed in fingerprints: `FingerprintWriter` no longer hashes `size_t` values
   for strings/vector counts. Counts now enter hashes as explicit `uint64_t`.
+- Fixed in snapshots: entity runtime callback function pointers are no longer
+  serialized. They are runtime metadata, not authoritative state, and
+  `RestoreGameplaySnapshot` / `RestoreSimSnapshot` rebind callbacks from the
+  local entity specs after restore.
 - Deferred risk: `SerializeSimSnapshotToBytes` / `DeserializeSimSnapshotFromBytes`
   still write many trivially-copyable structs by raw host layout. That means
-  endian, enum storage, bool representation, float bit representation, padding,
-  and pointer/function-pointer fields are not a finished cross-platform network
-  format. `RestoreSimSnapshot` rebinds entity runtime callbacks from specs
-  after restore, which avoids keeping remote function-pointer addresses live,
-  but the transport format should still be replaced with explicit field writers
-  before depending on heterogeneous Windows/macOS/Linux peers.
+  endian, enum storage, bool representation, float bit representation, and
+  padding are not a finished cross-platform network format. The transport
+  format should still be replaced with explicit field writers before depending
+  on heterogeneous Windows/macOS/Linux peers.
 
 ## Undefined And Uninitialized Behavior Audit
 

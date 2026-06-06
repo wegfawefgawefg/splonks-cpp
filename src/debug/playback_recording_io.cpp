@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 71;
+constexpr std::uint32_t kRecordingVersion = 72;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -240,15 +240,6 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalPod(out, ent.damage_sound);
     WriteOptionalPod(out, ent.collide_sound);
     WriteOptionalPod(out, ent.death_sound);
-    WritePod(out, ent.on_death);
-    WritePod(out, ent.on_damage);
-    WritePod(out, ent.on_use);
-    WritePod(out, ent.on_area_enter);
-    WritePod(out, ent.on_area_exit);
-    WritePod(out, ent.on_area_tile_changed);
-    WritePod(out, ent.control_logic);
-    WritePod(out, ent.step_logic);
-    WritePod(out, ent.step_physics);
     WriteOptionalPod(out, ent.transition_target);
     WritePod(out, ent.stage_exit_id);
     WritePod(out, ent.attack_weight);
@@ -377,15 +368,6 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalPod(in, ent.damage_sound) &&
            ReadOptionalPod(in, ent.collide_sound) &&
            ReadOptionalPod(in, ent.death_sound) &&
-           ReadPod(in, ent.on_death) &&
-           ReadPod(in, ent.on_damage) &&
-           ReadPod(in, ent.on_use) &&
-           ReadPod(in, ent.on_area_enter) &&
-           ReadPod(in, ent.on_area_exit) &&
-           ReadPod(in, ent.on_area_tile_changed) &&
-           ReadPod(in, ent.control_logic) &&
-           ReadPod(in, ent.step_logic) &&
-           ReadPod(in, ent.step_physics) &&
            ReadOptionalPod(in, ent.transition_target) &&
            ReadPod(in, ent.stage_exit_id) &&
            ReadPod(in, ent.attack_weight) &&

@@ -3860,13 +3860,10 @@ bool CheckStateEqualitySmoke() {
     }
 }
 
-// Regression: a GameplaySnapshot loaded from a debug recording carries raw
-// function-pointer bytes that are stale in this process (different ASLR base or
-// build). RestoreGameplaySnapshot must re-derive every ent callback from the
-// build-local type spec, never trust the restored bytes -- otherwise the next
-// StepEnts dereferences a wild pointer and crashes. We simulate stale bytes by
-// poisoning the snapshot's callbacks to nullptr and assert they come back equal
-// to the spec after restore.
+// Regression: recording/snapshot restore must re-derive runtime callbacks from
+// the build-local type spec. Serialized snapshots omit function-pointer bytes,
+// and in-memory snapshots may still carry null/stale callback values after tests
+// or older tools mutate them.
 bool CheckGameplaySnapshotCallbackRebindSmoke() {
     try {
         Graphics graphics;
