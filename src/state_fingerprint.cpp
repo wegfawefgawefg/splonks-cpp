@@ -7,7 +7,9 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <sstream>
+#include <type_traits>
 #include <vector>
 
 namespace splonks {
@@ -28,13 +30,67 @@ struct FingerprintWriter {
         }
     }
 
+    void AddByte(std::uint8_t byte) {
+        value ^= static_cast<std::uint64_t>(byte);
+        value *= kFnvPrime;
+    }
+
+    void AddUint16(std::uint16_t value_) {
+        for (unsigned int shift = 0; shift < 16; shift += 8) {
+            AddByte(static_cast<std::uint8_t>((value_ >> shift) & 0xFFU));
+        }
+    }
+
+    void AddUint32(std::uint32_t value_) {
+        for (unsigned int shift = 0; shift < 32; shift += 8) {
+            AddByte(static_cast<std::uint8_t>((value_ >> shift) & 0xFFU));
+        }
+    }
+
+    void AddUint64(std::uint64_t value_) {
+        for (unsigned int shift = 0; shift < 64; shift += 8) {
+            AddByte(static_cast<std::uint8_t>((value_ >> shift) & 0xFFU));
+        }
+    }
+
     template <typename T> void AddPod(const T& pod) {
-        AddBytes(&pod, sizeof(T));
+        if constexpr (std::is_enum_v<T>) {
+            AddPod(static_cast<std::underlying_type_t<T>>(pod));
+        } else if constexpr (std::is_same_v<T, bool>) {
+            AddByte(pod ? 1U : 0U);
+        } else if constexpr (std::is_integral_v<T>) {
+            using Unsigned = std::make_unsigned_t<T>;
+            Unsigned bits = 0;
+            static_assert(sizeof(bits) == sizeof(pod));
+            std::memcpy(&bits, &pod, sizeof(bits));
+            if constexpr (sizeof(bits) == 1) {
+                AddByte(static_cast<std::uint8_t>(bits));
+            } else if constexpr (sizeof(bits) == 2) {
+                AddUint16(static_cast<std::uint16_t>(bits));
+            } else if constexpr (sizeof(bits) == 4) {
+                AddUint32(static_cast<std::uint32_t>(bits));
+            } else if constexpr (sizeof(bits) == 8) {
+                AddUint64(static_cast<std::uint64_t>(bits));
+            } else {
+                static_assert(sizeof(bits) <= 8, "Unsupported fingerprint integer width");
+            }
+        } else if constexpr (std::is_same_v<T, float>) {
+            std::uint32_t bits = 0;
+            static_assert(sizeof(bits) == sizeof(pod));
+            std::memcpy(&bits, &pod, sizeof(bits));
+            AddUint32(bits);
+        } else if constexpr (std::is_same_v<T, double>) {
+            std::uint64_t bits = 0;
+            static_assert(sizeof(bits) == sizeof(pod));
+            std::memcpy(&bits, &pod, sizeof(bits));
+            AddUint64(bits);
+        } else {
+            static_assert(std::is_integral_v<T>, "Fingerprint AddPod requires scalar values");
+        }
     }
 
     void AddBool(bool value_) {
-        const std::uint8_t byte = value_ ? 1U : 0U;
-        AddPod(byte);
+        AddByte(value_ ? 1U : 0U);
     }
 
     void AddCount(std::size_t count) {

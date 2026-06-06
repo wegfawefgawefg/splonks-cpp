@@ -109,6 +109,11 @@ The expected end state is:
   state and no longer participates in the network lockstep hash. This removes
   render-only `std::atan2` / `std::fmod` rotation drift from desync detection
   while preserving rotation in canonical/debug snapshots and rendering.
+- Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
+  raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
+  values now hash as explicit little-endian bytes, and float/double values hash
+  through explicit IEEE bit payloads when they are intentionally included.
+  This removes host byte order from canonical/gameplay/network fingerprints.
 
 ## Container And Iteration Order Audit
 
@@ -454,6 +459,9 @@ The expected end state is:
   than `std::size_t`. This removes a broad platform-sized value from entity,
   light, audio-emitter, and audio-instance hashes/snapshots without changing
   gameplay identity semantics.
+- Fixed in runtime fingerprints: scalar hash inputs now pass through explicit
+  little-endian byte encoders instead of host memory order, including the
+  remaining fixed-width integer fields and fixed-point raw values.
 - Fixed in shared snapshot/replay format: VID-bearing vectors and structs now
   serialize VIDs field-by-field instead of relying on host raw layout for
   vector payloads or optional payloads.
