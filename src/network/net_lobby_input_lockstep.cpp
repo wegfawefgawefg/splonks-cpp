@@ -2,6 +2,7 @@
 
 #include "ent/spec_restore.hpp"
 #include "inputs.hpp"
+#include "math_types.hpp"
 #include "simulation_snapshot.hpp"
 #include "state_fingerprint.hpp"
 #include "state.hpp"
@@ -9,7 +10,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -253,8 +253,8 @@ std::uint32_t SuggestedLockstepDelayFrames(float ping_ms, float jitter_ms) {
     constexpr float kSafetyFrames = 1.0F;
     const float one_way_ms = std::max(0.0F, ping_ms) * 0.5F;
     const float jitter_margin_ms = std::max(2.0F, std::max(0.0F, jitter_ms) * 2.0F);
-    const float frames = std::ceil((one_way_ms + jitter_margin_ms) / kNetworkFrameMs + kSafetyFrames);
-    return ClampLockstepInputDelayFrames(static_cast<std::uint32_t>(std::max(0.0F, frames)));
+    const int frames = CeilToInt((one_way_ms + jitter_margin_ms) / kNetworkFrameMs + kSafetyFrames);
+    return ClampLockstepInputDelayFrames(static_cast<std::uint32_t>(std::max(0, frames)));
 }
 
 std::size_t ApproxRollbackBufferBytes(const State& state) {

@@ -1,5 +1,6 @@
 #include "debug/playback_internal.hpp"
 
+#include "math_types.hpp"
 #include "network/net_lobby.hpp"
 #include "network/net_session.hpp"
 #include "stage_spawning.hpp"
@@ -7,7 +8,6 @@
 #include <imgui.h>
 
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -56,11 +56,11 @@ int SuggestedLockstepDelayFrames(float ping_ms, float jitter_ms) {
     constexpr float kSafetyFrames = 1.0F;
     const float one_way_ms = std::max(0.0F, ping_ms) * 0.5F;
     const float jitter_margin_ms = std::max(2.0F, std::max(0.0F, jitter_ms) * 2.0F);
-    const float frames = std::ceil((one_way_ms + jitter_margin_ms) / kNetworkFrameMs + kSafetyFrames);
+    const int frames = CeilToInt((one_way_ms + jitter_margin_ms) / kNetworkFrameMs + kSafetyFrames);
     return static_cast<int>(std::clamp(
         frames,
-        static_cast<float>(network::kMinLockstepInputDelayFrames),
-        static_cast<float>(network::kMaxLockstepInputDelayFrames)
+        static_cast<int>(network::kMinLockstepInputDelayFrames),
+        static_cast<int>(network::kMaxLockstepInputDelayFrames)
     ));
 }
 

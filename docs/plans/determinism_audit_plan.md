@@ -580,6 +580,11 @@ The expected end state is:
   now use local `RoundToInt` / `CeilToInt` instead of platform libm
   `std::lround` / `std::ceil`. This is not authoritative gameplay state, but it
   keeps simulated network conditions more reproducible across platforms.
+- Fixed in lockstep delay selection: production and debug suggested input-delay
+  calculations now use local `CeilToInt` instead of platform libm `std::ceil`.
+  The suggested delay is network configuration, not direct gameplay state, but
+  keeping it under the same rounding rules avoids cross-platform drift in
+  validation and developer tuning.
 
 ## Networking/Topology Determinism Audit
 
