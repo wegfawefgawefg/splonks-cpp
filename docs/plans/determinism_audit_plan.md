@@ -229,6 +229,12 @@ The expected end state is:
   explicit `uint8_t` values instead of raw host `bool` / enum representation.
   Invalid player connection kinds now fail snapshot decode. Recording format
   version is now 82.
+- Fixed in shared gameplay/simulation snapshot serialization: remaining
+  high-level settings/stage/run-state booleans now use explicit `uint8_t`
+  values. This covers serialized video/post-process bools, stage exit
+  requirement expectations, spawn buyable flags, stage wrap/clamp flags,
+  optional fullscreen targets, gameplay/simulation running and game-over/pause/
+  win flags. Recording format version is now 83.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,

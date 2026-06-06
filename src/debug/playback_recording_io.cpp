@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 82;
+constexpr std::uint32_t kRecordingVersion = 83;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -258,6 +258,31 @@ bool ReadBoolByte(std::istream& in, bool& value) {
         return false;
     }
     value = stored != 0;
+    return true;
+}
+
+void WriteOptionalBoolByte(std::ostream& out, const std::optional<bool>& value) {
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (has_value) {
+        WriteBoolByte(out, *value);
+    }
+}
+
+bool ReadOptionalBoolByte(std::istream& in, std::optional<bool>& value) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        value.reset();
+        return true;
+    }
+    bool loaded = false;
+    if (!ReadBoolByte(in, loaded)) {
+        return false;
+    }
+    value = loaded;
     return true;
 }
 
@@ -671,8 +696,8 @@ bool ReadEnt(std::istream& in, Ent& ent) {
 void WriteSettings(std::ostream& out, const Settings& settings) {
     WritePod(out, settings.mode);
     WritePod(out, settings.video.resolution);
-    WritePod(out, settings.video.fullscreen);
-    WritePod(out, settings.video.vsync);
+    WriteBoolByte(out, settings.video.fullscreen);
+    WriteBoolByte(out, settings.video.vsync);
     WriteVectorPod(out, settings.video.resolution_options);
     WritePod(out, settings.audio.music_volume);
     WritePod(out, settings.audio.sfx_volume);
@@ -684,10 +709,10 @@ void WriteSettings(std::ostream& out, const Settings& settings) {
     WritePod(out, settings.ui.tool_slot_scale);
     WritePod(out, settings.ui.tool_icon_scale);
     WritePod(out, settings.post_process.effect);
-    WritePod(out, settings.post_process.terrain_lighting);
-    WritePod(out, settings.post_process.terrain_seam_ao);
-    WritePod(out, settings.post_process.terrain_exposure_lighting);
-    WritePod(out, settings.post_process.backwall_lighting);
+    WriteBoolByte(out, settings.post_process.terrain_lighting);
+    WriteBoolByte(out, settings.post_process.terrain_seam_ao);
+    WriteBoolByte(out, settings.post_process.terrain_exposure_lighting);
+    WriteBoolByte(out, settings.post_process.backwall_lighting);
     WritePod(out, settings.post_process.terrain_seam_ao_amount);
     WritePod(out, settings.post_process.terrain_seam_ao_size);
     WritePod(out, settings.post_process.terrain_exposure_amount);
@@ -715,8 +740,8 @@ void WriteSettings(std::ostream& out, const Settings& settings) {
 bool ReadSettings(std::istream& in, Settings& settings) {
     if (!ReadPod(in, settings.mode) ||
         !ReadPod(in, settings.video.resolution) ||
-        !ReadPod(in, settings.video.fullscreen) ||
-        !ReadPod(in, settings.video.vsync) ||
+        !ReadBoolByte(in, settings.video.fullscreen) ||
+        !ReadBoolByte(in, settings.video.vsync) ||
         !ReadVectorPod(in, settings.video.resolution_options) ||
         !ReadPod(in, settings.audio.music_volume) ||
         !ReadPod(in, settings.audio.sfx_volume) ||
@@ -728,10 +753,10 @@ bool ReadSettings(std::istream& in, Settings& settings) {
         !ReadPod(in, settings.ui.tool_slot_scale) ||
         !ReadPod(in, settings.ui.tool_icon_scale) ||
         !ReadPod(in, settings.post_process.effect) ||
-        !ReadPod(in, settings.post_process.terrain_lighting) ||
-        !ReadPod(in, settings.post_process.terrain_seam_ao) ||
-        !ReadPod(in, settings.post_process.terrain_exposure_lighting) ||
-        !ReadPod(in, settings.post_process.backwall_lighting) ||
+        !ReadBoolByte(in, settings.post_process.terrain_lighting) ||
+        !ReadBoolByte(in, settings.post_process.terrain_seam_ao) ||
+        !ReadBoolByte(in, settings.post_process.terrain_exposure_lighting) ||
+        !ReadBoolByte(in, settings.post_process.backwall_lighting) ||
         !ReadPod(in, settings.post_process.terrain_seam_ao_amount) ||
         !ReadPod(in, settings.post_process.terrain_seam_ao_size) ||
         !ReadPod(in, settings.post_process.terrain_exposure_amount) ||
@@ -761,12 +786,12 @@ bool ReadSettings(std::istream& in, Settings& settings) {
 
 void WriteStageExitRequirement(std::ostream& out, const StageExitRequirement& requirement) {
     WriteString(out, requirement.flag);
-    WritePod(out, requirement.expected);
+    WriteBoolByte(out, requirement.expected);
 }
 
 bool ReadStageExitRequirement(std::istream& in, StageExitRequirement& requirement) {
     return ReadString(in, requirement.flag) &&
-           ReadPod(in, requirement.expected);
+           ReadBoolByte(in, requirement.expected);
 }
 
 void WriteStageExitTarget(std::ostream& out, const StageExitTarget& target) {
@@ -817,7 +842,7 @@ void WriteEntSpawn(std::ostream& out, const EntSpawn& spawn) {
     WriteOptionalSizeIndex(out, spawn.ent_c_spawn_index);
     WriteOptionalSizeIndex(out, spawn.ent_d_spawn_index);
     WriteOptionalSizeIndex(out, spawn.shop_owner_spawn_index);
-    WritePod(out, spawn.buyable);
+    WriteBoolByte(out, spawn.buyable);
     WritePod(out, spawn.buy_price);
     WriteString(out, spawn.exit_id);
 }
@@ -834,7 +859,7 @@ bool ReadEntSpawn(std::istream& in, EntSpawn& spawn) {
            ReadOptionalSizeIndex(in, spawn.ent_c_spawn_index) &&
            ReadOptionalSizeIndex(in, spawn.ent_d_spawn_index) &&
            ReadOptionalSizeIndex(in, spawn.shop_owner_spawn_index) &&
-           ReadPod(in, spawn.buyable) &&
+           ReadBoolByte(in, spawn.buyable) &&
            ReadPod(in, spawn.buy_price) &&
            ReadString(in, spawn.exit_id);
 }
@@ -925,12 +950,12 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WritePod(out, stage.border.right.tile);
     WritePod(out, stage.border.top.tile);
     WritePod(out, stage.border.bottom.tile);
-    WritePod(out, stage.border.wrap_x);
-    WritePod(out, stage.border.wrap_y);
+    WriteBoolByte(out, stage.border.wrap_x);
+    WriteBoolByte(out, stage.border.wrap_y);
     WriteOptionalPod(out, stage.border.void_death_y);
-    WritePod(out, stage.camera_clamp_enabled);
+    WriteBoolByte(out, stage.camera_clamp_enabled);
     WritePod(out, stage.camera_clamp_margin);
-    WritePod(out, stage.wrap_transform_active);
+    WriteBoolByte(out, stage.wrap_transform_active);
     WritePod(out, stage.wrap_padding_tiles);
     WritePod(out, stage.wrap_core_origin_tiles);
     WritePod(out, stage.wrap_core_size_tiles);
@@ -995,12 +1020,12 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadPod(in, stage.border.right.tile) ||
         !ReadPod(in, stage.border.top.tile) ||
         !ReadPod(in, stage.border.bottom.tile) ||
-        !ReadPod(in, stage.border.wrap_x) ||
-        !ReadPod(in, stage.border.wrap_y) ||
+        !ReadBoolByte(in, stage.border.wrap_x) ||
+        !ReadBoolByte(in, stage.border.wrap_y) ||
         !ReadOptionalPod(in, stage.border.void_death_y) ||
-        !ReadPod(in, stage.camera_clamp_enabled) ||
+        !ReadBoolByte(in, stage.camera_clamp_enabled) ||
         !ReadPod(in, stage.camera_clamp_margin) ||
-        !ReadPod(in, stage.wrap_transform_active) ||
+        !ReadBoolByte(in, stage.wrap_transform_active) ||
         !ReadPod(in, stage.wrap_padding_tiles) ||
         !ReadPod(in, stage.wrap_core_origin_tiles) ||
         !ReadPod(in, stage.wrap_core_size_tiles)) {
@@ -1331,9 +1356,9 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.lighting_settings_menu_selection);
     WriteOptionalSizeIndex(out, snapshot.video_settings_target_window_size_index);
     WriteOptionalSizeIndex(out, snapshot.video_settings_target_resolution_index);
-    WriteOptionalPod(out, snapshot.video_settings_target_fullscreen);
-    WritePod(out, snapshot.rebuild_render_texture);
-    WritePod(out, snapshot.choosing_control_binding);
+    WriteOptionalBoolByte(out, snapshot.video_settings_target_fullscreen);
+    WriteBoolByte(out, snapshot.rebuild_render_texture);
+    WriteBoolByte(out, snapshot.choosing_control_binding);
     WritePod(out, snapshot.debug_overlay);
     WritePod(out, snapshot.debug_shake_brush);
     WritePod(out, snapshot.debug_audio_brush);
@@ -1348,9 +1373,9 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.drng);
     WritePod(out, snapshot.stagegen_drng);
     WritePod(out, snapshot.menu_return_to);
-    WritePod(out, snapshot.game_over);
-    WritePod(out, snapshot.pause);
-    WritePod(out, snapshot.win);
+    WriteBoolByte(out, snapshot.game_over);
+    WriteBoolByte(out, snapshot.pause);
+    WriteBoolByte(out, snapshot.win);
     WritePod(out, snapshot.respawn_target);
     WriteOptionalPod(out, snapshot.pending_stage_transition);
     WritePod(out, snapshot.multiplayer_respawn_mode);
@@ -1393,9 +1418,9 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.lighting_settings_menu_selection) &&
            ReadOptionalSizeIndex(in, snapshot.video_settings_target_window_size_index) &&
            ReadOptionalSizeIndex(in, snapshot.video_settings_target_resolution_index) &&
-           ReadOptionalPod(in, snapshot.video_settings_target_fullscreen) &&
-           ReadPod(in, snapshot.rebuild_render_texture) &&
-           ReadPod(in, snapshot.choosing_control_binding) &&
+           ReadOptionalBoolByte(in, snapshot.video_settings_target_fullscreen) &&
+           ReadBoolByte(in, snapshot.rebuild_render_texture) &&
+           ReadBoolByte(in, snapshot.choosing_control_binding) &&
            ReadPod(in, snapshot.debug_overlay) &&
            ReadPod(in, snapshot.debug_shake_brush) &&
            ReadPod(in, snapshot.debug_audio_brush) &&
@@ -1410,9 +1435,9 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.drng) &&
            ReadPod(in, snapshot.stagegen_drng) &&
            ReadPod(in, snapshot.menu_return_to) &&
-           ReadPod(in, snapshot.game_over) &&
-           ReadPod(in, snapshot.pause) &&
-           ReadPod(in, snapshot.win) &&
+           ReadBoolByte(in, snapshot.game_over) &&
+           ReadBoolByte(in, snapshot.pause) &&
+           ReadBoolByte(in, snapshot.win) &&
            ReadPod(in, snapshot.respawn_target) &&
            ReadOptionalPod(in, snapshot.pending_stage_transition) &&
            ReadPod(in, snapshot.multiplayer_respawn_mode) &&
@@ -1537,7 +1562,7 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WritePod(out, snapshot.previous_immediate_playing_input_snapshot);
     WritePod(out, snapshot.stage_rotation);
     WritePod(out, snapshot.player_tuning);
-    WritePod(out, snapshot.running);
+    WriteBoolByte(out, snapshot.running);
     WritePod(out, snapshot.now);
     WritePod(out, snapshot.time_since_last_update);
     WritePod(out, snapshot.scene_frame);
@@ -1546,9 +1571,9 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WritePod(out, snapshot.drng);
     WritePod(out, snapshot.stagegen_drng);
     WritePod(out, snapshot.menu_return_to);
-    WritePod(out, snapshot.game_over);
-    WritePod(out, snapshot.pause);
-    WritePod(out, snapshot.win);
+    WriteBoolByte(out, snapshot.game_over);
+    WriteBoolByte(out, snapshot.pause);
+    WriteBoolByte(out, snapshot.win);
     WritePod(out, snapshot.respawn_target);
     WriteOptionalPod(out, snapshot.pending_stage_transition);
     WritePod(out, snapshot.multiplayer_respawn_mode);
@@ -1582,7 +1607,7 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadPod(in, snapshot.previous_immediate_playing_input_snapshot) &&
            ReadPod(in, snapshot.stage_rotation) &&
            ReadPod(in, snapshot.player_tuning) &&
-           ReadPod(in, snapshot.running) &&
+           ReadBoolByte(in, snapshot.running) &&
            ReadPod(in, snapshot.now) &&
            ReadPod(in, snapshot.time_since_last_update) &&
            ReadPod(in, snapshot.scene_frame) &&
@@ -1591,9 +1616,9 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadPod(in, snapshot.drng) &&
            ReadPod(in, snapshot.stagegen_drng) &&
            ReadPod(in, snapshot.menu_return_to) &&
-           ReadPod(in, snapshot.game_over) &&
-           ReadPod(in, snapshot.pause) &&
-           ReadPod(in, snapshot.win) &&
+           ReadBoolByte(in, snapshot.game_over) &&
+           ReadBoolByte(in, snapshot.pause) &&
+           ReadBoolByte(in, snapshot.win) &&
            ReadPod(in, snapshot.respawn_target) &&
            ReadOptionalPod(in, snapshot.pending_stage_transition) &&
            ReadPod(in, snapshot.multiplayer_respawn_mode) &&
