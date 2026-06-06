@@ -37,6 +37,10 @@ struct FingerprintWriter {
         AddPod(byte);
     }
 
+    void AddCount(std::size_t count) {
+        AddPod(static_cast<std::uint64_t>(count));
+    }
+
     void AddFixedScalar(sim::Scalar value_) {
         AddPod(value_.raw_value());
     }
@@ -46,7 +50,7 @@ struct FingerprintWriter {
     }
 
     void AddString(const std::string& text) {
-        AddPod(text.size());
+        AddCount(text.size());
         AddBytes(text.data(), text.size());
     }
 
@@ -142,7 +146,7 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
     std::vector<StageLight> lights = stage.lights;
     std::sort(lights.begin(), lights.end(),
               [](const StageLight& lhs, const StageLight& rhs) { return lhs.vid.id < rhs.vid.id; });
-    writer.AddPod(lights.size());
+    writer.AddCount(lights.size());
     for (const StageLight& light : lights) {
         writer.AddVid(light.vid);
         writer.AddIVec2(light.tile_pos);
@@ -254,7 +258,7 @@ void AddInputFrameFingerprint(FingerprintWriter& writer, const InputFrame& input
 }
 
 void AddPlayerRegistryFingerprint(FingerprintWriter& writer, const PlayerRegistry& players) {
-    writer.AddPod(players.slots.size());
+    writer.AddCount(players.slots.size());
     for (const PlayerSlot& slot : players.slots) {
         writer.AddPod(slot.player_id);
         writer.AddBool(slot.ent_vid.has_value());
@@ -269,7 +273,7 @@ void AddPlayerRegistryFingerprint(FingerprintWriter& writer, const PlayerRegistr
 
 void AddToolInventoryFingerprint(FingerprintWriter& writer,
                                  const EntToolInventoryState& inventory) {
-    writer.AddPod(inventory.tool_states.size());
+    writer.AddCount(inventory.tool_states.size());
     for (const EntToolState& tool_state : inventory.tool_states) {
         writer.AddVid(tool_state.owner_vid);
         for (const ToolSlot& slot : tool_state.slots) {
@@ -403,7 +407,7 @@ void AddNetworkPlayerRegistryFingerprint(FingerprintWriter& writer, const State&
         return lhs->player_id < rhs->player_id;
     });
 
-    writer.AddPod(slots.size());
+    writer.AddCount(slots.size());
     for (const PlayerSlot* const slot : slots) {
         writer.AddPod(slot->player_id);
         writer.AddBool(slot->connected);
@@ -429,7 +433,7 @@ void AddNetworkToolInventoryFingerprint(FingerprintWriter& writer, const State& 
                          NetEntIdForVid(state, rhs->owner_vid);
               });
 
-    writer.AddPod(tool_states.size());
+    writer.AddCount(tool_states.size());
     for (const EntToolState* const tool_state : tool_states) {
         AddNetworkVid(writer, state, tool_state->owner_vid);
         for (const ToolSlot& slot : tool_state->slots) {
@@ -473,7 +477,7 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprintWithOptions(const Stat
     AddPlayerRegistryFingerprint(writer, state.players);
     AddToolInventoryFingerprint(writer, state.ent_tools);
 
-    writer.AddPod(state.ents.ents.size());
+    writer.AddCount(state.ents.ents.size());
     for (const Ent& ent : state.ents.ents) {
         AddEntFingerprint(writer, ent);
     }
@@ -582,7 +586,7 @@ NetworkStateFingerprintComponents ComputeNetworkStateFingerprintComponents(const
         return lhs->vid.id < rhs->vid.id;
     });
     FingerprintWriter ents;
-    ents.AddPod(active_ents.size());
+    ents.AddCount(active_ents.size());
     for (const Ent* const ent : active_ents) {
         AddNetworkEntFingerprint(ents, state, *ent);
     }

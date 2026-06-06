@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <limits>
 #include <random>
 
 namespace splonks {
@@ -73,39 +72,37 @@ namespace rng {
 
 namespace {
 
-std::mt19937& GetRandomGenerator() {
+std::uint32_t MakeProcessRandomSeed() {
     static std::random_device device;
-    static std::mt19937 generator(device());
+    const std::uint32_t seed = device();
+    return seed == 0 ? 1U : seed;
+}
+
+DetRng& GetRandomGenerator() {
+    static DetRng generator = DetRng::New(MakeProcessRandomSeed());
     return generator;
 }
 
 } // namespace
 
 void SetSeed(std::uint32_t seed) {
-    GetRandomGenerator().seed(seed);
+    GetRandomGenerator() = DetRng::New(seed == 0 ? 1U : seed);
 }
 
 std::uint32_t RandomU32() {
-    std::uniform_int_distribution<std::uint32_t> distribution(
-        0,
-        std::numeric_limits<std::uint32_t>::max()
-    );
-    return distribution(GetRandomGenerator());
+    return GetRandomGenerator().NextU32();
 }
 
 int RandomIntInclusive(int minimum, int maximum) {
-    std::uniform_int_distribution<int> distribution(minimum, maximum);
-    return distribution(GetRandomGenerator());
+    return GetRandomGenerator().RandomIntInclusive(minimum, maximum);
 }
 
 int RandomIntExclusive(int minimum, int maximum) {
-    std::uniform_int_distribution<int> distribution(minimum, maximum - 1);
-    return distribution(GetRandomGenerator());
+    return GetRandomGenerator().RandomIntExclusive(minimum, maximum);
 }
 
 float RandomFloat(float minimum, float maximum) {
-    std::uniform_real_distribution<float> distribution(minimum, maximum);
-    return distribution(GetRandomGenerator());
+    return GetRandomGenerator().RandomFloat(minimum, maximum);
 }
 
 } // namespace rng

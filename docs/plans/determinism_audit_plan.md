@@ -40,6 +40,23 @@ The expected end state is:
 - [ ] Keep render/camera/UI/audio/effects float unless they feed back into
       gameplay state.
 
+### Status 2026-06-06
+
+- In progress. The network fingerprint no longer hashes raw float bits; it
+  quantizes known hashed float fields through `sim::Scalar` / Fixed12.
+- Remaining authoritative float storage is still broad. `Ent::pos`, `vel`,
+  `acc`, `size`, `rotation`, `counter_a` through `counter_d`,
+  `AFrameAnimator::current_time`, `AFrameAnimator::speed`,
+  `Stage::gravity`, and `Stage::fluid_amount` are the highest-priority
+  simulation fields because they affect movement, contact, animation gates,
+  world state, or lockstep fingerprints.
+- Deferred risk: these fields are still simulated as float. The current
+  quantized hash can prevent false cross-ISA mismatches from tiny float-bit
+  differences, but it does not prevent two peers from crossing different branch
+  thresholds before quantization. The follow-up migration is to move
+  authoritative gameplay storage/math to fixed-point, integer counters, or
+  explicit threshold quantization.
+
 ## Math Function Audit
 
 - [ ] Find gameplay uses of `std::sin`, `std::cos`, `std::tan`, `std::atan2`,
@@ -51,6 +68,20 @@ The expected end state is:
 - [ ] Replace gameplay-affecting length/normalize code with deterministic
       alternatives or avoid normalization in authoritative state.
 
+### Status 2026-06-06
+
+- In progress. Initial search found gameplay math calls in:
+  `world_query.cpp`, `ents/common/physics.cpp`, `ents/common/hang.cpp`,
+  `ents/moving_platform.cpp`, `ents/ball_and_chain.cpp`, `ents/arrow_trap.cpp`,
+  `ents/bow.cpp`, `ents/web_cannon.cpp`, `ents/bomb.cpp`, and related entity
+  logic.
+- Clear render/cosmetic math exists in lighting, acoustics, render shake, and
+  particle paths; those can remain float unless they feed back into gameplay.
+- Deferred risk: circular moving platforms currently use `std::sin` /
+  `std::cos` in gameplay movement. Ball-and-chain uses `std::sqrt` for
+  authoritative pull direction. These should be converted to deterministic
+  lookup/fixed-point math or discrete approximations.
+
 ## Container And Iteration Order Audit
 
 - [ ] Search deterministic simulation code for unordered containers.
@@ -61,6 +92,16 @@ The expected end state is:
       gameplay results.
 - [ ] Avoid sorting by non-stable values or platform-dependent comparisons.
 
+### Status 2026-06-06
+
+- In progress. Network entity fingerprints already sort active entities by
+  stable network entity id, falling back to VID. Stage lights are sorted by VID
+  before hashing.
+- `Sid` uses `std::unordered_map`, but it is an index/query cache keyed by
+  integer bucket and should not decide simulation order unless callers iterate
+  buckets/results without a stable sort. That call surface still needs review.
+- Deferred risk: contact/collision tie ordering is not yet fully audited.
+
 ## RNG Audit
 
 - [ ] Identify every RNG stream.
@@ -68,6 +109,27 @@ The expected end state is:
 - [ ] Ensure all gameplay RNG is seeded from synchronized state.
 - [ ] Ensure joining peers receive exact RNG state in snapshots.
 - [ ] Remove or quarantine process-global RNG use from gameplay.
+
+### Status 2026-06-06
+
+- Partially fixed. `rng::Random*` no longer depends on
+  `std::uniform_int_distribution`, `std::uniform_real_distribution`, or
+  `std::mt19937` mapping. It now uses the local `DetRng` algorithm for stable
+  integer and float mapping after seeding.
+- Rule recorded: authoritative gameplay randomness must use `state.drng` or
+  another synchronized `DetRng` stream. The `rng::` namespace is process-global
+  and remains appropriate only for render, audio variation, debug bots, local
+  presentation particles, and initial local seed creation before host state is
+  synchronized.
+- Initial search found process-global `rng::` calls in many particle/audio
+  feedback paths and a small set of gameplay-adjacent paths:
+  `stage_progression.cpp` local run seed creation, `ents/bat.cpp` sound choice,
+  `ents/baseball_bat.cpp` kill sound choice, `ents/meathead.cpp` popup
+  placement/flip, and debug input bot code. The sound/debug paths are
+  non-authoritative. Meathead popup particles are not in `SimSnapshot`, but
+  should stay quarantined as presentation-only.
+- Deferred risk: audit every remaining `rng::` call and either prove it is
+  non-authoritative or move it to `state.drng`.
 
 ## Serialization And Snapshot Audit
 
@@ -78,6 +140,21 @@ The expected end state is:
       snapshots/resync state.
 - [ ] Ensure desync replay files include enough final local state to diff entity
       fields, not just hashes.
+
+### Status 2026-06-06
+
+- In progress. Snapshot vector and string counts are generally serialized with
+  explicit `uint32_t` counts.
+- Fixed in fingerprints: `FingerprintWriter` no longer hashes `size_t` values
+  for strings/vector counts. Counts now enter hashes as explicit `uint64_t`.
+- Deferred risk: `SerializeSimSnapshotToBytes` / `DeserializeSimSnapshotFromBytes`
+  still write many trivially-copyable structs by raw host layout. That means
+  endian, enum storage, bool representation, float bit representation, padding,
+  and pointer/function-pointer fields are not a finished cross-platform network
+  format. `RestoreSimSnapshot` rebinds entity runtime callbacks from specs
+  after restore, which avoids keeping remote function-pointer addresses live,
+  but the transport format should still be replaced with explicit field writers
+  before depending on heterogeneous Windows/macOS/Linux peers.
 
 ## Undefined And Uninitialized Behavior Audit
 
@@ -95,6 +172,15 @@ The expected end state is:
 - [ ] Use explicit types: `int32_t`, `uint32_t`, `int64_t`, `uint64_t`.
 - [ ] Audit hashes for platform-sized values.
 - [ ] Audit save/snapshot/replay formats for platform-sized values.
+
+### Status 2026-06-06
+
+- Partially fixed. Gameplay/network fingerprints no longer include direct
+  `size_t` count representations.
+- Deferred risk: local debug/playback snapshots still include
+  `std::optional<std::size_t>` menu-selection fields in `GameplaySnapshot`.
+  Those are not part of `SimSnapshot` network state, but should be made explicit
+  before treating recordings as portable artifacts.
 
 ## Asset And Config Consistency Audit
 
@@ -122,6 +208,16 @@ The expected end state is:
 - [ ] Ensure resync snapshots restore every gameplay-affecting field.
 - [ ] Keep Realnet/Gubsy transport metadata outside authoritative gameplay
       state unless explicitly synchronized.
+
+### Status 2026-06-06
+
+- In progress. The current lockstep path has join barriers, snapshot catchup,
+  stable network entity ids, and sorted network fingerprints. Recent validation
+  covered same-machine two-process UDP lockstep with confirmed hashes and no
+  mismatches.
+- Deferred risk: topology changes during active play need broader validation
+  with multiple local players per peer, high latency, reconnect, stage
+  transition, restart run, and relay/NAT paths.
 
 ## Final Audit Result
 
