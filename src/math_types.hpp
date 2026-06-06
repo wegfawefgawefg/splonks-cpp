@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <cmath>
 
 namespace splonks {
@@ -158,6 +159,29 @@ inline int RoundToInt(float value) {
         return FloorToInt(value + 0.5F);
     }
     return -FloorToInt((-value) + 0.5F);
+}
+
+inline int CeilToInt(float value) {
+    const int floored = FloorToInt(value);
+    return static_cast<float>(floored) < value ? floored + 1 : floored;
+}
+
+inline std::uint64_t IntegerSqrtFloor(std::uint64_t value) {
+    std::uint64_t result = 0;
+    std::uint64_t bit = std::uint64_t{1} << 62U;
+    while (bit > value) {
+        bit >>= 2U;
+    }
+    while (bit != 0) {
+        if (value >= result + bit) {
+            value -= result + bit;
+            result = (result >> 1U) + bit;
+        } else {
+            result >>= 1U;
+        }
+        bit >>= 2U;
+    }
+    return result;
 }
 
 inline IVec2 ToIVec2(const UVec2& value) {

@@ -100,6 +100,11 @@ The expected end state is:
   meat-slime surface keys, and trap-block sensor distances now use local
   `FloorToInt` / `RoundToInt` helpers instead of platform libm
   `std::floor`, `std::round`, or `std::fmod`.
+- Fixed in tile-shake propagation: area radius expansion now uses local
+  `CeilToInt`, and per-tile radial falloff uses fixed-scale integer distance
+  plus `IntegerSqrtFloor` instead of platform libm `std::ceil` / `std::sqrt`.
+  Tile shake is presentation state, but it is snapshot/replay state, so this
+  keeps local replay and resync bytes less platform-sensitive.
 - Deferred risk: those helpers make the float-to-integer conversion rule
   explicit, but the source positions are still authoritative floats. Two peers
   can still diverge if prior float math crosses a grid/branch threshold

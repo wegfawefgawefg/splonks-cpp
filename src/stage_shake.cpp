@@ -1,7 +1,6 @@
 #include "stage.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <optional>
 
 namespace splonks {
@@ -9,6 +8,12 @@ namespace splonks {
 namespace {
 
 using TileShakeGrid = std::vector<std::vector<float>>;
+
+constexpr int kTileShakeDistanceScale = 1024;
+
+int AbsInt(int value) {
+    return value < 0 ? -value : value;
+}
 
 int WrapCoordinate(int value, int size) {
     if (size <= 0) {
@@ -109,19 +114,26 @@ void AddTileShakeAreaToGrid(Stage& stage, TileShakeGrid& grid, const IVec2& pos,
         std::vector<bool>(stage.tiles[0].size(), false)
     );
 
-    const int radius = static_cast<int>(std::ceil(dist));
+    const int radius = CeilToInt(dist);
+    const int dist_scaled = std::max(1, RoundToInt(dist * static_cast<float>(kTileShakeDistanceScale)));
     for (int y = pos.y - radius; y <= pos.y + radius; ++y) {
         for (int x = pos.x - radius; x <= pos.x + radius; ++x) {
-            const float dx = static_cast<float>(x - pos.x);
-            const float dy = static_cast<float>(y - pos.y);
-            const float distance = std::sqrt((dx * dx) + (dy * dy));
-            if (distance > dist) {
+            const std::uint64_t dx_scaled =
+                static_cast<std::uint64_t>(AbsInt(x - pos.x)) * kTileShakeDistanceScale;
+            const std::uint64_t dy_scaled =
+                static_cast<std::uint64_t>(AbsInt(y - pos.y)) * kTileShakeDistanceScale;
+            const std::uint64_t distance_squared =
+                (dx_scaled * dx_scaled) + (dy_scaled * dy_scaled);
+            const int distance_scaled = static_cast<int>(IntegerSqrtFloor(distance_squared));
+            if (distance_scaled > dist_scaled) {
                 continue;
             }
-            const float falloff = 1.0F - (distance / dist);
-            if (falloff <= 0.0F) {
+            const int falloff_scaled = dist_scaled - distance_scaled;
+            if (falloff_scaled <= 0) {
                 continue;
             }
+            const float falloff =
+                static_cast<float>(falloff_scaled) / static_cast<float>(dist_scaled);
 
             const std::optional<IVec2> resolved = ResolveTileShakeCoord(stage, IVec2::New(x, y));
             if (!resolved.has_value()) {
