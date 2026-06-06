@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 74;
+constexpr std::uint32_t kRecordingVersion = 75;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -102,6 +102,20 @@ bool ReadOptionalSizeIndex(std::istream& in, std::optional<std::size_t>& value) 
         value.reset();
         return true;
     }
+    std::uint32_t loaded = 0;
+    if (!ReadPod(in, loaded)) {
+        return false;
+    }
+    value = static_cast<std::size_t>(loaded);
+    return true;
+}
+
+void WriteSizeIndex(std::ostream& out, const std::size_t value) {
+    const std::uint32_t stored = static_cast<std::uint32_t>(value);
+    WritePod(out, stored);
+}
+
+bool ReadSizeIndex(std::istream& in, std::size_t& value) {
     std::uint32_t loaded = 0;
     if (!ReadPod(in, loaded)) {
         return false;
@@ -609,11 +623,11 @@ void WriteEntSpawn(std::ostream& out, const EntSpawn& spawn) {
     WritePod(out, spawn.facing);
     WriteOptionalPod(out, spawn.ai_state_override);
     WritePod(out, spawn.anim_id);
-    WriteOptionalPod(out, spawn.ent_a_spawn_index);
-    WriteOptionalPod(out, spawn.ent_b_spawn_index);
-    WriteOptionalPod(out, spawn.ent_c_spawn_index);
-    WriteOptionalPod(out, spawn.ent_d_spawn_index);
-    WriteOptionalPod(out, spawn.shop_owner_spawn_index);
+    WriteOptionalSizeIndex(out, spawn.ent_a_spawn_index);
+    WriteOptionalSizeIndex(out, spawn.ent_b_spawn_index);
+    WriteOptionalSizeIndex(out, spawn.ent_c_spawn_index);
+    WriteOptionalSizeIndex(out, spawn.ent_d_spawn_index);
+    WriteOptionalSizeIndex(out, spawn.shop_owner_spawn_index);
     WritePod(out, spawn.buyable);
     WritePod(out, spawn.buy_price);
     WriteString(out, spawn.exit_id);
@@ -626,11 +640,11 @@ bool ReadEntSpawn(std::istream& in, EntSpawn& spawn) {
            ReadPod(in, spawn.facing) &&
            ReadOptionalPod(in, spawn.ai_state_override) &&
            ReadPod(in, spawn.anim_id) &&
-           ReadOptionalPod(in, spawn.ent_a_spawn_index) &&
-           ReadOptionalPod(in, spawn.ent_b_spawn_index) &&
-           ReadOptionalPod(in, spawn.ent_c_spawn_index) &&
-           ReadOptionalPod(in, spawn.ent_d_spawn_index) &&
-           ReadOptionalPod(in, spawn.shop_owner_spawn_index) &&
+           ReadOptionalSizeIndex(in, spawn.ent_a_spawn_index) &&
+           ReadOptionalSizeIndex(in, spawn.ent_b_spawn_index) &&
+           ReadOptionalSizeIndex(in, spawn.ent_c_spawn_index) &&
+           ReadOptionalSizeIndex(in, spawn.ent_d_spawn_index) &&
+           ReadOptionalSizeIndex(in, spawn.shop_owner_spawn_index) &&
            ReadPod(in, spawn.buyable) &&
            ReadPod(in, spawn.buy_price) &&
            ReadString(in, spawn.exit_id);
@@ -727,7 +741,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     }
     WriteVectorPod(out, stage.lights);
     WritePod(out, stage.block_anim_id);
-    WritePod(out, stage.next_light_vid);
+    WriteSizeIndex(out, stage.next_light_vid);
     WritePod(out, stage.tile_change_generation);
 }
 
@@ -816,7 +830,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
 
     return ReadVectorPod(in, stage.lights) &&
            ReadPod(in, stage.block_anim_id) &&
-           ReadPod(in, stage.next_light_vid) &&
+           ReadSizeIndex(in, stage.next_light_vid) &&
            ReadPod(in, stage.tile_change_generation);
 }
 

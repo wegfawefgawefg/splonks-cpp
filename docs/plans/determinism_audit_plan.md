@@ -187,6 +187,17 @@ The expected end state is:
   optional/vector `uint32_t` values instead of raw host `size_t`. These fields
   affect spawn identity and entity id reuse after replay/resync. Recording
   format version is now 74.
+- Fixed in shared gameplay/simulation snapshot serialization: `EntSpawn`
+  linked spawn indices and `Stage::next_light_vid` now use explicit
+  optional/single `uint32_t` values instead of raw host `size_t`. Recording
+  format version is now 75.
+- Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
+  pointer fields and is not serialized by the stage snapshot writer. Network
+  resync currently preserves local tile triggers around `RestoreSimSnapshot`,
+  then rebinds entity callbacks from local specs. If debug recordings need to
+  become fully portable across process sessions, tile triggers should be
+  encoded as explicit trigger ids plus deterministic payload fields rather than
+  raw callbacks.
 - Deferred risk: `SerializeSimSnapshotToBytes` / `DeserializeSimSnapshotFromBytes`
   still write many trivially-copyable structs by raw host layout. That means
   endian, enum storage, bool representation, float bit representation, and
@@ -223,6 +234,10 @@ The expected end state is:
   `Ent::stage_spawn_index` and `EntPool::available_ids` still use
   `std::size_t` in runtime state because they index local arrays, but the
   snapshot byte format now stores them as explicit `uint32_t` values.
+- Fixed in shared gameplay/simulation snapshot serialization: `EntSpawn`
+  spawn-link indices and `Stage::next_light_vid` still use `std::size_t` in
+  runtime state because they index local arrays / id counters, but the snapshot
+  byte format now stores them as explicit `uint32_t` values.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 
