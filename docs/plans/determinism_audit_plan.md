@@ -339,6 +339,12 @@ The expected end state is:
   instead of raw local POD variables. This is byte-compatible with recording
   format version 95 and keeps the authoritative tile grids independent of enum
   storage and alias typedef assumptions.
+- Fixed in shared gameplay/simulation snapshot serialization: local presence
+  bytes, enum bytes, fixed-width ids, vector/grid counts, stage/player/tool/
+  topology counts, and recording header fields now route through named
+  fixed-width helpers instead of direct POD calls. The only remaining raw POD
+  calls in the recording writer are the centralized scalar helper internals,
+  so this is a byte-compatible cleanup within recording format version 95.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -434,6 +440,11 @@ The expected end state is:
   and tool-slot member POD calls from the recording writer.
 - Fixed in shared snapshot/replay format: tile and tile-rotation grid elements
   now route through typed fixed-width helpers.
+- Fixed in shared snapshot/replay format: local option/presence bytes, vector
+  counts, grid dimensions, player/tool/topology collection counts, deterministic
+  RNG state, net entity ids, and recording header fields now route through
+  named fixed-width helpers. Raw POD use is now isolated to the scalar helper
+  implementations in the recording writer.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

@@ -44,19 +44,21 @@ void WriteUint16(std::ostream& out, std::uint16_t value);
 bool ReadUint16(std::istream& in, std::uint16_t& value);
 void WriteUint32(std::ostream& out, std::uint32_t value);
 bool ReadUint32(std::istream& in, std::uint32_t& value);
+void WriteUint64(std::ostream& out, std::uint64_t value);
+bool ReadUint64(std::istream& in, std::uint64_t& value);
 
 void WriteOptionalSizeIndex(std::ostream& out, const std::optional<std::size_t>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (has_value) {
         const std::uint32_t stored = static_cast<std::uint32_t>(*value);
-        WritePod(out, stored);
+        WriteUint32(out, stored);
     }
 }
 
 bool ReadOptionalSizeIndex(std::istream& in, std::optional<std::size_t>& value) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -67,7 +69,7 @@ bool ReadOptionalSizeIndex(std::istream& in, std::optional<std::size_t>& value) 
         return false;
     }
     std::uint32_t loaded = 0;
-    if (!ReadPod(in, loaded)) {
+    if (!ReadUint32(in, loaded)) {
         return false;
     }
     value = static_cast<std::size_t>(loaded);
@@ -76,12 +78,12 @@ bool ReadOptionalSizeIndex(std::istream& in, std::optional<std::size_t>& value) 
 
 void WriteSizeIndex(std::ostream& out, const std::size_t value) {
     const std::uint32_t stored = static_cast<std::uint32_t>(value);
-    WritePod(out, stored);
+    WriteUint32(out, stored);
 }
 
 bool ReadSizeIndex(std::istream& in, std::size_t& value) {
     std::uint32_t loaded = 0;
-    if (!ReadPod(in, loaded)) {
+    if (!ReadUint32(in, loaded)) {
         return false;
     }
     value = static_cast<std::size_t>(loaded);
@@ -90,22 +92,22 @@ bool ReadSizeIndex(std::istream& in, std::size_t& value) {
 
 void WriteSizeIndexVector(std::ostream& out, const std::vector<std::size_t>& values) {
     const std::uint32_t count = static_cast<std::uint32_t>(values.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const std::size_t value : values) {
         const std::uint32_t stored = static_cast<std::uint32_t>(value);
-        WritePod(out, stored);
+        WriteUint32(out, stored);
     }
 }
 
 bool ReadSizeIndexVector(std::istream& in, std::vector<std::size_t>& values) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     values.resize(count);
     for (std::size_t i = 0; i < values.size(); ++i) {
         std::uint32_t loaded = 0;
-        if (!ReadPod(in, loaded)) {
+        if (!ReadUint32(in, loaded)) {
             return false;
         }
         values[i] = static_cast<std::size_t>(loaded);
@@ -125,7 +127,7 @@ bool ReadVid(std::istream& in, VID& vid) {
 
 void WriteOptionalVid(std::ostream& out, const std::optional<VID>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (value.has_value()) {
         WriteVid(out, *value);
     }
@@ -133,7 +135,7 @@ void WriteOptionalVid(std::ostream& out, const std::optional<VID>& value) {
 
 bool ReadOptionalVid(std::istream& in, std::optional<VID>& value) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -153,7 +155,7 @@ bool ReadOptionalVid(std::istream& in, std::optional<VID>& value) {
 
 void WriteVidVector(std::ostream& out, const std::vector<VID>& values) {
     const std::uint32_t count = static_cast<std::uint32_t>(values.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const VID& value : values) {
         WriteVid(out, value);
     }
@@ -161,7 +163,7 @@ void WriteVidVector(std::ostream& out, const std::vector<VID>& values) {
 
 bool ReadVidVector(std::istream& in, std::vector<VID>& values) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     values.resize(count);
@@ -175,7 +177,7 @@ bool ReadVidVector(std::istream& in, std::vector<VID>& values) {
 
 void WriteOptionalVidVector(std::ostream& out, const std::optional<std::vector<VID>>& values) {
     const std::uint8_t has_value = values.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (values.has_value()) {
         WriteVidVector(out, *values);
     }
@@ -183,7 +185,7 @@ void WriteOptionalVidVector(std::ostream& out, const std::optional<std::vector<V
 
 bool ReadOptionalVidVector(std::istream& in, std::optional<std::vector<VID>>& values) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -199,7 +201,7 @@ bool ReadOptionalVidVector(std::istream& in, std::optional<std::vector<VID>>& va
 
 void WriteString(std::ostream& out, const std::string& value) {
     const std::uint32_t count = static_cast<std::uint32_t>(value.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     if (count > 0) {
         out.write(value.data(), static_cast<std::streamsize>(count));
     }
@@ -207,7 +209,7 @@ void WriteString(std::ostream& out, const std::string& value) {
 
 bool ReadString(std::istream& in, std::string& value) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     value.resize(count);
@@ -219,12 +221,12 @@ bool ReadString(std::istream& in, std::string& value) {
 
 void WriteBoolByte(std::ostream& out, bool value) {
     const std::uint8_t stored = value ? 1U : 0U;
-    WritePod(out, stored);
+    WriteUint8(out, stored);
 }
 
 bool ReadBoolByte(std::istream& in, bool& value) {
     std::uint8_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint8(in, stored)) {
         return false;
     }
     if (stored > 1) {
@@ -236,7 +238,7 @@ bool ReadBoolByte(std::istream& in, bool& value) {
 
 void WriteOptionalBoolByte(std::ostream& out, const std::optional<bool>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (has_value) {
         WriteBoolByte(out, *value);
     }
@@ -244,7 +246,7 @@ void WriteOptionalBoolByte(std::ostream& out, const std::optional<bool>& value) 
 
 bool ReadOptionalBoolByte(std::istream& in, std::optional<bool>& value) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -264,12 +266,12 @@ bool ReadOptionalBoolByte(std::istream& in, std::optional<bool>& value) {
 
 void WritePlayerConnectionKind(std::ostream& out, PlayerConnectionKind kind) {
     const std::uint8_t stored = static_cast<std::uint8_t>(kind);
-    WritePod(out, stored);
+    WriteUint8(out, stored);
 }
 
 bool ReadPlayerConnectionKind(std::istream& in, PlayerConnectionKind& kind) {
     std::uint8_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint8(in, stored)) {
         return false;
     }
     if (stored > static_cast<std::uint8_t>(PlayerConnectionKind::Remote)) {
@@ -281,12 +283,12 @@ bool ReadPlayerConnectionKind(std::istream& in, PlayerConnectionKind& kind) {
 
 void WriteMode(std::ostream& out, Mode mode) {
     const std::uint8_t stored = static_cast<std::uint8_t>(mode);
-    WritePod(out, stored);
+    WriteUint8(out, stored);
 }
 
 bool ReadMode(std::istream& in, Mode& mode) {
     std::uint8_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint8(in, stored)) {
         return false;
     }
     if (stored > static_cast<std::uint8_t>(Mode::Win)) {
@@ -298,12 +300,12 @@ bool ReadMode(std::istream& in, Mode& mode) {
 
 void WriteSettingsMode(std::ostream& out, SettingsMode mode) {
     const std::uint8_t stored = static_cast<std::uint8_t>(mode);
-    WritePod(out, stored);
+    WriteUint8(out, stored);
 }
 
 bool ReadSettingsMode(std::istream& in, SettingsMode& mode) {
     std::uint8_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint8(in, stored)) {
         return false;
     }
     if (stored > static_cast<std::uint8_t>(SettingsMode::Controls)) {
@@ -315,12 +317,12 @@ bool ReadSettingsMode(std::istream& in, SettingsMode& mode) {
 
 void WritePostProcessEffect(std::ostream& out, PostProcessEffect effect) {
     const std::uint8_t stored = static_cast<std::uint8_t>(effect);
-    WritePod(out, stored);
+    WriteUint8(out, stored);
 }
 
 bool ReadPostProcessEffect(std::istream& in, PostProcessEffect& effect) {
     std::uint8_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint8(in, stored)) {
         return false;
     }
     if (stored > static_cast<std::uint8_t>(PostProcessEffect::Crt)) {
@@ -332,12 +334,12 @@ bool ReadPostProcessEffect(std::istream& in, PostProcessEffect& effect) {
 
 void WriteStageType(std::ostream& out, StageType stage_type) {
     const std::uint8_t stored = static_cast<std::uint8_t>(stage_type);
-    WritePod(out, stored);
+    WriteUint8(out, stored);
 }
 
 bool ReadStageType(std::istream& in, StageType& stage_type) {
     std::uint8_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint8(in, stored)) {
         return false;
     }
     if (stored > static_cast<std::uint8_t>(StageType::Test1)) {
@@ -349,12 +351,12 @@ bool ReadStageType(std::istream& in, StageType& stage_type) {
 
 void WriteMultiplayerRespawnMode(std::ostream& out, MultiplayerRespawnMode mode) {
     const std::uint8_t stored = static_cast<std::uint8_t>(mode);
-    WritePod(out, stored);
+    WriteUint8(out, stored);
 }
 
 bool ReadMultiplayerRespawnMode(std::istream& in, MultiplayerRespawnMode& mode) {
     std::uint8_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint8(in, stored)) {
         return false;
     }
     if (stored > static_cast<std::uint8_t>(MultiplayerRespawnMode::RespawnAtEntrance)) {
@@ -366,12 +368,12 @@ bool ReadMultiplayerRespawnMode(std::istream& in, MultiplayerRespawnMode& mode) 
 
 void WriteAttachMode(std::ostream& out, AttachMode mode) {
     const std::uint8_t stored = static_cast<std::uint8_t>(mode);
-    WritePod(out, stored);
+    WriteUint8(out, stored);
 }
 
 bool ReadAttachMode(std::istream& in, AttachMode& mode) {
     std::uint8_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint8(in, stored)) {
         return false;
     }
     if (stored > static_cast<std::uint8_t>(AttachMode::Back)) {
@@ -383,15 +385,15 @@ bool ReadAttachMode(std::istream& in, AttachMode& mode) {
 
 void WriteOptionalAFrameId(std::ostream& out, const std::optional<AFrameId>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (value.has_value()) {
-        WritePod(out, *value);
+        WriteUint32(out, *value);
     }
 }
 
 bool ReadOptionalAFrameId(std::istream& in, std::optional<AFrameId>& value) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -402,7 +404,7 @@ bool ReadOptionalAFrameId(std::istream& in, std::optional<AFrameId>& value) {
         return false;
     }
     AFrameId loaded = 0;
-    if (!ReadPod(in, loaded)) {
+    if (!ReadUint32(in, loaded)) {
         return false;
     }
     value = loaded;
@@ -412,13 +414,13 @@ bool ReadOptionalAFrameId(std::istream& in, std::optional<AFrameId>& value) {
 template <typename T>
 void WriteEnumByte(std::ostream& out, T value) {
     const std::uint8_t stored = static_cast<std::uint8_t>(value);
-    WritePod(out, stored);
+    WriteUint8(out, stored);
 }
 
 template <typename T>
 bool ReadEnumByte(std::istream& in, T& value, T max_value) {
     std::uint8_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint8(in, stored)) {
         return false;
     }
     if (stored > static_cast<std::uint8_t>(max_value)) {
@@ -431,7 +433,7 @@ bool ReadEnumByte(std::istream& in, T& value, T max_value) {
 template <typename T>
 void WriteOptionalEnumByte(std::ostream& out, const std::optional<T>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (value.has_value()) {
         WriteEnumByte(out, *value);
     }
@@ -440,7 +442,7 @@ void WriteOptionalEnumByte(std::ostream& out, const std::optional<T>& value) {
 template <typename T>
 bool ReadOptionalEnumByte(std::istream& in, std::optional<T>& value, T max_value) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -532,12 +534,12 @@ bool ReadQuestId(std::istream& in, QuestId& id) {
 
 void WriteEntType(std::ostream& out, EntType type) {
     const std::uint16_t stored = static_cast<std::uint16_t>(type);
-    WritePod(out, stored);
+    WriteUint16(out, stored);
 }
 
 bool ReadEntType(std::istream& in, EntType& type) {
     std::uint16_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint16(in, stored)) {
         return false;
     }
     if (stored > static_cast<std::uint16_t>(EntType::DebugMovingLight)) {
@@ -570,14 +572,14 @@ bool ReadIVec2(std::istream& in, IVec2& value) {
 void WriteUVec2(std::ostream& out, const UVec2& value) {
     const std::uint32_t x = static_cast<std::uint32_t>(value.x);
     const std::uint32_t y = static_cast<std::uint32_t>(value.y);
-    WritePod(out, x);
-    WritePod(out, y);
+    WriteUint32(out, x);
+    WriteUint32(out, y);
 }
 
 bool ReadUVec2(std::istream& in, UVec2& value) {
     std::uint32_t x = 0;
     std::uint32_t y = 0;
-    if (!ReadPod(in, x) || !ReadPod(in, y)) {
+    if (!ReadUint32(in, x) || !ReadUint32(in, y)) {
         return false;
     }
     value.x = static_cast<unsigned int>(x);
@@ -599,7 +601,7 @@ bool ReadColor3(std::istream& in, Color3& color) {
 
 void WriteUVec2Vector(std::ostream& out, const std::vector<UVec2>& values) {
     const std::uint32_t count = static_cast<std::uint32_t>(values.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const UVec2& value : values) {
         WriteUVec2(out, value);
     }
@@ -607,7 +609,7 @@ void WriteUVec2Vector(std::ostream& out, const std::vector<UVec2>& values) {
 
 bool ReadUVec2Vector(std::istream& in, std::vector<UVec2>& values) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     values.resize(count);
@@ -651,7 +653,7 @@ bool ReadInt32(std::istream& in, int& value) {
 
 void WriteOptionalInt32(std::ostream& out, const std::optional<int>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (value.has_value()) {
         WriteInt32(out, *value);
     }
@@ -659,7 +661,7 @@ void WriteOptionalInt32(std::ostream& out, const std::optional<int>& value) {
 
 bool ReadOptionalInt32(std::istream& in, std::optional<int>& value) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -709,14 +711,22 @@ bool ReadUint32(std::istream& in, std::uint32_t& value) {
     return ReadPod(in, value);
 }
 
+void WriteUint64(std::ostream& out, std::uint64_t value) {
+    WritePod(out, value);
+}
+
+bool ReadUint64(std::istream& in, std::uint64_t& value) {
+    return ReadPod(in, value);
+}
+
 void WriteUnsigned32(std::ostream& out, unsigned int value) {
     const std::uint32_t stored = static_cast<std::uint32_t>(value);
-    WritePod(out, stored);
+    WriteUint32(out, stored);
 }
 
 bool ReadUnsigned32(std::istream& in, unsigned int& value) {
     std::uint32_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint32(in, stored)) {
         return false;
     }
     value = static_cast<unsigned int>(stored);
@@ -725,15 +735,15 @@ bool ReadUnsigned32(std::istream& in, unsigned int& value) {
 
 void WriteOptionalUint32(std::ostream& out, const std::optional<std::uint32_t>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (value.has_value()) {
-        WritePod(out, *value);
+        WriteUint32(out, *value);
     }
 }
 
 bool ReadOptionalUint32(std::istream& in, std::optional<std::uint32_t>& value) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -744,7 +754,7 @@ bool ReadOptionalUint32(std::istream& in, std::optional<std::uint32_t>& value) {
         return false;
     }
     std::uint32_t loaded = 0;
-    if (!ReadPod(in, loaded)) {
+    if (!ReadUint32(in, loaded)) {
         return false;
     }
     value = loaded;
@@ -753,12 +763,12 @@ bool ReadOptionalUint32(std::istream& in, std::optional<std::uint32_t>& value) {
 
 void WritePlayerId(std::ostream& out, PlayerId player_id) {
     const std::uint32_t stored = static_cast<std::uint32_t>(player_id);
-    WritePod(out, stored);
+    WriteUint32(out, stored);
 }
 
 bool ReadPlayerId(std::istream& in, PlayerId& player_id) {
     std::uint32_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint32(in, stored)) {
         return false;
     }
     player_id = static_cast<PlayerId>(stored);
@@ -767,7 +777,7 @@ bool ReadPlayerId(std::istream& in, PlayerId& player_id) {
 
 void WriteOptionalPlayerId(std::ostream& out, const std::optional<PlayerId>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (value.has_value()) {
         WritePlayerId(out, *value);
     }
@@ -775,7 +785,7 @@ void WriteOptionalPlayerId(std::ostream& out, const std::optional<PlayerId>& val
 
 bool ReadOptionalPlayerId(std::istream& in, std::optional<PlayerId>& value) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -795,12 +805,12 @@ bool ReadOptionalPlayerId(std::istream& in, std::optional<PlayerId>& value) {
 
 void WriteAudioAssetId(std::ostream& out, AudioAssetId audio_asset_id) {
     const std::uint32_t stored = static_cast<std::uint32_t>(audio_asset_id);
-    WritePod(out, stored);
+    WriteUint32(out, stored);
 }
 
 bool ReadAudioAssetId(std::istream& in, AudioAssetId& audio_asset_id) {
     std::uint32_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint32(in, stored)) {
         return false;
     }
     audio_asset_id = static_cast<AudioAssetId>(stored);
@@ -809,7 +819,7 @@ bool ReadAudioAssetId(std::istream& in, AudioAssetId& audio_asset_id) {
 
 void WriteOptionalAudioAssetId(std::ostream& out, const std::optional<AudioAssetId>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (value.has_value()) {
         WriteAudioAssetId(out, *value);
     }
@@ -817,7 +827,7 @@ void WriteOptionalAudioAssetId(std::ostream& out, const std::optional<AudioAsset
 
 bool ReadOptionalAudioAssetId(std::istream& in, std::optional<AudioAssetId>& value) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -836,12 +846,12 @@ bool ReadOptionalAudioAssetId(std::istream& in, std::optional<AudioAssetId>& val
 }
 
 void WriteDetRng(std::ostream& out, const DetRng& rng) {
-    WritePod(out, static_cast<std::uint64_t>(rng.state));
+    WriteUint64(out, static_cast<std::uint64_t>(rng.state));
 }
 
 bool ReadDetRng(std::istream& in, DetRng& rng) {
     std::uint64_t state = 0;
-    if (!ReadPod(in, state)) {
+    if (!ReadUint64(in, state)) {
         return false;
     }
     rng.state = state;
@@ -850,12 +860,12 @@ bool ReadDetRng(std::istream& in, DetRng& rng) {
 
 void WriteNetEntId(std::ostream& out, network::NetEntId net_id) {
     const std::uint64_t stored = static_cast<std::uint64_t>(net_id);
-    WritePod(out, stored);
+    WriteUint64(out, stored);
 }
 
 bool ReadNetEntId(std::istream& in, network::NetEntId& net_id) {
     std::uint64_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint64(in, stored)) {
         return false;
     }
     net_id = static_cast<network::NetEntId>(stored);
@@ -1072,7 +1082,7 @@ bool ReadMenuInputDebounceTimers(std::istream& in, MenuInputDebounceTimers& time
 
 void WriteOptionalVec2(std::ostream& out, const std::optional<Vec2>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (value.has_value()) {
         WriteVec2(out, *value);
     }
@@ -1080,7 +1090,7 @@ void WriteOptionalVec2(std::ostream& out, const std::optional<Vec2>& value) {
 
 bool ReadOptionalVec2(std::istream& in, std::optional<Vec2>& value) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -1158,7 +1168,7 @@ void WriteOptionalStageTransitionTarget(
     const std::optional<StageTransitionTarget>& value
 ) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
+    WriteUint8(out, has_value);
     if (value.has_value()) {
         WriteStageTransitionTarget(out, *value);
     }
@@ -1169,7 +1179,7 @@ bool ReadOptionalStageTransitionTarget(
     std::optional<StageTransitionTarget>& value
 ) {
     std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
+    if (!ReadUint8(in, has_value)) {
         return false;
     }
     if (has_value == 0) {
@@ -1202,7 +1212,7 @@ std::optional<BuyableCallbackKind> GetBuyableCallbackKind(EntOnTryBuy callback) 
 
 bool ReadBuyableCallback(std::istream& in, EntOnTryBuy& callback) {
     std::uint8_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadUint8(in, stored)) {
         return false;
     }
     switch (static_cast<BuyableCallbackKind>(stored)) {
@@ -1228,7 +1238,7 @@ void WriteBuyable(std::ostream& out, const Buyable& buyable) {
     const std::uint8_t callback = callback_kind.has_value()
         ? static_cast<std::uint8_t>(*callback_kind)
         : 0xFFU;
-    WritePod(out, callback);
+    WriteUint8(out, callback);
 }
 
 bool ReadBuyable(std::istream& in, Buyable& buyable) {
@@ -1317,7 +1327,7 @@ bool ReadEffectInstance(std::istream& in, EffectInstance& effect) {
 void WriteEntEffects(std::ostream& out, const BoxedEntEffects& effects_box) {
     const EntEffects* const effects = effects_box.get();
     const std::uint8_t count = effects != nullptr ? effects->count : 0;
-    WritePod(out, count);
+    WriteUint8(out, count);
     for (std::uint8_t i = 0; i < count; ++i) {
         WriteEffectInstance(out, effects->effects[i]);
     }
@@ -1325,7 +1335,7 @@ void WriteEntEffects(std::ostream& out, const BoxedEntEffects& effects_box) {
 
 bool ReadEntEffects(std::istream& in, BoxedEntEffects& effects_box) {
     std::uint8_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint8(in, count)) {
         return false;
     }
     if (count > kMaxEntEffects) {
@@ -1355,7 +1365,7 @@ void WriteAFrameAnimator(std::ostream& out, const AFrameAnimator& animator) {
     WriteBoolByte(out, animator.loop);
     WriteBoolByte(out, animator.finished);
     const std::uint8_t playback_mode = static_cast<std::uint8_t>(animator.playback_mode);
-    WritePod(out, playback_mode);
+    WriteUint8(out, playback_mode);
     WriteUint32(out, animator.play_count);
     WriteUint32(out, animator.plays_completed);
     WriteBoolByte(out, animator.playback_dirty);
@@ -1377,7 +1387,7 @@ bool ReadAFrameAnimator(std::istream& in, AFrameAnimator& animator) {
         !ReadBoolByte(in, animate) ||
         !ReadBoolByte(in, loop) ||
         !ReadBoolByte(in, finished) ||
-        !ReadPod(in, playback_mode) ||
+        !ReadUint8(in, playback_mode) ||
         !ReadUint32(in, animator.play_count) ||
         !ReadUint32(in, animator.plays_completed) ||
         !ReadBoolByte(in, playback_dirty) ||
@@ -2244,7 +2254,7 @@ bool ReadStageExitRequirement(std::istream& in, StageExitRequirement& requiremen
 void WriteStageExitTarget(std::ostream& out, const StageExitTarget& target) {
     WriteString(out, target.target_stage_id);
     const std::uint32_t count = static_cast<std::uint32_t>(target.requirements.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const StageExitRequirement& requirement : target.requirements) {
         WriteStageExitRequirement(out, requirement);
     }
@@ -2255,7 +2265,7 @@ bool ReadStageExitTarget(std::istream& in, StageExitTarget& target) {
         return false;
     }
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     target.requirements.resize(count);
@@ -2364,10 +2374,10 @@ bool ReadTileRotation(std::istream& in, TileRotation& rotation) {
 template <typename T, typename WriteOne>
 void WriteGridExplicit(std::ostream& out, const std::vector<std::vector<T>>& grid, WriteOne write_one) {
     const std::uint32_t rows = static_cast<std::uint32_t>(grid.size());
-    WritePod(out, rows);
+    WriteUint32(out, rows);
     for (const std::vector<T>& row : grid) {
         const std::uint32_t count = static_cast<std::uint32_t>(row.size());
-        WritePod(out, count);
+        WriteUint32(out, count);
         for (const T& value : row) {
             write_one(out, value);
         }
@@ -2377,13 +2387,13 @@ void WriteGridExplicit(std::ostream& out, const std::vector<std::vector<T>>& gri
 template <typename T, typename ReadOne>
 bool ReadGridExplicit(std::istream& in, std::vector<std::vector<T>>& grid, ReadOne read_one) {
     std::uint32_t rows = 0;
-    if (!ReadPod(in, rows)) {
+    if (!ReadUint32(in, rows)) {
         return false;
     }
     grid.resize(rows);
     for (std::vector<T>& row : grid) {
         std::uint32_t count = 0;
-        if (!ReadPod(in, count)) {
+        if (!ReadUint32(in, count)) {
             return false;
         }
         row.resize(count);
@@ -2398,7 +2408,7 @@ bool ReadGridExplicit(std::istream& in, std::vector<std::vector<T>>& grid, ReadO
 
 void WriteTileVector(std::ostream& out, const std::vector<Tile>& tiles) {
     const std::uint32_t count = static_cast<std::uint32_t>(tiles.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (Tile tile : tiles) {
         WriteTile(out, tile);
     }
@@ -2406,7 +2416,7 @@ void WriteTileVector(std::ostream& out, const std::vector<Tile>& tiles) {
 
 bool ReadTileVector(std::istream& in, std::vector<Tile>& tiles) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     tiles.resize(count);
@@ -2420,7 +2430,7 @@ bool ReadTileVector(std::istream& in, std::vector<Tile>& tiles) {
 
 void WriteIVec2Vector(std::ostream& out, const std::vector<IVec2>& values) {
     const std::uint32_t count = static_cast<std::uint32_t>(values.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const IVec2& value : values) {
         WriteIVec2(out, value);
     }
@@ -2428,7 +2438,7 @@ void WriteIVec2Vector(std::ostream& out, const std::vector<IVec2>& values) {
 
 bool ReadIVec2Vector(std::istream& in, std::vector<IVec2>& values) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     values.resize(count);
@@ -2487,7 +2497,7 @@ bool ReadBackgroundStamp(std::istream& in, BackgroundStamp& stamp) {
 
 void WriteBackgroundStamps(std::ostream& out, const std::vector<BackgroundStamp>& stamps) {
     const std::uint32_t count = static_cast<std::uint32_t>(stamps.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const BackgroundStamp& stamp : stamps) {
         WriteBackgroundStamp(out, stamp);
     }
@@ -2495,7 +2505,7 @@ void WriteBackgroundStamps(std::ostream& out, const std::vector<BackgroundStamp>
 
 bool ReadBackgroundStamps(std::istream& in, std::vector<BackgroundStamp>& stamps) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     stamps.resize(count);
@@ -2509,7 +2519,7 @@ bool ReadBackgroundStamps(std::istream& in, std::vector<BackgroundStamp>& stamps
 
 void WriteStageLights(std::ostream& out, const std::vector<StageLight>& lights) {
     const std::uint32_t count = static_cast<std::uint32_t>(lights.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const StageLight& light : lights) {
         WriteStageLight(out, light);
     }
@@ -2517,7 +2527,7 @@ void WriteStageLights(std::ostream& out, const std::vector<StageLight>& lights) 
 
 bool ReadStageLights(std::istream& in, std::vector<StageLight>& lights) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     lights.resize(count);
@@ -2538,7 +2548,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteInt32(out, stage.quest_level_number);
     WriteOptionalUint32(out, stage.generation_seed);
     const std::uint32_t exit_count = static_cast<std::uint32_t>(stage.exits.size());
-    WritePod(out, exit_count);
+    WriteUint32(out, exit_count);
     for (const StageExit& exit : stage.exits) {
         WriteStageExit(out, exit);
     }
@@ -2573,14 +2583,14 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteGridExplicit(out, stage.rooms, WriteInt32);
     WriteIVec2Vector(out, stage.path);
     const std::uint32_t spawn_count = static_cast<std::uint32_t>(stage.ent_spawns.size());
-    WritePod(out, spawn_count);
+    WriteUint32(out, spawn_count);
     for (const EntSpawn& spawn : stage.ent_spawns) {
         WriteEntSpawn(out, spawn);
     }
     WriteBackgroundStamps(out, stage.background_stamps);
     const std::uint32_t annotation_count =
         static_cast<std::uint32_t>(stage.stagegen_annotations.size());
-    WritePod(out, annotation_count);
+    WriteUint32(out, annotation_count);
     for (const StageGenAnnotation& annotation : stage.stagegen_annotations) {
         WriteStageGenAnnotation(out, annotation);
     }
@@ -2602,7 +2612,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
     }
 
     std::uint32_t exit_count = 0;
-    if (!ReadPod(in, exit_count)) {
+    if (!ReadUint32(in, exit_count)) {
         return false;
     }
     stage.exits.resize(exit_count);
@@ -2649,7 +2659,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
     }
 
     std::uint32_t spawn_count = 0;
-    if (!ReadPod(in, spawn_count)) {
+    if (!ReadUint32(in, spawn_count)) {
         return false;
     }
     stage.ent_spawns.resize(spawn_count);
@@ -2663,7 +2673,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         return false;
     }
     std::uint32_t annotation_count = 0;
-    if (!ReadPod(in, annotation_count)) {
+    if (!ReadUint32(in, annotation_count)) {
         return false;
     }
     stage.stagegen_annotations.resize(annotation_count);
@@ -2681,7 +2691,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
 
 void WriteEntPool(std::ostream& out, const EntPool& ents) {
     const std::uint32_t ent_count = static_cast<std::uint32_t>(ents.ents.size());
-    WritePod(out, ent_count);
+    WriteUint32(out, ent_count);
     for (const Ent& ent : ents.ents) {
         WriteEnt(out, ent);
     }
@@ -2690,7 +2700,7 @@ void WriteEntPool(std::ostream& out, const EntPool& ents) {
 
 bool ReadEntPool(std::istream& in, EntPool& ents) {
     std::uint32_t ent_count = 0;
-    if (!ReadPod(in, ent_count)) {
+    if (!ReadUint32(in, ent_count)) {
         return false;
     }
 
@@ -2706,7 +2716,7 @@ bool ReadEntPool(std::istream& in, EntPool& ents) {
 
 void WritePlayerRegistry(std::ostream& out, const PlayerRegistry& players) {
     const std::uint32_t count = static_cast<std::uint32_t>(players.slots.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const PlayerSlot& slot : players.slots) {
         WritePlayerId(out, slot.player_id);
         WriteOptionalVid(out, slot.ent_vid);
@@ -2723,7 +2733,7 @@ void WritePlayerRegistry(std::ostream& out, const PlayerRegistry& players) {
 
 bool ReadPlayerRegistry(std::istream& in, PlayerRegistry& players) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     players.slots.resize(count);
@@ -2747,7 +2757,7 @@ bool ReadPlayerRegistry(std::istream& in, PlayerRegistry& players) {
 void WriteContactBookkeeping(std::ostream& out, const ContactBookkeeping& contact) {
     const auto write_contact_cooldowns = [&](const std::vector<ContactCooldownEntry>& entries) {
         const std::uint32_t count = static_cast<std::uint32_t>(entries.size());
-        WritePod(out, count);
+        WriteUint32(out, count);
         for (const ContactCooldownEntry& entry : entries) {
             WriteVid(out, entry.source_vid);
             WriteVid(out, entry.target_vid);
@@ -2757,17 +2767,17 @@ void WriteContactBookkeeping(std::ostream& out, const ContactBookkeeping& contac
     const auto write_interaction_cooldowns =
         [&](const std::vector<InteractionCooldownEntry>& entries) {
             const std::uint32_t count = static_cast<std::uint32_t>(entries.size());
-            WritePod(out, count);
+            WriteUint32(out, count);
             for (const InteractionCooldownEntry& entry : entries) {
                 WriteVid(out, entry.source_vid);
                 WriteVid(out, entry.target_vid);
-                WritePod(out, static_cast<std::uint8_t>(entry.kind));
+                WriteUint8(out, static_cast<std::uint8_t>(entry.kind));
                 WriteUint32(out, entry.expires_on_stage_frame);
             }
         };
     const auto write_ent_dispatches = [&](const std::vector<EntContactDispatchEntry>& entries) {
         const std::uint32_t count = static_cast<std::uint32_t>(entries.size());
-        WritePod(out, count);
+        WriteUint32(out, count);
         for (const EntContactDispatchEntry& entry : entries) {
             WriteVid(out, entry.first_vid);
             WriteVid(out, entry.second_vid);
@@ -2776,7 +2786,7 @@ void WriteContactBookkeeping(std::ostream& out, const ContactBookkeeping& contac
     const auto write_proj_body_cooldowns =
         [&](const std::vector<ProjBodyImpactCooldownEntry>& entries) {
             const std::uint32_t count = static_cast<std::uint32_t>(entries.size());
-            WritePod(out, count);
+            WriteUint32(out, count);
             for (const ProjBodyImpactCooldownEntry& entry : entries) {
                 WriteVid(out, entry.first_vid);
                 WriteVid(out, entry.second_vid);
@@ -2792,7 +2802,7 @@ void WriteContactBookkeeping(std::ostream& out, const ContactBookkeeping& contac
 
 bool ReadContactBookkeeping(std::istream& in, ContactBookkeeping& contact) {
     const auto read_count = [&](std::uint32_t& count) {
-        return ReadPod(in, count);
+        return ReadUint32(in, count);
     };
     const auto read_contact_cooldowns = [&]() {
         std::uint32_t count = 0;
@@ -2819,7 +2829,7 @@ bool ReadContactBookkeeping(std::istream& in, ContactBookkeeping& contact) {
             std::uint8_t kind = 0;
             if (!ReadVid(in, entry.source_vid) ||
                 !ReadVid(in, entry.target_vid) ||
-                !ReadPod(in, kind) ||
+                !ReadUint8(in, kind) ||
                 !ReadUint32(in, entry.expires_on_stage_frame)) {
                 return false;
             }
@@ -2913,7 +2923,7 @@ bool ReadEntToolState(std::istream& in, EntToolState& state) {
 
 void WriteEntToolStates(std::ostream& out, const std::vector<EntToolState>& states) {
     const std::uint32_t count = static_cast<std::uint32_t>(states.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const EntToolState& state : states) {
         WriteEntToolState(out, state);
     }
@@ -2921,7 +2931,7 @@ void WriteEntToolStates(std::ostream& out, const std::vector<EntToolState>& stat
 
 bool ReadEntToolStates(std::istream& in, std::vector<EntToolState>& states) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     states.resize(count);
@@ -3081,7 +3091,7 @@ bool ReadSimPlayerSlotSnapshot(std::istream& in, SimPlayerSlotSnapshot& slot) {
 
 void WriteSimPlayerSlots(std::ostream& out, const std::vector<SimPlayerSlotSnapshot>& slots) {
     const std::uint32_t count = static_cast<std::uint32_t>(slots.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const SimPlayerSlotSnapshot& slot : slots) {
         WriteSimPlayerSlotSnapshot(out, slot);
     }
@@ -3089,7 +3099,7 @@ void WriteSimPlayerSlots(std::ostream& out, const std::vector<SimPlayerSlotSnaps
 
 bool ReadSimPlayerSlots(std::istream& in, std::vector<SimPlayerSlotSnapshot>& slots) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     slots.resize(count);
@@ -3106,7 +3116,7 @@ void WriteSimNetEntLinks(
     const std::vector<SimNetEntLinkSnapshot>& links
 ) {
     const std::uint32_t count = static_cast<std::uint32_t>(links.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const SimNetEntLinkSnapshot& link : links) {
         WriteNetEntId(out, link.net_id);
         WriteVid(out, link.local_vid);
@@ -3120,7 +3130,7 @@ bool ReadSimNetEntLinks(
     std::vector<SimNetEntLinkSnapshot>& links
 ) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     links.resize(count);
@@ -3140,7 +3150,7 @@ void WriteSimNetEntIdAliases(
     const std::vector<SimNetEntIdAliasSnapshot>& aliases
 ) {
     const std::uint32_t count = static_cast<std::uint32_t>(aliases.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const SimNetEntIdAliasSnapshot& alias : aliases) {
         WriteNetEntId(out, alias.from_id);
         WriteNetEntId(out, alias.to_id);
@@ -3152,7 +3162,7 @@ bool ReadSimNetEntIdAliases(
     std::vector<SimNetEntIdAliasSnapshot>& aliases
 ) {
     std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
+    if (!ReadUint32(in, count)) {
         return false;
     }
     aliases.resize(count);
@@ -3305,10 +3315,10 @@ bool SaveRecordingToFile(const DebugPlayback& debug, std::string* status_out) {
         return false;
     }
 
-    WritePod(out, kRecordingMagic);
-    WritePod(out, kRecordingVersion);
+    WriteUint32(out, kRecordingMagic);
+    WriteUint32(out, kRecordingVersion);
     const std::uint32_t count = static_cast<std::uint32_t>(debug.recorded_snapshots.size());
-    WritePod(out, count);
+    WriteUint32(out, count);
     for (const GameplaySnapshot& snapshot : debug.recorded_snapshots) {
         WriteSnapshot(out, snapshot);
     }
@@ -3347,7 +3357,7 @@ bool LoadRecordingFromFile(DebugPlayback& debug, std::string* status_out) {
     std::uint32_t magic = 0;
     std::uint32_t version = 0;
     std::uint32_t count = 0;
-    if (!ReadPod(in, magic) || !ReadPod(in, version) || !ReadPod(in, count)) {
+    if (!ReadUint32(in, magic) || !ReadUint32(in, version) || !ReadUint32(in, count)) {
         if (status_out != nullptr) {
             *status_out = "Failed to read recording header.";
         }
