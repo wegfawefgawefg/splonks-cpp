@@ -1,5 +1,8 @@
 #include "debug/playback_internal.hpp"
 
+#include "buying.hpp"
+#include "ents/damsel.hpp"
+
 #include <cstdio>
 #include <fstream>
 #include <sstream>
@@ -10,7 +13,13 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 84;
+constexpr std::uint32_t kRecordingVersion = 85;
+
+enum class BuyableCallbackKind : std::uint8_t {
+    None = 0,
+    TryBuyEntForMoney = 1,
+    BuyDamsel = 2,
+};
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -388,6 +397,146 @@ bool ReadMultiplayerRespawnMode(std::istream& in, MultiplayerRespawnMode& mode) 
     return true;
 }
 
+void WriteAttachMode(std::ostream& out, AttachMode mode) {
+    const std::uint8_t stored = static_cast<std::uint8_t>(mode);
+    WritePod(out, stored);
+}
+
+bool ReadAttachMode(std::istream& in, AttachMode& mode) {
+    std::uint8_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    if (stored > static_cast<std::uint8_t>(AttachMode::Back)) {
+        return false;
+    }
+    mode = static_cast<AttachMode>(stored);
+    return true;
+}
+
+void WriteOptionalAFrameId(std::ostream& out, const std::optional<AFrameId>& value) {
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (value.has_value()) {
+        WritePod(out, *value);
+    }
+}
+
+bool ReadOptionalAFrameId(std::istream& in, std::optional<AFrameId>& value) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        value.reset();
+        return true;
+    }
+    AFrameId loaded = 0;
+    if (!ReadPod(in, loaded)) {
+        return false;
+    }
+    value = loaded;
+    return true;
+}
+
+std::optional<BuyableCallbackKind> GetBuyableCallbackKind(EntOnTryBuy callback) {
+    if (callback == nullptr) {
+        return BuyableCallbackKind::None;
+    }
+    if (callback == TryBuyEntForMoney) {
+        return BuyableCallbackKind::TryBuyEntForMoney;
+    }
+    if (callback == ents::damsel::BuyDamsel) {
+        return BuyableCallbackKind::BuyDamsel;
+    }
+    return std::nullopt;
+}
+
+bool ReadBuyableCallback(std::istream& in, EntOnTryBuy& callback) {
+    std::uint8_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    switch (static_cast<BuyableCallbackKind>(stored)) {
+    case BuyableCallbackKind::None:
+        callback = nullptr;
+        return true;
+    case BuyableCallbackKind::TryBuyEntForMoney:
+        callback = TryBuyEntForMoney;
+        return true;
+    case BuyableCallbackKind::BuyDamsel:
+        callback = ents::damsel::BuyDamsel;
+        return true;
+    }
+    return false;
+}
+
+void WriteBuyable(std::ostream& out, const Buyable& buyable) {
+    WriteBoolByte(out, buyable.active);
+    WritePod(out, buyable.display_quantity);
+    WriteOptionalAFrameId(out, buyable.display_icon_anim_id);
+    WriteOptionalVid(out, buyable.shop_owner_vid);
+    const std::optional<BuyableCallbackKind> callback_kind = GetBuyableCallbackKind(buyable.on_try_buy);
+    const std::uint8_t callback = callback_kind.has_value()
+        ? static_cast<std::uint8_t>(*callback_kind)
+        : 0xFFU;
+    WritePod(out, callback);
+}
+
+bool ReadBuyable(std::istream& in, Buyable& buyable) {
+    bool active = false;
+    std::uint32_t display_quantity = 0;
+    std::optional<AFrameId> display_icon_anim_id;
+    std::optional<VID> shop_owner_vid;
+    EntOnTryBuy on_try_buy = nullptr;
+    if (!ReadBoolByte(in, active) ||
+        !ReadPod(in, display_quantity) ||
+        !ReadOptionalAFrameId(in, display_icon_anim_id) ||
+        !ReadOptionalVid(in, shop_owner_vid) ||
+        !ReadBuyableCallback(in, on_try_buy)) {
+        return false;
+    }
+    buyable.active = active;
+    buyable.display_quantity = display_quantity;
+    buyable.display_icon_anim_id = display_icon_anim_id;
+    buyable.shop_owner_vid = shop_owner_vid;
+    buyable.on_try_buy = on_try_buy;
+    return true;
+}
+
+void WriteUseState(std::ostream& out, const UseState& use_state) {
+    WriteBoolByte(out, use_state.down);
+    WriteBoolByte(out, use_state.pressed);
+    WriteBoolByte(out, use_state.released);
+    WritePod(out, use_state.frames);
+    WriteOptionalVid(out, use_state.user_vid);
+    WriteAttachMode(out, use_state.source);
+}
+
+bool ReadUseState(std::istream& in, UseState& use_state) {
+    bool down = false;
+    bool pressed = false;
+    bool released = false;
+    std::uint32_t frames = 0;
+    std::optional<VID> user_vid;
+    AttachMode source = AttachMode::None;
+    if (!ReadBoolByte(in, down) ||
+        !ReadBoolByte(in, pressed) ||
+        !ReadBoolByte(in, released) ||
+        !ReadPod(in, frames) ||
+        !ReadOptionalVid(in, user_vid) ||
+        !ReadAttachMode(in, source)) {
+        return false;
+    }
+    use_state.down = down;
+    use_state.pressed = pressed;
+    use_state.released = released;
+    use_state.frames = frames;
+    use_state.user_vid = user_vid;
+    use_state.source = source;
+    return true;
+}
+
 void WriteEffectInstance(std::ostream& out, const EffectInstance& effect) {
     const std::uint8_t id = static_cast<std::uint8_t>(effect.id);
     WritePod(out, id);
@@ -582,11 +731,11 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WritePod(out, ent.holding);
     WriteOptionalPod(out, ent.pickup_effect);
     WritePod(out, ent.money);
-    WritePod(out, ent.buyable);
+    WriteBuyable(out, ent.buyable);
     WriteOptionalSizeIndex(out, ent.stage_spawn_index);
     WriteOptionalVid(out, ent.back_vid);
-    WritePod(out, ent.attach_mode);
-    WritePod(out, ent.use_state);
+    WriteAttachMode(out, ent.attach_mode);
+    WriteUseState(out, ent.use_state);
     WritePod(out, ent.travel_sound_countdown);
     WritePod(out, ent.travel_sound);
     WritePod(out, ent.condition);
@@ -710,11 +859,11 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadPod(in, ent.holding) &&
            ReadOptionalPod(in, ent.pickup_effect) &&
            ReadPod(in, ent.money) &&
-           ReadPod(in, ent.buyable) &&
+           ReadBuyable(in, ent.buyable) &&
            ReadOptionalSizeIndex(in, ent.stage_spawn_index) &&
            ReadOptionalVid(in, ent.back_vid) &&
-           ReadPod(in, ent.attach_mode) &&
-           ReadPod(in, ent.use_state) &&
+           ReadAttachMode(in, ent.attach_mode) &&
+           ReadUseState(in, ent.use_state) &&
            ReadPod(in, ent.travel_sound_countdown) &&
            ReadPod(in, ent.travel_sound) &&
            ReadPod(in, ent.condition) &&

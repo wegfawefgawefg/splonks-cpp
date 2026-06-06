@@ -240,6 +240,13 @@ The expected end state is:
   instead of raw host enum storage. This covers game/menu modes, menu return
   modes, multiplayer respawn mode, settings mode, post-process effect, and
   stage type. Recording format version is now 84.
+- Fixed in shared gameplay/simulation snapshot serialization: entity
+  `Buyable`, `UseState`, and `AttachMode` are now encoded field-by-field
+  instead of as raw host structs. Buy callbacks are encoded as explicit
+  callback ids for the known buy handlers (`TryBuyEntForMoney` and
+  `BuyDamsel`) instead of process-local function pointer bytes; an unmapped
+  future buy callback intentionally fails decode until it is added to the
+  mapping. Recording format version is now 85.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
