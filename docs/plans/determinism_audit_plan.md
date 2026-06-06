@@ -279,6 +279,10 @@ The expected end state is:
   struct/vector layout. This covers player-registry ids, simulation player-slot
   ids, spectator target ids, network entity ids, network input-owner player ids,
   and network entity id aliases. Recording format version is now 90.
+- Fixed in shared gameplay/simulation snapshot serialization: menu and playing
+  input state now encodes button bools, input snapshots, input frames, debounce
+  timers, and mouse coordinates field-by-field instead of through raw input
+  struct layout. Recording format version is now 91.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -342,6 +346,9 @@ The expected end state is:
 - Fixed in shared snapshot/replay format: player ids remain `uint32_t` in
   runtime, but snapshot bytes now route them through explicit fixed-width
   writers, including optional spectator targets and network input-owner ids.
+- Fixed in shared snapshot/replay format: input structs still contain runtime
+  `bool` fields, but the serialized bytes now use explicit one-byte bool
+  markers and fixed-width `UVec2` mouse coordinates.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 90;
+constexpr std::uint32_t kRecordingVersion = 91;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -654,6 +654,214 @@ bool ReadNetEntId(std::istream& in, network::NetEntId& net_id) {
     }
     net_id = static_cast<network::NetEntId>(stored);
     return true;
+}
+
+void WriteButtonState(std::ostream& out, const ButtonState& button) {
+    WriteBoolByte(out, button.down);
+    WriteBoolByte(out, button.pressed);
+    WriteBoolByte(out, button.released);
+}
+
+bool ReadButtonState(std::istream& in, ButtonState& button) {
+    return ReadBoolByte(in, button.down) &&
+           ReadBoolByte(in, button.pressed) &&
+           ReadBoolByte(in, button.released);
+}
+
+void WriteMenuInputs(std::ostream& out, const MenuInputs& inputs) {
+    WriteButtonState(out, inputs.left);
+    WriteButtonState(out, inputs.right);
+    WriteButtonState(out, inputs.up);
+    WriteButtonState(out, inputs.down);
+    WriteButtonState(out, inputs.confirm);
+    WriteButtonState(out, inputs.back);
+    WriteButtonState(out, inputs.page_prev);
+    WriteButtonState(out, inputs.page_next);
+}
+
+bool ReadMenuInputs(std::istream& in, MenuInputs& inputs) {
+    return ReadButtonState(in, inputs.left) &&
+           ReadButtonState(in, inputs.right) &&
+           ReadButtonState(in, inputs.up) &&
+           ReadButtonState(in, inputs.down) &&
+           ReadButtonState(in, inputs.confirm) &&
+           ReadButtonState(in, inputs.back) &&
+           ReadButtonState(in, inputs.page_prev) &&
+           ReadButtonState(in, inputs.page_next);
+}
+
+void WriteMenuInputSnapshot(std::ostream& out, const MenuInputSnapshot& inputs) {
+    WriteBoolByte(out, inputs.left);
+    WriteBoolByte(out, inputs.right);
+    WriteBoolByte(out, inputs.up);
+    WriteBoolByte(out, inputs.down);
+    WriteBoolByte(out, inputs.confirm);
+    WriteBoolByte(out, inputs.back);
+    WriteBoolByte(out, inputs.page_prev);
+    WriteBoolByte(out, inputs.page_next);
+}
+
+bool ReadMenuInputSnapshot(std::istream& in, MenuInputSnapshot& inputs) {
+    return ReadBoolByte(in, inputs.left) &&
+           ReadBoolByte(in, inputs.right) &&
+           ReadBoolByte(in, inputs.up) &&
+           ReadBoolByte(in, inputs.down) &&
+           ReadBoolByte(in, inputs.confirm) &&
+           ReadBoolByte(in, inputs.back) &&
+           ReadBoolByte(in, inputs.page_prev) &&
+           ReadBoolByte(in, inputs.page_next);
+}
+
+void WritePlayingInputs(std::ostream& out, const PlayingInputs& inputs) {
+    WriteButtonState(out, inputs.left);
+    WriteButtonState(out, inputs.right);
+    WriteButtonState(out, inputs.up);
+    WriteButtonState(out, inputs.down);
+    WriteButtonState(out, inputs.jump);
+    WriteButtonState(out, inputs.run);
+    WriteButtonState(out, inputs.use_button);
+    WriteButtonState(out, inputs.equip_button);
+    WriteButtonState(out, inputs.pick_up_drop);
+    WriteButtonState(out, inputs.stop);
+    WriteButtonState(out, inputs.bomb);
+    WriteButtonState(out, inputs.rope);
+    WriteButtonState(out, inputs.attack);
+    WriteButtonState(out, inputs.buy_button);
+    WriteButtonState(out, inputs.emote_up);
+    WriteButtonState(out, inputs.emote_down);
+    WriteButtonState(out, inputs.quit);
+    WriteButtonState(out, inputs.toggle_collision_boxes);
+    WriteButtonState(out, inputs.regenerate_level);
+    WriteUVec2(out, inputs.mouse_pos);
+}
+
+bool ReadPlayingInputs(std::istream& in, PlayingInputs& inputs) {
+    return ReadButtonState(in, inputs.left) &&
+           ReadButtonState(in, inputs.right) &&
+           ReadButtonState(in, inputs.up) &&
+           ReadButtonState(in, inputs.down) &&
+           ReadButtonState(in, inputs.jump) &&
+           ReadButtonState(in, inputs.run) &&
+           ReadButtonState(in, inputs.use_button) &&
+           ReadButtonState(in, inputs.equip_button) &&
+           ReadButtonState(in, inputs.pick_up_drop) &&
+           ReadButtonState(in, inputs.stop) &&
+           ReadButtonState(in, inputs.bomb) &&
+           ReadButtonState(in, inputs.rope) &&
+           ReadButtonState(in, inputs.attack) &&
+           ReadButtonState(in, inputs.buy_button) &&
+           ReadButtonState(in, inputs.emote_up) &&
+           ReadButtonState(in, inputs.emote_down) &&
+           ReadButtonState(in, inputs.quit) &&
+           ReadButtonState(in, inputs.toggle_collision_boxes) &&
+           ReadButtonState(in, inputs.regenerate_level) &&
+           ReadUVec2(in, inputs.mouse_pos);
+}
+
+void WriteInputFrame(std::ostream& out, const InputFrame& inputs) {
+    WriteBoolByte(out, inputs.left);
+    WriteBoolByte(out, inputs.right);
+    WriteBoolByte(out, inputs.up);
+    WriteBoolByte(out, inputs.down);
+    WriteBoolByte(out, inputs.jump);
+    WriteBoolByte(out, inputs.run);
+    WriteBoolByte(out, inputs.use_button);
+    WriteBoolByte(out, inputs.equip_button);
+    WriteBoolByte(out, inputs.pick_up_drop);
+    WriteBoolByte(out, inputs.stop);
+    WriteBoolByte(out, inputs.bomb);
+    WriteBoolByte(out, inputs.rope);
+    WriteBoolByte(out, inputs.attack);
+    WriteBoolByte(out, inputs.buy_button);
+    WriteBoolByte(out, inputs.emote_up);
+    WriteBoolByte(out, inputs.emote_down);
+    WriteBoolByte(out, inputs.quit);
+    WriteBoolByte(out, inputs.toggle_collision_boxes);
+    WriteBoolByte(out, inputs.regenerate_level);
+    WriteUVec2(out, inputs.mouse_pos);
+}
+
+bool ReadInputFrame(std::istream& in, InputFrame& inputs) {
+    return ReadBoolByte(in, inputs.left) &&
+           ReadBoolByte(in, inputs.right) &&
+           ReadBoolByte(in, inputs.up) &&
+           ReadBoolByte(in, inputs.down) &&
+           ReadBoolByte(in, inputs.jump) &&
+           ReadBoolByte(in, inputs.run) &&
+           ReadBoolByte(in, inputs.use_button) &&
+           ReadBoolByte(in, inputs.equip_button) &&
+           ReadBoolByte(in, inputs.pick_up_drop) &&
+           ReadBoolByte(in, inputs.stop) &&
+           ReadBoolByte(in, inputs.bomb) &&
+           ReadBoolByte(in, inputs.rope) &&
+           ReadBoolByte(in, inputs.attack) &&
+           ReadBoolByte(in, inputs.buy_button) &&
+           ReadBoolByte(in, inputs.emote_up) &&
+           ReadBoolByte(in, inputs.emote_down) &&
+           ReadBoolByte(in, inputs.quit) &&
+           ReadBoolByte(in, inputs.toggle_collision_boxes) &&
+           ReadBoolByte(in, inputs.regenerate_level) &&
+           ReadUVec2(in, inputs.mouse_pos);
+}
+
+void WritePlayingInputSnapshot(std::ostream& out, const PlayingInputSnapshot& inputs) {
+    WriteBoolByte(out, inputs.left);
+    WriteBoolByte(out, inputs.right);
+    WriteBoolByte(out, inputs.up);
+    WriteBoolByte(out, inputs.down);
+    WriteBoolByte(out, inputs.jump);
+    WriteBoolByte(out, inputs.run);
+    WriteBoolByte(out, inputs.use_button);
+    WriteBoolByte(out, inputs.equip_button);
+    WriteBoolByte(out, inputs.pick_up_drop);
+    WriteBoolByte(out, inputs.stop);
+    WriteBoolByte(out, inputs.bomb);
+    WriteBoolByte(out, inputs.rope);
+    WriteBoolByte(out, inputs.attack);
+    WriteBoolByte(out, inputs.buy_button);
+    WriteBoolByte(out, inputs.emote_up);
+    WriteBoolByte(out, inputs.emote_down);
+    WriteBoolByte(out, inputs.quit);
+    WriteBoolByte(out, inputs.toggle_collision_boxes);
+    WriteBoolByte(out, inputs.regenerate_level);
+    WriteUVec2(out, inputs.mouse_pos);
+}
+
+bool ReadPlayingInputSnapshot(std::istream& in, PlayingInputSnapshot& inputs) {
+    return ReadBoolByte(in, inputs.left) &&
+           ReadBoolByte(in, inputs.right) &&
+           ReadBoolByte(in, inputs.up) &&
+           ReadBoolByte(in, inputs.down) &&
+           ReadBoolByte(in, inputs.jump) &&
+           ReadBoolByte(in, inputs.run) &&
+           ReadBoolByte(in, inputs.use_button) &&
+           ReadBoolByte(in, inputs.equip_button) &&
+           ReadBoolByte(in, inputs.pick_up_drop) &&
+           ReadBoolByte(in, inputs.stop) &&
+           ReadBoolByte(in, inputs.bomb) &&
+           ReadBoolByte(in, inputs.rope) &&
+           ReadBoolByte(in, inputs.attack) &&
+           ReadBoolByte(in, inputs.buy_button) &&
+           ReadBoolByte(in, inputs.emote_up) &&
+           ReadBoolByte(in, inputs.emote_down) &&
+           ReadBoolByte(in, inputs.quit) &&
+           ReadBoolByte(in, inputs.toggle_collision_boxes) &&
+           ReadBoolByte(in, inputs.regenerate_level) &&
+           ReadUVec2(in, inputs.mouse_pos);
+}
+
+void WriteMenuInputDebounceTimers(std::ostream& out, const MenuInputDebounceTimers& timers) {
+    WriteFloat(out, timers.left);
+    WriteFloat(out, timers.right);
+    WriteFloat(out, timers.up);
+    WriteFloat(out, timers.down);
+}
+
+bool ReadMenuInputDebounceTimers(std::istream& in, MenuInputDebounceTimers& timers) {
+    return ReadFloat(in, timers.left) &&
+           ReadFloat(in, timers.right) &&
+           ReadFloat(in, timers.up) &&
+           ReadFloat(in, timers.down);
 }
 
 void WriteOptionalVec2(std::ostream& out, const std::optional<Vec2>& value) {
@@ -1862,10 +2070,10 @@ void WritePlayerRegistry(std::ostream& out, const PlayerRegistry& players) {
         WriteBoolByte(out, slot.connected);
         WriteBoolByte(out, slot.primary_local);
         WriteString(out, slot.display_name);
-        WritePod(out, slot.input_frame);
-        WritePod(out, slot.previous_input_frame);
-        WritePod(out, slot.inputs);
-        WritePod(out, slot.immediate_inputs);
+        WriteInputFrame(out, slot.input_frame);
+        WriteInputFrame(out, slot.previous_input_frame);
+        WritePlayingInputs(out, slot.inputs);
+        WritePlayingInputs(out, slot.immediate_inputs);
     }
 }
 
@@ -1882,10 +2090,10 @@ bool ReadPlayerRegistry(std::istream& in, PlayerRegistry& players) {
             !ReadBoolByte(in, slot.connected) ||
             !ReadBoolByte(in, slot.primary_local) ||
             !ReadString(in, slot.display_name) ||
-            !ReadPod(in, slot.input_frame) ||
-            !ReadPod(in, slot.previous_input_frame) ||
-            !ReadPod(in, slot.inputs) ||
-            !ReadPod(in, slot.immediate_inputs)) {
+            !ReadInputFrame(in, slot.input_frame) ||
+            !ReadInputFrame(in, slot.previous_input_frame) ||
+            !ReadPlayingInputs(in, slot.inputs) ||
+            !ReadPlayingInputs(in, slot.immediate_inputs)) {
             return false;
         }
     }
@@ -2084,15 +2292,15 @@ bool ReadEntToolStates(std::istream& in, std::vector<EntToolState>& states) {
 void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteMode(out, snapshot.mode);
     WriteSettings(out, snapshot.settings);
-    WritePod(out, snapshot.menu_inputs);
-    WritePod(out, snapshot.menu_input_snapshot);
-    WritePod(out, snapshot.previous_menu_input_snapshot);
-    WritePod(out, snapshot.menu_input_debounce_timers);
-    WritePod(out, snapshot.playing_inputs);
-    WritePod(out, snapshot.immediate_playing_inputs);
-    WritePod(out, snapshot.playing_input_snapshot);
-    WritePod(out, snapshot.previous_playing_input_snapshot);
-    WritePod(out, snapshot.previous_immediate_playing_input_snapshot);
+    WriteMenuInputs(out, snapshot.menu_inputs);
+    WriteMenuInputSnapshot(out, snapshot.menu_input_snapshot);
+    WriteMenuInputSnapshot(out, snapshot.previous_menu_input_snapshot);
+    WriteMenuInputDebounceTimers(out, snapshot.menu_input_debounce_timers);
+    WritePlayingInputs(out, snapshot.playing_inputs);
+    WritePlayingInputs(out, snapshot.immediate_playing_inputs);
+    WritePlayingInputSnapshot(out, snapshot.playing_input_snapshot);
+    WritePlayingInputSnapshot(out, snapshot.previous_playing_input_snapshot);
+    WritePlayingInputSnapshot(out, snapshot.previous_immediate_playing_input_snapshot);
     WritePod(out, snapshot.title_menu_selection);
     WritePod(out, snapshot.settings_menu_selection);
     WritePod(out, snapshot.video_settings_menu_selection);
@@ -2146,15 +2354,15 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
 bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
     return ReadMode(in, snapshot.mode) &&
            ReadSettings(in, snapshot.settings) &&
-           ReadPod(in, snapshot.menu_inputs) &&
-           ReadPod(in, snapshot.menu_input_snapshot) &&
-           ReadPod(in, snapshot.previous_menu_input_snapshot) &&
-           ReadPod(in, snapshot.menu_input_debounce_timers) &&
-           ReadPod(in, snapshot.playing_inputs) &&
-           ReadPod(in, snapshot.immediate_playing_inputs) &&
-           ReadPod(in, snapshot.playing_input_snapshot) &&
-           ReadPod(in, snapshot.previous_playing_input_snapshot) &&
-           ReadPod(in, snapshot.previous_immediate_playing_input_snapshot) &&
+           ReadMenuInputs(in, snapshot.menu_inputs) &&
+           ReadMenuInputSnapshot(in, snapshot.menu_input_snapshot) &&
+           ReadMenuInputSnapshot(in, snapshot.previous_menu_input_snapshot) &&
+           ReadMenuInputDebounceTimers(in, snapshot.menu_input_debounce_timers) &&
+           ReadPlayingInputs(in, snapshot.playing_inputs) &&
+           ReadPlayingInputs(in, snapshot.immediate_playing_inputs) &&
+           ReadPlayingInputSnapshot(in, snapshot.playing_input_snapshot) &&
+           ReadPlayingInputSnapshot(in, snapshot.previous_playing_input_snapshot) &&
+           ReadPlayingInputSnapshot(in, snapshot.previous_immediate_playing_input_snapshot) &&
            ReadPod(in, snapshot.title_menu_selection) &&
            ReadPod(in, snapshot.settings_menu_selection) &&
            ReadPod(in, snapshot.video_settings_menu_selection) &&
@@ -2210,10 +2418,10 @@ void WriteSimPlayerSlotSnapshot(std::ostream& out, const SimPlayerSlotSnapshot& 
     WriteOptionalVid(out, slot.ent_vid);
     WriteBoolByte(out, slot.connected);
     WriteString(out, slot.display_name);
-    WritePod(out, slot.input_frame);
-    WritePod(out, slot.previous_input_frame);
-    WritePod(out, slot.inputs);
-    WritePod(out, slot.immediate_inputs);
+    WriteInputFrame(out, slot.input_frame);
+    WriteInputFrame(out, slot.previous_input_frame);
+    WritePlayingInputs(out, slot.inputs);
+    WritePlayingInputs(out, slot.immediate_inputs);
 }
 
 bool ReadSimPlayerSlotSnapshot(std::istream& in, SimPlayerSlotSnapshot& slot) {
@@ -2221,10 +2429,10 @@ bool ReadSimPlayerSlotSnapshot(std::istream& in, SimPlayerSlotSnapshot& slot) {
            ReadOptionalVid(in, slot.ent_vid) &&
            ReadBoolByte(in, slot.connected) &&
            ReadString(in, slot.display_name) &&
-           ReadPod(in, slot.input_frame) &&
-           ReadPod(in, slot.previous_input_frame) &&
-           ReadPod(in, slot.inputs) &&
-           ReadPod(in, slot.immediate_inputs);
+           ReadInputFrame(in, slot.input_frame) &&
+           ReadInputFrame(in, slot.previous_input_frame) &&
+           ReadPlayingInputs(in, slot.inputs) &&
+           ReadPlayingInputs(in, slot.immediate_inputs);
 }
 
 void WriteSimPlayerSlots(std::ostream& out, const std::vector<SimPlayerSlotSnapshot>& slots) {
@@ -2316,11 +2524,11 @@ bool ReadSimNetEntIdAliases(
 void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WriteMode(out, snapshot.mode);
     WriteSettings(out, snapshot.settings);
-    WritePod(out, snapshot.playing_inputs);
-    WritePod(out, snapshot.immediate_playing_inputs);
-    WritePod(out, snapshot.playing_input_snapshot);
-    WritePod(out, snapshot.previous_playing_input_snapshot);
-    WritePod(out, snapshot.previous_immediate_playing_input_snapshot);
+    WritePlayingInputs(out, snapshot.playing_inputs);
+    WritePlayingInputs(out, snapshot.immediate_playing_inputs);
+    WritePlayingInputSnapshot(out, snapshot.playing_input_snapshot);
+    WritePlayingInputSnapshot(out, snapshot.previous_playing_input_snapshot);
+    WritePlayingInputSnapshot(out, snapshot.previous_immediate_playing_input_snapshot);
     WritePod(out, snapshot.stage_rotation);
     WritePod(out, snapshot.player_tuning);
     WriteBoolByte(out, snapshot.running);
@@ -2361,11 +2569,11 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
 bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
     return ReadMode(in, snapshot.mode) &&
            ReadSettings(in, snapshot.settings) &&
-           ReadPod(in, snapshot.playing_inputs) &&
-           ReadPod(in, snapshot.immediate_playing_inputs) &&
-           ReadPod(in, snapshot.playing_input_snapshot) &&
-           ReadPod(in, snapshot.previous_playing_input_snapshot) &&
-           ReadPod(in, snapshot.previous_immediate_playing_input_snapshot) &&
+           ReadPlayingInputs(in, snapshot.playing_inputs) &&
+           ReadPlayingInputs(in, snapshot.immediate_playing_inputs) &&
+           ReadPlayingInputSnapshot(in, snapshot.playing_input_snapshot) &&
+           ReadPlayingInputSnapshot(in, snapshot.previous_playing_input_snapshot) &&
+           ReadPlayingInputSnapshot(in, snapshot.previous_immediate_playing_input_snapshot) &&
            ReadPod(in, snapshot.stage_rotation) &&
            ReadPod(in, snapshot.player_tuning) &&
            ReadBoolByte(in, snapshot.running) &&
