@@ -295,6 +295,12 @@ The expected end state is:
   RNG state, respawn targets, quest state, debug level config, and gameplay
   camera position. Stage-transition seeds now use an explicit optional
   `uint32_t`. Recording format version is now 93.
+- Fixed in shared gameplay/simulation snapshot serialization: optional entity
+  audio asset ids, optional entity stage-transition targets, stage generation
+  seeds, and optional void-death boundaries now use explicit typed optional
+  writers instead of generic raw optional payloads. Dead raw vector/optional/
+  grid helper paths were removed from the recording writer. Recording format
+  version is now 94.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -368,6 +374,10 @@ The expected end state is:
 - Fixed in shared snapshot/replay format: deterministic RNG state is written as
   an explicit `uint64_t`, stage-transition seeds as optional `uint32_t`, and
   debug/test configuration enums and counters as explicit byte/int fields.
+- Fixed in shared snapshot/replay format: entity audio asset optionals, entity
+  stage-transition target optionals, stage generation seed optionals, and
+  stage void-death boundary optionals now use typed optional encoders rather
+  than raw optional payloads.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

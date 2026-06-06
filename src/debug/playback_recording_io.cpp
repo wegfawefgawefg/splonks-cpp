@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 93;
+constexpr std::uint32_t kRecordingVersion = 94;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -32,68 +32,6 @@ bool ReadPod(std::istream& in, T& value) {
     static_assert(std::is_trivially_copyable_v<T>);
     in.read(reinterpret_cast<char*>(&value), static_cast<std::streamsize>(sizeof(T)));
     return in.good();
-}
-
-template <typename T>
-void WriteVectorPod(std::ostream& out, const std::vector<T>& values) {
-    static_assert(std::is_trivially_copyable_v<T>);
-    const std::uint32_t count = static_cast<std::uint32_t>(values.size());
-    WritePod(out, count);
-    if (!values.empty()) {
-        out.write(
-            reinterpret_cast<const char*>(values.data()),
-            static_cast<std::streamsize>(sizeof(T) * values.size())
-        );
-    }
-}
-
-template <typename T>
-bool ReadVectorPod(std::istream& in, std::vector<T>& values) {
-    static_assert(std::is_trivially_copyable_v<T>);
-    std::uint32_t count = 0;
-    if (!ReadPod(in, count)) {
-        return false;
-    }
-    values.resize(count);
-    if (count > 0) {
-        in.read(
-            reinterpret_cast<char*>(values.data()),
-            static_cast<std::streamsize>(sizeof(T) * values.size())
-        );
-    }
-    return in.good();
-}
-
-template <typename T>
-void WriteOptionalPod(std::ostream& out, const std::optional<T>& value) {
-    static_assert(std::is_trivially_copyable_v<T>);
-    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
-    if (has_value) {
-        WritePod(out, *value);
-    }
-}
-
-template <typename T>
-bool ReadOptionalPod(std::istream& in, std::optional<T>& value) {
-    static_assert(std::is_trivially_copyable_v<T>);
-    std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
-        return false;
-    }
-    if (has_value == 0) {
-        value.reset();
-        return true;
-    }
-    if (has_value != 1) {
-        return false;
-    }
-    T loaded{};
-    if (!ReadPod(in, loaded)) {
-        return false;
-    }
-    value = loaded;
-    return true;
 }
 
 void WriteOptionalSizeIndex(std::ostream& out, const std::optional<std::size_t>& value) {
@@ -806,6 +744,34 @@ bool ReadAudioAssetId(std::istream& in, AudioAssetId& audio_asset_id) {
     return true;
 }
 
+void WriteOptionalAudioAssetId(std::ostream& out, const std::optional<AudioAssetId>& value) {
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (value.has_value()) {
+        WriteAudioAssetId(out, *value);
+    }
+}
+
+bool ReadOptionalAudioAssetId(std::istream& in, std::optional<AudioAssetId>& value) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        value.reset();
+        return true;
+    }
+    if (has_value != 1) {
+        return false;
+    }
+    AudioAssetId loaded = kInvalidAudioAssetId;
+    if (!ReadAudioAssetId(in, loaded)) {
+        return false;
+    }
+    value = loaded;
+    return true;
+}
+
 void WriteDetRng(std::ostream& out, const DetRng& rng) {
     WritePod(out, static_cast<std::uint64_t>(rng.state));
 }
@@ -1367,32 +1333,6 @@ bool ReadAFrameAnimator(std::istream& in, AFrameAnimator& animator) {
     return true;
 }
 
-template <typename T>
-void WriteOptionalVectorPod(std::ostream& out, const std::optional<std::vector<T>>& values) {
-    const std::uint8_t has_value = values.has_value() ? 1U : 0U;
-    WritePod(out, has_value);
-    if (has_value) {
-        WriteVectorPod(out, *values);
-    }
-}
-
-template <typename T>
-bool ReadOptionalVectorPod(std::istream& in, std::optional<std::vector<T>>& values) {
-    std::uint8_t has_value = 0;
-    if (!ReadPod(in, has_value)) {
-        return false;
-    }
-    if (has_value == 0) {
-        values.reset();
-        return true;
-    }
-    if (has_value != 1) {
-        return false;
-    }
-    values.emplace();
-    return ReadVectorPod(in, *values);
-}
-
 void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.active);
     WriteBoolByte(out, ent.marked_for_destruction);
@@ -1472,10 +1412,10 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WritePod(out, ent.support_ground_friction);
     WritePod(out, ent.push_acc);
     WriteOptionalAFrameId(out, ent.damage_anim);
-    WriteOptionalPod(out, ent.damage_sound);
-    WriteOptionalPod(out, ent.collide_sound);
-    WriteOptionalPod(out, ent.death_sound);
-    WriteOptionalPod(out, ent.transition_target);
+    WriteOptionalAudioAssetId(out, ent.damage_sound);
+    WriteOptionalAudioAssetId(out, ent.collide_sound);
+    WriteOptionalAudioAssetId(out, ent.death_sound);
+    WriteOptionalStageTransitionTarget(out, ent.transition_target);
     WritePod(out, ent.stage_exit_id);
     WritePod(out, ent.attack_weight);
     WritePod(out, ent.weight);
@@ -1600,10 +1540,10 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadPod(in, ent.support_ground_friction) &&
            ReadPod(in, ent.push_acc) &&
            ReadOptionalAFrameId(in, ent.damage_anim) &&
-           ReadOptionalPod(in, ent.damage_sound) &&
-           ReadOptionalPod(in, ent.collide_sound) &&
-           ReadOptionalPod(in, ent.death_sound) &&
-           ReadOptionalPod(in, ent.transition_target) &&
+           ReadOptionalAudioAssetId(in, ent.damage_sound) &&
+           ReadOptionalAudioAssetId(in, ent.collide_sound) &&
+           ReadOptionalAudioAssetId(in, ent.death_sound) &&
+           ReadOptionalStageTransitionTarget(in, ent.transition_target) &&
            ReadPod(in, ent.stage_exit_id) &&
            ReadPod(in, ent.attack_weight) &&
            ReadPod(in, ent.weight) &&
@@ -2526,30 +2466,6 @@ bool ReadStageLights(std::istream& in, std::vector<StageLight>& lights) {
     return true;
 }
 
-template <typename T>
-void WriteGridPod(std::ostream& out, const std::vector<std::vector<T>>& grid) {
-    const std::uint32_t rows = static_cast<std::uint32_t>(grid.size());
-    WritePod(out, rows);
-    for (const std::vector<T>& row : grid) {
-        WriteVectorPod(out, row);
-    }
-}
-
-template <typename T>
-bool ReadGridPod(std::istream& in, std::vector<std::vector<T>>& grid) {
-    std::uint32_t rows = 0;
-    if (!ReadPod(in, rows)) {
-        return false;
-    }
-    grid.resize(rows);
-    for (std::uint32_t i = 0; i < rows; ++i) {
-        if (!ReadVectorPod(in, grid[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
 void WriteStage(std::ostream& out, const Stage& stage) {
     WriteStageType(out, stage.stage_type);
     WriteString(out, stage.quest_id);
@@ -2557,7 +2473,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteString(out, stage.route_label);
     WriteString(out, stage.stage_title);
     WritePod(out, stage.quest_level_number);
-    WriteOptionalPod(out, stage.generation_seed);
+    WriteOptionalUint32(out, stage.generation_seed);
     const std::uint32_t exit_count = static_cast<std::uint32_t>(stage.exits.size());
     WritePod(out, exit_count);
     for (const StageExit& exit : stage.exits) {
@@ -2570,7 +2486,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteTile(out, stage.border.bottom.tile);
     WriteBoolByte(out, stage.border.wrap_x);
     WriteBoolByte(out, stage.border.wrap_y);
-    WriteOptionalPod(out, stage.border.void_death_y);
+    WriteOptionalInt32(out, stage.border.void_death_y);
     WriteBoolByte(out, stage.camera_clamp_enabled);
     WriteVec2(out, stage.camera_clamp_margin);
     WriteBoolByte(out, stage.wrap_transform_active);
@@ -2618,7 +2534,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadString(in, stage.route_label) ||
         !ReadString(in, stage.stage_title) ||
         !ReadPod(in, stage.quest_level_number) ||
-        !ReadOptionalPod(in, stage.generation_seed)) {
+        !ReadOptionalUint32(in, stage.generation_seed)) {
         return false;
     }
 
@@ -2640,7 +2556,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadTile(in, stage.border.bottom.tile) ||
         !ReadBoolByte(in, stage.border.wrap_x) ||
         !ReadBoolByte(in, stage.border.wrap_y) ||
-        !ReadOptionalPod(in, stage.border.void_death_y) ||
+        !ReadOptionalInt32(in, stage.border.void_death_y) ||
         !ReadBoolByte(in, stage.camera_clamp_enabled) ||
         !ReadVec2(in, stage.camera_clamp_margin) ||
         !ReadBoolByte(in, stage.wrap_transform_active) ||
