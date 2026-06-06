@@ -289,6 +289,12 @@ The expected end state is:
   post-process/stage-lighting config, fluid simulation config, water movement
   config, debug UI config, and player tuning. Recording format version is now
   92.
+- Fixed in shared gameplay/simulation snapshot serialization: high-level run
+  state now uses explicit field writers instead of raw structs for menu
+  selections, debug overlay/brush state, stage rotation, player tuning, runtime
+  RNG state, respawn targets, quest state, debug level config, and gameplay
+  camera position. Stage-transition seeds now use an explicit optional
+  `uint32_t`. Recording format version is now 93.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -359,6 +365,9 @@ The expected end state is:
   scalar/vector writers, including full `UVec2` resolution option vectors,
   `uint32_t` controls/debug ids, `int32_t` frame/count values, and one-byte
   bool markers.
+- Fixed in shared snapshot/replay format: deterministic RNG state is written as
+  an explicit `uint64_t`, stage-transition seeds as optional `uint32_t`, and
+  debug/test configuration enums and counters as explicit byte/int fields.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

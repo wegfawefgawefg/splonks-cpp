@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 92;
+constexpr std::uint32_t kRecordingVersion = 93;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -509,6 +509,78 @@ bool ReadOptionalEnumByte(std::istream& in, std::optional<T>& value, T max_value
     return true;
 }
 
+void WriteTitleMenuOption(std::ostream& out, TitleMenuOption option) {
+    WriteEnumByte(out, option);
+}
+
+bool ReadTitleMenuOption(std::istream& in, TitleMenuOption& option) {
+    return ReadEnumByte(in, option, TitleMenuOption::Quit);
+}
+
+void WriteSettingsMenuOption(std::ostream& out, SettingsMenuOption option) {
+    WriteEnumByte(out, option);
+}
+
+bool ReadSettingsMenuOption(std::istream& in, SettingsMenuOption& option) {
+    return ReadEnumByte(in, option, SettingsMenuOption::Back);
+}
+
+void WriteVideoSettingsMenuOption(std::ostream& out, VideoSettingsMenuOption option) {
+    WriteEnumByte(out, option);
+}
+
+bool ReadVideoSettingsMenuOption(std::istream& in, VideoSettingsMenuOption& option) {
+    return ReadEnumByte(in, option, VideoSettingsMenuOption::Back);
+}
+
+void WriteUiSettingsMenuOption(std::ostream& out, UiSettingsMenuOption option) {
+    WriteEnumByte(out, option);
+}
+
+bool ReadUiSettingsMenuOption(std::istream& in, UiSettingsMenuOption& option) {
+    return ReadEnumByte(in, option, UiSettingsMenuOption::Back);
+}
+
+void WritePostFxSettingsMenuOption(std::ostream& out, PostFxSettingsMenuOption option) {
+    WriteEnumByte(out, option);
+}
+
+bool ReadPostFxSettingsMenuOption(std::istream& in, PostFxSettingsMenuOption& option) {
+    return ReadEnumByte(in, option, PostFxSettingsMenuOption::Back);
+}
+
+void WriteLightingSettingsMenuOption(std::ostream& out, LightingSettingsMenuOption option) {
+    WriteEnumByte(out, option);
+}
+
+bool ReadLightingSettingsMenuOption(std::istream& in, LightingSettingsMenuOption& option) {
+    return ReadEnumByte(in, option, LightingSettingsMenuOption::Back);
+}
+
+void WriteStageRotationWrapPolicy(std::ostream& out, StageRotationWrapPolicy policy) {
+    WriteEnumByte(out, policy);
+}
+
+bool ReadStageRotationWrapPolicy(std::istream& in, StageRotationWrapPolicy& policy) {
+    return ReadEnumByte(in, policy, StageRotationWrapPolicy::SwapXYWrap);
+}
+
+void WriteDebugFluidBrushMode(std::ostream& out, DebugFluidBrushState::Mode mode) {
+    WriteEnumByte(out, mode);
+}
+
+bool ReadDebugFluidBrushMode(std::istream& in, DebugFluidBrushState::Mode& mode) {
+    return ReadEnumByte(in, mode, DebugFluidBrushState::Mode::GlobalGravityDirection);
+}
+
+void WriteQuestId(std::ostream& out, QuestId id) {
+    WriteEnumByte(out, id);
+}
+
+bool ReadQuestId(std::istream& in, QuestId& id) {
+    return ReadEnumByte(in, id, QuestId::Classic);
+}
+
 void WriteEntType(std::ostream& out, EntType type) {
     const std::uint16_t stored = static_cast<std::uint16_t>(type);
     WritePod(out, stored);
@@ -608,6 +680,34 @@ bool ReadInt32(std::istream& in, int& value) {
     return true;
 }
 
+void WriteOptionalInt32(std::ostream& out, const std::optional<int>& value) {
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (value.has_value()) {
+        WriteInt32(out, *value);
+    }
+}
+
+bool ReadOptionalInt32(std::istream& in, std::optional<int>& value) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        value.reset();
+        return true;
+    }
+    if (has_value != 1) {
+        return false;
+    }
+    int loaded = 0;
+    if (!ReadInt32(in, loaded)) {
+        return false;
+    }
+    value = loaded;
+    return true;
+}
+
 void WriteUnsigned32(std::ostream& out, unsigned int value) {
     const std::uint32_t stored = static_cast<std::uint32_t>(value);
     WritePod(out, stored);
@@ -619,6 +719,34 @@ bool ReadUnsigned32(std::istream& in, unsigned int& value) {
         return false;
     }
     value = static_cast<unsigned int>(stored);
+    return true;
+}
+
+void WriteOptionalUint32(std::ostream& out, const std::optional<std::uint32_t>& value) {
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (value.has_value()) {
+        WritePod(out, *value);
+    }
+}
+
+bool ReadOptionalUint32(std::istream& in, std::optional<std::uint32_t>& value) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        value.reset();
+        return true;
+    }
+    if (has_value != 1) {
+        return false;
+    }
+    std::uint32_t loaded = 0;
+    if (!ReadPod(in, loaded)) {
+        return false;
+    }
+    value = loaded;
     return true;
 }
 
@@ -661,6 +789,33 @@ bool ReadOptionalPlayerId(std::istream& in, std::optional<PlayerId>& value) {
         return false;
     }
     value = loaded;
+    return true;
+}
+
+void WriteAudioAssetId(std::ostream& out, AudioAssetId audio_asset_id) {
+    const std::uint32_t stored = static_cast<std::uint32_t>(audio_asset_id);
+    WritePod(out, stored);
+}
+
+bool ReadAudioAssetId(std::istream& in, AudioAssetId& audio_asset_id) {
+    std::uint32_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    audio_asset_id = static_cast<AudioAssetId>(stored);
+    return true;
+}
+
+void WriteDetRng(std::ostream& out, const DetRng& rng) {
+    WritePod(out, static_cast<std::uint64_t>(rng.state));
+}
+
+bool ReadDetRng(std::istream& in, DetRng& rng) {
+    std::uint64_t state = 0;
+    if (!ReadPod(in, state)) {
+        return false;
+    }
+    rng.state = state;
     return true;
 }
 
@@ -960,13 +1115,13 @@ bool ReadStageLoadTarget(std::istream& in, StageLoadTarget& target) {
 void WriteStageTransitionTarget(std::ostream& out, const StageTransitionTarget& target) {
     WriteStageLoadTarget(out, target.destination);
     WriteBoolByte(out, target.preserve_player_state);
-    WriteOptionalPod(out, target.seed);
+    WriteOptionalUint32(out, target.seed);
 }
 
 bool ReadStageTransitionTarget(std::istream& in, StageTransitionTarget& target) {
     return ReadStageLoadTarget(in, target.destination) &&
            ReadBoolByte(in, target.preserve_player_state) &&
-           ReadOptionalPod(in, target.seed);
+           ReadOptionalUint32(in, target.seed);
 }
 
 void WriteOptionalStageTransitionTarget(
@@ -1870,6 +2025,209 @@ bool ReadSettings(std::istream& in, Settings& settings) {
            ReadPlayerTuningState(in, settings.player_tuning);
 }
 
+void WriteTile(std::ostream& out, Tile tile);
+bool ReadTile(std::istream& in, Tile& tile);
+
+void WriteDebugOverlayState(std::ostream& out, const DebugOverlayState& overlay) {
+    WriteBoolByte(out, overlay.show_ent_collision_boxes);
+    WriteBoolByte(out, overlay.show_ent_ids);
+    WriteBoolByte(out, overlay.show_ent_types);
+    WriteBoolByte(out, overlay.show_ent_render_centers);
+    WriteBoolByte(out, overlay.show_void_death_line);
+    WriteBoolByte(out, overlay.show_chunk_boundaries);
+    WriteBoolByte(out, overlay.show_chunk_coords);
+    WriteBoolByte(out, overlay.show_tile_indexes);
+    WriteBoolByte(out, overlay.show_tile_types);
+    WriteBoolByte(out, overlay.show_tile_openness);
+    WriteBoolByte(out, overlay.show_fluid_amounts);
+    WriteBoolByte(out, overlay.show_fluid_gravity);
+    WriteBoolByte(out, overlay.show_lights);
+    WriteBoolByte(out, overlay.show_area_boundaries);
+    WriteBoolByte(out, overlay.show_area_ids);
+    WriteBoolByte(out, overlay.show_area_types);
+    WriteBoolByte(out, overlay.show_audio_emitters);
+    WriteBoolByte(out, overlay.show_audio_occlusion_paths);
+    WriteBoolByte(out, overlay.show_debug_annotations);
+    WriteBoolByte(out, overlay.show_stagegen_annotations);
+}
+
+bool ReadDebugOverlayState(std::istream& in, DebugOverlayState& overlay) {
+    return ReadBoolByte(in, overlay.show_ent_collision_boxes) &&
+           ReadBoolByte(in, overlay.show_ent_ids) &&
+           ReadBoolByte(in, overlay.show_ent_types) &&
+           ReadBoolByte(in, overlay.show_ent_render_centers) &&
+           ReadBoolByte(in, overlay.show_void_death_line) &&
+           ReadBoolByte(in, overlay.show_chunk_boundaries) &&
+           ReadBoolByte(in, overlay.show_chunk_coords) &&
+           ReadBoolByte(in, overlay.show_tile_indexes) &&
+           ReadBoolByte(in, overlay.show_tile_types) &&
+           ReadBoolByte(in, overlay.show_tile_openness) &&
+           ReadBoolByte(in, overlay.show_fluid_amounts) &&
+           ReadBoolByte(in, overlay.show_fluid_gravity) &&
+           ReadBoolByte(in, overlay.show_lights) &&
+           ReadBoolByte(in, overlay.show_area_boundaries) &&
+           ReadBoolByte(in, overlay.show_area_ids) &&
+           ReadBoolByte(in, overlay.show_area_types) &&
+           ReadBoolByte(in, overlay.show_audio_emitters) &&
+           ReadBoolByte(in, overlay.show_audio_occlusion_paths) &&
+           ReadBoolByte(in, overlay.show_debug_annotations) &&
+           ReadBoolByte(in, overlay.show_stagegen_annotations);
+}
+
+void WriteDebugShakeBrushState(std::ostream& out, const DebugShakeBrushState& brush) {
+    WriteBoolByte(out, brush.enabled);
+    WriteBoolByte(out, brush.affect_foreground_tiles);
+    WriteBoolByte(out, brush.affect_background_tiles);
+    WriteBoolByte(out, brush.affect_ents);
+    WriteFloat(out, brush.foreground_tile_amount);
+    WriteFloat(out, brush.background_tile_amount);
+    WriteFloat(out, brush.ent_amount);
+    WriteFloat(out, brush.radius_tiles);
+}
+
+bool ReadDebugShakeBrushState(std::istream& in, DebugShakeBrushState& brush) {
+    return ReadBoolByte(in, brush.enabled) &&
+           ReadBoolByte(in, brush.affect_foreground_tiles) &&
+           ReadBoolByte(in, brush.affect_background_tiles) &&
+           ReadBoolByte(in, brush.affect_ents) &&
+           ReadFloat(in, brush.foreground_tile_amount) &&
+           ReadFloat(in, brush.background_tile_amount) &&
+           ReadFloat(in, brush.ent_amount) &&
+           ReadFloat(in, brush.radius_tiles);
+}
+
+void WriteDebugAudioBrushState(std::ostream& out, const DebugAudioBrushState& brush) {
+    WriteBoolByte(out, brush.enabled);
+    WriteBoolByte(out, brush.show_openness_rays);
+    WriteBoolByte(out, brush.show_occlusion_ray);
+    WriteAudioAssetId(out, brush.audio_asset_id);
+    WriteFloat(out, brush.volume_scale);
+    WriteBoolByte(out, brush.source_active);
+    WriteVec2(out, brush.source_world_pos);
+}
+
+bool ReadDebugAudioBrushState(std::istream& in, DebugAudioBrushState& brush) {
+    return ReadBoolByte(in, brush.enabled) &&
+           ReadBoolByte(in, brush.show_openness_rays) &&
+           ReadBoolByte(in, brush.show_occlusion_ray) &&
+           ReadAudioAssetId(in, brush.audio_asset_id) &&
+           ReadFloat(in, brush.volume_scale) &&
+           ReadBoolByte(in, brush.source_active) &&
+           ReadVec2(in, brush.source_world_pos);
+}
+
+void WriteDebugFluidBrushState(std::ostream& out, const DebugFluidBrushState& brush) {
+    WriteBoolByte(out, brush.enabled);
+    WriteBoolByte(out, brush.replace_solid_tiles);
+    WriteDebugFluidBrushMode(out, brush.mode);
+    WriteInt32(out, brush.radius_tiles);
+    WriteFloat(out, brush.paint_gravity_x);
+    WriteFloat(out, brush.paint_gravity_y);
+    WriteBoolByte(out, brush.show_flow_indicators);
+}
+
+bool ReadDebugFluidBrushState(std::istream& in, DebugFluidBrushState& brush) {
+    return ReadBoolByte(in, brush.enabled) &&
+           ReadBoolByte(in, brush.replace_solid_tiles) &&
+           ReadDebugFluidBrushMode(in, brush.mode) &&
+           ReadInt32(in, brush.radius_tiles) &&
+           ReadFloat(in, brush.paint_gravity_x) &&
+           ReadFloat(in, brush.paint_gravity_y) &&
+           ReadBoolByte(in, brush.show_flow_indicators);
+}
+
+void WriteStageRotationState(std::ostream& out, const StageRotationState& rotation) {
+    WriteBoolByte(out, rotation.active);
+    WriteInt32(out, rotation.elapsed_frames);
+    WriteInt32(out, rotation.duration_frames);
+    WriteInt32(out, rotation.quarter_turns);
+    WriteVec2(out, rotation.pivot);
+    WriteStageRotationWrapPolicy(out, rotation.wrap_policy);
+}
+
+bool ReadStageRotationState(std::istream& in, StageRotationState& rotation) {
+    return ReadBoolByte(in, rotation.active) &&
+           ReadInt32(in, rotation.elapsed_frames) &&
+           ReadInt32(in, rotation.duration_frames) &&
+           ReadInt32(in, rotation.quarter_turns) &&
+           ReadVec2(in, rotation.pivot) &&
+           ReadStageRotationWrapPolicy(in, rotation.wrap_policy);
+}
+
+void WriteClassicQuestState(std::ostream& out, const ClassicQuestState& quest) {
+    WriteBoolByte(out, quest.made_black_market);
+    WriteBoolByte(out, quest.made_udjat_eye);
+    WriteBoolByte(out, quest.has_udjat_eye);
+    WriteBoolByte(out, quest.made_moai);
+    WriteBoolByte(out, quest.has_hedjet);
+    WriteBoolByte(out, quest.has_sceptre);
+    WriteBoolByte(out, quest.has_book_of_dead);
+}
+
+bool ReadClassicQuestState(std::istream& in, ClassicQuestState& quest) {
+    return ReadBoolByte(in, quest.made_black_market) &&
+           ReadBoolByte(in, quest.made_udjat_eye) &&
+           ReadBoolByte(in, quest.has_udjat_eye) &&
+           ReadBoolByte(in, quest.made_moai) &&
+           ReadBoolByte(in, quest.has_hedjet) &&
+           ReadBoolByte(in, quest.has_sceptre) &&
+           ReadBoolByte(in, quest.has_book_of_dead);
+}
+
+void WriteQuestState(std::ostream& out, const QuestState& quest) {
+    WriteQuestId(out, quest.quest_id);
+    WriteClassicQuestState(out, quest.classic);
+}
+
+bool ReadQuestState(std::istream& in, QuestState& quest) {
+    return ReadQuestId(in, quest.quest_id) &&
+           ReadClassicQuestState(in, quest.classic);
+}
+
+void WriteDebugLevelConfig(std::ostream& out, const DebugLevelConfig& debug_level) {
+    WriteDebugLevelKind(out, debug_level.kind);
+    WriteInt32(out, debug_level.hang_test.drop_tiles);
+    WriteTile(out, debug_level.border_test.left_tile);
+    WriteTile(out, debug_level.border_test.right_tile);
+    WriteTile(out, debug_level.border_test.top_tile);
+    WriteTile(out, debug_level.border_test.bottom_tile);
+    WriteBoolByte(out, debug_level.border_test.wrap_x);
+    WriteBoolByte(out, debug_level.border_test.wrap_y);
+    WriteInt32(out, debug_level.border_test.wrap_padding_tiles);
+    WriteBoolByte(out, debug_level.border_test.camera_clamp_enabled);
+    WriteOptionalInt32(out, debug_level.border_test.void_death_y);
+    WriteInt32(out, static_cast<int>(debug_level.maze_door_test.room));
+    WriteInt32(out, debug_level.crusher_trap_test.stress_squisher_count);
+    WriteInt32(out, debug_level.crusher_trap_test.squisher_sensor_tiles);
+    WriteInt32(out, debug_level.lighting_stress_test.moving_light_count);
+}
+
+bool ReadDebugLevelConfig(std::istream& in, DebugLevelConfig& debug_level) {
+    int maze_room = 0;
+    if (!ReadDebugLevelKind(in, debug_level.kind) ||
+        !ReadInt32(in, debug_level.hang_test.drop_tiles) ||
+        !ReadTile(in, debug_level.border_test.left_tile) ||
+        !ReadTile(in, debug_level.border_test.right_tile) ||
+        !ReadTile(in, debug_level.border_test.top_tile) ||
+        !ReadTile(in, debug_level.border_test.bottom_tile) ||
+        !ReadBoolByte(in, debug_level.border_test.wrap_x) ||
+        !ReadBoolByte(in, debug_level.border_test.wrap_y) ||
+        !ReadInt32(in, debug_level.border_test.wrap_padding_tiles) ||
+        !ReadBoolByte(in, debug_level.border_test.camera_clamp_enabled) ||
+        !ReadOptionalInt32(in, debug_level.border_test.void_death_y) ||
+        !ReadInt32(in, maze_room) ||
+        !ReadInt32(in, debug_level.crusher_trap_test.stress_squisher_count) ||
+        !ReadInt32(in, debug_level.crusher_trap_test.squisher_sensor_tiles) ||
+        !ReadInt32(in, debug_level.lighting_stress_test.moving_light_count)) {
+        return false;
+    }
+    if (maze_room < 0 || maze_room > static_cast<int>(MazeDoorTestRoom::RoomC)) {
+        return false;
+    }
+    debug_level.maze_door_test.room = static_cast<MazeDoorTestRoom>(maze_room);
+    return true;
+}
+
 void WriteStageExitRequirement(std::ostream& out, const StageExitRequirement& requirement) {
     WriteString(out, requirement.flag);
     WriteBoolByte(out, requirement.expected);
@@ -2608,35 +2966,35 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePlayingInputSnapshot(out, snapshot.playing_input_snapshot);
     WritePlayingInputSnapshot(out, snapshot.previous_playing_input_snapshot);
     WritePlayingInputSnapshot(out, snapshot.previous_immediate_playing_input_snapshot);
-    WritePod(out, snapshot.title_menu_selection);
-    WritePod(out, snapshot.settings_menu_selection);
-    WritePod(out, snapshot.video_settings_menu_selection);
-    WritePod(out, snapshot.ui_settings_menu_selection);
-    WritePod(out, snapshot.post_fx_settings_menu_selection);
-    WritePod(out, snapshot.lighting_settings_menu_selection);
+    WriteTitleMenuOption(out, snapshot.title_menu_selection);
+    WriteSettingsMenuOption(out, snapshot.settings_menu_selection);
+    WriteVideoSettingsMenuOption(out, snapshot.video_settings_menu_selection);
+    WriteUiSettingsMenuOption(out, snapshot.ui_settings_menu_selection);
+    WritePostFxSettingsMenuOption(out, snapshot.post_fx_settings_menu_selection);
+    WriteLightingSettingsMenuOption(out, snapshot.lighting_settings_menu_selection);
     WriteOptionalSizeIndex(out, snapshot.video_settings_target_window_size_index);
     WriteOptionalSizeIndex(out, snapshot.video_settings_target_resolution_index);
     WriteOptionalBoolByte(out, snapshot.video_settings_target_fullscreen);
     WriteBoolByte(out, snapshot.rebuild_render_texture);
     WriteBoolByte(out, snapshot.choosing_control_binding);
-    WritePod(out, snapshot.debug_overlay);
-    WritePod(out, snapshot.debug_shake_brush);
-    WritePod(out, snapshot.debug_audio_brush);
-    WritePod(out, snapshot.debug_fluid_brush);
-    WritePod(out, snapshot.stage_rotation);
-    WritePod(out, snapshot.player_tuning);
+    WriteDebugOverlayState(out, snapshot.debug_overlay);
+    WriteDebugShakeBrushState(out, snapshot.debug_shake_brush);
+    WriteDebugAudioBrushState(out, snapshot.debug_audio_brush);
+    WriteDebugFluidBrushState(out, snapshot.debug_fluid_brush);
+    WriteStageRotationState(out, snapshot.stage_rotation);
+    WritePlayerTuningState(out, snapshot.player_tuning);
     WritePod(out, snapshot.now);
     WritePod(out, snapshot.time_since_last_update);
     WritePod(out, snapshot.scene_frame);
     WritePod(out, snapshot.frame);
     WritePod(out, snapshot.stage_frame);
-    WritePod(out, snapshot.drng);
-    WritePod(out, snapshot.stagegen_drng);
+    WriteDetRng(out, snapshot.drng);
+    WriteDetRng(out, snapshot.stagegen_drng);
     WriteMode(out, snapshot.menu_return_to);
     WriteBoolByte(out, snapshot.game_over);
     WriteBoolByte(out, snapshot.pause);
     WriteBoolByte(out, snapshot.win);
-    WritePod(out, snapshot.respawn_target);
+    WriteStageLoadTarget(out, snapshot.respawn_target);
     WriteOptionalStageTransitionTarget(out, snapshot.pending_stage_transition);
     WriteMultiplayerRespawnMode(out, snapshot.multiplayer_respawn_mode);
     WritePod(out, snapshot.points);
@@ -2644,10 +3002,10 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.depth);
     WritePod(out, snapshot.sac_altar_favor);
     WritePod(out, snapshot.sac_altar_reward_tier);
-    WritePod(out, snapshot.quest_state);
+    WriteQuestState(out, snapshot.quest_state);
     WritePlayerRegistry(out, snapshot.players);
     WritePod(out, snapshot.frame_pause);
-    WritePod(out, snapshot.debug_level);
+    WriteDebugLevelConfig(out, snapshot.debug_level);
     WriteEntPool(out, snapshot.ents);
     WriteStage(out, snapshot.stage);
     WriteOptionalVid(out, snapshot.controlled_ent_vid);
@@ -2655,7 +3013,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteOptionalVid(out, snapshot.mouse_trailer_vid);
     WriteContactBookkeeping(out, snapshot.contact);
     WriteEntToolStates(out, snapshot.ent_tool_states);
-    WritePod(out, snapshot.play_cam_pos);
+    WriteVec2(out, snapshot.play_cam_pos);
 }
 
 bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
@@ -2670,35 +3028,35 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPlayingInputSnapshot(in, snapshot.playing_input_snapshot) &&
            ReadPlayingInputSnapshot(in, snapshot.previous_playing_input_snapshot) &&
            ReadPlayingInputSnapshot(in, snapshot.previous_immediate_playing_input_snapshot) &&
-           ReadPod(in, snapshot.title_menu_selection) &&
-           ReadPod(in, snapshot.settings_menu_selection) &&
-           ReadPod(in, snapshot.video_settings_menu_selection) &&
-           ReadPod(in, snapshot.ui_settings_menu_selection) &&
-           ReadPod(in, snapshot.post_fx_settings_menu_selection) &&
-           ReadPod(in, snapshot.lighting_settings_menu_selection) &&
+           ReadTitleMenuOption(in, snapshot.title_menu_selection) &&
+           ReadSettingsMenuOption(in, snapshot.settings_menu_selection) &&
+           ReadVideoSettingsMenuOption(in, snapshot.video_settings_menu_selection) &&
+           ReadUiSettingsMenuOption(in, snapshot.ui_settings_menu_selection) &&
+           ReadPostFxSettingsMenuOption(in, snapshot.post_fx_settings_menu_selection) &&
+           ReadLightingSettingsMenuOption(in, snapshot.lighting_settings_menu_selection) &&
            ReadOptionalSizeIndex(in, snapshot.video_settings_target_window_size_index) &&
            ReadOptionalSizeIndex(in, snapshot.video_settings_target_resolution_index) &&
            ReadOptionalBoolByte(in, snapshot.video_settings_target_fullscreen) &&
            ReadBoolByte(in, snapshot.rebuild_render_texture) &&
            ReadBoolByte(in, snapshot.choosing_control_binding) &&
-           ReadPod(in, snapshot.debug_overlay) &&
-           ReadPod(in, snapshot.debug_shake_brush) &&
-           ReadPod(in, snapshot.debug_audio_brush) &&
-           ReadPod(in, snapshot.debug_fluid_brush) &&
-           ReadPod(in, snapshot.stage_rotation) &&
-           ReadPod(in, snapshot.player_tuning) &&
+           ReadDebugOverlayState(in, snapshot.debug_overlay) &&
+           ReadDebugShakeBrushState(in, snapshot.debug_shake_brush) &&
+           ReadDebugAudioBrushState(in, snapshot.debug_audio_brush) &&
+           ReadDebugFluidBrushState(in, snapshot.debug_fluid_brush) &&
+           ReadStageRotationState(in, snapshot.stage_rotation) &&
+           ReadPlayerTuningState(in, snapshot.player_tuning) &&
            ReadPod(in, snapshot.now) &&
            ReadPod(in, snapshot.time_since_last_update) &&
            ReadPod(in, snapshot.scene_frame) &&
            ReadPod(in, snapshot.frame) &&
            ReadPod(in, snapshot.stage_frame) &&
-           ReadPod(in, snapshot.drng) &&
-           ReadPod(in, snapshot.stagegen_drng) &&
+           ReadDetRng(in, snapshot.drng) &&
+           ReadDetRng(in, snapshot.stagegen_drng) &&
            ReadMode(in, snapshot.menu_return_to) &&
            ReadBoolByte(in, snapshot.game_over) &&
            ReadBoolByte(in, snapshot.pause) &&
            ReadBoolByte(in, snapshot.win) &&
-           ReadPod(in, snapshot.respawn_target) &&
+           ReadStageLoadTarget(in, snapshot.respawn_target) &&
            ReadOptionalStageTransitionTarget(in, snapshot.pending_stage_transition) &&
            ReadMultiplayerRespawnMode(in, snapshot.multiplayer_respawn_mode) &&
            ReadPod(in, snapshot.points) &&
@@ -2706,10 +3064,10 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.depth) &&
            ReadPod(in, snapshot.sac_altar_favor) &&
            ReadPod(in, snapshot.sac_altar_reward_tier) &&
-           ReadPod(in, snapshot.quest_state) &&
+           ReadQuestState(in, snapshot.quest_state) &&
            ReadPlayerRegistry(in, snapshot.players) &&
            ReadPod(in, snapshot.frame_pause) &&
-           ReadPod(in, snapshot.debug_level) &&
+           ReadDebugLevelConfig(in, snapshot.debug_level) &&
            ReadEntPool(in, snapshot.ents) &&
            ReadStage(in, snapshot.stage) &&
            ReadOptionalVid(in, snapshot.controlled_ent_vid) &&
@@ -2717,7 +3075,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadOptionalVid(in, snapshot.mouse_trailer_vid) &&
            ReadContactBookkeeping(in, snapshot.contact) &&
            ReadEntToolStates(in, snapshot.ent_tool_states) &&
-           ReadPod(in, snapshot.play_cam_pos);
+           ReadVec2(in, snapshot.play_cam_pos);
 }
 
 void WriteSimPlayerSlotSnapshot(std::ostream& out, const SimPlayerSlotSnapshot& slot) {
@@ -2836,21 +3194,21 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WritePlayingInputSnapshot(out, snapshot.playing_input_snapshot);
     WritePlayingInputSnapshot(out, snapshot.previous_playing_input_snapshot);
     WritePlayingInputSnapshot(out, snapshot.previous_immediate_playing_input_snapshot);
-    WritePod(out, snapshot.stage_rotation);
-    WritePod(out, snapshot.player_tuning);
+    WriteStageRotationState(out, snapshot.stage_rotation);
+    WritePlayerTuningState(out, snapshot.player_tuning);
     WriteBoolByte(out, snapshot.running);
     WritePod(out, snapshot.now);
     WritePod(out, snapshot.time_since_last_update);
     WritePod(out, snapshot.scene_frame);
     WritePod(out, snapshot.frame);
     WritePod(out, snapshot.stage_frame);
-    WritePod(out, snapshot.drng);
-    WritePod(out, snapshot.stagegen_drng);
+    WriteDetRng(out, snapshot.drng);
+    WriteDetRng(out, snapshot.stagegen_drng);
     WriteMode(out, snapshot.menu_return_to);
     WriteBoolByte(out, snapshot.game_over);
     WriteBoolByte(out, snapshot.pause);
     WriteBoolByte(out, snapshot.win);
-    WritePod(out, snapshot.respawn_target);
+    WriteStageLoadTarget(out, snapshot.respawn_target);
     WriteOptionalStageTransitionTarget(out, snapshot.pending_stage_transition);
     WriteMultiplayerRespawnMode(out, snapshot.multiplayer_respawn_mode);
     WritePod(out, snapshot.points);
@@ -2859,10 +3217,10 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WritePod(out, snapshot.sac_altar_favor);
     WritePod(out, snapshot.sac_altar_reward_tier);
     WriteVidVector(out, snapshot.interact_claimed_vids_this_frame);
-    WritePod(out, snapshot.quest_state);
+    WriteQuestState(out, snapshot.quest_state);
     WriteSimPlayerSlots(out, snapshot.players);
     WritePod(out, snapshot.frame_pause);
-    WritePod(out, snapshot.debug_level);
+    WriteDebugLevelConfig(out, snapshot.debug_level);
     WriteEntPool(out, snapshot.ents);
     WriteVidVector(out, snapshot.area_listener_vids);
     WriteStage(out, snapshot.stage);
@@ -2881,21 +3239,21 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadPlayingInputSnapshot(in, snapshot.playing_input_snapshot) &&
            ReadPlayingInputSnapshot(in, snapshot.previous_playing_input_snapshot) &&
            ReadPlayingInputSnapshot(in, snapshot.previous_immediate_playing_input_snapshot) &&
-           ReadPod(in, snapshot.stage_rotation) &&
-           ReadPod(in, snapshot.player_tuning) &&
+           ReadStageRotationState(in, snapshot.stage_rotation) &&
+           ReadPlayerTuningState(in, snapshot.player_tuning) &&
            ReadBoolByte(in, snapshot.running) &&
            ReadPod(in, snapshot.now) &&
            ReadPod(in, snapshot.time_since_last_update) &&
            ReadPod(in, snapshot.scene_frame) &&
            ReadPod(in, snapshot.frame) &&
            ReadPod(in, snapshot.stage_frame) &&
-           ReadPod(in, snapshot.drng) &&
-           ReadPod(in, snapshot.stagegen_drng) &&
+           ReadDetRng(in, snapshot.drng) &&
+           ReadDetRng(in, snapshot.stagegen_drng) &&
            ReadMode(in, snapshot.menu_return_to) &&
            ReadBoolByte(in, snapshot.game_over) &&
            ReadBoolByte(in, snapshot.pause) &&
            ReadBoolByte(in, snapshot.win) &&
-           ReadPod(in, snapshot.respawn_target) &&
+           ReadStageLoadTarget(in, snapshot.respawn_target) &&
            ReadOptionalStageTransitionTarget(in, snapshot.pending_stage_transition) &&
            ReadMultiplayerRespawnMode(in, snapshot.multiplayer_respawn_mode) &&
            ReadPod(in, snapshot.points) &&
@@ -2904,10 +3262,10 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadPod(in, snapshot.sac_altar_favor) &&
            ReadPod(in, snapshot.sac_altar_reward_tier) &&
            ReadVidVector(in, snapshot.interact_claimed_vids_this_frame) &&
-           ReadPod(in, snapshot.quest_state) &&
+           ReadQuestState(in, snapshot.quest_state) &&
            ReadSimPlayerSlots(in, snapshot.players) &&
            ReadPod(in, snapshot.frame_pause) &&
-           ReadPod(in, snapshot.debug_level) &&
+           ReadDebugLevelConfig(in, snapshot.debug_level) &&
            ReadEntPool(in, snapshot.ents) &&
            ReadVidVector(in, snapshot.area_listener_vids) &&
            ReadStage(in, snapshot.stage) &&
