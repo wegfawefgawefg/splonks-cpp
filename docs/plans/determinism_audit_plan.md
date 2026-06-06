@@ -178,6 +178,11 @@ The expected end state is:
 - Fixed in debug recordings: `GameplaySnapshot` video menu target indices are
   serialized as optional `uint32_t` values instead of raw
   `std::optional<std::size_t>`. Recording format version is now 73.
+- Fixed in shared gameplay/simulation snapshot serialization: entity
+  `stage_spawn_index` and `EntPool::available_ids` are now encoded as explicit
+  optional/vector `uint32_t` values instead of raw host `size_t`. These fields
+  affect spawn identity and entity id reuse after replay/resync. Recording
+  format version is now 74.
 - Deferred risk: `SerializeSimSnapshotToBytes` / `DeserializeSimSnapshotFromBytes`
   still write many trivially-copyable structs by raw host layout. That means
   endian, enum storage, bool representation, float bit representation, and
@@ -210,6 +215,10 @@ The expected end state is:
   menu-selection indices still use `std::optional<std::size_t>` in runtime
   state because they index local option arrays, but the on-disk recording format
   now stores them as explicit optional `uint32_t` values.
+- Fixed in shared gameplay/simulation snapshot serialization:
+  `Ent::stage_spawn_index` and `EntPool::available_ids` still use
+  `std::size_t` in runtime state because they index local arrays, but the
+  snapshot byte format now stores them as explicit `uint32_t` values.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

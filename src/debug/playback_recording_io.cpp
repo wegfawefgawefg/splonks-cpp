@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 73;
+constexpr std::uint32_t kRecordingVersion = 74;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -107,6 +107,31 @@ bool ReadOptionalSizeIndex(std::istream& in, std::optional<std::size_t>& value) 
         return false;
     }
     value = static_cast<std::size_t>(loaded);
+    return true;
+}
+
+void WriteSizeIndexVector(std::ostream& out, const std::vector<std::size_t>& values) {
+    const std::uint32_t count = static_cast<std::uint32_t>(values.size());
+    WritePod(out, count);
+    for (const std::size_t value : values) {
+        const std::uint32_t stored = static_cast<std::uint32_t>(value);
+        WritePod(out, stored);
+    }
+}
+
+bool ReadSizeIndexVector(std::istream& in, std::vector<std::size_t>& values) {
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    values.resize(count);
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        std::uint32_t loaded = 0;
+        if (!ReadPod(in, loaded)) {
+            return false;
+        }
+        values[i] = static_cast<std::size_t>(loaded);
+    }
     return true;
 }
 
@@ -245,7 +270,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalPod(out, ent.pickup_effect);
     WritePod(out, ent.money);
     WritePod(out, ent.buyable);
-    WriteOptionalPod(out, ent.stage_spawn_index);
+    WriteOptionalSizeIndex(out, ent.stage_spawn_index);
     WriteOptionalPod(out, ent.back_vid);
     WritePod(out, ent.attach_mode);
     WritePod(out, ent.use_state);
@@ -373,7 +398,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalPod(in, ent.pickup_effect) &&
            ReadPod(in, ent.money) &&
            ReadPod(in, ent.buyable) &&
-           ReadOptionalPod(in, ent.stage_spawn_index) &&
+           ReadOptionalSizeIndex(in, ent.stage_spawn_index) &&
            ReadOptionalPod(in, ent.back_vid) &&
            ReadPod(in, ent.attach_mode) &&
            ReadPod(in, ent.use_state) &&
@@ -801,7 +826,7 @@ void WriteEntPool(std::ostream& out, const EntPool& ents) {
     for (const Ent& ent : ents.ents) {
         WriteEnt(out, ent);
     }
-    WriteVectorPod(out, ents.available_ids);
+    WriteSizeIndexVector(out, ents.available_ids);
 }
 
 bool ReadEntPool(std::istream& in, EntPool& ents) {
@@ -817,7 +842,7 @@ bool ReadEntPool(std::istream& in, EntPool& ents) {
         }
     }
 
-    return ReadVectorPod(in, ents.available_ids);
+    return ReadSizeIndexVector(in, ents.available_ids);
 }
 
 void WritePlayerRegistry(std::ostream& out, const PlayerRegistry& players) {
