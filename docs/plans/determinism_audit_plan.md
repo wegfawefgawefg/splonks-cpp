@@ -121,7 +121,16 @@ The expected end state is:
   unordered-map iteration. Fixed: `SID::Query` now sorts returned VIDs by
   `id` / `version` before callers consume the result, so per-bucket insertion
   order cannot leak into collision/contact ordering.
-- Deferred risk: contact/collision tie ordering is not yet fully audited.
+- Fixed in shared world queries: `QueryEntsInAabb` now re-sorts the final
+  deduplicated result by VID after merging wrapped-world sample offsets. This
+  keeps wrapped-stage broadphase consumers from inheriting offset enumeration
+  order when the same query touches multiple wrapped copies.
+- Fixed in moving-platform carry ordering: riders with equal carried x
+  positions now use VID as a deterministic tie-breaker. The old comparator left
+  equal-position riders equivalent under `std::sort`, so their displacement
+  order was not explicitly defined.
+- Deferred risk: continue auditing contact/collision tie ordering outside the
+  common broadphase and moving-platform carry paths.
 
 ## RNG Audit
 

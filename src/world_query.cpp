@@ -13,6 +13,13 @@ namespace splonks {
 
 namespace {
 
+bool VidLess(const VID& left, const VID& right) {
+    if (left.id != right.id) {
+        return left.id < right.id;
+    }
+    return left.version < right.version;
+}
+
 float GetNearestWrappedDelta(float from, float to, float span, bool wraps) {
     float delta = to - from;
     if (!wraps || span <= 0.0F) {
@@ -347,6 +354,7 @@ std::vector<VID> QueryEntsInAabb(
         }
     }
 
+    std::sort(result.begin(), result.end(), VidLess);
     return result;
 }
 

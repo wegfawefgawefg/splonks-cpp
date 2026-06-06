@@ -13,6 +13,13 @@ namespace splonks::ents::common {
 
 namespace {
 
+bool VidLess(const VID& left, const VID& right) {
+    if (left.id != right.id) {
+        return left.id < right.id;
+    }
+    return left.version < right.version;
+}
+
 AABB GetAabbAtPosition(const Ent& ent, const Vec2& pos) {
     return AABB::New(pos, pos + ent.size - Vec2::New(1.0F, 1.0F));
 }
@@ -466,12 +473,18 @@ void TryCarryEntsOnTopByOnePixel(
             const float right_x =
                 GetNearestWorldAabb(state.stage, mover.GetCenter(), right->GetAABB()).tl.x;
             if (direction.x > 0) {
-                return left_x > right_x;
+                if (left_x != right_x) {
+                    return left_x > right_x;
+                }
+                return VidLess(lhs, rhs);
             }
             if (direction.x < 0) {
-                return left_x < right_x;
+                if (left_x != right_x) {
+                    return left_x < right_x;
+                }
+                return VidLess(lhs, rhs);
             }
-            return false;
+            return VidLess(lhs, rhs);
         }
     );
 
