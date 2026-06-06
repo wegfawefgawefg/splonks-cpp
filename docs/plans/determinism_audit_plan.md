@@ -247,6 +247,14 @@ The expected end state is:
   `BuyDamsel`) instead of process-local function pointer bytes; an unmapped
   future buy callback intentionally fails decode until it is added to the
   mapping. Recording format version is now 85.
+- Fixed in shared gameplay/simulation snapshot serialization: common entity
+  booleans and small enums now use explicit one-byte encodings instead of raw
+  host `bool` / enum storage. This covers entity activity/collision/pickup/
+  hang/contact flags plus `EntType`, `Side`, `DrawLayer`, `TravelSound`,
+  `EntCondition`, `EntAiState`, `DamageType`, `DamageVuln`, `PointLabel`,
+  `EntLabel`, `Alignment`, and optional enum fields. Snapshot optional
+  presence markers now reject invalid nonzero values instead of accepting any
+  byte as present. Recording format version is now 86.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,

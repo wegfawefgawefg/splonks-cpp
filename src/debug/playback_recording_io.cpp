@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 85;
+constexpr std::uint32_t kRecordingVersion = 86;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -85,6 +85,9 @@ bool ReadOptionalPod(std::istream& in, std::optional<T>& value) {
         value.reset();
         return true;
     }
+    if (has_value != 1) {
+        return false;
+    }
     T loaded{};
     if (!ReadPod(in, loaded)) {
         return false;
@@ -110,6 +113,9 @@ bool ReadOptionalSizeIndex(std::istream& in, std::optional<std::size_t>& value) 
     if (has_value == 0) {
         value.reset();
         return true;
+    }
+    if (has_value != 1) {
+        return false;
     }
     std::uint32_t loaded = 0;
     if (!ReadPod(in, loaded)) {
@@ -185,6 +191,9 @@ bool ReadOptionalVid(std::istream& in, std::optional<VID>& value) {
         value.reset();
         return true;
     }
+    if (has_value != 1) {
+        return false;
+    }
     VID loaded{};
     if (!ReadVid(in, loaded)) {
         return false;
@@ -232,6 +241,9 @@ bool ReadOptionalVidVector(std::istream& in, std::optional<std::vector<VID>>& va
         values.reset();
         return true;
     }
+    if (has_value != 1) {
+        return false;
+    }
     values.emplace();
     return ReadVidVector(in, *values);
 }
@@ -266,6 +278,9 @@ bool ReadBoolByte(std::istream& in, bool& value) {
     if (!ReadPod(in, stored)) {
         return false;
     }
+    if (stored > 1) {
+        return false;
+    }
     value = stored != 0;
     return true;
 }
@@ -286,6 +301,9 @@ bool ReadOptionalBoolByte(std::istream& in, std::optional<bool>& value) {
     if (has_value == 0) {
         value.reset();
         return true;
+    }
+    if (has_value != 1) {
+        return false;
     }
     bool loaded = false;
     if (!ReadBoolByte(in, loaded)) {
@@ -431,11 +449,80 @@ bool ReadOptionalAFrameId(std::istream& in, std::optional<AFrameId>& value) {
         value.reset();
         return true;
     }
+    if (has_value != 1) {
+        return false;
+    }
     AFrameId loaded = 0;
     if (!ReadPod(in, loaded)) {
         return false;
     }
     value = loaded;
+    return true;
+}
+
+template <typename T>
+void WriteEnumByte(std::ostream& out, T value) {
+    const std::uint8_t stored = static_cast<std::uint8_t>(value);
+    WritePod(out, stored);
+}
+
+template <typename T>
+bool ReadEnumByte(std::istream& in, T& value, T max_value) {
+    std::uint8_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    if (stored > static_cast<std::uint8_t>(max_value)) {
+        return false;
+    }
+    value = static_cast<T>(stored);
+    return true;
+}
+
+template <typename T>
+void WriteOptionalEnumByte(std::ostream& out, const std::optional<T>& value) {
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
+    WritePod(out, has_value);
+    if (value.has_value()) {
+        WriteEnumByte(out, *value);
+    }
+}
+
+template <typename T>
+bool ReadOptionalEnumByte(std::istream& in, std::optional<T>& value, T max_value) {
+    std::uint8_t has_value = 0;
+    if (!ReadPod(in, has_value)) {
+        return false;
+    }
+    if (has_value == 0) {
+        value.reset();
+        return true;
+    }
+    if (has_value != 1) {
+        return false;
+    }
+    T loaded{};
+    if (!ReadEnumByte(in, loaded, max_value)) {
+        return false;
+    }
+    value = loaded;
+    return true;
+}
+
+void WriteEntType(std::ostream& out, EntType type) {
+    const std::uint16_t stored = static_cast<std::uint16_t>(type);
+    WritePod(out, stored);
+}
+
+bool ReadEntType(std::istream& in, EntType& type) {
+    std::uint16_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    if (stored > static_cast<std::uint16_t>(EntType::DebugMovingLight)) {
+        return false;
+    }
+    type = static_cast<EntType>(stored);
     return true;
 }
 
@@ -667,40 +754,43 @@ bool ReadOptionalVectorPod(std::istream& in, std::optional<std::vector<T>>& valu
         values.reset();
         return true;
     }
+    if (has_value != 1) {
+        return false;
+    }
     values.emplace();
     return ReadVectorPod(in, *values);
 }
 
 void WriteEnt(std::ostream& out, const Ent& ent) {
-    WritePod(out, ent.active);
-    WritePod(out, ent.marked_for_destruction);
-    WritePod(out, ent.type_);
+    WriteBoolByte(out, ent.active);
+    WriteBoolByte(out, ent.marked_for_destruction);
+    WriteEntType(out, ent.type_);
     WriteVid(out, ent.vid);
-    WritePod(out, ent.has_physics);
-    WritePod(out, ent.can_collide);
-    WritePod(out, ent.can_be_hit);
-    WritePod(out, ent.can_receive_proj_contact);
-    WritePod(out, ent.stone);
-    WritePod(out, ent.wanted);
-    WritePod(out, ent.crusher_pusher);
-    WritePod(out, ent.pushable);
-    WritePod(out, ent.can_stomp);
-    WritePod(out, ent.can_be_stomped);
-    WritePod(out, ent.can_collect_pickups);
-    WritePod(out, ent.can_go_on_back);
-    WritePod(out, ent.grounded);
+    WriteBoolByte(out, ent.has_physics);
+    WriteBoolByte(out, ent.can_collide);
+    WriteBoolByte(out, ent.can_be_hit);
+    WriteBoolByte(out, ent.can_receive_proj_contact);
+    WriteBoolByte(out, ent.stone);
+    WriteBoolByte(out, ent.wanted);
+    WriteBoolByte(out, ent.crusher_pusher);
+    WriteBoolByte(out, ent.pushable);
+    WriteBoolByte(out, ent.can_stomp);
+    WriteBoolByte(out, ent.can_be_stomped);
+    WriteBoolByte(out, ent.can_collect_pickups);
+    WriteBoolByte(out, ent.can_go_on_back);
+    WriteBoolByte(out, ent.grounded);
     WritePod(out, ent.shake);
     WritePod(out, ent.rotation);
     WritePod(out, ent.alpha);
     WritePod(out, ent.coyote_time);
     WritePod(out, ent.stun_timer);
-    WritePod(out, ent.stun_recovers_on_ground);
-    WritePod(out, ent.stun_recovers_while_held);
-    WritePod(out, ent.can_be_picked_up);
-    WritePod(out, ent.affected_by_cobweb);
-    WritePod(out, ent.can_only_be_picked_up_if_dead_or_stunned);
-    WritePod(out, ent.impassable);
-    WritePod(out, ent.can_be_hung_on);
+    WriteBoolByte(out, ent.stun_recovers_on_ground);
+    WriteBoolByte(out, ent.stun_recovers_while_held);
+    WriteBoolByte(out, ent.can_be_picked_up);
+    WriteBoolByte(out, ent.affected_by_cobweb);
+    WriteBoolByte(out, ent.can_only_be_picked_up_if_dead_or_stunned);
+    WriteBoolByte(out, ent.impassable);
+    WriteBoolByte(out, ent.can_be_hung_on);
     WritePod(out, ent.fall_timer);
     WritePod(out, ent.pos);
     WritePod(out, ent.vel);
@@ -716,20 +806,20 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WritePod(out, ent.light_color);
     WritePod(out, ent.light_radius);
     WritePod(out, ent.dist_traveled_this_frame);
-    WritePod(out, ent.facing);
-    WritePod(out, ent.vertical_flip);
-    WritePod(out, ent.draw_layer);
-    WritePod(out, ent.render_enabled);
+    WriteEnumByte(out, ent.facing);
+    WriteBoolByte(out, ent.vertical_flip);
+    WriteEnumByte(out, ent.draw_layer);
+    WriteBoolByte(out, ent.render_enabled);
     WriteAFrameAnimator(out, ent.aframe_animator);
     WritePod(out, ent.jump_delay_frame_count);
-    WritePod(out, ent.jumped_this_frame);
+    WriteBoolByte(out, ent.jumped_this_frame);
     WritePod(out, ent.climb_detach_cooldown);
-    WriteOptionalPod(out, ent.hang_side);
-    WritePod(out, ent.can_hang_ledge);
-    WritePod(out, ent.can_hang_wall);
+    WriteOptionalEnumByte(out, ent.hang_side);
+    WriteBoolByte(out, ent.can_hang_ledge);
+    WriteBoolByte(out, ent.can_hang_wall);
     WritePod(out, ent.hang_count);
-    WritePod(out, ent.holding);
-    WriteOptionalPod(out, ent.pickup_effect);
+    WriteBoolByte(out, ent.holding);
+    WriteOptionalEnumByte(out, ent.pickup_effect);
     WritePod(out, ent.money);
     WriteBuyable(out, ent.buyable);
     WriteOptionalSizeIndex(out, ent.stage_spawn_index);
@@ -737,19 +827,19 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteAttachMode(out, ent.attach_mode);
     WriteUseState(out, ent.use_state);
     WritePod(out, ent.travel_sound_countdown);
-    WritePod(out, ent.travel_sound);
-    WritePod(out, ent.condition);
-    WritePod(out, ent.last_condition);
-    WritePod(out, ent.ai_state);
-    WritePod(out, ent.last_ai_state);
+    WriteEnumByte(out, ent.travel_sound);
+    WriteEnumByte(out, ent.condition);
+    WriteEnumByte(out, ent.last_condition);
+    WriteEnumByte(out, ent.ai_state);
+    WriteEnumByte(out, ent.last_ai_state);
     WritePod(out, ent.movement_flags);
     WritePod(out, ent.health);
-    WritePod(out, ent.hurt_on_contact);
-    WritePod(out, ent.vanish_on_death);
-    WritePod(out, ent.affected_by_ground_friction);
+    WriteBoolByte(out, ent.hurt_on_contact);
+    WriteBoolByte(out, ent.vanish_on_death);
+    WriteBoolByte(out, ent.affected_by_ground_friction);
     WritePod(out, ent.support_ground_friction);
     WritePod(out, ent.push_acc);
-    WriteOptionalPod(out, ent.damage_anim);
+    WriteOptionalAFrameId(out, ent.damage_anim);
     WriteOptionalPod(out, ent.damage_sound);
     WriteOptionalPod(out, ent.collide_sound);
     WriteOptionalPod(out, ent.death_sound);
@@ -763,23 +853,23 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WritePod(out, ent.equip_delay_countdown);
     WriteOptionalVid(out, ent.thrown_by);
     WritePod(out, ent.thrown_immunity_timer);
-    WritePod(out, ent.proj_contact_damage_type);
+    WriteEnumByte(out, ent.proj_contact_damage_type);
     WritePod(out, ent.proj_contact_damage_amount);
-    WritePod(out, ent.can_apply_proj_contact);
+    WriteBoolByte(out, ent.can_apply_proj_contact);
     WritePod(out, ent.proj_contact_timer);
-    WritePod(out, ent.collided);
-    WritePod(out, ent.collided_last_frame);
+    WriteBoolByte(out, ent.collided);
+    WriteBoolByte(out, ent.collided_last_frame);
     WritePod(out, ent.contact_sound_cooldown);
-    WritePod(out, ent.damage_vuln);
-    WritePod(out, ent.can_be_stunned);
+    WriteEnumByte(out, ent.damage_vuln);
+    WriteBoolByte(out, ent.can_be_stunned);
     WritePod(out, ent.point_a);
     WritePod(out, ent.point_b);
     WritePod(out, ent.point_c);
     WritePod(out, ent.point_d);
-    WritePod(out, ent.point_label_a);
-    WritePod(out, ent.point_label_b);
-    WritePod(out, ent.point_label_c);
-    WritePod(out, ent.point_label_d);
+    WriteEnumByte(out, ent.point_label_a);
+    WriteEnumByte(out, ent.point_label_b);
+    WriteEnumByte(out, ent.point_label_c);
+    WriteEnumByte(out, ent.point_label_d);
     WriteOptionalVid(out, ent.holding_vid);
     WriteOptionalVid(out, ent.held_by_vid);
     WritePod(out, ent.holding_timer);
@@ -789,8 +879,8 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalVid(out, ent.ent_d);
     WriteOptionalVidVector(out, ent.child_vids);
     WriteOptionalVidVector(out, ent.inside_vids);
-    WritePod(out, ent.ent_label_a);
-    WritePod(out, ent.alignment);
+    WriteEnumByte(out, ent.ent_label_a);
+    WriteEnumByte(out, ent.alignment);
     WritePod(out, ent.counter_a);
     WritePod(out, ent.counter_b);
     WritePod(out, ent.counter_c);
@@ -800,35 +890,35 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
 }
 
 bool ReadEnt(std::istream& in, Ent& ent) {
-    return ReadPod(in, ent.active) &&
-           ReadPod(in, ent.marked_for_destruction) &&
-           ReadPod(in, ent.type_) &&
+    return ReadBoolByte(in, ent.active) &&
+           ReadBoolByte(in, ent.marked_for_destruction) &&
+           ReadEntType(in, ent.type_) &&
            ReadVid(in, ent.vid) &&
-           ReadPod(in, ent.has_physics) &&
-           ReadPod(in, ent.can_collide) &&
-           ReadPod(in, ent.can_be_hit) &&
-           ReadPod(in, ent.can_receive_proj_contact) &&
-           ReadPod(in, ent.stone) &&
-           ReadPod(in, ent.wanted) &&
-           ReadPod(in, ent.crusher_pusher) &&
-           ReadPod(in, ent.pushable) &&
-           ReadPod(in, ent.can_stomp) &&
-           ReadPod(in, ent.can_be_stomped) &&
-           ReadPod(in, ent.can_collect_pickups) &&
-           ReadPod(in, ent.can_go_on_back) &&
-           ReadPod(in, ent.grounded) &&
+           ReadBoolByte(in, ent.has_physics) &&
+           ReadBoolByte(in, ent.can_collide) &&
+           ReadBoolByte(in, ent.can_be_hit) &&
+           ReadBoolByte(in, ent.can_receive_proj_contact) &&
+           ReadBoolByte(in, ent.stone) &&
+           ReadBoolByte(in, ent.wanted) &&
+           ReadBoolByte(in, ent.crusher_pusher) &&
+           ReadBoolByte(in, ent.pushable) &&
+           ReadBoolByte(in, ent.can_stomp) &&
+           ReadBoolByte(in, ent.can_be_stomped) &&
+           ReadBoolByte(in, ent.can_collect_pickups) &&
+           ReadBoolByte(in, ent.can_go_on_back) &&
+           ReadBoolByte(in, ent.grounded) &&
            ReadPod(in, ent.shake) &&
            ReadPod(in, ent.rotation) &&
            ReadPod(in, ent.alpha) &&
            ReadPod(in, ent.coyote_time) &&
            ReadPod(in, ent.stun_timer) &&
-           ReadPod(in, ent.stun_recovers_on_ground) &&
-           ReadPod(in, ent.stun_recovers_while_held) &&
-           ReadPod(in, ent.can_be_picked_up) &&
-           ReadPod(in, ent.affected_by_cobweb) &&
-           ReadPod(in, ent.can_only_be_picked_up_if_dead_or_stunned) &&
-           ReadPod(in, ent.impassable) &&
-           ReadPod(in, ent.can_be_hung_on) &&
+           ReadBoolByte(in, ent.stun_recovers_on_ground) &&
+           ReadBoolByte(in, ent.stun_recovers_while_held) &&
+           ReadBoolByte(in, ent.can_be_picked_up) &&
+           ReadBoolByte(in, ent.affected_by_cobweb) &&
+           ReadBoolByte(in, ent.can_only_be_picked_up_if_dead_or_stunned) &&
+           ReadBoolByte(in, ent.impassable) &&
+           ReadBoolByte(in, ent.can_be_hung_on) &&
            ReadPod(in, ent.fall_timer) &&
            ReadPod(in, ent.pos) &&
            ReadPod(in, ent.vel) &&
@@ -844,20 +934,20 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadPod(in, ent.light_color) &&
            ReadPod(in, ent.light_radius) &&
            ReadPod(in, ent.dist_traveled_this_frame) &&
-           ReadPod(in, ent.facing) &&
-           ReadPod(in, ent.vertical_flip) &&
-           ReadPod(in, ent.draw_layer) &&
-           ReadPod(in, ent.render_enabled) &&
+           ReadEnumByte(in, ent.facing, Side::Right) &&
+           ReadBoolByte(in, ent.vertical_flip) &&
+           ReadEnumByte(in, ent.draw_layer, DrawLayer::Foreground) &&
+           ReadBoolByte(in, ent.render_enabled) &&
            ReadAFrameAnimator(in, ent.aframe_animator) &&
            ReadPod(in, ent.jump_delay_frame_count) &&
-           ReadPod(in, ent.jumped_this_frame) &&
+           ReadBoolByte(in, ent.jumped_this_frame) &&
            ReadPod(in, ent.climb_detach_cooldown) &&
-           ReadOptionalPod(in, ent.hang_side) &&
-           ReadPod(in, ent.can_hang_ledge) &&
-           ReadPod(in, ent.can_hang_wall) &&
+           ReadOptionalEnumByte(in, ent.hang_side, Side::Right) &&
+           ReadBoolByte(in, ent.can_hang_ledge) &&
+           ReadBoolByte(in, ent.can_hang_wall) &&
            ReadPod(in, ent.hang_count) &&
-           ReadPod(in, ent.holding) &&
-           ReadOptionalPod(in, ent.pickup_effect) &&
+           ReadBoolByte(in, ent.holding) &&
+           ReadOptionalEnumByte(in, ent.pickup_effect, EffectId::InWater) &&
            ReadPod(in, ent.money) &&
            ReadBuyable(in, ent.buyable) &&
            ReadOptionalSizeIndex(in, ent.stage_spawn_index) &&
@@ -865,19 +955,19 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadAttachMode(in, ent.attach_mode) &&
            ReadUseState(in, ent.use_state) &&
            ReadPod(in, ent.travel_sound_countdown) &&
-           ReadPod(in, ent.travel_sound) &&
-           ReadPod(in, ent.condition) &&
-           ReadPod(in, ent.last_condition) &&
-           ReadPod(in, ent.ai_state) &&
-           ReadPod(in, ent.last_ai_state) &&
+           ReadEnumByte(in, ent.travel_sound, TravelSound::Two) &&
+           ReadEnumByte(in, ent.condition, EntCondition::Stunned) &&
+           ReadEnumByte(in, ent.last_condition, EntCondition::Stunned) &&
+           ReadEnumByte(in, ent.ai_state, EntAiState::Returning) &&
+           ReadEnumByte(in, ent.last_ai_state, EntAiState::Returning) &&
            ReadPod(in, ent.movement_flags) &&
            ReadPod(in, ent.health) &&
-           ReadPod(in, ent.hurt_on_contact) &&
-           ReadPod(in, ent.vanish_on_death) &&
-           ReadPod(in, ent.affected_by_ground_friction) &&
+           ReadBoolByte(in, ent.hurt_on_contact) &&
+           ReadBoolByte(in, ent.vanish_on_death) &&
+           ReadBoolByte(in, ent.affected_by_ground_friction) &&
            ReadPod(in, ent.support_ground_friction) &&
            ReadPod(in, ent.push_acc) &&
-           ReadOptionalPod(in, ent.damage_anim) &&
+           ReadOptionalAFrameId(in, ent.damage_anim) &&
            ReadOptionalPod(in, ent.damage_sound) &&
            ReadOptionalPod(in, ent.collide_sound) &&
            ReadOptionalPod(in, ent.death_sound) &&
@@ -891,23 +981,23 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadPod(in, ent.equip_delay_countdown) &&
            ReadOptionalVid(in, ent.thrown_by) &&
            ReadPod(in, ent.thrown_immunity_timer) &&
-           ReadPod(in, ent.proj_contact_damage_type) &&
+           ReadEnumByte(in, ent.proj_contact_damage_type, DamageType::Fall) &&
            ReadPod(in, ent.proj_contact_damage_amount) &&
-           ReadPod(in, ent.can_apply_proj_contact) &&
+           ReadBoolByte(in, ent.can_apply_proj_contact) &&
            ReadPod(in, ent.proj_contact_timer) &&
-           ReadPod(in, ent.collided) &&
-           ReadPod(in, ent.collided_last_frame) &&
+           ReadBoolByte(in, ent.collided) &&
+           ReadBoolByte(in, ent.collided_last_frame) &&
            ReadPod(in, ent.contact_sound_cooldown) &&
-           ReadPod(in, ent.damage_vuln) &&
-           ReadPod(in, ent.can_be_stunned) &&
+           ReadEnumByte(in, ent.damage_vuln, DamageVuln::AnthingExceptJumpOn) &&
+           ReadBoolByte(in, ent.can_be_stunned) &&
            ReadPod(in, ent.point_a) &&
            ReadPod(in, ent.point_b) &&
            ReadPod(in, ent.point_c) &&
            ReadPod(in, ent.point_d) &&
-           ReadPod(in, ent.point_label_a) &&
-           ReadPod(in, ent.point_label_b) &&
-           ReadPod(in, ent.point_label_c) &&
-           ReadPod(in, ent.point_label_d) &&
+           ReadEnumByte(in, ent.point_label_a, PointLabel::Avoid) &&
+           ReadEnumByte(in, ent.point_label_b, PointLabel::Avoid) &&
+           ReadEnumByte(in, ent.point_label_c, PointLabel::Avoid) &&
+           ReadEnumByte(in, ent.point_label_d, PointLabel::Avoid) &&
            ReadOptionalVid(in, ent.holding_vid) &&
            ReadOptionalVid(in, ent.held_by_vid) &&
            ReadPod(in, ent.holding_timer) &&
@@ -917,8 +1007,8 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalVid(in, ent.ent_d) &&
            ReadOptionalVidVector(in, ent.child_vids) &&
            ReadOptionalVidVector(in, ent.inside_vids) &&
-           ReadPod(in, ent.ent_label_a) &&
-           ReadPod(in, ent.alignment) &&
+           ReadEnumByte(in, ent.ent_label_a, EntLabel::AttachedToThis) &&
+           ReadEnumByte(in, ent.alignment, Alignment::Enemy) &&
            ReadPod(in, ent.counter_a) &&
            ReadPod(in, ent.counter_b) &&
            ReadPod(in, ent.counter_c) &&
