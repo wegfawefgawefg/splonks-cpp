@@ -536,24 +536,29 @@ bool ReadEntType(std::istream& in, EntType& type) {
     return true;
 }
 
+void WriteFloat(std::ostream& out, float value);
+bool ReadFloat(std::istream& in, float& value);
+void WriteInt32(std::ostream& out, int value);
+bool ReadInt32(std::istream& in, int& value);
+
 void WriteVec2(std::ostream& out, const Vec2& value) {
-    WritePod(out, value.x);
-    WritePod(out, value.y);
+    WriteFloat(out, value.x);
+    WriteFloat(out, value.y);
 }
 
 bool ReadVec2(std::istream& in, Vec2& value) {
-    return ReadPod(in, value.x) &&
-           ReadPod(in, value.y);
+    return ReadFloat(in, value.x) &&
+           ReadFloat(in, value.y);
 }
 
 void WriteIVec2(std::ostream& out, const IVec2& value) {
-    WritePod(out, value.x);
-    WritePod(out, value.y);
+    WriteInt32(out, value.x);
+    WriteInt32(out, value.y);
 }
 
 bool ReadIVec2(std::istream& in, IVec2& value) {
-    return ReadPod(in, value.x) &&
-           ReadPod(in, value.y);
+    return ReadInt32(in, value.x) &&
+           ReadInt32(in, value.y);
 }
 
 void WriteUVec2(std::ostream& out, const UVec2& value) {
@@ -572,6 +577,18 @@ bool ReadUVec2(std::istream& in, UVec2& value) {
     value.x = static_cast<unsigned int>(x);
     value.y = static_cast<unsigned int>(y);
     return true;
+}
+
+void WriteColor3(std::ostream& out, const Color3& color) {
+    WriteFloat(out, color.r);
+    WriteFloat(out, color.g);
+    WriteFloat(out, color.b);
+}
+
+bool ReadColor3(std::istream& in, Color3& color) {
+    return ReadFloat(in, color.r) &&
+           ReadFloat(in, color.g) &&
+           ReadFloat(in, color.b);
 }
 
 void WriteUVec2Vector(std::ostream& out, const std::vector<UVec2>& values) {
@@ -1388,18 +1405,18 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.impassable);
     WriteBoolByte(out, ent.can_be_hung_on);
     WritePod(out, ent.fall_timer);
-    WritePod(out, ent.pos);
-    WritePod(out, ent.vel);
-    WritePod(out, ent.acc);
+    WriteVec2(out, ent.pos);
+    WriteVec2(out, ent.vel);
+    WriteVec2(out, ent.acc);
     WritePod(out, ent.max_speed);
     WritePod(out, ent.jump_hold_gravity_frames_remaining);
     WritePod(out, ent.throw_velocity_scale);
     WritePod(out, ent.buoyancy);
     WriteEntEffects(out, ent.effects);
-    WritePod(out, ent.size);
+    WriteVec2(out, ent.size);
     WritePod(out, ent.self_light);
     WritePod(out, ent.light_strength);
-    WritePod(out, ent.light_color);
+    WriteColor3(out, ent.light_color);
     WritePod(out, ent.light_radius);
     WritePod(out, ent.dist_traveled_this_frame);
     WriteEnumByte(out, ent.facing);
@@ -1458,10 +1475,10 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WritePod(out, ent.contact_sound_cooldown);
     WriteEnumByte(out, ent.damage_vuln);
     WriteBoolByte(out, ent.can_be_stunned);
-    WritePod(out, ent.point_a);
-    WritePod(out, ent.point_b);
-    WritePod(out, ent.point_c);
-    WritePod(out, ent.point_d);
+    WriteIVec2(out, ent.point_a);
+    WriteIVec2(out, ent.point_b);
+    WriteIVec2(out, ent.point_c);
+    WriteIVec2(out, ent.point_d);
     WriteEnumByte(out, ent.point_label_a);
     WriteEnumByte(out, ent.point_label_b);
     WriteEnumByte(out, ent.point_label_c);
@@ -1516,18 +1533,18 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.impassable) &&
            ReadBoolByte(in, ent.can_be_hung_on) &&
            ReadPod(in, ent.fall_timer) &&
-           ReadPod(in, ent.pos) &&
-           ReadPod(in, ent.vel) &&
-           ReadPod(in, ent.acc) &&
+           ReadVec2(in, ent.pos) &&
+           ReadVec2(in, ent.vel) &&
+           ReadVec2(in, ent.acc) &&
            ReadPod(in, ent.max_speed) &&
            ReadPod(in, ent.jump_hold_gravity_frames_remaining) &&
            ReadPod(in, ent.throw_velocity_scale) &&
            ReadPod(in, ent.buoyancy) &&
            ReadEntEffects(in, ent.effects) &&
-           ReadPod(in, ent.size) &&
+           ReadVec2(in, ent.size) &&
            ReadPod(in, ent.self_light) &&
            ReadPod(in, ent.light_strength) &&
-           ReadPod(in, ent.light_color) &&
+           ReadColor3(in, ent.light_color) &&
            ReadPod(in, ent.light_radius) &&
            ReadPod(in, ent.dist_traveled_this_frame) &&
            ReadEnumByte(in, ent.facing, Side::Right) &&
@@ -1586,10 +1603,10 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadPod(in, ent.contact_sound_cooldown) &&
            ReadEnumByte(in, ent.damage_vuln, DamageVuln::AnthingExceptJumpOn) &&
            ReadBoolByte(in, ent.can_be_stunned) &&
-           ReadPod(in, ent.point_a) &&
-           ReadPod(in, ent.point_b) &&
-           ReadPod(in, ent.point_c) &&
-           ReadPod(in, ent.point_d) &&
+           ReadIVec2(in, ent.point_a) &&
+           ReadIVec2(in, ent.point_b) &&
+           ReadIVec2(in, ent.point_c) &&
+           ReadIVec2(in, ent.point_d) &&
            ReadEnumByte(in, ent.point_label_a, PointLabel::Avoid) &&
            ReadEnumByte(in, ent.point_label_b, PointLabel::Avoid) &&
            ReadEnumByte(in, ent.point_label_c, PointLabel::Avoid) &&

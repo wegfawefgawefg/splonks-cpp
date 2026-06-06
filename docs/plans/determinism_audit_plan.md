@@ -307,6 +307,12 @@ The expected end state is:
   `time_since_last_update`, `scene_frame`, `frame`, `stage_frame`, points,
   deaths, depth, sac altar favor/reward tier, and `frame_pause`. Recording
   format version is now 95.
+- Fixed in shared gameplay/simulation snapshot serialization: entity `Vec2`,
+  `IVec2`, and `Color3` fields now use component writers instead of raw struct
+  POD calls. This covers entity position, velocity, acceleration, size, light
+  color, and generic entity point fields. The emitted field bytes are unchanged
+  for the current structs, so this is a layout-dependency cleanup within
+  recording format version 95.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -387,6 +393,9 @@ The expected end state is:
 - Fixed in shared snapshot/replay format: top-level frame/time/score/depth/
   altar/pause scalar fields now use named fixed-width helpers rather than raw
   POD snapshot calls.
+- Fixed in shared snapshot/replay format: entity vector/color fields now write
+  components explicitly, avoiding dependence on `Vec2` / `IVec2` / `Color3`
+  struct padding or aggregate layout.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 
