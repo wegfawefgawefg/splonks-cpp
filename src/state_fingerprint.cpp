@@ -67,6 +67,7 @@ struct FingerprintWriter {
 
     void AddVid(const VID& vid) {
         AddPod(vid.id);
+        AddPod(vid.version);
     }
 
     void AddOptionalVid(const std::optional<VID>& vid) {

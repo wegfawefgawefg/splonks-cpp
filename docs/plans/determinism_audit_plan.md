@@ -201,6 +201,10 @@ The expected end state is:
   host `size_t`. Entity, audio-emitter, audio-instance, light, optional VID, and
   vector-of-VID snapshot fields no longer carry platform-width ids by raw
   struct layout. Recording format version is now 77.
+- Fixed in canonical gameplay/replay fingerprints: `VID` hashing now includes
+  both `id` and `version`. Entity pool version is part of stale-reference
+  identity, so canonical hashes must distinguish a live reference from a reused
+  id with a different generation.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
