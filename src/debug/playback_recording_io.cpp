@@ -4,16 +4,16 @@
 #include "ents/damsel.hpp"
 
 #include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <sstream>
-#include <type_traits>
 
 namespace splonks::debug_playback_internal {
 
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 95;
+constexpr std::uint32_t kRecordingVersion = 96;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -21,16 +21,18 @@ enum class BuyableCallbackKind : std::uint8_t {
     BuyDamsel = 2,
 };
 
-template <typename T>
-void WritePod(std::ostream& out, const T& value) {
-    static_assert(std::is_trivially_copyable_v<T>);
-    out.write(reinterpret_cast<const char*>(&value), static_cast<std::streamsize>(sizeof(T)));
+void WriteRawByte(std::ostream& out, std::uint8_t value) {
+    const char byte = static_cast<char>(value);
+    out.write(&byte, 1);
 }
 
-template <typename T>
-bool ReadPod(std::istream& in, T& value) {
-    static_assert(std::is_trivially_copyable_v<T>);
-    in.read(reinterpret_cast<char*>(&value), static_cast<std::streamsize>(sizeof(T)));
+bool ReadRawByte(std::istream& in, std::uint8_t& value) {
+    char byte = 0;
+    in.read(&byte, 1);
+    if (!in.good()) {
+        return false;
+    }
+    value = static_cast<std::uint8_t>(byte);
     return in.good();
 }
 
@@ -38,6 +40,8 @@ void WriteFloat(std::ostream& out, float value);
 bool ReadFloat(std::istream& in, float& value);
 void WriteInt32(std::ostream& out, int value);
 bool ReadInt32(std::istream& in, int& value);
+void WriteSigned32(std::ostream& out, std::int32_t value);
+bool ReadSigned32(std::istream& in, std::int32_t& value);
 void WriteUint8(std::ostream& out, std::uint8_t value);
 bool ReadUint8(std::istream& in, std::uint8_t& value);
 void WriteUint16(std::ostream& out, std::uint16_t value);
@@ -622,29 +626,47 @@ bool ReadUVec2Vector(std::istream& in, std::vector<UVec2>& values) {
 }
 
 void WriteFloat(std::ostream& out, float value) {
-    WritePod(out, value);
+    std::uint32_t bits = 0;
+    static_assert(sizeof(bits) == sizeof(value));
+    std::memcpy(&bits, &value, sizeof(bits));
+    WriteUint32(out, bits);
 }
 
 bool ReadFloat(std::istream& in, float& value) {
-    return ReadPod(in, value);
+    std::uint32_t bits = 0;
+    if (!ReadUint32(in, bits)) {
+        return false;
+    }
+    static_assert(sizeof(bits) == sizeof(value));
+    std::memcpy(&value, &bits, sizeof(value));
+    return true;
 }
 
 void WriteDouble(std::ostream& out, double value) {
-    WritePod(out, value);
+    std::uint64_t bits = 0;
+    static_assert(sizeof(bits) == sizeof(value));
+    std::memcpy(&bits, &value, sizeof(bits));
+    WriteUint64(out, bits);
 }
 
 bool ReadDouble(std::istream& in, double& value) {
-    return ReadPod(in, value);
+    std::uint64_t bits = 0;
+    if (!ReadUint64(in, bits)) {
+        return false;
+    }
+    static_assert(sizeof(bits) == sizeof(value));
+    std::memcpy(&value, &bits, sizeof(value));
+    return true;
 }
 
 void WriteInt32(std::ostream& out, int value) {
     const std::int32_t stored = static_cast<std::int32_t>(value);
-    WritePod(out, stored);
+    WriteSigned32(out, stored);
 }
 
 bool ReadInt32(std::istream& in, int& value) {
     std::int32_t stored = 0;
-    if (!ReadPod(in, stored)) {
+    if (!ReadSigned32(in, stored)) {
         return false;
     }
     value = static_cast<int>(stored);
@@ -680,43 +702,84 @@ bool ReadOptionalInt32(std::istream& in, std::optional<int>& value) {
 }
 
 void WriteSigned32(std::ostream& out, std::int32_t value) {
-    WritePod(out, value);
+    std::uint32_t bits = 0;
+    static_assert(sizeof(bits) == sizeof(value));
+    std::memcpy(&bits, &value, sizeof(bits));
+    WriteUint32(out, bits);
 }
 
 bool ReadSigned32(std::istream& in, std::int32_t& value) {
-    return ReadPod(in, value);
+    std::uint32_t bits = 0;
+    if (!ReadUint32(in, bits)) {
+        return false;
+    }
+    static_assert(sizeof(bits) == sizeof(value));
+    std::memcpy(&value, &bits, sizeof(value));
+    return true;
 }
 
 void WriteUint8(std::ostream& out, std::uint8_t value) {
-    WritePod(out, value);
+    WriteRawByte(out, value);
 }
 
 bool ReadUint8(std::istream& in, std::uint8_t& value) {
-    return ReadPod(in, value);
+    return ReadRawByte(in, value);
 }
 
 void WriteUint16(std::ostream& out, std::uint16_t value) {
-    WritePod(out, value);
+    for (unsigned int shift = 0; shift < 16; shift += 8) {
+        WriteRawByte(out, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+    }
 }
 
 bool ReadUint16(std::istream& in, std::uint16_t& value) {
-    return ReadPod(in, value);
+    value = 0;
+    for (unsigned int shift = 0; shift < 16; shift += 8) {
+        std::uint8_t byte = 0;
+        if (!ReadRawByte(in, byte)) {
+            return false;
+        }
+        value = static_cast<std::uint16_t>(
+            value | static_cast<std::uint16_t>(static_cast<std::uint16_t>(byte) << shift)
+        );
+    }
+    return true;
 }
 
 void WriteUint32(std::ostream& out, std::uint32_t value) {
-    WritePod(out, value);
+    for (unsigned int shift = 0; shift < 32; shift += 8) {
+        WriteRawByte(out, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+    }
 }
 
 bool ReadUint32(std::istream& in, std::uint32_t& value) {
-    return ReadPod(in, value);
+    value = 0;
+    for (unsigned int shift = 0; shift < 32; shift += 8) {
+        std::uint8_t byte = 0;
+        if (!ReadRawByte(in, byte)) {
+            return false;
+        }
+        value |= static_cast<std::uint32_t>(byte) << shift;
+    }
+    return true;
 }
 
 void WriteUint64(std::ostream& out, std::uint64_t value) {
-    WritePod(out, value);
+    for (unsigned int shift = 0; shift < 64; shift += 8) {
+        WriteRawByte(out, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+    }
 }
 
 bool ReadUint64(std::istream& in, std::uint64_t& value) {
-    return ReadPod(in, value);
+    value = 0;
+    for (unsigned int shift = 0; shift < 64; shift += 8) {
+        std::uint8_t byte = 0;
+        if (!ReadRawByte(in, byte)) {
+            return false;
+        }
+        value |= static_cast<std::uint64_t>(byte) << shift;
+    }
+    return true;
 }
 
 void WriteUnsigned32(std::ostream& out, unsigned int value) {

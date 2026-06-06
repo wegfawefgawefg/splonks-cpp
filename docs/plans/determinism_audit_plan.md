@@ -383,6 +383,10 @@ The expected end state is:
   fixed-width helpers instead of direct POD calls. The only remaining raw POD
   calls in the recording writer are the centralized scalar helper internals,
   so this is a byte-compatible cleanup within recording format version 95.
+- Fixed in shared gameplay/simulation snapshot serialization: the centralized
+  scalar helper internals now emit integer values in explicit little-endian
+  byte order and encode `float` / `double` through explicit IEEE bit copies
+  instead of raw host-endian POD writes. Recording format version is now 96.
 - Fixed in desync replay diagnostics: SDRP metadata, hash components, replayed
   input records, and captured local entity hashes now route through explicit
   `uint16_t` / `uint32_t` / `uint64_t` writer and reader helpers instead of a
@@ -403,11 +407,11 @@ The expected end state is:
   encoded as explicit trigger ids plus deterministic payload fields rather than
   raw callbacks.
 - Deferred risk: `SerializeSimSnapshotToBytes` / `DeserializeSimSnapshotFromBytes`
-  still write many trivially-copyable structs by raw host layout. That means
-  endian, enum storage, bool representation, float bit representation, and
-  padding are not a finished cross-platform network format. The transport
-  format should still be replaced with explicit field writers before depending
-  on heterogeneous Windows/macOS/Linux peers.
+  now avoid raw struct layout, raw enum storage, raw bool representation, host
+  endian scalar bytes, and padding. They still preserve current `float` /
+  `double` bit patterns for remaining authoritative float fields, so the
+  snapshot format is portable as bytes but cannot by itself prevent gameplay
+  divergence caused by cross-platform float arithmetic before snapshot/resync.
 
 ## Undefined And Uninitialized Behavior Audit
 
@@ -495,6 +499,9 @@ The expected end state is:
   RNG state, net entity ids, and recording header fields now route through
   named fixed-width helpers. Raw POD use is now isolated to the scalar helper
   implementations in the recording writer.
+- Fixed in shared snapshot/replay format: those scalar helper implementations
+  now write/read explicit little-endian fixed-width integers and explicit
+  `float` / `double` bit payloads. Recording format version is now 96.
 - Fixed in desync replay diagnostics: SDRP reader/writer fields now use named
   fixed-width helpers for stage ids, frames, player ids, hash components, input
   counts, input records, and local entity hash diagnostics. This removes the
