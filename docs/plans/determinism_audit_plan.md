@@ -211,6 +211,9 @@ The expected end state is:
   player-slot entity VIDs, contact cooldown/dispatch VIDs, tool owner VIDs,
   interact/area listener VID vectors, and net entity link local VIDs. Recording
   format version is now 78.
+- Fixed in shared gameplay/simulation snapshot serialization: optional presence
+  flags now use explicit `uint8_t` bytes instead of raw host `bool`
+  representation. Recording format version is now 79.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -269,6 +272,8 @@ The expected end state is:
 - Fixed in shared snapshot/replay format: VID-bearing vectors and structs now
   serialize VIDs field-by-field instead of relying on host raw layout for
   vector payloads or optional payloads.
+- Fixed in shared snapshot/replay format: optional presence flags now use an
+  explicit one-byte representation instead of raw `bool`.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

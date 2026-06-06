@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 78;
+constexpr std::uint32_t kRecordingVersion = 79;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -58,7 +58,7 @@ bool ReadVectorPod(std::istream& in, std::vector<T>& values) {
 template <typename T>
 void WriteOptionalPod(std::ostream& out, const std::optional<T>& value) {
     static_assert(std::is_trivially_copyable_v<T>);
-    const bool has_value = value.has_value();
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
     WritePod(out, has_value);
     if (has_value) {
         WritePod(out, *value);
@@ -68,11 +68,11 @@ void WriteOptionalPod(std::ostream& out, const std::optional<T>& value) {
 template <typename T>
 bool ReadOptionalPod(std::istream& in, std::optional<T>& value) {
     static_assert(std::is_trivially_copyable_v<T>);
-    bool has_value = false;
+    std::uint8_t has_value = 0;
     if (!ReadPod(in, has_value)) {
         return false;
     }
-    if (!has_value) {
+    if (has_value == 0) {
         value.reset();
         return true;
     }
@@ -85,7 +85,7 @@ bool ReadOptionalPod(std::istream& in, std::optional<T>& value) {
 }
 
 void WriteOptionalSizeIndex(std::ostream& out, const std::optional<std::size_t>& value) {
-    const bool has_value = value.has_value();
+    const std::uint8_t has_value = value.has_value() ? 1U : 0U;
     WritePod(out, has_value);
     if (has_value) {
         const std::uint32_t stored = static_cast<std::uint32_t>(*value);
@@ -94,11 +94,11 @@ void WriteOptionalSizeIndex(std::ostream& out, const std::optional<std::size_t>&
 }
 
 bool ReadOptionalSizeIndex(std::istream& in, std::optional<std::size_t>& value) {
-    bool has_value = false;
+    std::uint8_t has_value = 0;
     if (!ReadPod(in, has_value)) {
         return false;
     }
-    if (!has_value) {
+    if (has_value == 0) {
         value.reset();
         return true;
     }
@@ -312,7 +312,7 @@ bool ReadAFrameAnimator(std::istream& in, AFrameAnimator& animator) {
 
 template <typename T>
 void WriteOptionalVectorPod(std::ostream& out, const std::optional<std::vector<T>>& values) {
-    const bool has_value = values.has_value();
+    const std::uint8_t has_value = values.has_value() ? 1U : 0U;
     WritePod(out, has_value);
     if (has_value) {
         WriteVectorPod(out, *values);
@@ -321,11 +321,11 @@ void WriteOptionalVectorPod(std::ostream& out, const std::optional<std::vector<T
 
 template <typename T>
 bool ReadOptionalVectorPod(std::istream& in, std::optional<std::vector<T>>& values) {
-    bool has_value = false;
+    std::uint8_t has_value = 0;
     if (!ReadPod(in, has_value)) {
         return false;
     }
-    if (!has_value) {
+    if (has_value == 0) {
         values.reset();
         return true;
     }
