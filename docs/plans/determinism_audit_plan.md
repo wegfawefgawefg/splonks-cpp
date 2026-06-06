@@ -345,6 +345,12 @@ The expected end state is:
   fixed-width helpers instead of direct POD calls. The only remaining raw POD
   calls in the recording writer are the centralized scalar helper internals,
   so this is a byte-compatible cleanup within recording format version 95.
+- Fixed in desync replay diagnostics: SDRP metadata, hash components, replayed
+  input records, and captured local entity hashes now route through explicit
+  `uint16_t` / `uint32_t` / `uint64_t` writer and reader helpers instead of a
+  generic raw POD helper. The current SDRP version remains byte-compatible
+  because all affected fields already had fixed-width runtime types; this makes
+  the diagnostic artifact contract explicit for cross-platform desync work.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -445,6 +451,11 @@ The expected end state is:
   RNG state, net entity ids, and recording header fields now route through
   named fixed-width helpers. Raw POD use is now isolated to the scalar helper
   implementations in the recording writer.
+- Fixed in desync replay diagnostics: SDRP reader/writer fields now use named
+  fixed-width helpers for stage ids, frames, player ids, hash components, input
+  counts, input records, and local entity hash diagnostics. This removes the
+  local generic POD helper from SDRP metadata and keeps replay analysis files
+  independent of accidental future type-width changes.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

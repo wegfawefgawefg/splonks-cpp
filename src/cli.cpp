@@ -41,7 +41,6 @@
 #include <sstream>
 #include <string>
 #include <string_view>
-#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -90,16 +89,26 @@ struct ReplayedDesyncFile {
     std::vector<NetworkEntFingerprint> ent_hashes;
 };
 
-template <typename T>
-bool ReadReplayPod(std::istream& in, T& value) {
-    static_assert(std::is_trivially_copyable_v<T>);
-    in.read(reinterpret_cast<char*>(&value), static_cast<std::streamsize>(sizeof(T)));
+bool ReadReplayBytes(std::istream& in, void* data, std::size_t size) {
+    in.read(static_cast<char*>(data), static_cast<std::streamsize>(size));
     return in.good();
+}
+
+bool ReadReplayUint16(std::istream& in, std::uint16_t& value) {
+    return ReadReplayBytes(in, &value, sizeof(value));
+}
+
+bool ReadReplayUint32(std::istream& in, std::uint32_t& value) {
+    return ReadReplayBytes(in, &value, sizeof(value));
+}
+
+bool ReadReplayUint64(std::istream& in, std::uint64_t& value) {
+    return ReadReplayBytes(in, &value, sizeof(value));
 }
 
 bool ReadReplayString(std::istream& in, std::string& value) {
     std::uint32_t size = 0;
-    if (!ReadReplayPod(in, size)) {
+    if (!ReadReplayUint32(in, size)) {
         return false;
     }
     value.resize(size);
@@ -120,7 +129,7 @@ bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std
 
     std::uint32_t magic = 0;
     std::uint32_t version = 0;
-    if (!ReadReplayPod(in, magic) || !ReadReplayPod(in, version) ||
+    if (!ReadReplayUint32(in, magic) || !ReadReplayUint32(in, version) ||
         magic != kDesyncReplayMagic || version < kDesyncReplayVersionMin ||
         version > kDesyncReplayVersionMax) {
         if (status != nullptr) {
@@ -129,25 +138,25 @@ bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std
         return false;
     }
 
-    if (!ReadReplayPod(in, replay.stage_instance_id) ||
-        !ReadReplayPod(in, replay.stage_seed) ||
-        !ReadReplayPod(in, replay.start_frame) ||
+    if (!ReadReplayUint64(in, replay.stage_instance_id) ||
+        !ReadReplayUint32(in, replay.stage_seed) ||
+        !ReadReplayUint64(in, replay.start_frame) ||
         !ReadReplayString(in, replay.quest_id) ||
         !ReadReplayString(in, replay.quest_stage_id) ||
-        !ReadReplayPod(in, replay.mismatch_peer_id) ||
-        !ReadReplayPod(in, replay.mismatch_frame) ||
-        !ReadReplayPod(in, replay.local_hash) ||
-        !ReadReplayPod(in, replay.remote_hash) ||
-        !ReadReplayPod(in, replay.local_components.root) ||
-        !ReadReplayPod(in, replay.remote_components.root) ||
-        !ReadReplayPod(in, replay.local_components.stage) ||
-        !ReadReplayPod(in, replay.remote_components.stage) ||
-        !ReadReplayPod(in, replay.local_components.players) ||
-        !ReadReplayPod(in, replay.remote_components.players) ||
-        !ReadReplayPod(in, replay.local_components.tools) ||
-        !ReadReplayPod(in, replay.remote_components.tools) ||
-        !ReadReplayPod(in, replay.local_components.ents) ||
-        !ReadReplayPod(in, replay.remote_components.ents)) {
+        !ReadReplayUint32(in, replay.mismatch_peer_id) ||
+        !ReadReplayUint64(in, replay.mismatch_frame) ||
+        !ReadReplayUint64(in, replay.local_hash) ||
+        !ReadReplayUint64(in, replay.remote_hash) ||
+        !ReadReplayUint64(in, replay.local_components.root) ||
+        !ReadReplayUint64(in, replay.remote_components.root) ||
+        !ReadReplayUint64(in, replay.local_components.stage) ||
+        !ReadReplayUint64(in, replay.remote_components.stage) ||
+        !ReadReplayUint64(in, replay.local_components.players) ||
+        !ReadReplayUint64(in, replay.remote_components.players) ||
+        !ReadReplayUint64(in, replay.local_components.tools) ||
+        !ReadReplayUint64(in, replay.remote_components.tools) ||
+        !ReadReplayUint64(in, replay.local_components.ents) ||
+        !ReadReplayUint64(in, replay.remote_components.ents)) {
         if (status != nullptr) {
             *status = "failed to read replay metadata";
         }
@@ -155,7 +164,7 @@ bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std
     }
 
     std::uint32_t snapshot_size = 0;
-    if (!ReadReplayPod(in, snapshot_size)) {
+    if (!ReadReplayUint32(in, snapshot_size)) {
         if (status != nullptr) {
             *status = "failed to read snapshot size";
         }
@@ -176,7 +185,7 @@ bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std
     }
 
     std::uint64_t input_count = 0;
-    if (!ReadReplayPod(in, input_count)) {
+    if (!ReadReplayUint64(in, input_count)) {
         if (status != nullptr) {
             *status = "failed to read input count";
         }
@@ -184,16 +193,16 @@ bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std
     }
     replay.inputs.resize(static_cast<std::size_t>(input_count));
     for (DesyncReplayInputRecord& input : replay.inputs) {
-        if (!ReadReplayPod(in, input.player_id) ||
-            !ReadReplayPod(in, input.frame) ||
-            !ReadReplayPod(in, input.input_flags)) {
+        if (!ReadReplayUint32(in, input.player_id) ||
+            !ReadReplayUint64(in, input.frame) ||
+            !ReadReplayUint32(in, input.input_flags)) {
             if (status != nullptr) {
                 *status = "failed to read input records";
             }
             return false;
         }
         if (version >= 2 &&
-            (!ReadReplayPod(in, input.mouse_x) || !ReadReplayPod(in, input.mouse_y))) {
+            (!ReadReplayUint32(in, input.mouse_x) || !ReadReplayUint32(in, input.mouse_y))) {
             if (status != nullptr) {
                 *status = "failed to read input mouse records";
             }
@@ -202,7 +211,7 @@ bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std
     }
     if (version >= 3) {
         std::uint64_t ent_hash_count = 0;
-        if (!ReadReplayPod(in, ent_hash_count)) {
+        if (!ReadReplayUint64(in, ent_hash_count)) {
             if (status != nullptr) {
                 *status = "failed to read local entity hash count";
             }
@@ -210,9 +219,9 @@ bool LoadDesyncReplayFile(const std::string& path, DesyncReplayFile& replay, std
         }
         replay.captured_local_ent_hashes.resize(static_cast<std::size_t>(ent_hash_count));
         for (NetworkEntFingerprint& ent_hash : replay.captured_local_ent_hashes) {
-            if (!ReadReplayPod(in, ent_hash.net_ent_id) ||
-                !ReadReplayPod(in, ent_hash.type) ||
-                !ReadReplayPod(in, ent_hash.hash)) {
+            if (!ReadReplayUint64(in, ent_hash.net_ent_id) ||
+                !ReadReplayUint16(in, ent_hash.type) ||
+                !ReadReplayUint64(in, ent_hash.hash)) {
                 if (status != nullptr) {
                     *status = "failed to read local entity hashes";
                 }

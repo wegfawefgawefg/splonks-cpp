@@ -16,7 +16,6 @@
 #include <optional>
 #include <sstream>
 #include <string>
-#include <type_traits>
 
 namespace splonks::network {
 
@@ -43,15 +42,25 @@ enum class LockstepHashContext : std::uint8_t {
     Rollback,
 };
 
-template <typename T>
-void WriteReplayPod(std::ostream& out, const T& value) {
-    static_assert(std::is_trivially_copyable_v<T>);
-    out.write(reinterpret_cast<const char*>(&value), static_cast<std::streamsize>(sizeof(T)));
+void WriteReplayBytes(std::ostream& out, const void* data, std::size_t size) {
+    out.write(static_cast<const char*>(data), static_cast<std::streamsize>(size));
+}
+
+void WriteReplayUint16(std::ostream& out, std::uint16_t value) {
+    WriteReplayBytes(out, &value, sizeof(value));
+}
+
+void WriteReplayUint32(std::ostream& out, std::uint32_t value) {
+    WriteReplayBytes(out, &value, sizeof(value));
+}
+
+void WriteReplayUint64(std::ostream& out, std::uint64_t value) {
+    WriteReplayBytes(out, &value, sizeof(value));
 }
 
 void WriteReplayString(std::ostream& out, const std::string& value) {
     const std::uint32_t size = static_cast<std::uint32_t>(value.size());
-    WriteReplayPod(out, size);
+    WriteReplayUint32(out, size);
     if (size > 0) {
         out.write(value.data(), static_cast<std::streamsize>(size));
     }
@@ -154,31 +163,31 @@ void DumpLockstepReplayCaptureOnDesync(
         return;
     }
 
-    WriteReplayPod(out, kDesyncReplayMagic);
-    WriteReplayPod(out, kDesyncReplayVersion);
-    WriteReplayPod(out, capture.stage_instance_id);
-    WriteReplayPod(out, capture.stage_seed);
-    WriteReplayPod(out, capture.start_frame);
+    WriteReplayUint32(out, kDesyncReplayMagic);
+    WriteReplayUint32(out, kDesyncReplayVersion);
+    WriteReplayUint64(out, capture.stage_instance_id);
+    WriteReplayUint32(out, capture.stage_seed);
+    WriteReplayUint64(out, capture.start_frame);
     WriteReplayString(out, capture.quest_id);
     WriteReplayString(out, capture.quest_stage_id);
-    WriteReplayPod(out, remote.peer_id);
-    WriteReplayPod(out, remote.frame);
-    WriteReplayPod(out, local.hash);
-    WriteReplayPod(out, remote.hash);
-    WriteReplayPod(out, local.component_root);
-    WriteReplayPod(out, remote.component_root);
-    WriteReplayPod(out, local.component_stage);
-    WriteReplayPod(out, remote.component_stage);
-    WriteReplayPod(out, local.component_players);
-    WriteReplayPod(out, remote.component_players);
-    WriteReplayPod(out, local.component_tools);
-    WriteReplayPod(out, remote.component_tools);
-    WriteReplayPod(out, local.component_ents);
-    WriteReplayPod(out, remote.component_ents);
+    WriteReplayUint32(out, remote.peer_id);
+    WriteReplayUint64(out, remote.frame);
+    WriteReplayUint64(out, local.hash);
+    WriteReplayUint64(out, remote.hash);
+    WriteReplayUint64(out, local.component_root);
+    WriteReplayUint64(out, remote.component_root);
+    WriteReplayUint64(out, local.component_stage);
+    WriteReplayUint64(out, remote.component_stage);
+    WriteReplayUint64(out, local.component_players);
+    WriteReplayUint64(out, remote.component_players);
+    WriteReplayUint64(out, local.component_tools);
+    WriteReplayUint64(out, remote.component_tools);
+    WriteReplayUint64(out, local.component_ents);
+    WriteReplayUint64(out, remote.component_ents);
 
     const std::uint32_t snapshot_size =
         static_cast<std::uint32_t>(capture.initial_snapshot.size());
-    WriteReplayPod(out, snapshot_size);
+    WriteReplayUint32(out, snapshot_size);
     if (snapshot_size > 0) {
         out.write(
             reinterpret_cast<const char*>(capture.initial_snapshot.data()),
@@ -187,13 +196,13 @@ void DumpLockstepReplayCaptureOnDesync(
     }
 
     const std::uint64_t input_count = capture.inputs.size();
-    WriteReplayPod(out, input_count);
+    WriteReplayUint64(out, input_count);
     for (const LockstepReplayInputRecord& input : capture.inputs) {
-        WriteReplayPod(out, input.player_id);
-        WriteReplayPod(out, input.frame);
-        WriteReplayPod(out, input.input_flags);
-        WriteReplayPod(out, input.mouse_x);
-        WriteReplayPod(out, input.mouse_y);
+        WriteReplayUint32(out, input.player_id);
+        WriteReplayUint64(out, input.frame);
+        WriteReplayUint32(out, input.input_flags);
+        WriteReplayUint32(out, input.mouse_x);
+        WriteReplayUint32(out, input.mouse_y);
     }
 
     const std::vector<NetworkEntFingerprint> local_ent_hashes =
@@ -201,11 +210,11 @@ void DumpLockstepReplayCaptureOnDesync(
             ? ComputeNetworkEntFingerprints(state)
             : std::vector<NetworkEntFingerprint>{};
     const std::uint64_t ent_hash_count = local_ent_hashes.size();
-    WriteReplayPod(out, ent_hash_count);
+    WriteReplayUint64(out, ent_hash_count);
     for (const NetworkEntFingerprint& ent_hash : local_ent_hashes) {
-        WriteReplayPod(out, ent_hash.net_ent_id);
-        WriteReplayPod(out, ent_hash.type);
-        WriteReplayPod(out, ent_hash.hash);
+        WriteReplayUint64(out, ent_hash.net_ent_id);
+        WriteReplayUint16(out, ent_hash.type);
+        WriteReplayUint64(out, ent_hash.hash);
     }
 
     if (!out.good()) {
