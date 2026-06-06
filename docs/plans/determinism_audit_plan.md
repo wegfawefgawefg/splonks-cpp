@@ -326,6 +326,14 @@ The expected end state is:
   gravity, block animation id, tile-change generation, and cooldown expiry
   frames. The emitted scalar bytes are unchanged for the current field types,
   so this remains within recording format version 95.
+- Fixed in shared gameplay/simulation snapshot serialization: remaining small
+  snapshot structs and ids now use named typed helpers instead of raw member
+  POD calls. This covers VID id/version fields, stage-load debug variants,
+  buyable display counts, use-state frames, effect counts/values/timers,
+  authored spawn animation/buy ids, stage light radius, embedded treasure
+  counts/audio ids, background stamp animation ids, and tool-slot count/
+  cooldown fields. The emitted scalar bytes are unchanged for the current field
+  types, so this remains within recording format version 95.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -415,6 +423,10 @@ The expected end state is:
 - Fixed in shared snapshot/replay format: stage scalar fields and contact
   cooldown expiry frames now use typed scalar helpers, removing raw
   `stage.*` / `entry.*` member POD calls from the recording writer.
+- Fixed in shared snapshot/replay format: remaining small snapshot structs and
+  ids now use typed scalar helpers, removing raw VID, stage-load, buyable,
+  use-state, effect, spawn, stage-light, embedded-treasure, background-stamp,
+  and tool-slot member POD calls from the recording writer.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 
