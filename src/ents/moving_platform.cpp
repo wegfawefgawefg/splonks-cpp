@@ -5,7 +5,8 @@
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
 
-#include <cmath>
+#include <array>
+#include <cstdint>
 #include <memory>
 
 namespace splonks::ents::moving_platform {
@@ -13,8 +14,60 @@ namespace splonks::ents::moving_platform {
 namespace {
 
 constexpr float kPlatformSpeed = 1.0F;
-constexpr float kCircleAngularSpeed = 0.08F;
 constexpr float kIcyPlatformFriction = 1.0F;
+constexpr int kCircleUnitScale = 4096;
+
+struct CircleUnit {
+    int x = 0;
+    int y = 0;
+
+    static constexpr CircleUnit New(int x_value, int y_value) {
+        return CircleUnit{x_value, y_value};
+    }
+};
+
+constexpr std::array<CircleUnit, 80> kCirclePath{{
+    CircleUnit::New(4096, 0), CircleUnit::New(4083, 321), CircleUnit::New(4046, 641), CircleUnit::New(3983, 956),
+    CircleUnit::New(3896, 1266), CircleUnit::New(3784, 1567), CircleUnit::New(3650, 1860), CircleUnit::New(3492, 2140),
+    CircleUnit::New(3314, 2408), CircleUnit::New(3115, 2660), CircleUnit::New(2896, 2896), CircleUnit::New(2660, 3115),
+    CircleUnit::New(2408, 3314), CircleUnit::New(2140, 3492), CircleUnit::New(1860, 3650), CircleUnit::New(1567, 3784),
+    CircleUnit::New(1266, 3896), CircleUnit::New(956, 3983), CircleUnit::New(641, 4046), CircleUnit::New(321, 4083),
+    CircleUnit::New(0, 4096), CircleUnit::New(-321, 4083), CircleUnit::New(-641, 4046), CircleUnit::New(-956, 3983),
+    CircleUnit::New(-1266, 3896), CircleUnit::New(-1567, 3784), CircleUnit::New(-1860, 3650), CircleUnit::New(-2140, 3492),
+    CircleUnit::New(-2408, 3314), CircleUnit::New(-2660, 3115), CircleUnit::New(-2896, 2896), CircleUnit::New(-3115, 2660),
+    CircleUnit::New(-3314, 2408), CircleUnit::New(-3492, 2140), CircleUnit::New(-3650, 1860), CircleUnit::New(-3784, 1567),
+    CircleUnit::New(-3896, 1266), CircleUnit::New(-3983, 956), CircleUnit::New(-4046, 641), CircleUnit::New(-4083, 321),
+    CircleUnit::New(-4096, 0), CircleUnit::New(-4083, -321), CircleUnit::New(-4046, -641), CircleUnit::New(-3983, -956),
+    CircleUnit::New(-3896, -1266), CircleUnit::New(-3784, -1567), CircleUnit::New(-3650, -1860), CircleUnit::New(-3492, -2140),
+    CircleUnit::New(-3314, -2408), CircleUnit::New(-3115, -2660), CircleUnit::New(-2896, -2896), CircleUnit::New(-2660, -3115),
+    CircleUnit::New(-2408, -3314), CircleUnit::New(-2140, -3492), CircleUnit::New(-1860, -3650), CircleUnit::New(-1567, -3784),
+    CircleUnit::New(-1266, -3896), CircleUnit::New(-956, -3983), CircleUnit::New(-641, -4046), CircleUnit::New(-321, -4083),
+    CircleUnit::New(0, -4096), CircleUnit::New(321, -4083), CircleUnit::New(641, -4046), CircleUnit::New(956, -3983),
+    CircleUnit::New(1266, -3896), CircleUnit::New(1567, -3784), CircleUnit::New(1860, -3650), CircleUnit::New(2140, -3492),
+    CircleUnit::New(2408, -3314), CircleUnit::New(2660, -3115), CircleUnit::New(2896, -2896), CircleUnit::New(3115, -2660),
+    CircleUnit::New(3314, -2408), CircleUnit::New(3492, -2140), CircleUnit::New(3650, -1860), CircleUnit::New(3784, -1567),
+    CircleUnit::New(3896, -1266), CircleUnit::New(3983, -956), CircleUnit::New(4046, -641), CircleUnit::New(4083, -321)
+}};
+
+int RoundFloatToInt(float value) {
+    return static_cast<int>(value + (value >= 0.0F ? 0.5F : -0.5F));
+}
+
+int RoundRatio(std::int64_t numerator, std::int64_t denominator) {
+    if (denominator == 0) {
+        return 0;
+    }
+    const std::int64_t half = denominator / 2;
+    if (numerator >= 0) {
+        return static_cast<int>((numerator + half) / denominator);
+    }
+    return static_cast<int>((numerator - half) / denominator);
+}
+
+int PositiveModulo(int value, int divisor) {
+    const int result = value % divisor;
+    return result < 0 ? result + divisor : result;
+}
 
 bool IsIcyPlatform(const Ent& platform) {
     return platform.impassable &&
@@ -88,14 +141,21 @@ void StepVerticalPingPong(Ent& platform) {
 
 void StepCircle(Ent& platform) {
     const Vec2 center = ToVec2(platform.point_a);
-    const float radius = platform.threshold_a;
-    const Vec2 desired_pos = center +
-                             Vec2::New(
-                                 std::round(std::cos(platform.counter_a) * radius),
-                                 std::round(std::sin(platform.counter_a) * radius)
-                             );
+    const int radius = RoundFloatToInt(platform.threshold_a);
+    const int path_idx = PositiveModulo(
+        static_cast<int>(platform.counter_a),
+        static_cast<int>(kCirclePath.size())
+    );
+    const CircleUnit unit = kCirclePath[static_cast<std::size_t>(path_idx)];
+    const Vec2 desired_pos = center + Vec2::New(
+        static_cast<float>(RoundRatio(static_cast<std::int64_t>(unit.x) * radius, kCircleUnitScale)),
+        static_cast<float>(RoundRatio(static_cast<std::int64_t>(unit.y) * radius, kCircleUnitScale))
+    );
     platform.vel = desired_pos - platform.pos;
-    platform.counter_a += kCircleAngularSpeed;
+    platform.counter_a += 1.0F;
+    if (platform.counter_a >= static_cast<float>(kCirclePath.size())) {
+        platform.counter_a -= static_cast<float>(kCirclePath.size());
+    }
 }
 
 } // namespace
