@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 80;
+constexpr std::uint32_t kRecordingVersion = 81;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -327,30 +327,49 @@ void WriteAFrameAnimator(std::ostream& out, const AFrameAnimator& animator) {
     WritePod(out, animator.current_time);
     WritePod(out, animator.scale);
     WritePod(out, animator.speed);
-    WritePod(out, animator.animate);
-    WritePod(out, animator.loop);
-    WritePod(out, animator.finished);
-    WritePod(out, animator.playback_mode);
+    WriteBoolByte(out, animator.animate);
+    WriteBoolByte(out, animator.loop);
+    WriteBoolByte(out, animator.finished);
+    const std::uint8_t playback_mode = static_cast<std::uint8_t>(animator.playback_mode);
+    WritePod(out, playback_mode);
     WritePod(out, animator.play_count);
     WritePod(out, animator.plays_completed);
-    WritePod(out, animator.playback_dirty);
-    WritePod(out, animator.ping_pong_forward);
+    WriteBoolByte(out, animator.playback_dirty);
+    WriteBoolByte(out, animator.ping_pong_forward);
 }
 
 bool ReadAFrameAnimator(std::istream& in, AFrameAnimator& animator) {
-    return ReadPod(in, animator.anim_id) &&
-           ReadSizeIndex(in, animator.current_frame) &&
-           ReadPod(in, animator.current_time) &&
-           ReadPod(in, animator.scale) &&
-           ReadPod(in, animator.speed) &&
-           ReadPod(in, animator.animate) &&
-           ReadPod(in, animator.loop) &&
-           ReadPod(in, animator.finished) &&
-           ReadPod(in, animator.playback_mode) &&
-           ReadPod(in, animator.play_count) &&
-           ReadPod(in, animator.plays_completed) &&
-           ReadPod(in, animator.playback_dirty) &&
-           ReadPod(in, animator.ping_pong_forward);
+    std::uint8_t playback_mode = 0;
+    bool animate = false;
+    bool loop = false;
+    bool finished = false;
+    bool playback_dirty = false;
+    bool ping_pong_forward = false;
+    if (!ReadPod(in, animator.anim_id) ||
+        !ReadSizeIndex(in, animator.current_frame) ||
+        !ReadPod(in, animator.current_time) ||
+        !ReadPod(in, animator.scale) ||
+        !ReadPod(in, animator.speed) ||
+        !ReadBoolByte(in, animate) ||
+        !ReadBoolByte(in, loop) ||
+        !ReadBoolByte(in, finished) ||
+        !ReadPod(in, playback_mode) ||
+        !ReadPod(in, animator.play_count) ||
+        !ReadPod(in, animator.plays_completed) ||
+        !ReadBoolByte(in, playback_dirty) ||
+        !ReadBoolByte(in, ping_pong_forward)) {
+        return false;
+    }
+    if (playback_mode > static_cast<std::uint8_t>(AnimPlaybackMode::PingPong)) {
+        return false;
+    }
+    animator.animate = animate;
+    animator.loop = loop;
+    animator.finished = finished;
+    animator.playback_mode = static_cast<AnimPlaybackMode>(playback_mode);
+    animator.playback_dirty = playback_dirty;
+    animator.ping_pong_forward = ping_pong_forward;
+    return true;
 }
 
 template <typename T>

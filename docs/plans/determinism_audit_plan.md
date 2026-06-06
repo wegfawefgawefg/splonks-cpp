@@ -219,6 +219,10 @@ The expected end state is:
   explicit `uint8_t` values plus fixed-width scalar fields instead of raw host
   struct layout. Invalid effect/tool ids now fail snapshot decode. Recording
   format version is now 80.
+- Fixed in shared gameplay/simulation snapshot serialization:
+  `AFrameAnimator` now encodes animation bools and playback mode as explicit
+  `uint8_t` fields instead of raw host `bool` / enum representation. Invalid
+  playback modes now fail snapshot decode. Recording format version is now 81.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
