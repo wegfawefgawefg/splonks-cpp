@@ -268,6 +268,12 @@ The expected end state is:
   explicitly instead of depending on raw host enum struct layout. Stage
   annotation positions and stage-light tile positions are also written
   field-by-field. Recording format version is now 88.
+- Fixed in shared gameplay/simulation snapshot serialization: the remaining
+  stage bulk grid/vector fields now write their elements field-by-field instead
+  of using raw vector storage. This covers fluid/shake float grids, fluid
+  velocity/gravity `Vec2` grids, room id grids, stage path `IVec2` vectors,
+  camera clamp margin, wrap padding, and wrap core `UVec2` values. Recording
+  format version is now 89.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,

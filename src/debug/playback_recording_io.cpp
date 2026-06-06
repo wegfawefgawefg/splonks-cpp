@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 88;
+constexpr std::uint32_t kRecordingVersion = 89;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -544,6 +544,60 @@ void WriteIVec2(std::ostream& out, const IVec2& value) {
 bool ReadIVec2(std::istream& in, IVec2& value) {
     return ReadPod(in, value.x) &&
            ReadPod(in, value.y);
+}
+
+void WriteUVec2(std::ostream& out, const UVec2& value) {
+    const std::uint32_t x = static_cast<std::uint32_t>(value.x);
+    const std::uint32_t y = static_cast<std::uint32_t>(value.y);
+    WritePod(out, x);
+    WritePod(out, y);
+}
+
+bool ReadUVec2(std::istream& in, UVec2& value) {
+    std::uint32_t x = 0;
+    std::uint32_t y = 0;
+    if (!ReadPod(in, x) || !ReadPod(in, y)) {
+        return false;
+    }
+    value.x = static_cast<unsigned int>(x);
+    value.y = static_cast<unsigned int>(y);
+    return true;
+}
+
+void WriteFloat(std::ostream& out, float value) {
+    WritePod(out, value);
+}
+
+bool ReadFloat(std::istream& in, float& value) {
+    return ReadPod(in, value);
+}
+
+void WriteInt32(std::ostream& out, int value) {
+    const std::int32_t stored = static_cast<std::int32_t>(value);
+    WritePod(out, stored);
+}
+
+bool ReadInt32(std::istream& in, int& value) {
+    std::int32_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    value = static_cast<int>(stored);
+    return true;
+}
+
+void WriteUnsigned32(std::ostream& out, unsigned int value) {
+    const std::uint32_t stored = static_cast<std::uint32_t>(value);
+    WritePod(out, stored);
+}
+
+bool ReadUnsigned32(std::istream& in, unsigned int& value) {
+    std::uint32_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    value = static_cast<unsigned int>(stored);
+    return true;
 }
 
 void WriteOptionalVec2(std::ostream& out, const std::optional<Vec2>& value) {
@@ -1432,6 +1486,28 @@ bool ReadTileVector(std::istream& in, std::vector<Tile>& tiles) {
     return true;
 }
 
+void WriteIVec2Vector(std::ostream& out, const std::vector<IVec2>& values) {
+    const std::uint32_t count = static_cast<std::uint32_t>(values.size());
+    WritePod(out, count);
+    for (const IVec2& value : values) {
+        WriteIVec2(out, value);
+    }
+}
+
+bool ReadIVec2Vector(std::istream& in, std::vector<IVec2>& values) {
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    values.resize(count);
+    for (IVec2& value : values) {
+        if (!ReadIVec2(in, value)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void WriteEmbeddedTreasureDrop(std::ostream& out, const EmbeddedTreasureDrop& drop) {
     WriteEntType(out, drop.type_);
     WritePod(out, drop.count);
@@ -1567,27 +1643,27 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteBoolByte(out, stage.border.wrap_y);
     WriteOptionalPod(out, stage.border.void_death_y);
     WriteBoolByte(out, stage.camera_clamp_enabled);
-    WritePod(out, stage.camera_clamp_margin);
+    WriteVec2(out, stage.camera_clamp_margin);
     WriteBoolByte(out, stage.wrap_transform_active);
-    WritePod(out, stage.wrap_padding_tiles);
-    WritePod(out, stage.wrap_core_origin_tiles);
-    WritePod(out, stage.wrap_core_size_tiles);
+    WriteUnsigned32(out, stage.wrap_padding_tiles);
+    WriteUVec2(out, stage.wrap_core_origin_tiles);
+    WriteUVec2(out, stage.wrap_core_size_tiles);
     WriteGridExplicit(out, stage.tiles, WriteTile);
     WriteGridExplicit(out, stage.tile_rotations, WriteTileRotation);
     WriteGridExplicit(out, stage.fluid_tiles, WriteTile);
-    WriteGridPod(out, stage.fluid_amount);
-    WriteGridPod(out, stage.fluid_display_amount);
-    WriteGridPod(out, stage.fluid_velocity);
-    WriteGridPod(out, stage.fluid_gravity);
-    WriteGridPod(out, stage.fluid_gravity_strength);
-    WriteGridPod(out, stage.fluid_temp_gravity);
-    WriteGridPod(out, stage.tile_shake);
-    WriteGridPod(out, stage.backwall_tile_shake);
+    WriteGridExplicit(out, stage.fluid_amount, WriteFloat);
+    WriteGridExplicit(out, stage.fluid_display_amount, WriteFloat);
+    WriteGridExplicit(out, stage.fluid_velocity, WriteVec2);
+    WriteGridExplicit(out, stage.fluid_gravity, WriteVec2);
+    WriteGridExplicit(out, stage.fluid_gravity_strength, WriteFloat);
+    WriteGridExplicit(out, stage.fluid_temp_gravity, WriteVec2);
+    WriteGridExplicit(out, stage.tile_shake, WriteFloat);
+    WriteGridExplicit(out, stage.backwall_tile_shake, WriteFloat);
     WriteGridExplicit(out, stage.backwall_tiles, WriteTile);
     WriteTileVector(out, stage.backwall_fill_tiles);
     WriteGridExplicit(out, stage.embedded_treasures, WriteEmbeddedTreasure);
-    WriteGridPod(out, stage.rooms);
-    WriteVectorPod(out, stage.path);
+    WriteGridExplicit(out, stage.rooms, WriteInt32);
+    WriteIVec2Vector(out, stage.path);
     const std::uint32_t spawn_count = static_cast<std::uint32_t>(stage.ent_spawns.size());
     WritePod(out, spawn_count);
     for (const EntSpawn& spawn : stage.ent_spawns) {
@@ -1637,30 +1713,30 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadBoolByte(in, stage.border.wrap_y) ||
         !ReadOptionalPod(in, stage.border.void_death_y) ||
         !ReadBoolByte(in, stage.camera_clamp_enabled) ||
-        !ReadPod(in, stage.camera_clamp_margin) ||
+        !ReadVec2(in, stage.camera_clamp_margin) ||
         !ReadBoolByte(in, stage.wrap_transform_active) ||
-        !ReadPod(in, stage.wrap_padding_tiles) ||
-        !ReadPod(in, stage.wrap_core_origin_tiles) ||
-        !ReadPod(in, stage.wrap_core_size_tiles)) {
+        !ReadUnsigned32(in, stage.wrap_padding_tiles) ||
+        !ReadUVec2(in, stage.wrap_core_origin_tiles) ||
+        !ReadUVec2(in, stage.wrap_core_size_tiles)) {
         return false;
     }
 
     if (!ReadGridExplicit(in, stage.tiles, ReadTile) ||
         !ReadGridExplicit(in, stage.tile_rotations, ReadTileRotation) ||
         !ReadGridExplicit(in, stage.fluid_tiles, ReadTile) ||
-        !ReadGridPod(in, stage.fluid_amount) ||
-        !ReadGridPod(in, stage.fluid_display_amount) ||
-        !ReadGridPod(in, stage.fluid_velocity) ||
-        !ReadGridPod(in, stage.fluid_gravity) ||
-        !ReadGridPod(in, stage.fluid_gravity_strength) ||
-        !ReadGridPod(in, stage.fluid_temp_gravity) ||
-        !ReadGridPod(in, stage.tile_shake) ||
-        !ReadGridPod(in, stage.backwall_tile_shake) ||
+        !ReadGridExplicit(in, stage.fluid_amount, ReadFloat) ||
+        !ReadGridExplicit(in, stage.fluid_display_amount, ReadFloat) ||
+        !ReadGridExplicit(in, stage.fluid_velocity, ReadVec2) ||
+        !ReadGridExplicit(in, stage.fluid_gravity, ReadVec2) ||
+        !ReadGridExplicit(in, stage.fluid_gravity_strength, ReadFloat) ||
+        !ReadGridExplicit(in, stage.fluid_temp_gravity, ReadVec2) ||
+        !ReadGridExplicit(in, stage.tile_shake, ReadFloat) ||
+        !ReadGridExplicit(in, stage.backwall_tile_shake, ReadFloat) ||
         !ReadGridExplicit(in, stage.backwall_tiles, ReadTile) ||
         !ReadTileVector(in, stage.backwall_fill_tiles) ||
         !ReadGridExplicit(in, stage.embedded_treasures, ReadEmbeddedTreasure) ||
-        !ReadGridPod(in, stage.rooms) ||
-        !ReadVectorPod(in, stage.path)) {
+        !ReadGridExplicit(in, stage.rooms, ReadInt32) ||
+        !ReadIVec2Vector(in, stage.path)) {
         return false;
     }
 
