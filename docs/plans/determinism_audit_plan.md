@@ -156,8 +156,28 @@ The expected end state is:
 - Fixed: bat pursuit squeak/flap selection and baseball-bat kill sound
   selection now use synchronized `state.drng`. These choices create audio
   emitters, and audio emitters are part of rollback/resync snapshots.
-- Deferred risk: audit every remaining `rng::` call and either prove it is
-  non-authoritative or move it to `state.drng`.
+- Audited process-global `rng::` call classes. The remaining broad set in
+  entity particle bursts, render shake, presentation commands, treasure pickup
+  effects, debug stage builders, and debug input bots is presentation/debug
+  randomness. These values are not part of `SimSnapshot` and do not participate
+  in lockstep hashes or network resync. They can remain process-local unless
+  they are later promoted into authoritative sim state.
+- Quarantined boundary: full local `GameplaySnapshot` still includes particles,
+  audio emitters, and stage lighting so local recording/playback can restore
+  presentation state. Process-global presentation RNG therefore remains
+  acceptable for lockstep determinism, but full debug recordings are not
+  promised to be presentation-identical across platforms unless these effects
+  are given deterministic presentation streams.
+- Quarantined boundary: `MakeRandomStageSeed()` intentionally uses
+  process-global `rng::RandomU32()` only to create a fresh host/local run seed
+  before the new stage is synchronized. The chosen seed is then copied into
+  `state.net_session.stage_seed`, transition packets, snapshots, and stage
+  generation state. Peers must never independently call it for the same network
+  transition.
+- Deferred risk: keep auditing future `rng::` additions. Any process-global RNG
+  that creates audio emitters, mutates `SimSnapshot`, changes entity/world
+  state, or affects synchronized branch decisions must move to `state.drng` or
+  another synchronized `DetRng` stream.
 
 ## Serialization And Snapshot Audit
 
