@@ -389,6 +389,12 @@ The expected end state is:
   generic raw POD helper. The current SDRP version remains byte-compatible
   because all affected fields already had fixed-width runtime types; this makes
   the diagnostic artifact contract explicit for cross-platform desync work.
+- Fixed in UDP net protocol packets: packet headers and all lobby/lockstep/
+  snapshot-resync/topology/restart packet payloads now encode fields
+  explicitly in little-endian fixed-width form instead of raw-copying local C++
+  structs. This removes packet padding, host byte order, raw enum layout, and
+  `sizeof(struct)` from live multiplayer packet compatibility. Network
+  protocol version is now 2.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,

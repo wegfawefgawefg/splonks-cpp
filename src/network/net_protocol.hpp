@@ -14,7 +14,7 @@
 namespace splonks::network {
 
 constexpr std::uint32_t kNetProtocolMagic = 0x534C504B; // SLPK
-constexpr std::uint16_t kNetProtocolVersion = 1;
+constexpr std::uint16_t kNetProtocolVersion = 2;
 constexpr std::size_t kNetNameBytes = 32;
 constexpr std::size_t kNetQuestIdBytes = 32;
 constexpr std::size_t kNetQuestStageIdBytes = 64;
