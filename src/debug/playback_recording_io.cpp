@@ -1324,18 +1324,18 @@ bool ReadEntEffects(std::istream& in, BoxedEntEffects& effects_box) {
 }
 
 void WriteAFrameAnimator(std::ostream& out, const AFrameAnimator& animator) {
-    WritePod(out, animator.anim_id);
+    WriteUint32(out, animator.anim_id);
     WriteSizeIndex(out, animator.current_frame);
-    WritePod(out, animator.current_time);
-    WritePod(out, animator.scale);
-    WritePod(out, animator.speed);
+    WriteFloat(out, animator.current_time);
+    WriteFloat(out, animator.scale);
+    WriteFloat(out, animator.speed);
     WriteBoolByte(out, animator.animate);
     WriteBoolByte(out, animator.loop);
     WriteBoolByte(out, animator.finished);
     const std::uint8_t playback_mode = static_cast<std::uint8_t>(animator.playback_mode);
     WritePod(out, playback_mode);
-    WritePod(out, animator.play_count);
-    WritePod(out, animator.plays_completed);
+    WriteUint32(out, animator.play_count);
+    WriteUint32(out, animator.plays_completed);
     WriteBoolByte(out, animator.playback_dirty);
     WriteBoolByte(out, animator.ping_pong_forward);
 }
@@ -1347,17 +1347,17 @@ bool ReadAFrameAnimator(std::istream& in, AFrameAnimator& animator) {
     bool finished = false;
     bool playback_dirty = false;
     bool ping_pong_forward = false;
-    if (!ReadPod(in, animator.anim_id) ||
+    if (!ReadUint32(in, animator.anim_id) ||
         !ReadSizeIndex(in, animator.current_frame) ||
-        !ReadPod(in, animator.current_time) ||
-        !ReadPod(in, animator.scale) ||
-        !ReadPod(in, animator.speed) ||
+        !ReadFloat(in, animator.current_time) ||
+        !ReadFloat(in, animator.scale) ||
+        !ReadFloat(in, animator.speed) ||
         !ReadBoolByte(in, animate) ||
         !ReadBoolByte(in, loop) ||
         !ReadBoolByte(in, finished) ||
         !ReadPod(in, playback_mode) ||
-        !ReadPod(in, animator.play_count) ||
-        !ReadPod(in, animator.plays_completed) ||
+        !ReadUint32(in, animator.play_count) ||
+        !ReadUint32(in, animator.plays_completed) ||
         !ReadBoolByte(in, playback_dirty) ||
         !ReadBoolByte(in, ping_pong_forward)) {
         return false;
@@ -1392,11 +1392,11 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.can_collect_pickups);
     WriteBoolByte(out, ent.can_go_on_back);
     WriteBoolByte(out, ent.grounded);
-    WritePod(out, ent.shake);
-    WritePod(out, ent.rotation);
-    WritePod(out, ent.alpha);
-    WritePod(out, ent.coyote_time);
-    WritePod(out, ent.stun_timer);
+    WriteFloat(out, ent.shake);
+    WriteFloat(out, ent.rotation);
+    WriteFloat(out, ent.alpha);
+    WriteUint32(out, ent.coyote_time);
+    WriteUint32(out, ent.stun_timer);
     WriteBoolByte(out, ent.stun_recovers_on_ground);
     WriteBoolByte(out, ent.stun_recovers_while_held);
     WriteBoolByte(out, ent.can_be_picked_up);
@@ -1404,75 +1404,75 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.can_only_be_picked_up_if_dead_or_stunned);
     WriteBoolByte(out, ent.impassable);
     WriteBoolByte(out, ent.can_be_hung_on);
-    WritePod(out, ent.fall_timer);
+    WriteUint32(out, ent.fall_timer);
     WriteVec2(out, ent.pos);
     WriteVec2(out, ent.vel);
     WriteVec2(out, ent.acc);
-    WritePod(out, ent.max_speed);
-    WritePod(out, ent.jump_hold_gravity_frames_remaining);
-    WritePod(out, ent.throw_velocity_scale);
-    WritePod(out, ent.buoyancy);
+    WriteFloat(out, ent.max_speed);
+    WriteUint32(out, ent.jump_hold_gravity_frames_remaining);
+    WriteFloat(out, ent.throw_velocity_scale);
+    WriteFloat(out, ent.buoyancy);
     WriteEntEffects(out, ent.effects);
     WriteVec2(out, ent.size);
-    WritePod(out, ent.self_light);
-    WritePod(out, ent.light_strength);
+    WriteFloat(out, ent.self_light);
+    WriteFloat(out, ent.light_strength);
     WriteColor3(out, ent.light_color);
-    WritePod(out, ent.light_radius);
-    WritePod(out, ent.dist_traveled_this_frame);
+    WriteInt32(out, ent.light_radius);
+    WriteFloat(out, ent.dist_traveled_this_frame);
     WriteEnumByte(out, ent.facing);
     WriteBoolByte(out, ent.vertical_flip);
     WriteEnumByte(out, ent.draw_layer);
     WriteBoolByte(out, ent.render_enabled);
     WriteAFrameAnimator(out, ent.aframe_animator);
-    WritePod(out, ent.jump_delay_frame_count);
+    WriteUint32(out, ent.jump_delay_frame_count);
     WriteBoolByte(out, ent.jumped_this_frame);
-    WritePod(out, ent.climb_detach_cooldown);
+    WriteUint32(out, ent.climb_detach_cooldown);
     WriteOptionalEnumByte(out, ent.hang_side);
     WriteBoolByte(out, ent.can_hang_ledge);
     WriteBoolByte(out, ent.can_hang_wall);
-    WritePod(out, ent.hang_count);
+    WriteUint32(out, ent.hang_count);
     WriteBoolByte(out, ent.holding);
     WriteOptionalEnumByte(out, ent.pickup_effect);
-    WritePod(out, ent.money);
+    WriteUint32(out, ent.money);
     WriteBuyable(out, ent.buyable);
     WriteOptionalSizeIndex(out, ent.stage_spawn_index);
     WriteOptionalVid(out, ent.back_vid);
     WriteAttachMode(out, ent.attach_mode);
     WriteUseState(out, ent.use_state);
-    WritePod(out, ent.travel_sound_countdown);
+    WriteFloat(out, ent.travel_sound_countdown);
     WriteEnumByte(out, ent.travel_sound);
     WriteEnumByte(out, ent.condition);
     WriteEnumByte(out, ent.last_condition);
     WriteEnumByte(out, ent.ai_state);
     WriteEnumByte(out, ent.last_ai_state);
-    WritePod(out, ent.movement_flags);
-    WritePod(out, ent.health);
+    WriteUint32(out, ent.movement_flags);
+    WriteUint32(out, ent.health);
     WriteBoolByte(out, ent.hurt_on_contact);
     WriteBoolByte(out, ent.vanish_on_death);
     WriteBoolByte(out, ent.affected_by_ground_friction);
-    WritePod(out, ent.support_ground_friction);
-    WritePod(out, ent.push_acc);
+    WriteFloat(out, ent.support_ground_friction);
+    WriteFloat(out, ent.push_acc);
     WriteOptionalAFrameId(out, ent.damage_anim);
     WriteOptionalAudioAssetId(out, ent.damage_sound);
     WriteOptionalAudioAssetId(out, ent.collide_sound);
     WriteOptionalAudioAssetId(out, ent.death_sound);
     WriteOptionalStageTransitionTarget(out, ent.transition_target);
-    WritePod(out, ent.stage_exit_id);
-    WritePod(out, ent.attack_weight);
-    WritePod(out, ent.weight);
-    WritePod(out, ent.bomb_throw_delay_countdown);
-    WritePod(out, ent.rope_throw_delay_countdown);
-    WritePod(out, ent.attack_delay_countdown);
-    WritePod(out, ent.equip_delay_countdown);
+    WriteInt32(out, ent.stage_exit_id);
+    WriteFloat(out, ent.attack_weight);
+    WriteFloat(out, ent.weight);
+    WriteUint32(out, ent.bomb_throw_delay_countdown);
+    WriteUint32(out, ent.rope_throw_delay_countdown);
+    WriteUint32(out, ent.attack_delay_countdown);
+    WriteUint32(out, ent.equip_delay_countdown);
     WriteOptionalVid(out, ent.thrown_by);
-    WritePod(out, ent.thrown_immunity_timer);
+    WriteUint32(out, ent.thrown_immunity_timer);
     WriteEnumByte(out, ent.proj_contact_damage_type);
-    WritePod(out, ent.proj_contact_damage_amount);
+    WriteUnsigned32(out, ent.proj_contact_damage_amount);
     WriteBoolByte(out, ent.can_apply_proj_contact);
-    WritePod(out, ent.proj_contact_timer);
+    WriteUint32(out, ent.proj_contact_timer);
     WriteBoolByte(out, ent.collided);
     WriteBoolByte(out, ent.collided_last_frame);
-    WritePod(out, ent.contact_sound_cooldown);
+    WriteUint32(out, ent.contact_sound_cooldown);
     WriteEnumByte(out, ent.damage_vuln);
     WriteBoolByte(out, ent.can_be_stunned);
     WriteIVec2(out, ent.point_a);
@@ -1485,7 +1485,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteEnumByte(out, ent.point_label_d);
     WriteOptionalVid(out, ent.holding_vid);
     WriteOptionalVid(out, ent.held_by_vid);
-    WritePod(out, ent.holding_timer);
+    WriteUint32(out, ent.holding_timer);
     WriteOptionalVid(out, ent.ent_a);
     WriteOptionalVid(out, ent.ent_b);
     WriteOptionalVid(out, ent.ent_c);
@@ -1494,12 +1494,12 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalVidVector(out, ent.inside_vids);
     WriteEnumByte(out, ent.ent_label_a);
     WriteEnumByte(out, ent.alignment);
-    WritePod(out, ent.counter_a);
-    WritePod(out, ent.counter_b);
-    WritePod(out, ent.counter_c);
-    WritePod(out, ent.counter_d);
-    WritePod(out, ent.threshold_a);
-    WritePod(out, ent.threshold_b);
+    WriteFloat(out, ent.counter_a);
+    WriteFloat(out, ent.counter_b);
+    WriteFloat(out, ent.counter_c);
+    WriteFloat(out, ent.counter_d);
+    WriteFloat(out, ent.threshold_a);
+    WriteFloat(out, ent.threshold_b);
 }
 
 bool ReadEnt(std::istream& in, Ent& ent) {
@@ -1520,11 +1520,11 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.can_collect_pickups) &&
            ReadBoolByte(in, ent.can_go_on_back) &&
            ReadBoolByte(in, ent.grounded) &&
-           ReadPod(in, ent.shake) &&
-           ReadPod(in, ent.rotation) &&
-           ReadPod(in, ent.alpha) &&
-           ReadPod(in, ent.coyote_time) &&
-           ReadPod(in, ent.stun_timer) &&
+           ReadFloat(in, ent.shake) &&
+           ReadFloat(in, ent.rotation) &&
+           ReadFloat(in, ent.alpha) &&
+           ReadUint32(in, ent.coyote_time) &&
+           ReadUint32(in, ent.stun_timer) &&
            ReadBoolByte(in, ent.stun_recovers_on_ground) &&
            ReadBoolByte(in, ent.stun_recovers_while_held) &&
            ReadBoolByte(in, ent.can_be_picked_up) &&
@@ -1532,75 +1532,75 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.can_only_be_picked_up_if_dead_or_stunned) &&
            ReadBoolByte(in, ent.impassable) &&
            ReadBoolByte(in, ent.can_be_hung_on) &&
-           ReadPod(in, ent.fall_timer) &&
+           ReadUint32(in, ent.fall_timer) &&
            ReadVec2(in, ent.pos) &&
            ReadVec2(in, ent.vel) &&
            ReadVec2(in, ent.acc) &&
-           ReadPod(in, ent.max_speed) &&
-           ReadPod(in, ent.jump_hold_gravity_frames_remaining) &&
-           ReadPod(in, ent.throw_velocity_scale) &&
-           ReadPod(in, ent.buoyancy) &&
+           ReadFloat(in, ent.max_speed) &&
+           ReadUint32(in, ent.jump_hold_gravity_frames_remaining) &&
+           ReadFloat(in, ent.throw_velocity_scale) &&
+           ReadFloat(in, ent.buoyancy) &&
            ReadEntEffects(in, ent.effects) &&
            ReadVec2(in, ent.size) &&
-           ReadPod(in, ent.self_light) &&
-           ReadPod(in, ent.light_strength) &&
+           ReadFloat(in, ent.self_light) &&
+           ReadFloat(in, ent.light_strength) &&
            ReadColor3(in, ent.light_color) &&
-           ReadPod(in, ent.light_radius) &&
-           ReadPod(in, ent.dist_traveled_this_frame) &&
+           ReadInt32(in, ent.light_radius) &&
+           ReadFloat(in, ent.dist_traveled_this_frame) &&
            ReadEnumByte(in, ent.facing, Side::Right) &&
            ReadBoolByte(in, ent.vertical_flip) &&
            ReadEnumByte(in, ent.draw_layer, DrawLayer::Foreground) &&
            ReadBoolByte(in, ent.render_enabled) &&
            ReadAFrameAnimator(in, ent.aframe_animator) &&
-           ReadPod(in, ent.jump_delay_frame_count) &&
+           ReadUint32(in, ent.jump_delay_frame_count) &&
            ReadBoolByte(in, ent.jumped_this_frame) &&
-           ReadPod(in, ent.climb_detach_cooldown) &&
+           ReadUint32(in, ent.climb_detach_cooldown) &&
            ReadOptionalEnumByte(in, ent.hang_side, Side::Right) &&
            ReadBoolByte(in, ent.can_hang_ledge) &&
            ReadBoolByte(in, ent.can_hang_wall) &&
-           ReadPod(in, ent.hang_count) &&
+           ReadUint32(in, ent.hang_count) &&
            ReadBoolByte(in, ent.holding) &&
            ReadOptionalEnumByte(in, ent.pickup_effect, EffectId::InWater) &&
-           ReadPod(in, ent.money) &&
+           ReadUint32(in, ent.money) &&
            ReadBuyable(in, ent.buyable) &&
            ReadOptionalSizeIndex(in, ent.stage_spawn_index) &&
            ReadOptionalVid(in, ent.back_vid) &&
            ReadAttachMode(in, ent.attach_mode) &&
            ReadUseState(in, ent.use_state) &&
-           ReadPod(in, ent.travel_sound_countdown) &&
+           ReadFloat(in, ent.travel_sound_countdown) &&
            ReadEnumByte(in, ent.travel_sound, TravelSound::Two) &&
            ReadEnumByte(in, ent.condition, EntCondition::Stunned) &&
            ReadEnumByte(in, ent.last_condition, EntCondition::Stunned) &&
            ReadEnumByte(in, ent.ai_state, EntAiState::Returning) &&
            ReadEnumByte(in, ent.last_ai_state, EntAiState::Returning) &&
-           ReadPod(in, ent.movement_flags) &&
-           ReadPod(in, ent.health) &&
+           ReadUint32(in, ent.movement_flags) &&
+           ReadUint32(in, ent.health) &&
            ReadBoolByte(in, ent.hurt_on_contact) &&
            ReadBoolByte(in, ent.vanish_on_death) &&
            ReadBoolByte(in, ent.affected_by_ground_friction) &&
-           ReadPod(in, ent.support_ground_friction) &&
-           ReadPod(in, ent.push_acc) &&
+           ReadFloat(in, ent.support_ground_friction) &&
+           ReadFloat(in, ent.push_acc) &&
            ReadOptionalAFrameId(in, ent.damage_anim) &&
            ReadOptionalAudioAssetId(in, ent.damage_sound) &&
            ReadOptionalAudioAssetId(in, ent.collide_sound) &&
            ReadOptionalAudioAssetId(in, ent.death_sound) &&
            ReadOptionalStageTransitionTarget(in, ent.transition_target) &&
-           ReadPod(in, ent.stage_exit_id) &&
-           ReadPod(in, ent.attack_weight) &&
-           ReadPod(in, ent.weight) &&
-           ReadPod(in, ent.bomb_throw_delay_countdown) &&
-           ReadPod(in, ent.rope_throw_delay_countdown) &&
-           ReadPod(in, ent.attack_delay_countdown) &&
-           ReadPod(in, ent.equip_delay_countdown) &&
+           ReadInt32(in, ent.stage_exit_id) &&
+           ReadFloat(in, ent.attack_weight) &&
+           ReadFloat(in, ent.weight) &&
+           ReadUint32(in, ent.bomb_throw_delay_countdown) &&
+           ReadUint32(in, ent.rope_throw_delay_countdown) &&
+           ReadUint32(in, ent.attack_delay_countdown) &&
+           ReadUint32(in, ent.equip_delay_countdown) &&
            ReadOptionalVid(in, ent.thrown_by) &&
-           ReadPod(in, ent.thrown_immunity_timer) &&
+           ReadUint32(in, ent.thrown_immunity_timer) &&
            ReadEnumByte(in, ent.proj_contact_damage_type, DamageType::Fall) &&
-           ReadPod(in, ent.proj_contact_damage_amount) &&
+           ReadUnsigned32(in, ent.proj_contact_damage_amount) &&
            ReadBoolByte(in, ent.can_apply_proj_contact) &&
-           ReadPod(in, ent.proj_contact_timer) &&
+           ReadUint32(in, ent.proj_contact_timer) &&
            ReadBoolByte(in, ent.collided) &&
            ReadBoolByte(in, ent.collided_last_frame) &&
-           ReadPod(in, ent.contact_sound_cooldown) &&
+           ReadUint32(in, ent.contact_sound_cooldown) &&
            ReadEnumByte(in, ent.damage_vuln, DamageVuln::AnthingExceptJumpOn) &&
            ReadBoolByte(in, ent.can_be_stunned) &&
            ReadIVec2(in, ent.point_a) &&
@@ -1613,7 +1613,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadEnumByte(in, ent.point_label_d, PointLabel::Avoid) &&
            ReadOptionalVid(in, ent.holding_vid) &&
            ReadOptionalVid(in, ent.held_by_vid) &&
-           ReadPod(in, ent.holding_timer) &&
+           ReadUint32(in, ent.holding_timer) &&
            ReadOptionalVid(in, ent.ent_a) &&
            ReadOptionalVid(in, ent.ent_b) &&
            ReadOptionalVid(in, ent.ent_c) &&
@@ -1622,12 +1622,12 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalVidVector(in, ent.inside_vids) &&
            ReadEnumByte(in, ent.ent_label_a, EntLabel::AttachedToThis) &&
            ReadEnumByte(in, ent.alignment, Alignment::Enemy) &&
-           ReadPod(in, ent.counter_a) &&
-           ReadPod(in, ent.counter_b) &&
-           ReadPod(in, ent.counter_c) &&
-           ReadPod(in, ent.counter_d) &&
-           ReadPod(in, ent.threshold_a) &&
-           ReadPod(in, ent.threshold_b);
+           ReadFloat(in, ent.counter_a) &&
+           ReadFloat(in, ent.counter_b) &&
+           ReadFloat(in, ent.counter_c) &&
+           ReadFloat(in, ent.counter_d) &&
+           ReadFloat(in, ent.threshold_a) &&
+           ReadFloat(in, ent.threshold_b);
 }
 
 void WriteVideoSettings(std::ostream& out, const VideoSettings& settings) {

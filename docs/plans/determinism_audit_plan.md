@@ -313,6 +313,13 @@ The expected end state is:
   color, and generic entity point fields. The emitted field bytes are unchanged
   for the current structs, so this is a layout-dependency cleanup within
   recording format version 95.
+- Fixed in shared gameplay/simulation snapshot serialization: remaining
+  `AFrameAnimator` and `Ent` scalar fields now route through named fixed-width
+  integer/float writers instead of raw member POD calls. This covers animator
+  ids/timers/counts and entity timers, counters, weights, light values, health,
+  money, movement flags, damage amounts, and cooldowns. The emitted scalar
+  bytes are unchanged for the current field types, so this remains within
+  recording format version 95.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -396,6 +403,9 @@ The expected end state is:
 - Fixed in shared snapshot/replay format: entity vector/color fields now write
   components explicitly, avoiding dependence on `Vec2` / `IVec2` / `Color3`
   struct padding or aggregate layout.
+- Fixed in shared snapshot/replay format: entity and animator scalar fields now
+  use typed scalar helpers, removing the remaining raw `Ent`/`AFrameAnimator`
+  member POD calls from the recording writer.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 
