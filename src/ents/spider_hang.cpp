@@ -35,7 +35,8 @@ std::optional<Vec2> GetPlayerDeltaBelow(const Ent& ent, const State& state, int 
     const Vec2 ent_center = ent.GetCenter();
     const Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetCenter());
     const Vec2 delta = player_center - ent_center;
-    if (delta.y <= 0.0F || Length(delta) >= static_cast<float>(max_distance)) {
+    const float max_distance_f = static_cast<float>(max_distance);
+    if (delta.y <= 0.0F || LengthSquared(delta) >= max_distance_f * max_distance_f) {
         return std::nullopt;
     }
     return delta;

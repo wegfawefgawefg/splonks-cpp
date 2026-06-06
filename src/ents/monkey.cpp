@@ -33,6 +33,7 @@ constexpr float kMonkeyGroundLeapSpeed = 2.0F;
 constexpr float kMonkeyLeapSpeed = 3.0F;
 constexpr float kMonkeyClimbSpeed = 1.0F;
 constexpr float kMonkeySightDistance = 64.0F;
+constexpr float kMonkeySightDistanceSq = kMonkeySightDistance * kMonkeySightDistance;
 constexpr float kMonkeyItemThrowSpeedX = 5.0F;
 constexpr float kMonkeyItemThrowSpeedY = -4.0F;
 constexpr int kMonkeyIdleMinFrames = 18;
@@ -136,7 +137,7 @@ std::optional<Vec2> FindClimbableTargetCenter(const State& state, const Ent& mon
 
 bool ShouldClimbUp(Ent& monkey, State& state, const std::optional<Vec2>& player_delta) {
     (void)monkey;
-    if (player_delta.has_value() && Length(*player_delta) < kMonkeySightDistance &&
+    if (player_delta.has_value() && LengthSquared(*player_delta) < kMonkeySightDistanceSq &&
         std::abs(player_delta->y) > 16.0F) {
         return player_delta->y < 0.0F;
     }
@@ -362,7 +363,7 @@ void LaunchAtPlayerOrForward(Ent& monkey, const std::optional<Vec2>& player_delt
 }
 
 void LaunchOffClimbable(Ent& monkey, const std::optional<Vec2>& player_delta, State& state) {
-    if (player_delta.has_value() && Length(*player_delta) < kMonkeySightDistance) {
+    if (player_delta.has_value() && LengthSquared(*player_delta) < kMonkeySightDistanceSq) {
         LaunchAtPlayerOrForward(monkey, player_delta, state);
     } else {
         monkey.facing =
@@ -497,7 +498,7 @@ void StepEntLogicAsMonkey(
             EnterCharge(monkey, state);
         }
         if (GetMonkeyState(monkey) == MonkeyState::Idle &&
-            player_delta.has_value() && Length(*player_delta) < kMonkeySightDistance) {
+            player_delta.has_value() && LengthSquared(*player_delta) < kMonkeySightDistanceSq) {
             EnterCharge(monkey, state);
         }
         break;
@@ -570,7 +571,7 @@ void StepEntLogicAsMonkey(
             EnterHang(monkey, state);
         }
 
-        if (player_delta.has_value() && Length(*player_delta) < kMonkeySightDistance &&
+        if (player_delta.has_value() && LengthSquared(*player_delta) < kMonkeySightDistanceSq &&
             player_delta->y > 0.0F) {
             SetMonkeyState(monkey, MonkeyState::Bounce);
             monkey.counter_c = static_cast<float>(kMonkeyVineCooldownFrames);

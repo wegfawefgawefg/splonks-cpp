@@ -136,7 +136,9 @@ void TryHopTowardPlayer(
     int hop_speed_y_max
 ) {
     const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
-    if (!player_delta.has_value() || Length(*player_delta) > static_cast<float>(aggro_distance)) {
+    const float aggro_distance_f = static_cast<float>(aggro_distance);
+    if (!player_delta.has_value() ||
+        LengthSquared(*player_delta) > aggro_distance_f * aggro_distance_f) {
         ent.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
             kAggroSpiderCooldownMinFrames,
             kAggroSpiderCooldownMaxFrames

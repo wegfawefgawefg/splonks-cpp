@@ -125,8 +125,9 @@ The expected end state is:
   player-controlled projectile velocity and stored weapon rotation.
 - Fixed in gameplay distance thresholds: arrow-trap movement detection, arrow
   rotation velocity gating, piranha target/bite range checks, projectile-contact
-  activation, and spike high-speed override checks now compare squared lengths
-  instead of calling `Length` / platform libm `std::sqrt`.
+  activation, spike high-speed override checks, monkey sight checks, spider
+  aggro/drop checks, and cobweb occupant movement checks now compare squared
+  lengths instead of calling `Length` / platform libm `std::sqrt`.
 - Deferred risk: those helpers make the float-to-integer conversion rule
   explicit, but the source positions are still authoritative floats. Two peers
   can still diverge if prior float math crosses a grid/branch threshold

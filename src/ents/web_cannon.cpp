@@ -36,6 +36,8 @@ constexpr float kCobwebVerticalDamping = 0.25F;
 constexpr float kCobwebAccelerationDamping = 0.0F;
 constexpr float kCobwebJumpEscapeVelocity = -1.7F;
 constexpr float kCobwebOccupantSpeedThreshold = 0.05F;
+constexpr float kCobwebOccupantSpeedThresholdSq =
+    kCobwebOccupantSpeedThreshold * kCobwebOccupantSpeedThreshold;
 constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct WebGunAim {
@@ -799,8 +801,8 @@ void StepEntLogicAsCobweb(
         }
 
         const controls::ControlIntent intent = controls::GetControlIntentForEnt(*other, state);
-        const bool moving_in_web = Length(other->vel) > kCobwebOccupantSpeedThreshold ||
-                                   Length(other->acc) > 0.0F ||
+        const bool moving_in_web = LengthSquared(other->vel) > kCobwebOccupantSpeedThresholdSq ||
+                                   LengthSquared(other->acc) > 0.0F ||
                                    intent.jump_pressed;
         occupied = true;
         if (moving_in_web && cobweb.health > 0) {
