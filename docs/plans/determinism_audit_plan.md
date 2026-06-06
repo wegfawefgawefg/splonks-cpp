@@ -109,6 +109,10 @@ The expected end state is:
   detached carry placement, stage-rotation entity placement, arrow-trap stored
   offsets, bow arrow spawn centers, and teleporter holder destinations now use
   local `RoundToInt` instead of platform libm `std::round`.
+- Fixed in gameplay branch/timer conversions: climb probe pixel limits, player
+  fall-timer rate increments, and craps dice roll resolution now use local
+  `CeilToInt` / `RoundToInt` instead of platform libm `std::ceil` /
+  `std::round`.
 - Deferred risk: those helpers make the float-to-integer conversion rule
   explicit, but the source positions are still authoritative floats. Two peers
   can still diverge if prior float math crosses a grid/branch threshold

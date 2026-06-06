@@ -132,7 +132,7 @@ void PayCrapsResult(
     Audio& audio
 ) {
     (void)audio;
-    const int roll = std::clamp(static_cast<int>(std::round(dice.counter_a)), 2, 12);
+    const int roll = std::clamp(RoundToInt(dice.counter_a), 2, 12);
     if (roll == 7) {
         if (prize != nullptr && prize->active) {
             Ent* const won_prize = SpawnWonPrize(table, *prize, state);

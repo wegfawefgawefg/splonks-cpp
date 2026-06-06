@@ -1139,7 +1139,7 @@ void JumpingAndClimbingStep(
                 ent.acc.x = 0.0F;
 
                 if (control.up && !control.down) {
-                    const int max_climb_pixels = static_cast<int>(std::ceil(tuning.climb_speed));
+                    const int max_climb_pixels = CeilToInt(tuning.climb_speed);
                     const int allowed_up_pixels =
                         GetAllowedClimbUpPixels(ent, state, tuning, max_climb_pixels);
                     ent.vel.y = -std::min(tuning.climb_speed, static_cast<float>(allowed_up_pixels));

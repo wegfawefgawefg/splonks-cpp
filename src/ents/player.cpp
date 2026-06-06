@@ -191,11 +191,11 @@ void StepPlayerFallTimer(Ent& player, const State& state) {
     }
     if (player.vel.y > 0.0F && !player.IsClimbing() && !player.IsHanging()) {
         if (fall_timer_rate >= 1.0F) {
-            player.fall_timer += static_cast<std::uint32_t>(std::round(fall_timer_rate));
+            player.fall_timer += static_cast<std::uint32_t>(RoundToInt(fall_timer_rate));
             return;
         }
         const std::uint32_t interval =
-            static_cast<std::uint32_t>(std::max(1.0F, std::round(1.0F / fall_timer_rate)));
+            static_cast<std::uint32_t>(std::max(1, RoundToInt(1.0F / fall_timer_rate)));
         if ((state.stage_frame % interval) == 0) {
             player.fall_timer += 1;
         }
