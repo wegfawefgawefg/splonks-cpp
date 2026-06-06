@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 79;
+constexpr std::uint32_t kRecordingVersion = 80;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -247,12 +247,55 @@ bool ReadString(std::istream& in, std::string& value) {
     return in.good();
 }
 
+void WriteBoolByte(std::ostream& out, bool value) {
+    const std::uint8_t stored = value ? 1U : 0U;
+    WritePod(out, stored);
+}
+
+bool ReadBoolByte(std::istream& in, bool& value) {
+    std::uint8_t stored = 0;
+    if (!ReadPod(in, stored)) {
+        return false;
+    }
+    value = stored != 0;
+    return true;
+}
+
+void WriteEffectInstance(std::ostream& out, const EffectInstance& effect) {
+    const std::uint8_t id = static_cast<std::uint8_t>(effect.id);
+    WritePod(out, id);
+    WritePod(out, effect.count);
+    WritePod(out, effect.value);
+    WritePod(out, effect.frames_remaining);
+}
+
+bool ReadEffectInstance(std::istream& in, EffectInstance& effect) {
+    std::uint8_t id = 0;
+    std::int32_t count = 0;
+    float value = 0.0F;
+    std::uint32_t frames_remaining = 0;
+    if (!ReadPod(in, id) ||
+        !ReadPod(in, count) ||
+        !ReadPod(in, value) ||
+        !ReadPod(in, frames_remaining)) {
+        return false;
+    }
+    if (id >= static_cast<std::uint8_t>(EffectId::Count)) {
+        return false;
+    }
+    effect.id = static_cast<EffectId>(id);
+    effect.count = count;
+    effect.value = value;
+    effect.frames_remaining = frames_remaining;
+    return true;
+}
+
 void WriteEntEffects(std::ostream& out, const BoxedEntEffects& effects_box) {
     const EntEffects* const effects = effects_box.get();
     const std::uint8_t count = effects != nullptr ? effects->count : 0;
     WritePod(out, count);
     for (std::uint8_t i = 0; i < count; ++i) {
-        WritePod(out, effects->effects[i]);
+        WriteEffectInstance(out, effects->effects[i]);
     }
 }
 
@@ -271,7 +314,7 @@ bool ReadEntEffects(std::istream& in, BoxedEntEffects& effects_box) {
     EntEffects& effects = effects_box.emplace();
     effects.count = count;
     for (std::uint8_t i = 0; i < count; ++i) {
-        if (!ReadPod(in, effects.effects[i])) {
+        if (!ReadEffectInstance(in, effects.effects[i])) {
             return false;
         }
     }
@@ -1163,17 +1206,32 @@ bool ReadContactBookkeeping(std::istream& in, ContactBookkeeping& contact) {
 }
 
 void WriteToolSlot(std::ostream& out, const ToolSlot& slot) {
-    WritePod(out, slot.kind);
+    const std::uint8_t kind = static_cast<std::uint8_t>(slot.kind);
+    WritePod(out, kind);
     WritePod(out, slot.count);
     WritePod(out, slot.cooldown);
-    WritePod(out, slot.active);
+    WriteBoolByte(out, slot.active);
 }
 
 bool ReadToolSlot(std::istream& in, ToolSlot& slot) {
-    return ReadPod(in, slot.kind) &&
-           ReadPod(in, slot.count) &&
-           ReadPod(in, slot.cooldown) &&
-           ReadPod(in, slot.active);
+    std::uint8_t kind = 0;
+    std::uint16_t count = 0;
+    std::uint16_t cooldown = 0;
+    bool active = false;
+    if (!ReadPod(in, kind) ||
+        !ReadPod(in, count) ||
+        !ReadPod(in, cooldown) ||
+        !ReadBoolByte(in, active)) {
+        return false;
+    }
+    if (kind >= static_cast<std::uint8_t>(ToolKind::ThrowStickyBomb) + 1U) {
+        return false;
+    }
+    slot.kind = static_cast<ToolKind>(kind);
+    slot.count = count;
+    slot.cooldown = cooldown;
+    slot.active = active;
+    return true;
 }
 
 void WriteEntToolState(std::ostream& out, const EntToolState& state) {

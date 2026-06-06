@@ -214,6 +214,11 @@ The expected end state is:
 - Fixed in shared gameplay/simulation snapshot serialization: optional presence
   flags now use explicit `uint8_t` bytes instead of raw host `bool`
   representation. Recording format version is now 79.
+- Fixed in shared gameplay/simulation snapshot serialization:
+  `EffectInstance` and `ToolSlot` now encode enum ids and bool flags as
+  explicit `uint8_t` values plus fixed-width scalar fields instead of raw host
+  struct layout. Invalid effect/tool ids now fail snapshot decode. Recording
+  format version is now 80.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
