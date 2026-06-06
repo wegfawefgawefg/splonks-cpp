@@ -47,6 +47,18 @@ int FloorDivBySpan(float value, float span) {
     return static_cast<int>(std::floor(value / span));
 }
 
+int FloorDiv(int value, int divisor) {
+    if (divisor == 0) {
+        return 0;
+    }
+    int result = value / divisor;
+    const int remainder = value % divisor;
+    if ((remainder != 0) && ((value < 0) != (divisor < 0))) {
+        --result;
+    }
+    return result;
+}
+
 std::vector<Vec2> GetQueryOffsets(const Stage& stage, const AABB& area) {
     std::vector<Vec2> offsets;
     offsets.push_back(Vec2::New(0.0F, 0.0F));
@@ -186,12 +198,12 @@ std::vector<WorldTileQueryResult> QueryTilesInWorldRect(
     return QueryTilesInRect(
         stage,
         IVec2::New(
-            FloorDivBySpan(static_cast<float>(tl.x), static_cast<float>(kTileSize)),
-            FloorDivBySpan(static_cast<float>(tl.y), static_cast<float>(kTileSize))
+            FloorDiv(tl.x, static_cast<int>(kTileSize)),
+            FloorDiv(tl.y, static_cast<int>(kTileSize))
         ),
         IVec2::New(
-            FloorDivBySpan(static_cast<float>(br.x), static_cast<float>(kTileSize)),
-            FloorDivBySpan(static_cast<float>(br.y), static_cast<float>(kTileSize))
+            FloorDiv(br.x, static_cast<int>(kTileSize)),
+            FloorDiv(br.y, static_cast<int>(kTileSize))
         )
     );
 }

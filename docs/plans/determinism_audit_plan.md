@@ -90,6 +90,10 @@ The expected end state is:
   pullback. The entity still reads/writes float `pos`, `vel`, and `acc` at the
   current physics boundary, but the pull direction no longer depends on
   platform libm.
+- Fixed in tile queries: `QueryTilesInWorldRect` now uses integer floor
+  division for integer world-pixel bounds instead of converting to float and
+  calling `std::floor`. This removes a float/libm boundary from broad tile
+  collision and world geometry queries.
 - Deferred risk: shared world/tile query boundaries still use `std::floor` /
   `std::fmod` over float positions and need a fixed-point boundary pass.
 - Fixed in network fingerprints: `Ent::rotation` is treated as cosmetic/render
