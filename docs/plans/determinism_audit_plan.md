@@ -127,6 +127,10 @@ The expected end state is:
   state and no longer participates in the network lockstep hash. This removes
   render-only `std::atan2` / `std::fmod` rotation drift from desync detection
   while preserving rotation in canonical/debug snapshots and rendering.
+- Fixed in snapshot-preserved cosmetic rotation: bomb and dice rotation wraps
+  now use local bounded loops instead of platform libm `std::fmod`. Rotation
+  remains presentation state for network lockstep, but this keeps local replay
+  bytes less platform-sensitive.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash

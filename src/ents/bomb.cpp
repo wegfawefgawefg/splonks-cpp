@@ -69,11 +69,11 @@ void UpdateBombRotation(Ent& bomb) {
         return;
     }
 
-    bomb.rotation = std::fmod(
-        bomb.rotation + (bomb.vel.x * kBombRotationDegreesPerPixel),
-        360.0F
-    );
-    if (bomb.rotation < 0.0F) {
+    bomb.rotation += bomb.vel.x * kBombRotationDegreesPerPixel;
+    while (bomb.rotation >= 360.0F) {
+        bomb.rotation -= 360.0F;
+    }
+    while (bomb.rotation < 0.0F) {
         bomb.rotation += 360.0F;
     }
 }

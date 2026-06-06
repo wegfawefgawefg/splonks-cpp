@@ -17,6 +17,16 @@ namespace {
 constexpr float kRollingState = 1.0F;
 constexpr float kSettleSpeed = 0.2F;
 
+float WrapRotationDegrees(float degrees) {
+    while (degrees >= 360.0F) {
+        degrees -= 360.0F;
+    }
+    while (degrees < 0.0F) {
+        degrees += 360.0F;
+    }
+    return degrees;
+}
+
 int RollDicePairTotal(State& state) {
     return state.drng.RandomIntInclusive(1, 6) +
            state.drng.RandomIntInclusive(1, 6);
@@ -44,7 +54,7 @@ void StepEntLogicAsDice(
     if (!dice.grounded || std::abs(dice.vel.x) > kSettleSpeed ||
         std::abs(dice.vel.y) > kSettleSpeed) {
         dice.counter_a = static_cast<float>(RollDicePairTotal(state));
-        dice.rotation = std::fmod(dice.rotation + 24.0F + std::abs(dice.vel.x) * 8.0F, 360.0F);
+        dice.rotation = WrapRotationDegrees(dice.rotation + 24.0F + std::abs(dice.vel.x) * 8.0F);
         return;
     }
 
