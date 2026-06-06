@@ -145,6 +145,10 @@ The expected end state is:
   placement/flip, and debug input bot code. The sound/debug paths are
   non-authoritative. Meathead popup particles are not in `SimSnapshot`, but
   should stay quarantined as presentation-only.
+- Fixed: meathead popup tile choice and flip now use synchronized `state.drng`.
+  The chosen popup center is also used for world sound emitters, and audio
+  emitters are part of rollback/resync snapshots, so this cannot safely use the
+  process-global presentation RNG.
 - Deferred risk: audit every remaining `rng::` call and either prove it is
   non-authoritative or move it to `state.drng`.
 

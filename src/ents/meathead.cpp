@@ -6,7 +6,6 @@
 #include "aframe_id.hpp"
 #include "particles/particle_specs.hpp"
 #include "tile_spec.hpp"
-#include "utils.hpp"
 #include "world_query.hpp"
 
 #include <vector>
@@ -49,7 +48,7 @@ bool IsSolidTileAt(const Stage& stage, const IVec2& tile_pos) {
     return query.has_value() && query->tile != nullptr && GetTileSpec(*query->tile).solid;
 }
 
-std::optional<Vec2> FindMeatheadPopupCenter(const Ent& player, const State& state) {
+std::optional<Vec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
     if (!player.grounded) {
         return std::nullopt;
     }
@@ -74,7 +73,9 @@ std::optional<Vec2> FindMeatheadPopupCenter(const Ent& player, const State& stat
         return std::nullopt;
     }
 
-    const IVec2 choice = candidates[static_cast<std::size_t>(rng::RandomIntInclusive(0, static_cast<int>(candidates.size()) - 1))];
+    const IVec2 choice = candidates[static_cast<std::size_t>(
+        state.drng.RandomIntInclusive(0, static_cast<int>(candidates.size()) - 1)
+    )];
     const float center_x = static_cast<float>(choice.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2));
     const float support_top_y = static_cast<float>((choice.y + 1) * static_cast<int>(kTileSize));
     return Vec2::New(center_x, support_top_y - (kMeatheadPopupSize * 0.5F));
@@ -85,7 +86,11 @@ std::optional<Vec2> SpawnMeatheadPopup(State& state, const Ent& player) {
     if (!popup_center.has_value()) {
         return std::nullopt;
     }
-    state.particles.AddScripted(scripted_particle_spec_ids::MeatheadPopup, *popup_center, rng::RandomIntInclusive(0, 1) == 1);
+    state.particles.AddScripted(
+        scripted_particle_spec_ids::MeatheadPopup,
+        *popup_center,
+        state.drng.RandomIntInclusive(0, 1) == 1
+    );
     return popup_center;
 }
 
