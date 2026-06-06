@@ -2513,14 +2513,14 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteString(out, stage.quest_stage_id);
     WriteString(out, stage.route_label);
     WriteString(out, stage.stage_title);
-    WritePod(out, stage.quest_level_number);
+    WriteInt32(out, stage.quest_level_number);
     WriteOptionalUint32(out, stage.generation_seed);
     const std::uint32_t exit_count = static_cast<std::uint32_t>(stage.exits.size());
     WritePod(out, exit_count);
     for (const StageExit& exit : stage.exits) {
         WriteStageExit(out, exit);
     }
-    WritePod(out, stage.gravity);
+    WriteFloat(out, stage.gravity);
     WriteTile(out, stage.border.left.tile);
     WriteTile(out, stage.border.right.tile);
     WriteTile(out, stage.border.top.tile);
@@ -2563,9 +2563,9 @@ void WriteStage(std::ostream& out, const Stage& stage) {
         WriteStageGenAnnotation(out, annotation);
     }
     WriteStageLights(out, stage.lights);
-    WritePod(out, stage.block_anim_id);
+    WriteUint32(out, stage.block_anim_id);
     WriteSizeIndex(out, stage.next_light_vid);
-    WritePod(out, stage.tile_change_generation);
+    WriteUint32(out, stage.tile_change_generation);
 }
 
 bool ReadStage(std::istream& in, Stage& stage) {
@@ -2574,7 +2574,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadString(in, stage.quest_stage_id) ||
         !ReadString(in, stage.route_label) ||
         !ReadString(in, stage.stage_title) ||
-        !ReadPod(in, stage.quest_level_number) ||
+        !ReadInt32(in, stage.quest_level_number) ||
         !ReadOptionalUint32(in, stage.generation_seed)) {
         return false;
     }
@@ -2590,7 +2590,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         }
     }
 
-    if (!ReadPod(in, stage.gravity) ||
+    if (!ReadFloat(in, stage.gravity) ||
         !ReadTile(in, stage.border.left.tile) ||
         !ReadTile(in, stage.border.right.tile) ||
         !ReadTile(in, stage.border.top.tile) ||
@@ -2652,9 +2652,9 @@ bool ReadStage(std::istream& in, Stage& stage) {
     }
 
     return ReadStageLights(in, stage.lights) &&
-           ReadPod(in, stage.block_anim_id) &&
+           ReadUint32(in, stage.block_anim_id) &&
            ReadSizeIndex(in, stage.next_light_vid) &&
-           ReadPod(in, stage.tile_change_generation);
+           ReadUint32(in, stage.tile_change_generation);
 }
 
 void WriteEntPool(std::ostream& out, const EntPool& ents) {
@@ -2729,7 +2729,7 @@ void WriteContactBookkeeping(std::ostream& out, const ContactBookkeeping& contac
         for (const ContactCooldownEntry& entry : entries) {
             WriteVid(out, entry.source_vid);
             WriteVid(out, entry.target_vid);
-            WritePod(out, entry.expires_on_stage_frame);
+            WriteUint32(out, entry.expires_on_stage_frame);
         }
     };
     const auto write_interaction_cooldowns =
@@ -2740,7 +2740,7 @@ void WriteContactBookkeeping(std::ostream& out, const ContactBookkeeping& contac
                 WriteVid(out, entry.source_vid);
                 WriteVid(out, entry.target_vid);
                 WritePod(out, static_cast<std::uint8_t>(entry.kind));
-                WritePod(out, entry.expires_on_stage_frame);
+                WriteUint32(out, entry.expires_on_stage_frame);
             }
         };
     const auto write_ent_dispatches = [&](const std::vector<EntContactDispatchEntry>& entries) {
@@ -2758,7 +2758,7 @@ void WriteContactBookkeeping(std::ostream& out, const ContactBookkeeping& contac
             for (const ProjBodyImpactCooldownEntry& entry : entries) {
                 WriteVid(out, entry.first_vid);
                 WriteVid(out, entry.second_vid);
-                WritePod(out, entry.expires_on_stage_frame);
+                WriteUint32(out, entry.expires_on_stage_frame);
             }
         };
 
@@ -2781,7 +2781,7 @@ bool ReadContactBookkeeping(std::istream& in, ContactBookkeeping& contact) {
         for (ContactCooldownEntry& entry : contact.contact_cooldowns) {
             if (!ReadVid(in, entry.source_vid) ||
                 !ReadVid(in, entry.target_vid) ||
-                !ReadPod(in, entry.expires_on_stage_frame)) {
+                !ReadUint32(in, entry.expires_on_stage_frame)) {
                 return false;
             }
         }
@@ -2798,7 +2798,7 @@ bool ReadContactBookkeeping(std::istream& in, ContactBookkeeping& contact) {
             if (!ReadVid(in, entry.source_vid) ||
                 !ReadVid(in, entry.target_vid) ||
                 !ReadPod(in, kind) ||
-                !ReadPod(in, entry.expires_on_stage_frame)) {
+                !ReadUint32(in, entry.expires_on_stage_frame)) {
                 return false;
             }
             entry.kind = static_cast<InteractionCooldownKind>(kind);
@@ -2828,7 +2828,7 @@ bool ReadContactBookkeeping(std::istream& in, ContactBookkeeping& contact) {
         for (ProjBodyImpactCooldownEntry& entry : contact.proj_body_impact_cooldowns) {
             if (!ReadVid(in, entry.first_vid) ||
                 !ReadVid(in, entry.second_vid) ||
-                !ReadPod(in, entry.expires_on_stage_frame)) {
+                !ReadUint32(in, entry.expires_on_stage_frame)) {
                 return false;
             }
         }
