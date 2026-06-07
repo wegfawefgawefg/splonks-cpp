@@ -161,7 +161,7 @@ void DoExplosion(
                 );
                 continue;
             }
-            Vec2 knockback_dir = NormalizeOrZero(delta);
+            Vec2 knockback_dir = NormalizeOrZeroDeterministic(delta);
             if (knockback_dir == Vec2::New(0.0F, 0.0F)) {
                 knockback_dir = Vec2::New(0.0F, -1.0F);
             }

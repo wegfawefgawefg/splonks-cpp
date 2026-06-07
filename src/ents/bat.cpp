@@ -217,7 +217,7 @@ void StepEntLogicAsBat(
             }
             //  go to the target
             mutable_bat.ai_state = EntAiState::Pursuing;
-            mutable_bat.acc += NormalizeOrZero(*target_position - mutable_bat.pos) * kChaseSpeed;
+            mutable_bat.acc += NormalizeOrZeroDeterministic(*target_position - mutable_bat.pos) * kChaseSpeed;
             SetAnim(mutable_bat, aframe_ids::FlyingBat);
         } else {
             //  Go Back To Your Perch, (straight up from here lol)

@@ -161,13 +161,20 @@ The expected end state is:
   helpers instead of platform libm `std::floor`, `std::ceil`, and `std::round`.
   This keeps float-to-Fixed12 quantization explicit for fingerprints and other
   current fixed-point boundary crossings.
+- Fixed in gameplay normalization helpers: bat chase, ghost-ball chase,
+  piranha chase, and explosion knockback now use
+  `NormalizeOrZeroDeterministic`, which quantizes the source vector to a
+  Fixed12-scale integer grid, computes length with `IntegerSqrtFloor`, and
+  returns a quantized unit vector without platform libm `sqrt`. These paths
+  still write float acceleration/knockback into the current physics pipeline,
+  but their direction choice no longer depends on cross-platform square-root
+  behavior.
 - Remaining high-risk math boundaries after the simple cleanup pass:
   `stage_fluids.cpp` still normalizes/clamps fluid velocity and gravity through
   `Length` / `NormalizeOrZero`; `world_query.cpp` sweep/raycast stepping still
-  normalizes query directions; `ents/common/physics.cpp` still uses traveled
-  length while sweeping motion; bat, ghost-ball, piranha, and explosion logic
-  still normalize chase/knockback vectors. These are authoritative gameplay
-  paths and should move to fixed/integer vector math or explicit discrete
+  normalizes query directions; and `ents/common/physics.cpp` still uses
+  traveled length while sweeping motion. These are authoritative gameplay paths
+  and should move to fixed/integer vector math or explicit discrete
   approximations in targeted follow-up work, not casual squared-threshold
   rewrites.
 - Remaining mostly-cosmetic math boundaries: `stage_lighting.cpp` uses

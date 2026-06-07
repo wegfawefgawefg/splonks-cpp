@@ -57,7 +57,7 @@ void PatrolWater(Ent& piranha) {
 
 void ChaseTarget(Ent& piranha, const Vec2& target, const Stage& stage) {
     const Vec2 delta = GetNearestWorldDelta(stage, piranha.GetCenter(), target);
-    const Vec2 direction = NormalizeOrZero(delta);
+    const Vec2 direction = NormalizeOrZeroDeterministic(delta);
     piranha.acc += direction * kPiranhaChaseAcceleration;
     if (delta.x < 0.0F) {
         piranha.facing = Side::Left;

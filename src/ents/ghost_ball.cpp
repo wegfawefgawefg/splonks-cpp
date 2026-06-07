@@ -59,7 +59,7 @@ void StepEntLogicAsGhostBall(
             target_position = target->pos;
         }
     }
-    ghost_ball.acc = NormalizeOrZero(target_position - ghost_ball.pos) * kChaseSpeed;
+    ghost_ball.acc = NormalizeOrZeroDeterministic(target_position - ghost_ball.pos) * kChaseSpeed;
 }
 
 /** generalize this to all square or rectangular ents somehow */

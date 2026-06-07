@@ -184,6 +184,20 @@ inline std::uint64_t IntegerSqrtFloor(std::uint64_t value) {
     return result;
 }
 
+inline std::int64_t DivRoundNearest(std::int64_t numerator, std::int64_t denominator) {
+    if (denominator == 0) {
+        return 0;
+    }
+    const bool negative = numerator < 0;
+    const std::uint64_t abs_numerator =
+        negative ? static_cast<std::uint64_t>(-numerator) : static_cast<std::uint64_t>(numerator);
+    const std::uint64_t abs_denominator =
+        denominator < 0 ? static_cast<std::uint64_t>(-denominator) : static_cast<std::uint64_t>(denominator);
+    const std::uint64_t rounded = (abs_numerator + (abs_denominator / 2U)) / abs_denominator;
+    const std::int64_t signed_result = static_cast<std::int64_t>(rounded);
+    return negative == (denominator > 0) ? -signed_result : signed_result;
+}
+
 inline IVec2 ToIVec2(const UVec2& value) {
     return IVec2::New(static_cast<int>(value.x), static_cast<int>(value.y));
 }
@@ -227,6 +241,22 @@ inline Vec2 NormalizeOrZero(const Vec2& value) {
         return Vec2::New(0.0F, 0.0F);
     }
     return value / length;
+}
+
+inline Vec2 NormalizeOrZeroDeterministic(const Vec2& value) {
+    constexpr std::int64_t kScale = 4096;
+    const std::int64_t x = static_cast<std::int64_t>(RoundToInt(value.x * static_cast<float>(kScale)));
+    const std::int64_t y = static_cast<std::int64_t>(RoundToInt(value.y * static_cast<float>(kScale)));
+    const std::uint64_t x_sq = static_cast<std::uint64_t>(x * x);
+    const std::uint64_t y_sq = static_cast<std::uint64_t>(y * y);
+    const std::int64_t length = static_cast<std::int64_t>(IntegerSqrtFloor(x_sq + y_sq));
+    if (length == 0) {
+        return Vec2::New(0.0F, 0.0F);
+    }
+    const std::int64_t normalized_x = DivRoundNearest(x * kScale, length);
+    const std::int64_t normalized_y = DivRoundNearest(y * kScale, length);
+    return Vec2::New(static_cast<float>(normalized_x) / static_cast<float>(kScale),
+                     static_cast<float>(normalized_y) / static_cast<float>(kScale));
 }
 
 } // namespace splonks
