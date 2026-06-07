@@ -6,6 +6,7 @@
 #include "network/net_transport.hpp"
 #include "state.hpp"
 #include "state_fingerprint.hpp"
+#include "stage_progression.hpp"
 #include "tile.hpp"
 
 #include <algorithm>
@@ -570,6 +571,17 @@ std::string HandleStartGameCommand(State& state) {
     }
     if (state.mode == Mode::Playing || state.mode == Mode::StageTransition) {
         return "{\"ok\":true,\"cmd\":\"start-game\",\"already_started\":true}\n";
+    }
+    if (state.net_session.role == network::NetRole::Peer) {
+        return MakeError("only the host can start a network run");
+    }
+    if (state.net_session.role == network::NetRole::Host) {
+        std::string status;
+        if (!network::RequestRunStart(state, MakeRandomStageSeed(), &status)) {
+            return MakeError(status.empty() ? "failed to schedule network run start" : status);
+        }
+        return "{\"ok\":true,\"cmd\":\"start-game\",\"network\":true,\"status\":" +
+            JsonString(status) + "}\n";
     }
     if (state.mode != Mode::Title) {
         return MakeError("start-game is only available from title/lobby");

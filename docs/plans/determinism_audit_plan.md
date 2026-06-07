@@ -861,6 +861,17 @@ The expected end state is:
   input, or debug-only boundaries. The current scan did not find wall-clock
   values directly driving fixed-tick gameplay, but it does not close all UI
   command routing.
+- Fixed in debug control command routing: the TCP debug `start-game` command
+  now follows the same network start path as the Gubsy menu. Hosts schedule a
+  synchronized `RequestRunStart`, peers reject local starts, and offline runs
+  keep the old local `Mode::Playing` transition. The old debug command could
+  flip only the local process into `Playing` during a hosted lobby, which was a
+  dev-only but real path to unsynchronized gameplay state.
+- Validation 2026-06-07: release build,
+  `--check-join-barrier-next-stage-restart-smoke`,
+  `--check-network-fresh-reload-ownership-smoke`, and
+  `--check-state-equality-smoke` passed after the debug `start-game` routing
+  fix.
 - Validation 2026-06-07: `--check-input-lockstep-smoke` passed after the
   current time/input boundary audit checkpoint. The run covered clean,
   impaired, regional-latency, run-rate-skew, join-barrier, snapshot chunk,
