@@ -204,13 +204,15 @@ The expected end state is:
   policy covered by the Gameplay Float Audit, rather than more isolated libm
   call replacement.
 - Remaining mostly-cosmetic math boundaries: `stage_lighting.cpp` uses
-  `std::pow`, `std::floor`, and `Length`; `debug_moving_light.cpp` uses
-  `std::sin` / `std::cos`; arrow-trap rotation still uses `std::atan2` for
-  render rotation; web-cannon spray still normalizes particle direction. These
-  should stay outside network lockstep hashes, but stage lighting and particles
-  are preserved in local debug snapshots/replays, so cross-platform debug
-  playback may still differ cosmetically until presentation state gets its own
-  deterministic or quarantined serialization policy.
+  `std::pow`, `std::floor`, and `Length`; `audio_acoustics.cpp` uses
+  `std::sqrt` / `std::ceil`; `debug_moving_light.cpp` uses `std::sin` /
+  `std::cos`; arrow-trap rotation still uses `std::atan2` for render rotation;
+  and particle/audio rendering paths still use libm for presentation. These are
+  outside live network lockstep hashes and outside transmitted `SimSnapshot`
+  bytes. In-memory `GameplaySnapshot` / debug playback and rollback
+  presentation preservation still carry presentation state, so cross-platform
+  debug playback can differ cosmetically until presentation state gets its own
+  deterministic or explicitly host-local policy.
 
 ## Container And Iteration Order Audit
 
@@ -308,6 +310,11 @@ The expected end state is:
   that creates audio emitters, mutates `SimSnapshot`, changes entity/world
   state, or affects synchronized branch decisions must move to `state.drng` or
   another synchronized `DetRng` stream.
+- Audited stale process-global direction helpers: `Side`, `DownOrUp`,
+  `SideOrDown`, and `RandomDirection` in `direction.cpp` currently have no
+  callers, so their process-global RNG use is not a live gameplay determinism
+  risk. If these helpers are reused for gameplay later, they should accept a
+  synchronized `DetRng&` or be removed.
 
 ## Serialization And Snapshot Audit
 
@@ -531,6 +538,12 @@ The expected end state is:
   the explicit IEEE-754 compile-time contract above, so the snapshot format is
   portable as bytes but cannot by itself prevent gameplay divergence caused by
   cross-platform float arithmetic before snapshot/resync.
+- Audited presentation snapshot boundary: live network `SimSnapshot` does not
+  include particles, audio emitters, stage acoustics, or stage lighting. Rollback
+  keeps a local `RollbackPresentationSnapshot` for particles, audio emitters,
+  stage lighting, camera/listener state, and controlled/spectator ids only to
+  preserve local presentation across rollback correction; it is not transmitted
+  as authoritative lockstep state.
 
 ## Undefined And Uninitialized Behavior Audit
 
