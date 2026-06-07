@@ -836,6 +836,26 @@ The expected end state is:
   inputs; mouse position reads are debug/playback/editor tooling. If mouse aim
   becomes authoritative gameplay later, it must be quantized intentionally and
   included in the network fingerprint with explicit semantics.
+- Audit checkpoint 2026-06-07: the SDL wall-clock timers in `main.cpp` feed
+  render/UI/debug pacing, performance stats, frame capping, and the fixed-tick
+  accumulator. Authoritative gameplay ticks enter through `StepSingleTick` and
+  call `StepPlaying` / `StepGameOver` with `kTimestep`, not arbitrary render
+  frame delta. Debug playback also advances live simulation through
+  `StepSingleTick` when stepping manually. The accumulator
+  `time_since_last_update` is still serialized in snapshots as pacing state,
+  but it is not included in the live network gameplay fingerprint and does not
+  change per-tick simulation semantics.
+- Deferred risk: UI/debug control paths still need a focused audit for any
+  command that mutates authoritative gameplay state outside synchronized menu,
+  input, or debug-only boundaries. The current scan did not find wall-clock
+  values directly driving fixed-tick gameplay, but it does not close all UI
+  command routing.
+- Validation 2026-06-07: `--check-input-lockstep-smoke` passed after the
+  current time/input boundary audit checkpoint. The run covered clean,
+  impaired, regional-latency, run-rate-skew, join-barrier, snapshot chunk,
+  retained reconnect, carry transition, respawn policy, rollback repair,
+  snapshot resync, hash exchange, stage-transition resync-block, hash rollback,
+  and rollback-latency cases.
 
 ## Networking/Topology Determinism Audit
 
