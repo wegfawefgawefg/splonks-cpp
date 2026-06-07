@@ -76,6 +76,10 @@ public:
         WriteU32(bits);
     }
 
+    void WriteScalar(sim::Scalar value) {
+        WriteI32(value.raw_value());
+    }
+
     template <std::size_t N>
     void WriteBytes(const std::array<std::uint8_t, N>& values, std::size_t count = N) {
         count = std::min(count, N);
@@ -183,6 +187,10 @@ public:
         return value;
     }
 
+    sim::Scalar ReadScalar() {
+        return sim::Scalar::from_raw(ReadI32());
+    }
+
     template <std::size_t N>
     void ReadBytes(std::array<std::uint8_t, N>& values, std::size_t count = N) {
         count = std::min(count, N);
@@ -265,10 +273,10 @@ EncodedNetPacket EncodeJoinAccept(const JoinAcceptPacket& packet) {
     WritePlayerIds(writer, packet.assigned_player_ids);
     writer.WriteU32(packet.host_player_id);
     writer.WriteU64(packet.stage_instance_id);
-    writer.WriteF32(packet.remote_spawn_x);
-    writer.WriteF32(packet.remote_spawn_y);
-    writer.WriteF32(packet.host_spawn_x);
-    writer.WriteF32(packet.host_spawn_y);
+    writer.WriteScalar(packet.remote_spawn_x);
+    writer.WriteScalar(packet.remote_spawn_y);
+    writer.WriteScalar(packet.host_spawn_x);
+    writer.WriteScalar(packet.host_spawn_y);
     writer.WriteU32(packet.stage_seed);
     writer.WriteU64(packet.lockstep_start_frame);
     writer.WriteU32(packet.lockstep_input_delay_frames);
@@ -481,10 +489,10 @@ std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, s
     ReadPlayerIds(reader, packet.assigned_player_ids);
     packet.host_player_id = reader.ReadU32();
     packet.stage_instance_id = reader.ReadU64();
-    packet.remote_spawn_x = reader.ReadF32();
-    packet.remote_spawn_y = reader.ReadF32();
-    packet.host_spawn_x = reader.ReadF32();
-    packet.host_spawn_y = reader.ReadF32();
+    packet.remote_spawn_x = reader.ReadScalar();
+    packet.remote_spawn_y = reader.ReadScalar();
+    packet.host_spawn_x = reader.ReadScalar();
+    packet.host_spawn_y = reader.ReadScalar();
     packet.stage_seed = reader.ReadU32();
     packet.lockstep_start_frame = reader.ReadU64();
     packet.lockstep_input_delay_frames = reader.ReadU32();

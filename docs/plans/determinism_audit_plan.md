@@ -45,10 +45,9 @@ The expected end state is:
 - In progress. The network fingerprint no longer hashes raw float bits; it
   quantizes known hashed float fields through `sim::Scalar` / Fixed12.
 - Remaining authoritative float storage is still broad. `Ent::pos`, `vel`,
-  `acc`, `size`, `counter_a` through `counter_d`, `Stage::gravity`, and
-  `Stage::fluid_amount` are the highest-priority
-  simulation fields because they affect movement, contact, animation gates,
-  world state, or lockstep fingerprints.
+  `acc`, `size`, `counter_a` through `counter_d`, and stage fluid state are the
+  highest-priority simulation fields because they affect movement, contact,
+  animation gates, world state, or lockstep fingerprints.
 - Deferred risk: these fields are still simulated as float. The current
   quantized hash can prevent false cross-ISA mismatches from tiny float-bit
   differences, but it does not prevent two peers from crossing different branch
@@ -60,7 +59,7 @@ The expected end state is:
   stage fluid amount, velocity, gravity, gravity strength, and temporary gravity;
   synchronized gameplay settings for fluids, water movement, player tuning,
   and effect modifier values; retained reconnect player/item state mirrors of
-  entity position/velocity/acceleration/size/counters/effect values.
+  entity position/velocity/acceleration/size/counters.
 - Current lockstep hash behavior: entity position, velocity, acceleration,
   size, and counters are quantized through `sim::Scalar` / Fixed12 before
   hashing; entity rotation is stored and hashed as raw Fixed12, and
@@ -87,6 +86,12 @@ The expected end state is:
   migration should split these generic float counters into typed per-entity
   integer frame counters, explicit enum fields, and fixed/quantized distance
   accumulators rather than changing the four shared fields in one pass.
+- Audit checkpoint 2026-06-07: join-accept bootstrap spawn coordinates now use
+  Fixed12 (`sim::Scalar`) on the packet struct and wire. The network protocol
+  version is `5`. The peer still converts these values back to `Vec2` at the
+  current spawn API boundary, and the authoritative join barrier snapshot still
+  decides final synchronized topology, but this removes raw IEEE float payloads
+  from the initial synchronized room-join handoff.
 
 ## Math Function Audit
 

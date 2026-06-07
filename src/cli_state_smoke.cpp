@@ -1612,6 +1612,10 @@ bool RunJoinBarrierProtocolSmoke() {
     join_accept.assigned_player_ids[1] = 8;
     join_accept.host_player_id = 1;
     join_accept.stage_instance_id = 44;
+    join_accept.remote_spawn_x = sim::ToSimScalar(123.25F);
+    join_accept.remote_spawn_y = sim::ToSimScalar(45.5F);
+    join_accept.host_spawn_x = sim::ToSimScalar(32.75F);
+    join_accept.host_spawn_y = sim::ToSimScalar(64.125F);
     join_accept.stage_seed = 9876U;
     join_accept.lockstep_start_frame = 120;
     join_accept.content_hash = join_request.content_hash;
@@ -1628,6 +1632,10 @@ bool RunJoinBarrierProtocolSmoke() {
         decoded_join_accept->assigned_player_ids[1] != join_accept.assigned_player_ids[1] ||
         decoded_join_accept->host_player_id != join_accept.host_player_id ||
         decoded_join_accept->stage_instance_id != join_accept.stage_instance_id ||
+        decoded_join_accept->remote_spawn_x != join_accept.remote_spawn_x ||
+        decoded_join_accept->remote_spawn_y != join_accept.remote_spawn_y ||
+        decoded_join_accept->host_spawn_x != join_accept.host_spawn_x ||
+        decoded_join_accept->host_spawn_y != join_accept.host_spawn_y ||
         decoded_join_accept->stage_seed != join_accept.stage_seed ||
         decoded_join_accept->lockstep_start_frame != join_accept.lockstep_start_frame ||
         decoded_join_accept->content_hash != join_accept.content_hash) {
@@ -3806,6 +3814,10 @@ bool RunHostWaitsForMissingInputSmoke() {
 
 bool CheckJoinBarrierNextStageRestartSmoke() {
     return RunJoinBarrierNextStageRestartSmoke();
+}
+
+bool CheckJoinBarrierProtocolSmoke() {
+    return RunJoinBarrierProtocolSmoke();
 }
 
 bool CheckStateFingerprintSmoke() {

@@ -400,10 +400,10 @@ void HandleJoinRequestAsHost(
     }
     accept.host_player_id = state.net_session.host_player_id;
     accept.stage_instance_id = state.net_session.stage_instance_id;
-    accept.remote_spawn_x = remote_spawn.x;
-    accept.remote_spawn_y = remote_spawn.y;
-    accept.host_spawn_x = host_spawn.x;
-    accept.host_spawn_y = host_spawn.y;
+    accept.remote_spawn_x = sim::ToSimScalar(remote_spawn.x);
+    accept.remote_spawn_y = sim::ToSimScalar(remote_spawn.y);
+    accept.host_spawn_x = sim::ToSimScalar(host_spawn.x);
+    accept.host_spawn_y = sim::ToSimScalar(host_spawn.y);
     accept.stage_seed = state.net_session.stage_seed;
     accept.lockstep_start_frame = state.net_session.lockstep_next_frame_to_step;
     accept.lockstep_input_delay_frames = state.net_session.lockstep_input_delay_frames;
@@ -516,11 +516,19 @@ void HandleJoinAcceptAsPeer(
         transport.last_error = "Join accepted, but synced quest stage load failed.";
         return;
     }
+    const Vec2 host_spawn = Vec2::New(
+        sim::ToRenderScalar(accept.host_spawn_x),
+        sim::ToRenderScalar(accept.host_spawn_y)
+    );
+    const Vec2 remote_spawn = Vec2::New(
+        sim::ToRenderScalar(accept.remote_spawn_x),
+        sim::ToRenderScalar(accept.remote_spawn_y)
+    );
     PlayerSlot& host_slot =
         state.players.EnsureRemotePlayer(accept.host_player_id, ReadFixedString(accept.host_name));
     if (host_slot.ent_vid.has_value()) {
         if (Ent* const host = state.ents.GetEntMut(*host_slot.ent_vid)) {
-            host->pos = Vec2::New(accept.host_spawn_x, accept.host_spawn_y);
+            host->pos = host_spawn;
             host->vel = Vec2::New(0.0F, 0.0F);
             host->acc = Vec2::New(0.0F, 0.0F);
             state.net_session.LinkEnt(MakePlayerNetEntId(accept.host_player_id), host->vid);
@@ -531,7 +539,7 @@ void HandleJoinAcceptAsPeer(
             accept.host_player_id,
             false,
             false,
-            Vec2::New(accept.host_spawn_x, accept.host_spawn_y),
+            host_spawn,
             graphics
         );
     }
@@ -541,7 +549,7 @@ void HandleJoinAcceptAsPeer(
         accept.assigned_player_ids[0],
         true,
         true,
-        Vec2::New(accept.remote_spawn_x, accept.remote_spawn_y),
+        remote_spawn,
         graphics
     );
     for (std::uint32_t i = 1; i < assigned_count; ++i) {
@@ -555,7 +563,7 @@ void HandleJoinAcceptAsPeer(
             player_id,
             true,
             false,
-            Vec2::New(accept.remote_spawn_x + static_cast<float>(i) * 8.0F, accept.remote_spawn_y),
+            Vec2::New(remote_spawn.x + static_cast<float>(i) * 8.0F, remote_spawn.y),
             graphics
         );
     }

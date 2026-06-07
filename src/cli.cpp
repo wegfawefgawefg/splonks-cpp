@@ -1176,6 +1176,10 @@ bool RunCliCommand(int argc, char** argv) {
         std::exit(CheckInputLockstepSmoke() ? 0 : 1);
     }
 
+    if (command == "--check-join-barrier-protocol-smoke") {
+        std::exit(CheckJoinBarrierProtocolSmoke() ? 0 : 1);
+    }
+
     if (command == "--check-join-barrier-next-stage-restart-smoke") {
         std::exit(CheckJoinBarrierNextStageRestartSmoke() ? 0 : 1);
     }

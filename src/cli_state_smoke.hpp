@@ -8,6 +8,7 @@ bool CheckGameplaySnapshotCallbackRebindSmoke();
 bool CheckDetReplaySmoke();
 bool CheckNetworkFreshReloadOwnershipSmoke();
 bool CheckInputLockstepSmoke();
+bool CheckJoinBarrierProtocolSmoke();
 bool CheckJoinBarrierNextStageRestartSmoke();
 
 } // namespace splonks

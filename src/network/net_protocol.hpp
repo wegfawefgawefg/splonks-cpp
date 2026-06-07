@@ -3,6 +3,7 @@
 #include "network/lockstep_config.hpp"
 #include "network/net_ids.hpp"
 #include "network/net_limits.hpp"
+#include "sim/fxp.hpp"
 
 #include <algorithm>
 #include <array>
@@ -14,7 +15,7 @@
 namespace splonks::network {
 
 constexpr std::uint32_t kNetProtocolMagic = 0x534C504B; // SLPK
-constexpr std::uint16_t kNetProtocolVersion = 4;
+constexpr std::uint16_t kNetProtocolVersion = 5;
 constexpr std::size_t kNetNameBytes = 32;
 constexpr std::size_t kNetQuestIdBytes = 32;
 constexpr std::size_t kNetQuestStageIdBytes = 64;
@@ -68,10 +69,10 @@ struct JoinAcceptPacket {
     std::array<PlayerId, kNetPlayersPerProcess> assigned_player_ids{};
     PlayerId host_player_id = kPrimaryLocalPlayerId;
     StageInstanceId stage_instance_id = 1;
-    float remote_spawn_x = 0.0F;
-    float remote_spawn_y = 0.0F;
-    float host_spawn_x = 0.0F;
-    float host_spawn_y = 0.0F;
+    sim::Scalar remote_spawn_x = sim::Scalar::zero();
+    sim::Scalar remote_spawn_y = sim::Scalar::zero();
+    sim::Scalar host_spawn_x = sim::Scalar::zero();
+    sim::Scalar host_spawn_y = sim::Scalar::zero();
     std::uint32_t stage_seed = 1;
     std::uint64_t lockstep_start_frame = 0;
     std::uint32_t lockstep_input_delay_frames = kDefaultLockstepInputDelayFrames;
