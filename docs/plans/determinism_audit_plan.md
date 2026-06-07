@@ -1054,6 +1054,12 @@ The expected end state is:
   same-state, cross-country, Japan/Texas, run-rate-skew, join barrier, retained
   reconnect, carry transition, respawn policy, rollback repair, snapshot resync,
   hash exchange, transition resync-block, and rollback-latency cases.
+- Validation checkpoint 2026-06-07: after migrating join-accept spawn
+  coordinates to Fixed12 packet fields and removing raw float packet helpers,
+  the broader `--check-input-lockstep-smoke` passed again under a 360 second
+  cap. Earlier short timeouts were validation-harness impatience, not a
+  lockstep hang; the aggregate smoke is simply expensive because it runs many
+  1200-frame two-peer latency profiles plus topology/rollback cases.
 - Deferred risk: topology changes during active play need broader validation
   with multiple local players per peer, high latency, reconnect, stage
   transition, restart run, and relay/NAT paths.
