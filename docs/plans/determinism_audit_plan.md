@@ -1000,6 +1000,18 @@ The expected end state is:
   used as keyed lookup/cache data in stage generation, not as randomized
   iteration order for gameplay choices. `LoadRoomTemplatesFromDirectory`
   canonicalizes `directory_iterator` results by sorting paths before loading.
+- Audit checkpoint 2026-06-07: runtime quest exit ordering is canonicalized at
+  the generation boundary. `QuestStageDefinition::exits` is stored as an
+  `unordered_map`, but `GenerateClassicStage` copies the exit keys, sorts them,
+  and then appends `StageExit` records in that stable order before authored
+  `BasicExit` spawns resolve `stage_exit_id`. The remaining direct iteration of
+  `stage.exits` in quest validation only affects diagnostic order, not
+  gameplay state.
+- Audit checkpoint 2026-06-07: the SID broadphase uses an `unordered_map` for
+  cell buckets, but gameplay queries iterate deterministic tile-cell ranges and
+  sort returned VIDs by `(id, version)` before callers process collisions or
+  overlap results. Bucket hash iteration order is therefore not exposed to
+  authoritative entity processing.
 - Deferred risk: loaded quest/spec/profile files are not yet independently
   hashed or versioned as part of connection admission, so mismatched assets
   still rely on later state-fingerprint/desync detection rather than an early
