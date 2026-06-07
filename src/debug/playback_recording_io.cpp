@@ -569,8 +569,8 @@ bool ReadUVec2(std::istream& in, UVec2& value) {
     if (!ReadUint32(in, x) || !ReadUint32(in, y)) {
         return false;
     }
-    value.x = static_cast<unsigned int>(x);
-    value.y = static_cast<unsigned int>(y);
+    value.x = x;
+    value.y = y;
     return true;
 }
 
@@ -714,7 +714,7 @@ bool ReadUint8(std::istream& in, std::uint8_t& value) {
 }
 
 void WriteUint16(std::ostream& out, std::uint16_t value) {
-    for (unsigned int shift = 0; shift < 16; shift += 8) {
+    for (std::uint32_t shift = 0; shift < 16; shift += 8) {
         WriteRawByte(
             out,
             static_cast<std::uint8_t>(
@@ -726,7 +726,7 @@ void WriteUint16(std::ostream& out, std::uint16_t value) {
 
 bool ReadUint16(std::istream& in, std::uint16_t& value) {
     value = 0;
-    for (unsigned int shift = 0; shift < 16; shift += 8) {
+    for (std::uint32_t shift = 0; shift < 16; shift += 8) {
         std::uint8_t byte = 0;
         if (!ReadRawByte(in, byte)) {
             return false;
@@ -739,7 +739,7 @@ bool ReadUint16(std::istream& in, std::uint16_t& value) {
 }
 
 void WriteUint32(std::ostream& out, std::uint32_t value) {
-    for (unsigned int shift = 0; shift < 32; shift += 8) {
+    for (std::uint32_t shift = 0; shift < 32; shift += 8) {
         WriteRawByte(
             out,
             static_cast<std::uint8_t>(
@@ -751,7 +751,7 @@ void WriteUint32(std::ostream& out, std::uint32_t value) {
 
 bool ReadUint32(std::istream& in, std::uint32_t& value) {
     value = 0;
-    for (unsigned int shift = 0; shift < 32; shift += 8) {
+    for (std::uint32_t shift = 0; shift < 32; shift += 8) {
         std::uint8_t byte = 0;
         if (!ReadRawByte(in, byte)) {
             return false;
@@ -762,7 +762,7 @@ bool ReadUint32(std::istream& in, std::uint32_t& value) {
 }
 
 void WriteUint64(std::ostream& out, std::uint64_t value) {
-    for (unsigned int shift = 0; shift < 64; shift += 8) {
+    for (std::uint32_t shift = 0; shift < 64; shift += 8) {
         WriteRawByte(
             out,
             static_cast<std::uint8_t>(
@@ -774,7 +774,7 @@ void WriteUint64(std::ostream& out, std::uint64_t value) {
 
 bool ReadUint64(std::istream& in, std::uint64_t& value) {
     value = 0;
-    for (unsigned int shift = 0; shift < 64; shift += 8) {
+    for (std::uint32_t shift = 0; shift < 64; shift += 8) {
         std::uint8_t byte = 0;
         if (!ReadRawByte(in, byte)) {
             return false;
