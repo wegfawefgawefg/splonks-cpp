@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <cmath>
 
 namespace splonks::ents::trap_block {
@@ -273,12 +274,12 @@ bool SensorTouchesPlayer(Ent& block, const State& state, const Graphics& graphic
     return false;
 }
 
-std::optional<std::size_t> FindTriggerDirection(
+std::optional<std::uint32_t> FindTriggerDirection(
     Ent& block,
     const State& state,
     const Graphics& graphics
 ) {
-    std::optional<std::size_t> best_direction;
+    std::optional<std::uint32_t> best_direction;
     float best_distance = 0.0F;
     const Vec2 block_center = block.GetCenter();
 
@@ -304,7 +305,7 @@ std::optional<std::size_t> FindTriggerDirection(
         }
 
         if (!best_direction.has_value() || nearest_distance < best_distance) {
-            best_direction = direction_idx;
+            best_direction = static_cast<std::uint32_t>(direction_idx);
             best_distance = nearest_distance;
         }
     }
@@ -349,8 +350,8 @@ void ShowAwakeAnim(Ent& block) {
     }
 }
 
-void StartWindup(Ent& block, std::size_t direction_idx, State& state) {
-    const IVec2 tile_dir = kDirections[direction_idx].tile_dir;
+void StartWindup(Ent& block, std::uint32_t direction_idx, State& state) {
+    const IVec2 tile_dir = kDirections[static_cast<std::size_t>(direction_idx)].tile_dir;
     StoreMoveDirection(block, tile_dir);
     block.ai_state = EntAiState::Pursuing;
     block.counter_b = kWindupFrames;
@@ -459,7 +460,8 @@ void StepEntLogicAsTrapBlock(
     ShowSleepingFrame(block);
     block.vel = Vec2::New(0.0F, 0.0F);
     block.acc = Vec2::New(0.0F, 0.0F);
-    const std::optional<std::size_t> direction_idx = FindTriggerDirection(block, state, graphics);
+    const std::optional<std::uint32_t> direction_idx =
+        FindTriggerDirection(block, state, graphics);
     if (direction_idx.has_value()) {
         StartWindup(block, *direction_idx, state);
     }

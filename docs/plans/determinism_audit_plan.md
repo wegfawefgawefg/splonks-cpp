@@ -795,6 +795,10 @@ The expected end state is:
 - Fixed in tool spec gameplay metadata: preferred inventory slot ids now use
   explicit optional `uint32_t` storage instead of optional `std::size_t`, with
   casts kept at local two-slot array indexing boundaries.
+- Fixed in bounded gameplay choice indexes: trap-block trigger direction
+  selection and monkey stealable tool-slot candidate selection now store their
+  chosen indexes as explicit `uint32_t`, with casts kept at fixed-array access
+  boundaries.
 - Fixed in synchronized settings state: control-binding ids now use explicit
   `uint32_t` runtime storage, and the settings parser plus snapshot/replay
   controls/debug-ui writers route through typed `uint32_t` helpers instead of

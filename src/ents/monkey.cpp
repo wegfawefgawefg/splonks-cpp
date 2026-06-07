@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <cmath>
 
 namespace splonks::ents::monkey {
@@ -206,23 +207,25 @@ bool TryStealRandomToolAndCast(
         return false;
     }
 
-    std::array<std::size_t, kToolSlotCount> stealable_slot_indices{};
-    std::size_t stealable_slot_count = 0;
+    std::array<std::uint32_t, kToolSlotCount> stealable_slot_indices{};
+    std::uint32_t stealable_slot_count = 0;
     for (std::size_t slot_index = 0; slot_index < tool_state->slots.size(); ++slot_index) {
         if (!CanMonkeyStealToolSlot(tool_state->slots[slot_index])) {
             continue;
         }
-        stealable_slot_indices[stealable_slot_count] = slot_index;
+        stealable_slot_indices[static_cast<std::size_t>(stealable_slot_count)] =
+            static_cast<std::uint32_t>(slot_index);
         stealable_slot_count += 1;
     }
     if (stealable_slot_count == 0) {
         return false;
     }
 
-    const std::size_t selected_slot_index = stealable_slot_indices[static_cast<std::size_t>(
+    const std::uint32_t selected_slot_index = stealable_slot_indices[static_cast<std::size_t>(
         state.drng.RandomIntInclusive(0, static_cast<int>(stealable_slot_count - 1))
     )];
-    const ToolKind stolen_kind = tool_state->slots[selected_slot_index].kind;
+    const std::size_t selected_slot_array_index = static_cast<std::size_t>(selected_slot_index);
+    const ToolKind stolen_kind = tool_state->slots[selected_slot_array_index].kind;
 
     ToolSlot& monkey_slot = state.ent_tools.EnsureToolSlot(monkey.vid, 0);
     const ToolSlot previous_monkey_slot = monkey_slot;
@@ -238,11 +241,12 @@ bool TryStealRandomToolAndCast(
     }
 
     EntToolState* const mutable_player_tool_state = state.ent_tools.FindEntToolStateMut(player.vid);
-    if (mutable_player_tool_state == nullptr || selected_slot_index >= mutable_player_tool_state->slots.size()) {
+    if (mutable_player_tool_state == nullptr ||
+        selected_slot_array_index >= mutable_player_tool_state->slots.size()) {
         return true;
     }
 
-    ToolSlot& player_slot = mutable_player_tool_state->slots[selected_slot_index];
+    ToolSlot& player_slot = mutable_player_tool_state->slots[selected_slot_array_index];
     if (player_slot.active && player_slot.kind == stolen_kind && player_slot.count > 0) {
         player_slot.count -= 1;
     }
