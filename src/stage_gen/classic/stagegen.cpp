@@ -39,7 +39,15 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
         stage.quest_id = quest->id;
         stage.quest_stage_id = stage_def->id;
         stage.route_label = stage_def->route_label;
-        for (const auto& [exit_id, exit] : stage_def->exits) {
+        std::vector<std::string> exit_ids;
+        exit_ids.reserve(stage_def->exits.size());
+        for (const auto& exit_entry : stage_def->exits) {
+            exit_ids.push_back(exit_entry.first);
+        }
+        std::sort(exit_ids.begin(), exit_ids.end());
+
+        for (const std::string& exit_id : exit_ids) {
+            const StageExitDefinition& exit = stage_def->exits.at(exit_id);
             StageExit stage_exit;
             stage_exit.id = exit_id;
             stage_exit.target.target_stage_id = exit.target_stage_id;

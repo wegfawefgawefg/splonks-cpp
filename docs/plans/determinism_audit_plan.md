@@ -283,6 +283,11 @@ The expected end state is:
   animation names before appending to `database.anims`. Animation ids were
   already hashed from names, but the backing animation vector and index maps no
   longer inherit `unordered_map` iteration order across standard libraries.
+- Fixed in classic stage construction: quest stage exits are now copied from
+  the parsed exit map into `Stage::exits` in sorted exit-id order. `StageExitId`
+  is the vector index returned by `Stage::FindExitId`, so this removes
+  `unordered_map` iteration order from exit id assignment and stage-transition
+  routing.
 - Deferred risk: continue auditing contact/collision tie ordering outside the
   common broadphase and moving-platform carry paths.
 
