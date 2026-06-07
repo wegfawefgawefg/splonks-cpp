@@ -13,6 +13,10 @@ namespace splonks::stage_gen::classic {
 
 namespace {
 
+std::uint32_t ToSpawnIndex(std::size_t index) {
+    return static_cast<std::uint32_t>(index);
+}
+
 Vec2 GetShrineIdolTopLeft(const Vec2& tile_pos) {
     // The shrine idol rests on the seam between the two altar base tiles below it.
     // Spawn it already settled so the tiki head does not false-trigger from the
@@ -178,7 +182,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
             .type_ = EntType::CrapsTable,
             .pos = Vec2::New(0.0F, 0.0F),
             .size_override = shop_size,
-            .ent_a_spawn_index = *shop_spawn_index,
+            .ent_a_spawn_index = ToSpawnIndex(*shop_spawn_index),
             .exit_id = "",
         });
         return room.ent_spawns.size() - 1;
@@ -189,7 +193,10 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
             return;
         }
         room.tile_triggers.push_back(
-            ents::shop::MakeShopVandalismTileTrigger(IVec2::New(tile_x, tile_y), *shop_spawn_index)
+            ents::shop::MakeShopVandalismTileTrigger(
+                IVec2::New(tile_x, tile_y),
+                ToSpawnIndex(*shop_spawn_index)
+            )
         );
     };
 
@@ -225,7 +232,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                 }
                 spawn.buyable = true;
                 spawn.buy_price = price;
-                spawn.shop_owner_spawn_index = *shop_spawn_index;
+                spawn.shop_owner_spawn_index = ToSpawnIndex(*shop_spawn_index);
             };
             const auto spawn_ent = [&](EntType ent_type) -> std::optional<std::size_t> {
                 return spawn_ent_at(ent_type, tile_pos);
@@ -240,7 +247,8 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     !spawn_index.has_value()) {
                     return;
                 }
-                room.ent_spawns[*craps_table_spawn_index].ent_c_spawn_index = *spawn_index;
+                room.ent_spawns[*craps_table_spawn_index].ent_c_spawn_index =
+                    ToSpawnIndex(*spawn_index);
             };
             const auto spawn_shop_item = [&](EntType ent_type) {
                 const std::optional<std::size_t> spawn_index = spawn_ent(ent_type);
@@ -287,11 +295,12 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     spawn_index.has_value() && craps_table_spawn_index.has_value()) {
                     craps_dice_spawn_index = *spawn_index;
                     room.ent_spawns[*craps_table_spawn_index].ent_b_spawn_index =
-                        *spawn_index;
+                        ToSpawnIndex(*spawn_index);
                 }
                 if (is_shop_area_room && rule->spawn == EntType::Shopkeeper &&
                     shop_spawn_index.has_value() && spawn_index.has_value()) {
-                    room.ent_spawns[*spawn_index].ent_a_spawn_index = *shop_spawn_index;
+                    room.ent_spawns[*spawn_index].ent_a_spawn_index =
+                        ToSpawnIndex(*shop_spawn_index);
                 } else if (is_shop_room && !is_craps_shop &&
                            (rule->spawn == EntType::Dice || rule->spawn == EntType::Damsel)) {
                     mark_spawn_buyable(spawn_index);
@@ -444,18 +453,18 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                         .type_ = EntType::SacAltar,
                         .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
                         .anim_id = aframe_ids::SacAltarRight,
-                        .ent_a_spawn_index = left_altar_spawn_index,
+                        .ent_a_spawn_index = ToSpawnIndex(left_altar_spawn_index),
                         .exit_id = "",
                     });
                     room.ent_spawns.push_back(EntSpawn{
                         .type_ = EntType::SacAltarTopper,
                         .pos = tile_pos + Vec2::New(0.0F, -static_cast<float>(kTileSize)),
                         .anim_id = aframe_ids::SacAltarTopper,
-                        .ent_a_spawn_index = left_altar_spawn_index,
+                        .ent_a_spawn_index = ToSpawnIndex(left_altar_spawn_index),
                         .exit_id = "",
                     });
                     room.ent_spawns[left_altar_spawn_index].ent_a_spawn_index =
-                        room.ent_spawns.size() - 1;
+                        ToSpawnIndex(room.ent_spawns.size() - 1);
                 } else if (action == "gold_idol") {
                     room.ent_spawns.push_back(EntSpawn{
                         .type_ = EntType::GoldIdol,
@@ -464,7 +473,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     });
                     if (!pending_giant_tiki_head_spawn_indices.empty()) {
                         room.ent_spawns[pending_giant_tiki_head_spawn_indices.front()]
-                            .ent_a_spawn_index = room.ent_spawns.size() - 1;
+                            .ent_a_spawn_index = ToSpawnIndex(room.ent_spawns.size() - 1);
                         pending_giant_tiki_head_spawn_indices.erase(
                             pending_giant_tiki_head_spawn_indices.begin());
                     } else {
@@ -478,7 +487,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     });
                     if (!pending_gold_idol_spawn_indices.empty()) {
                         room.ent_spawns.back().ent_a_spawn_index =
-                            pending_gold_idol_spawn_indices.front();
+                            ToSpawnIndex(pending_gold_idol_spawn_indices.front());
                         pending_gold_idol_spawn_indices.erase(
                             pending_gold_idol_spawn_indices.begin());
                     } else {

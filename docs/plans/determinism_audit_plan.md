@@ -686,6 +686,11 @@ The expected end state is:
   gameplay ids rather than arbitrary host vector sizes, and their snapshot/
   replay byte representation was already explicit `uint32_t`, so this removes
   machine-width runtime state without changing recording format version 96.
+- Fixed in authored stage runtime state: `EntSpawn` link indices and
+  `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
+  storage instead of optional `std::size_t`. These are bounded authored spawn
+  ids and were already encoded as optional `uint32_t` in snapshot/replay bytes;
+  vector indexing now casts only at the local indexing boundary.
 - Fixed in shared snapshot/replay format: stage scalar fields and contact
   cooldown expiry frames now use typed scalar helpers, removing raw
   `stage.*` / `entry.*` member POD calls from the recording writer.

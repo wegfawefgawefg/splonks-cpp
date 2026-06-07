@@ -30,11 +30,11 @@ struct EntSpawn {
     Side facing = Side::Left;
     std::optional<EntAiState> ai_state_override = std::nullopt;
     AFrameId anim_id = kInvalidAFrameId;
-    std::optional<std::size_t> ent_a_spawn_index = std::nullopt;
-    std::optional<std::size_t> ent_b_spawn_index = std::nullopt;
-    std::optional<std::size_t> ent_c_spawn_index = std::nullopt;
-    std::optional<std::size_t> ent_d_spawn_index = std::nullopt;
-    std::optional<std::size_t> shop_owner_spawn_index = std::nullopt;
+    std::optional<std::uint32_t> ent_a_spawn_index = std::nullopt;
+    std::optional<std::uint32_t> ent_b_spawn_index = std::nullopt;
+    std::optional<std::uint32_t> ent_c_spawn_index = std::nullopt;
+    std::optional<std::uint32_t> ent_d_spawn_index = std::nullopt;
+    std::optional<std::uint32_t> shop_owner_spawn_index = std::nullopt;
     bool buyable = false;
     std::uint32_t buy_price = 0;
     std::string exit_id;
@@ -65,7 +65,7 @@ using StageTileTriggerHandler = void (*)(const StageTileTrigger&, const IVec2&, 
 struct StageTileTrigger {
     IVec2 tile_pos = IVec2::New(0, 0);
     StageTileTriggerKind kind = StageTileTriggerKind::Destroyed;
-    std::optional<std::size_t> target_spawn_index = std::nullopt;
+    std::optional<std::uint32_t> target_spawn_index = std::nullopt;
     std::optional<VID> target_vid = std::nullopt;
     std::uint32_t payload_id = 0;
     StageTileTriggerHandler on_triggered = nullptr;

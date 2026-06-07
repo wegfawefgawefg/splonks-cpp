@@ -2374,11 +2374,11 @@ void WriteEntSpawn(std::ostream& out, const EntSpawn& spawn) {
     WriteEnumByte(out, spawn.facing);
     WriteOptionalEnumByte(out, spawn.ai_state_override);
     WriteUint32(out, spawn.anim_id);
-    WriteOptionalSizeIndex(out, spawn.ent_a_spawn_index);
-    WriteOptionalSizeIndex(out, spawn.ent_b_spawn_index);
-    WriteOptionalSizeIndex(out, spawn.ent_c_spawn_index);
-    WriteOptionalSizeIndex(out, spawn.ent_d_spawn_index);
-    WriteOptionalSizeIndex(out, spawn.shop_owner_spawn_index);
+    WriteOptionalUint32(out, spawn.ent_a_spawn_index);
+    WriteOptionalUint32(out, spawn.ent_b_spawn_index);
+    WriteOptionalUint32(out, spawn.ent_c_spawn_index);
+    WriteOptionalUint32(out, spawn.ent_d_spawn_index);
+    WriteOptionalUint32(out, spawn.shop_owner_spawn_index);
     WriteBoolByte(out, spawn.buyable);
     WriteUint32(out, spawn.buy_price);
     WriteString(out, spawn.exit_id);
@@ -2391,11 +2391,11 @@ bool ReadEntSpawn(std::istream& in, EntSpawn& spawn) {
            ReadEnumByte(in, spawn.facing, Side::Right) &&
            ReadOptionalEnumByte(in, spawn.ai_state_override, EntAiState::Returning) &&
            ReadUint32(in, spawn.anim_id) &&
-           ReadOptionalSizeIndex(in, spawn.ent_a_spawn_index) &&
-           ReadOptionalSizeIndex(in, spawn.ent_b_spawn_index) &&
-           ReadOptionalSizeIndex(in, spawn.ent_c_spawn_index) &&
-           ReadOptionalSizeIndex(in, spawn.ent_d_spawn_index) &&
-           ReadOptionalSizeIndex(in, spawn.shop_owner_spawn_index) &&
+           ReadOptionalUint32(in, spawn.ent_a_spawn_index) &&
+           ReadOptionalUint32(in, spawn.ent_b_spawn_index) &&
+           ReadOptionalUint32(in, spawn.ent_c_spawn_index) &&
+           ReadOptionalUint32(in, spawn.ent_d_spawn_index) &&
+           ReadOptionalUint32(in, spawn.shop_owner_spawn_index) &&
            ReadBoolByte(in, spawn.buyable) &&
            ReadUint32(in, spawn.buy_price) &&
            ReadString(in, spawn.exit_id);

@@ -116,7 +116,8 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
                                        [static_cast<std::size_t>(tile_x)];
                 }
             }
-            const std::size_t room_spawn_base_index = stage.ent_spawns.size();
+            const std::uint32_t room_spawn_base_index =
+                static_cast<std::uint32_t>(stage.ent_spawns.size());
             for (EntSpawn& spawn : room.ent_spawns) {
                 spawn.pos += room_pos_wc;
                 if (spawn.ent_a_spawn_index.has_value()) {

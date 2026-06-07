@@ -10,7 +10,7 @@ constexpr const char* kShopVandalismTriggerLabel = "shop vandalism trigger";
 
 } // namespace
 
-StageTileTrigger MakeShopVandalismTileTrigger(const IVec2& tile_pos, std::size_t target_spawn_index) {
+StageTileTrigger MakeShopVandalismTileTrigger(const IVec2& tile_pos, std::uint32_t target_spawn_index) {
     return StageTileTrigger{
         .tile_pos = tile_pos,
         .kind = StageTileTriggerKind::Destroyed,

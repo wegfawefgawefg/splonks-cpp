@@ -391,20 +391,20 @@ void SpawnAuthoredStageEnts(State& state) {
     }
 
     const auto resolve_spawn_link = [&](std::size_t ent_spawn_index,
-                                        std::optional<std::size_t> linked_spawn_index, int slot) {
+                                        std::optional<std::uint32_t> linked_spawn_index, int slot) {
         if (!linked_spawn_index.has_value()) {
             return;
         }
         if (ent_spawn_index >= spawned_vids.size() || !spawned_vids[ent_spawn_index].has_value()) {
             return;
         }
-        if (*linked_spawn_index >= spawned_vids.size() ||
-            !spawned_vids[*linked_spawn_index].has_value()) {
+        const std::size_t linked_index = static_cast<std::size_t>(*linked_spawn_index);
+        if (linked_index >= spawned_vids.size() || !spawned_vids[linked_index].has_value()) {
             return;
         }
 
         Ent* const ent = state.ents.GetEntMut(*spawned_vids[ent_spawn_index]);
-        const Ent* const linked_ent = state.ents.GetEnt(*spawned_vids[*linked_spawn_index]);
+        const Ent* const linked_ent = state.ents.GetEnt(*spawned_vids[linked_index]);
         if (ent == nullptr || linked_ent == nullptr) {
             return;
         }
@@ -448,11 +448,13 @@ void SpawnAuthoredStageEnts(State& state) {
             continue;
         }
         trigger.target_vid = std::nullopt;
-        if (*trigger.target_spawn_index >= spawned_vids.size() ||
-            !spawned_vids[*trigger.target_spawn_index].has_value()) {
+        const std::size_t target_spawn_index =
+            static_cast<std::size_t>(*trigger.target_spawn_index);
+        if (target_spawn_index >= spawned_vids.size() ||
+            !spawned_vids[target_spawn_index].has_value()) {
             continue;
         }
-        trigger.target_vid = *spawned_vids[*trigger.target_spawn_index];
+        trigger.target_vid = *spawned_vids[target_spawn_index];
     }
 
     for (std::size_t i = 0; i < state.stage.ent_spawns.size(); ++i) {
@@ -469,13 +471,17 @@ void SpawnAuthoredStageEnts(State& state) {
             ConfigureEntAsBuyable(*ent, spawn.buy_price);
         }
 
-        if (!spawn.shop_owner_spawn_index.has_value() ||
-            *spawn.shop_owner_spawn_index >= spawned_vids.size() ||
-            !spawned_vids[*spawn.shop_owner_spawn_index].has_value()) {
+        if (!spawn.shop_owner_spawn_index.has_value()) {
+            continue;
+        }
+        const std::size_t shop_owner_spawn_index =
+            static_cast<std::size_t>(*spawn.shop_owner_spawn_index);
+        if (shop_owner_spawn_index >= spawned_vids.size() ||
+            !spawned_vids[shop_owner_spawn_index].has_value()) {
             continue;
         }
 
-        Ent* const shop = state.ents.GetEntMut(*spawned_vids[*spawn.shop_owner_spawn_index]);
+        Ent* const shop = state.ents.GetEntMut(*spawned_vids[shop_owner_spawn_index]);
         if (shop == nullptr || !shop->active || shop->type_ != EntType::Shop) {
             continue;
         }
