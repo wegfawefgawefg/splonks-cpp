@@ -437,10 +437,12 @@ The expected end state is:
 - Validation 2026-06-07: release build, `--check-state-equality-smoke`,
   `--check-det-replay-smoke`, and `--check-join-barrier-next-stage-restart-smoke`
   passed after removing the stale process-global direction helpers.
-- Audited stale sprite animation randomization: `SpriteAnimator::RandomizeFrame`
-  currently has no callers. If it is reused for gameplay-visible or
-  snapshot-visible animation state later, it should accept a synchronized
-  `DetRng&`; otherwise it should stay presentation-only or be removed.
+- Removed stale sprite animation randomization:
+  `SpriteAnimator::RandomizeFrame` had no callers and used process-global RNG
+  on a type that can sit on entity state. If randomized animation phase is
+  reintroduced for gameplay-visible or snapshot-visible animation later, it
+  must accept a synchronized `DetRng&`; presentation-only randomization should
+  live outside authoritative entity state.
 
 ## Serialization And Snapshot Audit
 

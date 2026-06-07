@@ -75,7 +75,6 @@ struct SpriteAnimator {
     void ResetSpeed();
     Sprite GetSprite() const;
     void Step(const std::vector<SpriteData>& sprites, float dt);
-    void RandomizeFrame(const std::vector<SpriteData>& sprites);
 };
 
 } // namespace splonks

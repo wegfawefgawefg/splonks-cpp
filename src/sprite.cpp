@@ -258,10 +258,4 @@ void SpriteAnimator::Step(const std::vector<SpriteData>& sprites, float dt) {
     }
 }
 
-void SpriteAnimator::RandomizeFrame(const std::vector<SpriteData>& sprites) {
-    const SpriteData& sprite_data = sprites[SpriteIndex(sprite)];
-    current_frame = static_cast<std::uint32_t>(
-        rng::RandomIntExclusive(0, static_cast<int>(sprite_data.frames.size())));
-}
-
 } // namespace splonks
