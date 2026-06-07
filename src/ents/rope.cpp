@@ -101,7 +101,7 @@ void StepEntLogicAsRope(
             // pop
         }
     }
-    constexpr unsigned int kRopeLength = 6;
+    constexpr std::uint32_t kRopeLength = 6;
     if (rope_popped) {
         rope.health = 0;
         // loop down up to 6 tiles, convert all air into rope tiles, but stop if interupped

@@ -23,7 +23,7 @@ constexpr int kTeleportCardinalMinTiles = 4;
 constexpr int kTeleportCardinalMaxTiles = 8;
 constexpr int kTeleportDiagonalMinTiles = 3;
 constexpr int kTeleportDiagonalMaxTiles = 6;
-constexpr unsigned int kTelefragDamage = 9999;
+constexpr std::uint32_t kTelefragDamage = 9999;
 constexpr float kDiagonalAxisComponent = 0.707106769F;
 
 enum class TeleportProbeBlockReason {

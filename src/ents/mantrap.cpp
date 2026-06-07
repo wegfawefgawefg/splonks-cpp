@@ -21,7 +21,7 @@ constexpr int kMantrapIdleMinFrames = 20;
 constexpr int kMantrapIdleMaxFrames = 50;
 constexpr int kMantrapIdleChance = 100;
 constexpr float kMantrapEatFrames = 54.0F;
-constexpr unsigned int kMantrapEatDamage = 9999;
+constexpr std::uint32_t kMantrapEatDamage = 9999;
 
 void StartIdle(Ent& mantrap, State& state) {
     mantrap.ai_state = EntAiState::Idle;

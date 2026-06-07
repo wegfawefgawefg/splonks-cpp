@@ -783,6 +783,11 @@ The expected end state is:
   settings dimensions, and the snapshot/replay format already writes those
   components as 32-bit integers. Local loop counters and stage indexing APIs
   still use native unsigned/index types where they are only indexing vectors.
+- Fixed in gameplay constants: frame-rate, tile-size, player cooldown, stun/
+  immunity/contact-duration, and damage constants that feed fixed-width
+  simulation fields now use explicit `uint32_t` instead of
+  implementation-width `unsigned int`. Local loop counters and vector indexes
+  remain native index types where they do not become gameplay state.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn

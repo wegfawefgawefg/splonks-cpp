@@ -3,6 +3,7 @@
 #include "ent/spec.hpp"
 
 #include <cstddef>
+#include <cstdint>
 
 namespace splonks {
 
@@ -22,13 +23,13 @@ constexpr float kMaxWalkSpeed = 2.5F;
 constexpr float kMaxRunSpeed = 4.0F;
 constexpr float kMaxSpeed = 9.0F;
 constexpr float kJumpImpulse = 4.5F;
-constexpr unsigned int kCoyoteTimeFrames = 6;
-constexpr unsigned int kJumpDelayFrames = 1;
-constexpr unsigned int kBombThrowDelay = 8;
-constexpr unsigned int kRopeThrowDelay = 8;
-constexpr unsigned int kPotThrowDelay = 12;
-constexpr unsigned int kAttackDelay = 24;
-constexpr unsigned int kEquipDelay = 8;
+constexpr std::uint32_t kCoyoteTimeFrames = 6;
+constexpr std::uint32_t kJumpDelayFrames = 1;
+constexpr std::uint32_t kBombThrowDelay = 8;
+constexpr std::uint32_t kRopeThrowDelay = 8;
+constexpr std::uint32_t kPotThrowDelay = 12;
+constexpr std::uint32_t kAttackDelay = 24;
+constexpr std::uint32_t kEquipDelay = 8;
 
 extern const EntSpec kPlayerSpec;
 

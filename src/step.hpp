@@ -4,9 +4,11 @@
 #include "graphics.hpp"
 #include "state.hpp"
 
+#include <cstdint>
+
 namespace splonks {
 
-constexpr unsigned int kFramesPerSecond = 60;
+constexpr std::uint32_t kFramesPerSecond = 60;
 constexpr float kTimestep = 1.0F / static_cast<float>(kFramesPerSecond);
 
 enum class SimulationTickMode {

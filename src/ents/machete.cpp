@@ -22,7 +22,7 @@ namespace splonks::ents::machete {
 namespace {
 
 constexpr float kMacheteStrikePending = 1.0F;
-constexpr unsigned int kMacheteDamage = 8;
+constexpr std::uint32_t kMacheteDamage = 8;
 constexpr std::int32_t kThrownKillFavor = 1;
 constexpr std::int32_t kCorpseCutFavor = 1;
 

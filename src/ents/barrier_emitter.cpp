@@ -18,7 +18,7 @@ namespace {
 
 constexpr int kBeamSegmentCount = 3;
 constexpr float kBeamSegmentSize = 16.0F;
-constexpr unsigned int kBeamContactDamage = 1;
+constexpr std::uint32_t kBeamContactDamage = 1;
 
 bool HasSolidSupportAbove(const Ent& emitter, const State& state) {
     const Vec2 probe = emitter.GetCenter() + Vec2::New(0.0F, -kBeamSegmentSize);

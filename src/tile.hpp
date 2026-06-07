@@ -67,7 +67,7 @@ enum class Tile {
     Exit,
 };
 
-constexpr unsigned int kTileSize = 16;
+constexpr std::uint32_t kTileSize = 16;
 constexpr std::size_t kTileCount = 55;
 using TileRotation = std::uint8_t;
 constexpr TileRotation kTileRotationMask = 0x03;

@@ -28,7 +28,7 @@ constexpr float kArrowRotationVelocityEpsilon = 0.01F;
 constexpr float kArrowRotationVelocityEpsilonSq =
     kArrowRotationVelocityEpsilon * kArrowRotationVelocityEpsilon;
 constexpr float kArrowImpactVelocityScale = 0.18F;
-constexpr unsigned int kArrowDamage = 2;
+constexpr std::uint32_t kArrowDamage = 2;
 
 bool HasFired(const Ent& trap) {
     return trap.counter_a > 0.0F;

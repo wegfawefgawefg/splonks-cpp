@@ -33,7 +33,7 @@ constexpr int kCobraSpitCooldownMinFrames = 48;
 constexpr int kCobraSpitCooldownMaxFrames = 72;
 constexpr float kCobraSpitLifetimeFrames = 120.0F;
 constexpr float kCobraSpitTrailIntervalFrames = 2.0F;
-constexpr unsigned int kCobraVenomDamage = 1;
+constexpr std::uint32_t kCobraVenomDamage = 1;
 
 void StartIdle(
     Ent& cobra,

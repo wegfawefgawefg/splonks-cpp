@@ -19,9 +19,9 @@ namespace splonks::ents::common {
 
 constexpr float kMaxSpeed = 7.0F;
 constexpr std::uint32_t kDefaultCoyoteTimeFrames = 6;
-constexpr unsigned int kDefaultStunTimer = 60;
-constexpr unsigned int kThrownByImmunityDuration = 16;
-constexpr unsigned int kProjContactDuration = 120;
+constexpr std::uint32_t kDefaultStunTimer = 60;
+constexpr std::uint32_t kThrownByImmunityDuration = 16;
+constexpr std::uint32_t kProjContactDuration = 120;
 
 struct JumpAndClimbTuning {
     float gravity_scale = 1.0F;

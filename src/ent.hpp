@@ -18,7 +18,7 @@
 
 namespace splonks {
 
-constexpr unsigned int kJumpDelayFrames = 1;
+constexpr std::uint32_t kJumpDelayFrames = 1;
 
 struct UseState {
     bool down = false;

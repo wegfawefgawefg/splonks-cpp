@@ -13,7 +13,7 @@ constexpr float kStompShortBounceVelocityY = -3.0F;
 constexpr float kStompHeldJumpBounceVelocityY = -4.5F;
 constexpr float kStompVictimKnockbackVelocityY = -1.0F;
 constexpr float kStompVictimKnockbackVelocityX = 1.0F;
-constexpr unsigned int kStompDamage = 1;
+constexpr std::uint32_t kStompDamage = 1;
 constexpr float kSpringShoeMovementSoundVolume = 0.15F;
 
 bool CanEntAttemptStomp(const Ent& stomper, const State& state) {

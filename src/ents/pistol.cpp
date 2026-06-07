@@ -21,7 +21,7 @@ namespace {
 
 constexpr float kPistolFireCooldownFrames = 12.0F;
 constexpr float kPistolAmmo = 4.0F;
-constexpr unsigned int kPistolDamage = 4;
+constexpr std::uint32_t kPistolDamage = 4;
 
 void SpawnPistolMuzzleSmoke(State& state, const Vec2& pos, int direction) {
     for (int i = 0; i < 4; ++i) {

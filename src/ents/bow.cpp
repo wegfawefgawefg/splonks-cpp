@@ -20,7 +20,7 @@ namespace {
 constexpr float kBowFireCooldownFrames = 10.0F;
 constexpr float kBowArrowAmmo = 8.0F;
 constexpr float kBowArrowSpeed = 8.0F;
-constexpr unsigned int kBowArrowDamage = 2;
+constexpr std::uint32_t kBowArrowDamage = 2;
 constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct BowAim {
