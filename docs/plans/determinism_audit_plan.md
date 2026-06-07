@@ -707,6 +707,10 @@ The expected end state is:
   stable network entity ids, and sorted network fingerprints. Recent validation
   covered same-machine two-process UDP lockstep with confirmed hashes and no
   mismatches.
+- Cleanup pass: join-barrier topology delta sets now canonicalize player ids
+  for joined players, removed players, and topology-ack peers. The catchup
+  queue intentionally remains FIFO because it is scheduling state, not
+  authoritative player ordering.
 - Deferred risk: topology changes during active play need broader validation
   with multiple local players per peer, high latency, reconnect, stage
   transition, restart run, and relay/NAT paths.

@@ -37,6 +37,18 @@ constexpr std::size_t kReplayInputReserveChunk = 4096;
 constexpr std::uint32_t kMaxReplayDumpsPerRun = 32;
 constexpr LockstepFrame kReplayDumpMinFrameGap = 60;
 
+void SortUniqueValidPlayerIds(std::vector<PlayerId>& player_ids) {
+    player_ids.erase(
+        std::remove(player_ids.begin(), player_ids.end(), kInvalidPlayerId),
+        player_ids.end()
+    );
+    std::sort(player_ids.begin(), player_ids.end());
+    player_ids.erase(
+        std::unique(player_ids.begin(), player_ids.end()),
+        player_ids.end()
+    );
+}
+
 enum class LockstepHashContext : std::uint8_t {
     Normal,
     Rollback,
@@ -662,6 +674,7 @@ void QueueJoinBarrierTopologyAck(State& state, PlayerId target_peer_id) {
     std::vector<PlayerId>& peers = state.net_session.join_barrier_topology_ack_peers;
     if (std::find(peers.begin(), peers.end(), target_peer_id) == peers.end()) {
         peers.push_back(target_peer_id);
+        SortUniqueValidPlayerIds(peers);
     }
 }
 
@@ -2190,6 +2203,7 @@ void BeginJoinBarrierTopologyChange(
             joined.push_back(player_id);
         }
     }
+    SortUniqueValidPlayerIds(joined);
     for (const PlayerId target_peer_id : endpoint_targets) {
         QueueJoinBarrierPeer(state, target_peer_id);
     }
@@ -2254,6 +2268,7 @@ void BeginJoinBarrierTopologyRemoval(
             removed.push_back(player_id);
         }
     }
+    SortUniqueValidPlayerIds(removed);
 
     auto erase_removed = [&](std::vector<PlayerId>& values) {
         values.erase(
@@ -2274,6 +2289,8 @@ void BeginJoinBarrierTopologyRemoval(
     erase_removed(state.net_session.join_barrier_joined_player_ids);
     erase_removed(state.net_session.join_barrier_queue);
     erase_removed(state.net_session.join_barrier_topology_ack_peers);
+    SortUniqueValidPlayerIds(state.net_session.join_barrier_joined_player_ids);
+    SortUniqueValidPlayerIds(state.net_session.join_barrier_topology_ack_peers);
     if (std::find(
             removed_player_ids.begin(),
             removed_player_ids.end(),
@@ -2396,6 +2413,8 @@ void HandleJoinBarrierTopology(
             );
         }
     }
+    SortUniqueValidPlayerIds(removed_player_ids);
+    SortUniqueValidPlayerIds(state.net_session.join_barrier_removed_player_ids);
     if (!removed_player_ids.empty()) {
         RemoveRemotePlayers(state, transport, removed_player_ids);
     }
@@ -2420,6 +2439,7 @@ void HandleJoinBarrierTopology(
             graphics
         );
     }
+    SortUniqueValidPlayerIds(state.net_session.join_barrier_joined_player_ids);
 
     SeedLockstepInputBaselineForPlayers(
         state,
