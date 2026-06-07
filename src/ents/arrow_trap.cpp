@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace splonks::ents::arrow_trap {
 
@@ -29,6 +30,10 @@ constexpr float kArrowRotationVelocityEpsilonSq =
     kArrowRotationVelocityEpsilon * kArrowRotationVelocityEpsilon;
 constexpr float kArrowImpactVelocityScale = 0.18F;
 constexpr std::uint32_t kArrowDamage = 2;
+constexpr std::int64_t kAngleScale = 4096;
+constexpr std::int64_t kFortyFiveDegreesRaw = 45 * kAngleScale;
+constexpr std::int64_t kNinetyDegreesRaw = 90 * kAngleScale;
+constexpr std::int64_t kAtanCurveDegreesRaw = 16 * kAngleScale;
 
 bool HasFired(const Ent& trap) {
     return trap.counter_a > 0.0F;
@@ -64,6 +69,53 @@ IVec2 ToStoredArrowOffsetPoint(const Vec2& offset) {
 
 Vec2 FromStoredArrowOffsetPoint(const IVec2& point) {
     return Vec2::New(static_cast<float>(point.x), static_cast<float>(point.y));
+}
+
+std::int32_t ClampAngleRaw(std::int64_t raw) {
+    return static_cast<std::int32_t>(
+        std::clamp(raw,
+                   static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::min()),
+                   static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max()))
+    );
+}
+
+std::int64_t AbsInt64(std::int64_t value) {
+    return value < 0 ? -value : value;
+}
+
+std::int64_t AtanUnitRatioDegreesRaw(std::int64_t ratio_raw) {
+    ratio_raw = std::clamp(ratio_raw, std::int64_t{0}, kAngleScale);
+    const std::int64_t linear = DivRoundNearest(kFortyFiveDegreesRaw * ratio_raw, kAngleScale);
+    const std::int64_t curve_numerator =
+        kAtanCurveDegreesRaw * ratio_raw * (kAngleScale - ratio_raw);
+    const std::int64_t curve = DivRoundNearest(curve_numerator, kAngleScale * kAngleScale);
+    return linear + curve;
+}
+
+sim::Scalar ArrowRotationFromVelocity(const Vec2& velocity, Side facing) {
+    const std::int64_t x_raw = std::max<std::int64_t>(
+        1,
+        AbsInt64(static_cast<std::int64_t>(
+            RoundToInt(std::abs(velocity.x) * static_cast<float>(kAngleScale))))
+    );
+    const std::int64_t y_raw = static_cast<std::int64_t>(
+        RoundToInt(velocity.y * static_cast<float>(kAngleScale)));
+    const std::int64_t abs_y_raw = AbsInt64(y_raw);
+    std::int64_t angle_raw = 0;
+    if (abs_y_raw <= x_raw) {
+        angle_raw =
+            AtanUnitRatioDegreesRaw(DivRoundNearest(abs_y_raw * kAngleScale, x_raw));
+    } else {
+        angle_raw = kNinetyDegreesRaw -
+                    AtanUnitRatioDegreesRaw(DivRoundNearest(x_raw * kAngleScale, abs_y_raw));
+    }
+    if (y_raw < 0) {
+        angle_raw = -angle_raw;
+    }
+    if (facing == Side::Left) {
+        angle_raw = -angle_raw;
+    }
+    return sim::Scalar::from_raw(ClampAngleRaw(angle_raw));
 }
 
 int GetOpenSensorCacheMarker(const Stage& stage) {
@@ -288,11 +340,7 @@ void StepEntLogicAsArrow(
         if (std::abs(arrow.vel.x) > kArrowRotationVelocityEpsilon) {
             arrow.facing = arrow.vel.x < 0.0F ? Side::Left : Side::Right;
         }
-        const float horizontal_speed = std::max(std::abs(arrow.vel.x), kArrowRotationVelocityEpsilon);
-        const float relative_rotation =
-            std::atan2(arrow.vel.y, horizontal_speed) * (180.0F / 3.14159265F);
-        arrow.rotation =
-            sim::ToSimScalar(arrow.facing == Side::Left ? -relative_rotation : relative_rotation);
+        arrow.rotation = ArrowRotationFromVelocity(arrow.vel, arrow.facing);
     }
     const float gravity_scale =
         GetModifiedEffectValue(arrow, EffectModifierTarget::GravityScale, 1.0F);

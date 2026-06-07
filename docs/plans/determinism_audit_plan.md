@@ -292,6 +292,11 @@ The expected end state is:
   feeds gameplay-adjacent timers, sound countdowns, boulder counters, and player
   animation gates, so its per-frame distance threshold is now quantized through
   the same Fixed12-scale integer length path as deterministic normalization.
+- Fixed in arrow rotation bookkeeping: falling/flying arrow rotation now
+  quantizes velocity to the Fixed12 grid and uses an integer-only atan
+  approximation before storing `Ent::rotation`. Arrow velocity is still
+  float-backed until the broader movement migration, but this authoritative
+  fixed rotation writer no longer depends on platform libm `std::atan2`.
 - Fixed in fluid vector math boundaries: `stage_fluids.cpp` now uses
   `LengthDeterministic` for velocity clamping and gravity magnitude, and
   `NormalizeOrZeroDeterministic` for gravity and neighbor transfer directions.
@@ -307,8 +312,8 @@ The expected end state is:
 - Remaining mostly-cosmetic math boundaries: `stage_lighting.cpp` uses
   `std::pow`, `std::floor`, and `Length`; `audio_acoustics.cpp` uses
   `std::sqrt` / `std::ceil`; `debug_moving_light.cpp` uses `std::sin` /
-  `std::cos`; arrow-trap rotation still uses `std::atan2` for render rotation;
-  and particle/audio rendering paths still use libm for presentation. These are
+  `std::cos`; and particle/audio rendering paths still use libm for
+  presentation. These are
   outside live network lockstep hashes and outside transmitted `SimSnapshot`
   bytes. In-memory `GameplaySnapshot` / debug playback and rollback
   presentation preservation still carry presentation state, so cross-platform
