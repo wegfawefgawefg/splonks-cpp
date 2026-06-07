@@ -297,6 +297,12 @@ The expected end state is:
   approximation before storing `Ent::rotation`. Arrow velocity is still
   float-backed until the broader movement migration, but this authoritative
   fixed rotation writer no longer depends on platform libm `std::atan2`.
+- Fixed in snapshot-preserved audio acoustics: listener/source distance tests
+  and occlusion ray lengths now use `LengthDeterministic` and `CeilToInt`
+  instead of platform libm `std::sqrt` / `std::ceil`. Positional audio
+  acoustics are outside live network lockstep, but `StageAcoustics` is captured
+  by local gameplay snapshots/debug playback, so this keeps that replay boundary
+  under explicit deterministic rounding.
 - Fixed in fluid vector math boundaries: `stage_fluids.cpp` now uses
   `LengthDeterministic` for velocity clamping and gravity magnitude, and
   `NormalizeOrZeroDeterministic` for gravity and neighbor transfer directions.
@@ -310,10 +316,9 @@ The expected end state is:
   policy covered by the Gameplay Float Audit, rather than more isolated libm
   call replacement.
 - Remaining mostly-cosmetic math boundaries: `stage_lighting.cpp` uses
-  `std::pow`, `std::floor`, and `Length`; `audio_acoustics.cpp` uses
-  `std::sqrt` / `std::ceil`; `debug_moving_light.cpp` uses `std::sin` /
-  `std::cos`; and particle/audio rendering paths still use libm for
-  presentation. These are
+  `std::pow`, `std::floor`, and `Length`; `debug_moving_light.cpp` uses
+  `std::sin` / `std::cos`; and particle/audio rendering paths still use libm
+  for presentation. These are
   outside live network lockstep hashes and outside transmitted `SimSnapshot`
   bytes. In-memory `GameplaySnapshot` / debug playback and rollback
   presentation preservation still carry presentation state, so cross-platform

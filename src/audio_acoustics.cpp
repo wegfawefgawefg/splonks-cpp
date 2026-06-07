@@ -4,7 +4,6 @@
 #include "world_query.hpp"
 
 #include <algorithm>
-#include <cmath>
 
 namespace splonks {
 
@@ -19,9 +18,7 @@ float Lerp(float a, float b, float t) {
 }
 
 float Distance(const Vec2& a, const Vec2& b) {
-    const float dx = a.x - b.x;
-    const float dy = a.y - b.y;
-    return std::sqrt((dx * dx) + (dy * dy));
+    return LengthDeterministic(a - b);
 }
 
 float GetAudioOcclusionListenerEpsilonPx(const State& state) {
@@ -127,12 +124,11 @@ PositionalAudioAcoustics ComputePositionalAudioAcoustics(
             result.wrapped_source_world_pos,
             listener_world_pos
         );
-        const float ray_length =
-            std::sqrt((ray_delta.x * ray_delta.x) + (ray_delta.y * ray_delta.y));
+        const float ray_length = LengthDeterministic(ray_delta);
         const WorldRayHit hit = RaycastTiles(
             result.wrapped_source_world_pos,
             ray_delta,
-            static_cast<int>(std::ceil(ray_length)) + 1,
+            CeilToInt(ray_length) + 1,
             state
         );
         result.occluded = ShouldAudioRayHitCountAsOccluded(state, listener_world_pos, hit);
