@@ -53,6 +53,13 @@ public:
         }
     }
 
+    void WriteI32(std::int32_t value) {
+        std::uint32_t bits = 0;
+        static_assert(sizeof(bits) == sizeof(value));
+        std::memcpy(&bits, &value, sizeof(bits));
+        WriteU32(bits);
+    }
+
     void WriteU64(std::uint64_t value) {
         for (std::uint32_t shift = 0; shift < 64; shift += 8) {
             WriteByte(static_cast<std::uint8_t>(
@@ -151,6 +158,14 @@ public:
         return value;
     }
 
+    std::int32_t ReadI32() {
+        const std::uint32_t bits = ReadU32();
+        std::int32_t value = 0;
+        static_assert(sizeof(bits) == sizeof(value));
+        std::memcpy(&value, &bits, sizeof(value));
+        return value;
+    }
+
     std::uint64_t ReadU64() {
         std::uint64_t value = 0;
         for (std::uint32_t shift = 0; shift < 64; shift += 8) {
@@ -217,6 +232,18 @@ void WriteFloats(PacketWriter& writer, const std::array<float, kNetPlayersPerPro
 void ReadFloats(PacketReader& reader, std::array<float, kNetPlayersPerProcess>& values) {
     for (float& value : values) {
         value = reader.ReadF32();
+    }
+}
+
+void WriteInt32s(PacketWriter& writer, const std::array<std::int32_t, kNetPlayersPerProcess>& values) {
+    for (std::int32_t value : values) {
+        writer.WriteI32(value);
+    }
+}
+
+void ReadInt32s(PacketReader& reader, std::array<std::int32_t, kNetPlayersPerProcess>& values) {
+    for (std::int32_t& value : values) {
+        value = reader.ReadI32();
     }
 }
 
@@ -396,8 +423,8 @@ EncodedNetPacket EncodeJoinBarrierTopology(const JoinBarrierTopologyPacket& pack
     writer.WriteU64(packet.barrier_frame);
     writer.WriteU32(packet.player_count);
     WritePlayerIds(writer, packet.player_ids);
-    WriteFloats(writer, packet.player_pos_x);
-    WriteFloats(writer, packet.player_pos_y);
+    WriteInt32s(writer, packet.player_pos_x_raw);
+    WriteInt32s(writer, packet.player_pos_y_raw);
     writer.WriteU32(packet.removed_player_count);
     WritePlayerIds(writer, packet.removed_player_ids);
     return writer.Finish();
@@ -715,8 +742,8 @@ std::optional<JoinBarrierTopologyPacket> TryDecodeJoinBarrierTopology(
     packet.barrier_frame = reader.ReadU64();
     packet.player_count = reader.ReadU32();
     ReadPlayerIds(reader, packet.player_ids);
-    ReadFloats(reader, packet.player_pos_x);
-    ReadFloats(reader, packet.player_pos_y);
+    ReadInt32s(reader, packet.player_pos_x_raw);
+    ReadInt32s(reader, packet.player_pos_y_raw);
     packet.removed_player_count = reader.ReadU32();
     ReadPlayerIds(reader, packet.removed_player_ids);
     if (!reader.Done()) {

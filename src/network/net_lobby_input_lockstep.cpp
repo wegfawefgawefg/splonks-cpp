@@ -3,6 +3,7 @@
 #include "ent/spec_restore.hpp"
 #include "inputs.hpp"
 #include "math_types.hpp"
+#include "sim/fxp.hpp"
 #include "simulation_snapshot.hpp"
 #include "state_fingerprint.hpp"
 #include "state.hpp"
@@ -809,8 +810,9 @@ JoinBarrierTopologyPacket BuildJoinBarrierTopologyPacket(const State& state) {
                 }
             }
         }
-        packet.player_pos_x[i] = pos.x;
-        packet.player_pos_y[i] = pos.y;
+        const sim::Vec2 fixed_pos = sim::ToSimVec2(pos);
+        packet.player_pos_x_raw[i] = fixed_pos.x.raw_value();
+        packet.player_pos_y_raw[i] = fixed_pos.y.raw_value();
     }
     packet.removed_player_count = static_cast<std::uint32_t>(std::min<std::size_t>(
         state.net_session.join_barrier_removed_player_ids.size(),
@@ -2450,7 +2452,9 @@ void HandleJoinBarrierTopology(
             player_id,
             false,
             false,
-            Vec2::New(packet.player_pos_x[i], packet.player_pos_y[i]),
+            sim::ToRenderVec2(
+                sim::Vec2::from_raw(packet.player_pos_x_raw[i], packet.player_pos_y_raw[i])
+            ),
             graphics
         );
     }

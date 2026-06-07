@@ -17,6 +17,7 @@
 #include "network/net_lobby.hpp"
 #include "quest_stage_loader.hpp"
 #include "raw_aframe.hpp"
+#include "sim/fxp.hpp"
 #include "simulation_snapshot.hpp"
 #include "stage_spawning.hpp"
 #include "stage_progression.hpp"
@@ -1772,8 +1773,9 @@ bool RunJoinBarrierProtocolSmoke() {
     topology.barrier_frame = host.net_session.lockstep_next_frame_to_step;
     topology.player_count = 1;
     topology.player_ids[0] = 6;
-    topology.player_pos_x[0] = 128.0F;
-    topology.player_pos_y[0] = 64.0F;
+    const sim::Vec2 topology_pos = sim::ToSimVec2(Vec2::New(128.0F, 64.0F));
+    topology.player_pos_x_raw[0] = topology_pos.x.raw_value();
+    topology.player_pos_y_raw[0] = topology_pos.y.raw_value();
     topology.removed_player_count = 1;
     topology.removed_player_ids[0] = 4;
     const network::EncodedNetPacket encoded_topology =
@@ -1789,6 +1791,8 @@ bool RunJoinBarrierProtocolSmoke() {
         decoded_topology->barrier_frame != topology.barrier_frame ||
         decoded_topology->player_count != topology.player_count ||
         decoded_topology->player_ids[0] != topology.player_ids[0] ||
+        decoded_topology->player_pos_x_raw[0] != topology.player_pos_x_raw[0] ||
+        decoded_topology->player_pos_y_raw[0] != topology.player_pos_y_raw[0] ||
         decoded_topology->removed_player_count != topology.removed_player_count ||
         decoded_topology->removed_player_ids[0] != topology.removed_player_ids[0]) {
         std::cerr << "join barrier protocol smoke failed: topology packet roundtrip mismatch\n";

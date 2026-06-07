@@ -14,7 +14,7 @@
 namespace splonks::network {
 
 constexpr std::uint32_t kNetProtocolMagic = 0x534C504B; // SLPK
-constexpr std::uint16_t kNetProtocolVersion = 3;
+constexpr std::uint16_t kNetProtocolVersion = 4;
 constexpr std::size_t kNetNameBytes = 32;
 constexpr std::size_t kNetQuestIdBytes = 32;
 constexpr std::size_t kNetQuestStageIdBytes = 64;
@@ -202,8 +202,8 @@ struct JoinBarrierTopologyPacket {
     std::uint64_t barrier_frame = 0;
     std::uint32_t player_count = 0;
     std::array<PlayerId, kNetPlayersPerProcess> player_ids{};
-    std::array<float, kNetPlayersPerProcess> player_pos_x{};
-    std::array<float, kNetPlayersPerProcess> player_pos_y{};
+    std::array<std::int32_t, kNetPlayersPerProcess> player_pos_x_raw{};
+    std::array<std::int32_t, kNetPlayersPerProcess> player_pos_y_raw{};
     std::uint32_t removed_player_count = 0;
     std::array<PlayerId, kNetPlayersPerProcess> removed_player_ids{};
 };

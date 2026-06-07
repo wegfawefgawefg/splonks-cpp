@@ -582,11 +582,16 @@ The expected end state is:
   explicitly in little-endian fixed-width form instead of raw-copying local C++
   structs. This removes packet padding, host byte order, raw enum layout, and
   `sizeof(struct)` from live multiplayer packet compatibility. Network
-  protocol version is now 2.
+  protocol version was bumped to 2 at this checkpoint.
 - Fixed in UDP net protocol codec internals: integer packet writer/reader
   byte-shift loops now use explicit `uint32_t` counters instead of
   implementation-width `unsigned int`, without changing packet bytes or
   protocol version.
+- Fixed in UDP join-barrier topology packets: joined player spawn positions
+  now cross the wire as Fixed12 raw `int32_t` components instead of IEEE float
+  payloads. Hosts quantize at packet build time, peers convert back only at the
+  spawn edge, and the network protocol version is now 4 so old clients reject
+  cleanly.
 - Audit checkpoint 2026-06-07: current `SimSnapshot` field scan confirms
   `MakeSimSnapshot`, `RestoreSimSnapshot`, `WriteSimSnapshot`, and
   `ReadSimSnapshot` cover the same simulation snapshot fields. Omitted `State`
