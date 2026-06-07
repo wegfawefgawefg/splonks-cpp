@@ -99,10 +99,11 @@ The expected end state is:
   logic.
 - Clear render/cosmetic math exists in lighting, acoustics, render shake, and
   particle paths; those can remain float unless they feed back into gameplay.
-- Deferred risk: circular moving platforms currently use `std::sin` /
-  `std::cos` in gameplay movement. Ball-and-chain uses `std::sqrt` for
-  authoritative pull direction. These should be converted to deterministic
-  lookup/fixed-point math or discrete approximations.
+- Fixed in this pass: the initial high-risk libm hits in circular moving
+  platforms and ball-and-chain were converted below. The remaining libm search
+  results are now classified as render/audio/debug/cosmetic presentation
+  boundaries, with the larger remaining gameplay risk being float-backed
+  authoritative storage rather than direct platform-libm calls.
 - Fixed for circular moving platforms: runtime `std::sin` / `std::cos` were
   replaced with a fixed 80-step integer unit-circle table. The platform still
   writes float `pos` / `vel` for the current physics pipeline, but its path
