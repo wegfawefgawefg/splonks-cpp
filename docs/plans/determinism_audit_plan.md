@@ -56,6 +56,28 @@ The expected end state is:
   thresholds before quantization. The follow-up migration is to move
   authoritative gameplay storage/math to fixed-point, integer counters, or
   explicit threshold quantization.
+- Current authoritative float-backed inventory:
+  `Ent::pos`, `vel`, `acc`, `size`, `max_speed`, `throw_velocity_scale`,
+  `buoyancy`, `dist_traveled_this_frame`, `travel_sound_countdown`,
+  `support_ground_friction`, `push_acc`, `rotation`, `counter_a` through
+  `counter_d`, `light_strength`, `light_color`, and
+  `AFrameAnimator::current_time` / `scale` / `speed`; stage fluid amount,
+  velocity, gravity, gravity strength, temporary gravity, and `Stage::gravity`;
+  synchronized gameplay settings for fluids, water movement, player tuning,
+  and effect modifier values; retained reconnect player/item state mirrors of
+  entity position/velocity/acceleration/size/counters/effect values.
+- Current lockstep hash behavior: entity position, velocity, acceleration,
+  size, counters, effect values, light values, and animation timers are
+  quantized through `sim::Scalar` / Fixed12 before hashing. That reduces noisy
+  float-bit hash mismatches, but the simulation and `SimSnapshot` still carry
+  IEEE float payloads for those fields.
+- Migration order should be narrow and mechanical: introduce fixed-point
+  storage at authoritative boundaries, convert parsing/spec constants into
+  fixed values, keep render/audio/UI conversion at the edge, and validate each
+  subsystem against current gameplay feel before moving to the next. Entity
+  `pos` / `vel` / `acc` / `size` and common physics/contact helpers are the
+  first real migration target; stage fluids and gameplay settings are a second
+  target because they are broader and more tuning-sensitive.
 
 ## Math Function Audit
 
