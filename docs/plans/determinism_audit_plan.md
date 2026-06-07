@@ -777,6 +777,12 @@ The expected end state is:
   implementation-width `unsigned int`. Snapshot/replay bytes already stored the
   field as 32 bits, so runtime storage now matches the serialized stage
   contract.
+- Fixed in unsigned vector runtime state: `UVec2` now stores explicit
+  `uint32_t` components instead of implementation-width `unsigned int`.
+  `UVec2` carries snapshot-visible tile, room, stage, input mouse, sprite, and
+  settings dimensions, and the snapshot/replay format already writes those
+  components as 32-bit integers. Local loop counters and stage indexing APIs
+  still use native unsigned/index types where they are only indexing vectors.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn

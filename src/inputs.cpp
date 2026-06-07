@@ -188,7 +188,7 @@ void SetPlayingInputSnapshot(State& state) {
     float mx = 0.0F;
     float my = 0.0F;
     SDL_GetMouseState(&mx, &my);
-    new_inputs.mouse_pos = UVec2::New(static_cast<unsigned int>(mx), static_cast<unsigned int>(my));
+    new_inputs.mouse_pos = UVec2::New(static_cast<std::uint32_t>(mx), static_cast<std::uint32_t>(my));
     if (state.debug_input_override.active && state.debug_input_override.frames_remaining > 0) {
         const PlayerId target_player_id = state.debug_input_override.player_id;
         const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal();

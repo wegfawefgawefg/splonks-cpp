@@ -40,8 +40,8 @@ UVec2 FitTemplate(const UVec2& available_area,
                   const std::vector<std::vector<MetaTile>>& room_template, bool grounded,
                   DetRng& det_rng) {
     const UVec2 size =
-        UVec2::New(static_cast<unsigned int>(room_template[0].size()),
-                   static_cast<unsigned int>(room_template.size()));
+        UVec2::New(static_cast<std::uint32_t>(room_template[0].size()),
+                   static_cast<std::uint32_t>(room_template.size()));
     return Fit(available_area, size, grounded, det_rng);
 }
 

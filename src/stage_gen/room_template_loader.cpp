@@ -79,7 +79,7 @@ UVec2 ParseSize(const std::string& value, const std::string& path, int line_numb
         );
     }
 
-    return UVec2::New(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+    return UVec2::New(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y));
 }
 
 std::string StripGridIndent(const std::string& line) {

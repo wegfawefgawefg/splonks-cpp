@@ -93,7 +93,7 @@ UVec2 ParseSize(const std::string& value, const std::string& path, int line_numb
         throw std::runtime_error(path + ":" + std::to_string(line_number) +
                                  ": size must be positive");
     }
-    return UVec2::New(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+    return UVec2::New(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y));
 }
 
 std::vector<std::string> ReadLines(const std::string& path) {

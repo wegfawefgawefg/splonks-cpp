@@ -291,11 +291,11 @@ int SplonksMain(int argc, char** argv) {
         graphics.dims = loaded_settings.video.resolution;
         graphics.fullscreen = loaded_settings.video.fullscreen;
         graphics.window_dims =
-            splonks::UVec2::New(static_cast<unsigned int>(std::max(gubsy_frame.window_width, 1)),
-                                static_cast<unsigned int>(std::max(gubsy_frame.window_height, 1)));
+            splonks::UVec2::New(static_cast<std::uint32_t>(std::max(gubsy_frame.window_width, 1)),
+                                static_cast<std::uint32_t>(std::max(gubsy_frame.window_height, 1)));
         graphics.dims =
-            splonks::UVec2::New(static_cast<unsigned int>(std::max(gubsy_frame.render_width, 1)),
-                                static_cast<unsigned int>(std::max(gubsy_frame.render_height, 1)));
+            splonks::UVec2::New(static_cast<std::uint32_t>(std::max(gubsy_frame.render_width, 1)),
+                                static_cast<std::uint32_t>(std::max(gubsy_frame.render_height, 1)));
         SDL_Texture* post_fx_target = nullptr;
 
         const auto sync_gubsy_frame = [&](const splonks::PostProcessSettings& post_settings) {
@@ -309,11 +309,11 @@ int SplonksMain(int argc, char** argv) {
             const bool target_changed = render_texture != gubsy_frame.render_target;
             render_texture = gubsy_frame.render_target;
             graphics.window_dims = splonks::UVec2::New(
-                static_cast<unsigned int>(std::max(gubsy_frame.window_width, 1)),
-                static_cast<unsigned int>(std::max(gubsy_frame.window_height, 1)));
+                static_cast<std::uint32_t>(std::max(gubsy_frame.window_width, 1)),
+                static_cast<std::uint32_t>(std::max(gubsy_frame.window_height, 1)));
             graphics.dims = splonks::UVec2::New(
-                static_cast<unsigned int>(std::max(gubsy_frame.render_width, 1)),
-                static_cast<unsigned int>(std::max(gubsy_frame.render_height, 1)));
+                static_cast<std::uint32_t>(std::max(gubsy_frame.render_width, 1)),
+                static_cast<std::uint32_t>(std::max(gubsy_frame.render_height, 1)));
             graphics.camera.offset = splonks::ToVec2(graphics.dims / 2U);
             if (target_changed || post_fx_target != render_texture) {
                 splonks::InitRenderPostFx(post_fx, renderer, render_texture, post_settings);

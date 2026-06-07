@@ -30,10 +30,10 @@ struct IVec2 {
 };
 
 struct UVec2 {
-    unsigned int x = 0;
-    unsigned int y = 0;
+    std::uint32_t x = 0;
+    std::uint32_t y = 0;
 
-    static UVec2 New(unsigned int x_value, unsigned int y_value) {
+    static UVec2 New(std::uint32_t x_value, std::uint32_t y_value) {
         UVec2 result;
         result.x = x_value;
         result.y = y_value;
@@ -117,7 +117,7 @@ inline IVec2 operator*(const IVec2& left, int right) {
     return IVec2::New(left.x * right, left.y * right);
 }
 
-inline UVec2 operator*(const UVec2& left, unsigned int right) {
+inline UVec2 operator*(const UVec2& left, std::uint32_t right) {
     return UVec2::New(left.x * right, left.y * right);
 }
 
@@ -141,7 +141,7 @@ inline IVec2 operator/(const IVec2& left, int right) {
     return IVec2::New(left.x / right, left.y / right);
 }
 
-inline UVec2 operator/(const UVec2& left, unsigned int right) {
+inline UVec2 operator/(const UVec2& left, std::uint32_t right) {
     return UVec2::New(left.x / right, left.y / right);
 }
 
@@ -203,7 +203,7 @@ inline IVec2 ToIVec2(const UVec2& value) {
 }
 
 inline UVec2 ToUVec2(const IVec2& value) {
-    return UVec2::New(static_cast<unsigned int>(value.x), static_cast<unsigned int>(value.y));
+    return UVec2::New(static_cast<std::uint32_t>(value.x), static_cast<std::uint32_t>(value.y));
 }
 
 inline Vec2 ToVec2(const UVec2& value) {
