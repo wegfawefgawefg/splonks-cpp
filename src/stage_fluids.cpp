@@ -42,7 +42,7 @@ float Dot(const Vec2& left, const Vec2& right) {
 }
 
 Vec2 ClampLength(const Vec2& value, float max_length) {
-    const float length = Length(value);
+    const float length = LengthDeterministic(value);
     if (length <= max_length || length <= 0.0F) {
         return value;
     }
@@ -168,8 +168,8 @@ void AddFluidTransferProposalsForCell(
         GetVelocityFromGrid(velocities, source) + effective_gravity,
         kVelocityClamp
     );
-    const float gravity_magnitude = Length(effective_gravity);
-    const Vec2 gravity_direction = NormalizeOrZero(effective_gravity);
+    const float gravity_magnitude = LengthDeterministic(effective_gravity);
+    const Vec2 gravity_direction = NormalizeOrZeroDeterministic(effective_gravity);
     const bool has_gravity = gravity_magnitude > 0.0001F;
     const float gravity_pressure_bias = std::clamp(gravity_magnitude, 0.0F, 1.0F);
     std::vector<Candidate> candidates;
@@ -192,7 +192,7 @@ void AddFluidTransferProposalsForCell(
         }
 
         const float target_amount = GetAmountFromGrid(amounts, *resolved_target);
-        const Vec2 direction = NormalizeOrZero(ToVec2(offset));
+        const Vec2 direction = NormalizeOrZeroDeterministic(ToVec2(offset));
         const float velocity_score = std::max(0.0F, Dot(source_velocity, direction));
         const float directional_pressure_gate = (!has_gravity || Dot(direction, gravity_direction) >= -0.05F)
             ? 1.0F

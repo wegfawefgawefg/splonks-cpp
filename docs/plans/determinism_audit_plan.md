@@ -179,11 +179,18 @@ The expected end state is:
   feeds gameplay-adjacent timers, sound countdowns, boulder counters, and player
   animation gates, so its per-frame distance threshold is now quantized through
   the same Fixed12-scale integer length path as deterministic normalization.
-- Remaining high-risk math boundaries after the simple cleanup pass:
-  `stage_fluids.cpp` still normalizes/clamps fluid velocity and gravity through
-  `Length` / `NormalizeOrZero`. This is an authoritative gameplay path and
-  should move to fixed/integer vector math or explicit discrete approximations
-  in targeted follow-up work, not casual squared-threshold rewrites.
+- Fixed in fluid vector math boundaries: `stage_fluids.cpp` now uses
+  `LengthDeterministic` for velocity clamping and gravity magnitude, and
+  `NormalizeOrZeroDeterministic` for gravity and neighbor transfer directions.
+  Fluid amounts and velocities are still stored as floats, but the remaining
+  simple cleanup pass no longer has an authoritative fluid path calling
+  platform libm `sqrt` through `Length` / `NormalizeOrZero`.
+- Remaining high-risk math boundary after the simple cleanup pass: broad
+  authoritative gameplay storage is still float-backed, including fluid
+  amounts/velocities and entity position/velocity/acceleration. These need the
+  larger fixed-point storage migration or explicit per-system quantization
+  policy covered by the Gameplay Float Audit, rather than more isolated libm
+  call replacement.
 - Remaining mostly-cosmetic math boundaries: `stage_lighting.cpp` uses
   `std::pow`, `std::floor`, and `Length`; `debug_moving_light.cpp` uses
   `std::sin` / `std::cos`; arrow-trap rotation still uses `std::atan2` for
