@@ -73,15 +73,15 @@ struct NetRetainedEffect {
 struct NetRetainedAttachedEntState {
     bool valid = false;
     EntType ent_type = EntType::None;
-    Vec2 pos = Vec2::New(0.0F, 0.0F);
-    Vec2 vel = Vec2::New(0.0F, 0.0F);
-    Vec2 acc = Vec2::New(0.0F, 0.0F);
-    Vec2 size = Vec2::New(0.0F, 0.0F);
+    sim::Vec2 pos = sim::Vec2{sim::Scalar::zero(), sim::Scalar::zero()};
+    sim::Vec2 vel = sim::Vec2{sim::Scalar::zero(), sim::Scalar::zero()};
+    sim::Vec2 acc = sim::Vec2{sim::Scalar::zero(), sim::Scalar::zero()};
+    sim::Vec2 size = sim::Vec2{sim::Scalar::zero(), sim::Scalar::zero()};
     sim::Scalar rotation = sim::Scalar::zero();
-    float counter_a = 0.0F;
-    float counter_b = 0.0F;
-    float counter_c = 0.0F;
-    float counter_d = 0.0F;
+    sim::Scalar counter_a = sim::Scalar::zero();
+    sim::Scalar counter_b = sim::Scalar::zero();
+    sim::Scalar counter_c = sim::Scalar::zero();
+    sim::Scalar counter_d = sim::Scalar::zero();
     std::uint32_t health = 0;
     std::uint32_t money = 0;
     std::uint8_t facing = 0;
@@ -96,7 +96,7 @@ struct NetRetainedPlayerState {
     std::string quest_id;
     std::string quest_stage_id;
     EntType ent_type = EntType::Player;
-    Vec2 last_pos = Vec2::New(0.0F, 0.0F);
+    sim::Vec2 last_pos = sim::Vec2{sim::Scalar::zero(), sim::Scalar::zero()};
     std::uint32_t health = 0;
     std::uint32_t money = 0;
     std::uint64_t disconnected_frame = 0;

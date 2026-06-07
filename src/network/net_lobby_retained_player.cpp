@@ -113,15 +113,15 @@ NetRetainedAttachedEntState CaptureRetainedAttachedEnt(
 
     retained.valid = true;
     retained.ent_type = attached->type_;
-    retained.pos = attached->pos;
-    retained.vel = attached->vel;
-    retained.acc = attached->acc;
-    retained.size = attached->size;
+    retained.pos = sim::ToSimVec2(attached->pos);
+    retained.vel = sim::ToSimVec2(attached->vel);
+    retained.acc = sim::ToSimVec2(attached->acc);
+    retained.size = sim::ToSimVec2(attached->size);
     retained.rotation = attached->rotation;
-    retained.counter_a = attached->counter_a;
-    retained.counter_b = attached->counter_b;
-    retained.counter_c = attached->counter_c;
-    retained.counter_d = attached->counter_d;
+    retained.counter_a = sim::ToSimScalar(attached->counter_a);
+    retained.counter_b = sim::ToSimScalar(attached->counter_b);
+    retained.counter_c = sim::ToSimScalar(attached->counter_c);
+    retained.counter_d = sim::ToSimScalar(attached->counter_d);
     retained.health = attached->health;
     retained.money = attached->money;
     retained.facing = static_cast<std::uint8_t>(attached->facing == Side::Right ? 1 : 0);
@@ -152,7 +152,7 @@ void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Ent& p
     retained.quest_id = state.stage.quest_id;
     retained.quest_stage_id = state.stage.quest_stage_id;
     retained.ent_type = player.type_;
-    retained.last_pos = player.pos;
+    retained.last_pos = sim::ToSimVec2(player.pos);
     retained.health = player.health;
     retained.money = player.money;
     retained.disconnected_frame = state.frame;
@@ -241,7 +241,7 @@ Vec2 ResolveReconnectSpawnPos(
         break;
     case NetReconnectSpawnMode::RetainedAtLastPosition:
         if (retained != nullptr) {
-            pos = retained->last_pos;
+            pos = sim::ToRenderVec2(retained->last_pos);
         }
         break;
     }
@@ -313,15 +313,15 @@ void ApplyRetainedAttachedEntState(
         state,
         retained.ent_type,
         [&](Ent& ent) {
-            ent.pos = retained.pos;
-            ent.vel = retained.vel;
-            ent.acc = retained.acc;
-            ent.size = retained.size;
+            ent.pos = sim::ToRenderVec2(retained.pos);
+            ent.vel = sim::ToRenderVec2(retained.vel);
+            ent.acc = sim::ToRenderVec2(retained.acc);
+            ent.size = sim::ToRenderVec2(retained.size);
             ent.rotation = retained.rotation;
-            ent.counter_a = retained.counter_a;
-            ent.counter_b = retained.counter_b;
-            ent.counter_c = retained.counter_c;
-            ent.counter_d = retained.counter_d;
+            ent.counter_a = sim::ToRenderScalar(retained.counter_a);
+            ent.counter_b = sim::ToRenderScalar(retained.counter_b);
+            ent.counter_c = sim::ToRenderScalar(retained.counter_c);
+            ent.counter_d = sim::ToRenderScalar(retained.counter_d);
             ent.health = retained.health;
             ent.money = retained.money;
             ent.facing = retained.facing != 0 ? Side::Right : Side::Left;

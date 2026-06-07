@@ -2769,7 +2769,7 @@ bool RunRetainedReconnectSmoke() {
     const network::NetRetainedPlayerState* const retained =
         network::FindRetainedPlayerState(state, slot->player_id);
     if (retained == nullptr ||
-        retained->last_pos != Vec2::New(128.0F, 192.0F) ||
+        retained->last_pos != sim::ToSimVec2(Vec2::New(128.0F, 192.0F)) ||
         retained->health != 277 ||
         retained->money != 54321 ||
         !retained->held_item.valid ||

@@ -301,6 +301,13 @@ The expected end state is:
   machine's wall-clock accumulator. Full local `GameplaySnapshot` still records
   them for debug playback where local frame reconstruction is expected.
   Recording format version is now 109.
+- Fixed in retained reconnect topology state: retained player last position and
+  retained attached item position, velocity, acceleration, size, and generic
+  counters are now stored as Fixed12 mirrors. Capture quantizes from the current
+  float-backed entity pipeline, and reconnect restore converts back at the
+  entity-spawn boundary. This does not replace the broader entity movement
+  migration, but it prevents delayed reconnect/topology state from preserving
+  arbitrary IEEE float payloads after a player disconnects.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes. `AddPod` now rejects
