@@ -65,7 +65,9 @@ void WriteReplayByte(std::ostream& out, std::uint8_t value) {
 
 void WriteReplayUint16(std::ostream& out, std::uint16_t value) {
     for (unsigned shift = 0; shift < 16; shift += 8) {
-        WriteReplayByte(out, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+        WriteReplayByte(out, static_cast<std::uint8_t>(
+            (value >> shift) & static_cast<std::uint16_t>(0xFFU)
+        ));
     }
 }
 

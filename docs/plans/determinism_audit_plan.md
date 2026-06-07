@@ -608,6 +608,12 @@ The expected end state is:
   state-fingerprint and gameplay snapshot smokes passed, and the ASan/UBSan
   binary passed the state-fingerprint smoke with leak detection disabled for
   the short headless run.
+- Validation 2026-06-07: ASan/UBSan build passed again after the authored
+  spawn-index conversion. The sanitizer build exposed one remaining SDRP
+  `uint16_t` byte-mask promotion warning in `WriteReplayUint16`; that helper now
+  uses a width-explicit `uint16_t` mask. The ASan/UBSan binary then passed
+  `--check-state-fingerprint-smoke` and `--check-state-equality-smoke` with
+  leak detection disabled for short headless runs.
 - Deferred risk: sanitizer execution is not yet broad enough to close this
   section. Run sanitized headless smokes, local play, and two-client lockstep
   sessions before treating uninitialized/undefined behavior risk as audited.
@@ -719,6 +725,9 @@ The expected end state is:
   counts, input records, and local entity hash diagnostics. This removes the
   local generic POD helper from SDRP metadata and keeps replay analysis files
   independent of accidental future type-width changes.
+- Fixed in desync replay diagnostics: the SDRP `uint16_t` writer now masks with
+  a width-explicit `uint16_t` constant before narrowing to bytes. This was
+  caught by the ASan/UBSan strict build under `-Wsign-conversion`.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 
