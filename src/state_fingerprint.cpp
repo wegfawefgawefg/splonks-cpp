@@ -44,7 +44,7 @@ struct FingerprintWriter {
     }
 
     void AddUint16(std::uint16_t value_) {
-        for (unsigned int shift = 0; shift < 16; shift += 8) {
+        for (std::uint32_t shift = 0; shift < 16; shift += 8) {
             AddByte(static_cast<std::uint8_t>(
                 (value_ >> shift) & static_cast<std::uint16_t>(0xFFU)
             ));
@@ -52,7 +52,7 @@ struct FingerprintWriter {
     }
 
     void AddUint32(std::uint32_t value_) {
-        for (unsigned int shift = 0; shift < 32; shift += 8) {
+        for (std::uint32_t shift = 0; shift < 32; shift += 8) {
             AddByte(static_cast<std::uint8_t>(
                 (value_ >> shift) & static_cast<std::uint32_t>(0xFFU)
             ));
@@ -60,7 +60,7 @@ struct FingerprintWriter {
     }
 
     void AddUint64(std::uint64_t value_) {
-        for (unsigned int shift = 0; shift < 64; shift += 8) {
+        for (std::uint32_t shift = 0; shift < 64; shift += 8) {
             AddByte(static_cast<std::uint8_t>(
                 (value_ >> shift) & static_cast<std::uint64_t>(0xFFU)
             ));
@@ -169,9 +169,9 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
     const UVec2 dims = stage.GetStageDims();
     writer.AddPod(dims.x);
     writer.AddPod(dims.y);
-    for (unsigned int y = 0; y < dims.y; ++y) {
+    for (std::uint32_t y = 0; y < dims.y; ++y) {
         const std::size_t row_y = static_cast<std::size_t>(y);
-        for (unsigned int x = 0; x < dims.x; ++x) {
+        for (std::uint32_t x = 0; x < dims.x; ++x) {
             const std::size_t col_x = static_cast<std::size_t>(x);
             const auto read_tile_grid = [&](const std::vector<std::vector<Tile>>& grid,
                                             Tile fallback) {

@@ -796,6 +796,9 @@ The expected end state is:
 - Fixed in shared snapshot/replay scalar helpers: `UVec2` reads now assign
   directly into explicit `uint32_t` components, and byte-shift helper loops use
   fixed-width counters instead of implementation-width `unsigned int`.
+- Fixed in runtime fingerprint construction: byte-shift hashing helpers and
+  stage-grid traversal now use explicit `uint32_t` counters at the fixed-width
+  hash boundary instead of implementation-width `unsigned int`.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn
