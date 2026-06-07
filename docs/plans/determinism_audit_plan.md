@@ -145,6 +145,11 @@ The expected end state is:
   `NormalizeOrZeroDeterministic`. These are still presentation effects, but
   they no longer depend on platform libm `sqrt` when captured in local
   debug snapshots/replays.
+- Fixed in snapshot-preserved stage-acoustics cache math: openness ray scoring
+  no longer calls `std::sqrt(2)` because the diagonal step distance canceled
+  out of the final ratio. `StageAcoustics` is captured by full local
+  `GameplaySnapshot` for debug playback, but not by network `SimSnapshot`, so
+  this cleanup protects local replay bytes without changing lockstep state.
 - Deferred risk: those helpers make the float-to-integer conversion rule
   explicit, but the source positions are still authoritative floats. Two peers
   can still diverge if prior float math crosses a grid/branch threshold

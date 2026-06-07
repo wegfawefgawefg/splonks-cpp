@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 
 namespace splonks {
 
@@ -87,13 +86,10 @@ StageOpennessRay CastStageOpennessRay(
     result.blocker_unwrapped_tile = ray.blocker_unwrapped_tile;
     result.blocked = ray.blocked;
 
-    const float step_distance =
-        (direction.x != 0 && direction.y != 0) ? std::sqrt(2.0F) : 1.0F;
-    const float max_distance =
-        step_distance * static_cast<float>(kStageOpennessRayLengthTiles);
-    result.openness = max_distance > 0.0F
+    result.openness = kStageOpennessRayLengthTiles > 0
         ? std::clamp(
-              (static_cast<float>(ray.open_steps) * step_distance) / max_distance,
+              static_cast<float>(ray.open_steps) /
+                  static_cast<float>(kStageOpennessRayLengthTiles),
               0.0F,
               1.0F
           )
