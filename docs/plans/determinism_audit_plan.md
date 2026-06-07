@@ -377,8 +377,8 @@ The expected end state is:
 
 ### Status 2026-06-06
 
-- In progress. Snapshot vector and string counts are generally serialized with
-  explicit `uint32_t` counts.
+- In progress. Snapshot vector, grid, and string counts are now serialized with
+  explicit fixed-width counts at the current shared snapshot/replay boundary.
 - Fixed in fingerprints: `FingerprintWriter` no longer hashes `size_t` values
   for strings/vector counts. Counts now enter hashes as explicit `uint64_t`.
 - Fixed in snapshots: entity runtime callback function pointers are no longer
@@ -568,6 +568,21 @@ The expected end state is:
   structs. This removes packet padding, host byte order, raw enum layout, and
   `sizeof(struct)` from live multiplayer packet compatibility. Network
   protocol version is now 2.
+- Audit checkpoint 2026-06-07: current `SimSnapshot` field scan confirms
+  `MakeSimSnapshot`, `RestoreSimSnapshot`, `WriteSimSnapshot`, and
+  `ReadSimSnapshot` cover the same simulation snapshot fields. Omitted `State`
+  fields are currently local/presentation/cache boundaries rather than
+  authoritative simulation bytes: particles, audio emitters, stage lighting,
+  audio listener position, gameplay camera anchor, controlled/spectator local
+  view state, world prompts, debug annotations, `SID`, transport runtime, and
+  performance counters. Network rollback/resync preserves presentation state
+  explicitly with `RollbackPresentationSnapshot`, while `RestoreSimSnapshot`
+  rebuilds SID and clears prompts/debug annotations after authoritative state
+  restore.
+- Audit checkpoint 2026-06-07: a current raw serialization scan found raw
+  `memcpy` / POD-style byte handling isolated to scalar helper implementations
+  and fixed-size byte array copies. `SimSnapshot` itself is serialized through
+  named field writers/readers rather than host struct layout.
 - Fixed/guarded float byte boundaries: network packet float payloads, runtime
   fingerprint float/double payloads, and debug recording float/double payloads
   now assert IEC 559 / IEEE-754 scalar formats at compile time before copying
