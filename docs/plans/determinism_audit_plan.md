@@ -443,6 +443,13 @@ The expected end state is:
   reintroduced for gameplay-visible or snapshot-visible animation later, it
   must accept a synchronized `DetRng&`; presentation-only randomization should
   live outside authoritative entity state.
+- Audit checkpoint 2026-06-07: a current `rng::Random*` scan found the
+  remaining process-global RNG call sites are the quarantined fresh run seed,
+  presentation effects/render shake/audio-visual particles, debug input-bot
+  generation, and debug stage decoration. No remaining call site was identified
+  that directly mutates synchronized world/entity/player state. Debug input-bot
+  output can still drive gameplay by becoming local input, so portable replay
+  must rely on captured input records rather than re-running the bot RNG.
 
 ## Serialization And Snapshot Audit
 
@@ -920,6 +927,13 @@ The expected end state is:
   calls inside `net_transport`, not synchronized gameplay state. Approximate
   network memory accounting still uses `sizeof`, but only as a diagnostic input
   to fixed-width telemetry.
+- Audit checkpoint 2026-06-07: a focused scan of fingerprint, debug recording,
+  snapshot, and network protocol writers found packet and snapshot byte formats
+  using explicit-width integer, fixed-point, string-count, and IEEE-bit helper
+  encoders at the serialization boundary. `std::size_t` still appears heavily
+  as local vector/string indexing and buffer-size plumbing, but current
+  fingerprint/network writers cast counts to explicit `uint32_t`/`uint64_t`
+  encodings before hashing or writing bytes.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 
