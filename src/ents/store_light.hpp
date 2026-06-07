@@ -22,7 +22,7 @@ EntDamageEffectResult OnDamageAsStoreLight(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     bool damage_applied
 );
 

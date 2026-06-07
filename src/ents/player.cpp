@@ -210,7 +210,7 @@ float GetFallDamageTimer(const Ent& player, const State& state) {
     return static_cast<float>(player.fall_timer);
 }
 
-unsigned int GetFallDamageAmount(
+std::uint32_t GetFallDamageAmount(
     const PlayerPhysicsTuning& tuning,
     float fall_damage_timer
 ) {
@@ -261,7 +261,7 @@ void ApplyClassicFallDamageOnLanding(
         return;
     }
 
-    const unsigned int damage_amount = GetFallDamageAmount(tuning, fall_damage_timer);
+    const std::uint32_t damage_amount = GetFallDamageAmount(tuning, fall_damage_timer);
     const common::DamageResult damage_result =
         common::TryDamageEnt(ent_idx, state, audio, DamageType::Fall, damage_amount);
     if (damage_result == common::DamageResult::None) {

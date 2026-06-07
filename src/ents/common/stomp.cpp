@@ -140,8 +140,8 @@ bool TryApplyStompContactToEnt(
     );
     const float stomp_damage_scale =
         GetModifiedEffectValue(stomper, EffectModifierTarget::StompDamageScale, 1.0F, &state);
-    const unsigned int stomp_damage =
-        static_cast<unsigned int>(std::max(0.0F, base_stomp_damage * stomp_damage_scale));
+    const std::uint32_t stomp_damage =
+        static_cast<std::uint32_t>(std::max(0.0F, base_stomp_damage * stomp_damage_scale));
     if (stomp_damage == 0) {
         return false;
     }

@@ -278,7 +278,7 @@ DamageResult TryDamageEnt(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     DamageOptions options = {}
 );
 DamageResult TryHitEnt(
@@ -286,7 +286,7 @@ DamageResult TryHitEnt(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     HitOptions options
 );
 bool TryApplyProjContactToEnt(

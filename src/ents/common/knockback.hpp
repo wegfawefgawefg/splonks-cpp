@@ -11,7 +11,7 @@ struct KnockbackSpec {
     std::optional<VID> thrown_by = std::nullopt;
     std::uint32_t thrown_immunity_timer = 0;
     DamageType proj_contact_damage_type = DamageType::Attack;
-    unsigned int proj_contact_damage_amount = 1;
+    std::uint32_t proj_contact_damage_amount = 1;
     std::uint32_t proj_contact_duration = 0;
 };
 

@@ -23,7 +23,7 @@ EntDamageEffectResult OnDamageAsJetpack(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     bool damage_applied
 );
 void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio);

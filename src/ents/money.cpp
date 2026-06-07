@@ -23,7 +23,7 @@ common::ContactResult TryCollectMoneyPickup(
     State& state,
     const Graphics* graphics,
     Audio* audio,
-    unsigned int amount,
+    std::uint32_t amount,
     AudioAssetId sound,
     int sparkle_count
 ) {

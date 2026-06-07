@@ -68,7 +68,7 @@ EntDamageEffectResult ApplyDamageEffect(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     bool damage_applied
 ) {
     Ent& ent = state.ents.ents[ent_idx];
@@ -152,7 +152,7 @@ DamageResult TryDamageEnt(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     DamageOptions options
 ) {
     Ent& ent = state.ents.ents[ent_idx];
@@ -247,7 +247,7 @@ DamageResult TryHitEnt(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     HitOptions options
 ) {
     if (ent_idx >= state.ents.ents.size()) {

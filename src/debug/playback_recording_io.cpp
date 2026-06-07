@@ -1564,7 +1564,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalVid(out, ent.thrown_by);
     WriteUint32(out, ent.thrown_immunity_timer);
     WriteEnumByte(out, ent.proj_contact_damage_type);
-    WriteUnsigned32(out, ent.proj_contact_damage_amount);
+    WriteUint32(out, ent.proj_contact_damage_amount);
     WriteBoolByte(out, ent.can_apply_proj_contact);
     WriteUint32(out, ent.proj_contact_timer);
     WriteBoolByte(out, ent.collided);
@@ -1692,7 +1692,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalVid(in, ent.thrown_by) &&
            ReadUint32(in, ent.thrown_immunity_timer) &&
            ReadEnumByte(in, ent.proj_contact_damage_type, DamageType::Fall) &&
-           ReadUnsigned32(in, ent.proj_contact_damage_amount) &&
+           ReadUint32(in, ent.proj_contact_damage_amount) &&
            ReadBoolByte(in, ent.can_apply_proj_contact) &&
            ReadUint32(in, ent.proj_contact_timer) &&
            ReadBoolByte(in, ent.collided) &&

@@ -6,6 +6,7 @@
 #include "math_types.hpp"
 
 #include <cstddef>
+#include <cstdint>
 
 namespace splonks {
 
@@ -23,7 +24,7 @@ using EntOnDamage = EntDamageEffectResult (*) (
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     bool damage_applied
 );
 using EntOnUse = void (*)(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio);

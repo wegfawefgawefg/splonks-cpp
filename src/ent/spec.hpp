@@ -62,7 +62,7 @@ struct EntSpec {
     float counter_d = 0.0F;
     DamageVuln damage_vuln = DamageVuln::Vulnerable;
     DamageType proj_contact_damage_type = DamageType::Attack;
-    unsigned int proj_contact_damage_amount = 1;
+    std::uint32_t proj_contact_damage_amount = 1;
     bool can_apply_proj_contact = true;
     std::optional<EffectId> pickup_effect = std::nullopt;
     Buyable buyable{};

@@ -758,6 +758,14 @@ The expected end state is:
   not the entity authoritative animation state, but the index is bounded by
   authored sprite frame counts and no longer leaves a host-width counter in
   presentation/runtime animation state.
+- Fixed in entity projectile-contact damage state: `Ent::proj_contact_damage_amount`,
+  `EntSpec::proj_contact_damage_amount`, knockback projectile-contact damage,
+  and shared damage callback/helper parameters now use explicit `uint32_t`
+  instead of implementation-width `unsigned int`. Snapshot/replay bytes already
+  stored the field as 32 bits; runtime storage and the gameplay callback API now
+  match that contract directly. A money-pickup amount helper was tightened to
+  the same explicit width because it feeds `Ent::money`, which is already
+  `uint32_t`.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn

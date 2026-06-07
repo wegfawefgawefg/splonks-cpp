@@ -74,7 +74,7 @@ EntDamageEffectResult OnDamageAsHangSpider(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     bool damage_applied,
     EntType live_type
 ) {
@@ -121,7 +121,7 @@ EntDamageEffectResult OnDamageAsSpiderHang(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     bool damage_applied
 ) {
     return OnDamageAsHangSpider(
@@ -140,7 +140,7 @@ EntDamageEffectResult OnDamageAsRageSpiderHang(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     bool damage_applied
 ) {
     return OnDamageAsHangSpider(
@@ -159,7 +159,7 @@ EntDamageEffectResult OnDamageAsGiantSpiderHang(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount,
+    std::uint32_t amount,
     bool damage_applied
 ) {
     return OnDamageAsHangSpider(
