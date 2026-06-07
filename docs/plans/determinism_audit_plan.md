@@ -315,14 +315,24 @@ The expected end state is:
   larger fixed-point storage migration or explicit per-system quantization
   policy covered by the Gameplay Float Audit, rather than more isolated libm
   call replacement.
-- Remaining mostly-cosmetic math boundaries: `stage_lighting.cpp` uses
-  `std::pow`, `std::floor`, and `Length`; `debug_moving_light.cpp` uses
-  `std::sin` / `std::cos`; and particle/audio rendering paths still use libm
-  for presentation. These are
-  outside live network lockstep hashes and outside transmitted `SimSnapshot`
-  bytes. In-memory `GameplaySnapshot` / debug playback and rollback
-  presentation preservation still carry presentation state, so cross-platform
-  debug playback can differ cosmetically until presentation state gets its own
+- Audited remaining `stage_lighting.cpp` libm use: `std::pow`, `std::floor`,
+  and render-time `Length` feed the cached lighting grids and sampling helpers.
+  The cache is not included in live network `SimSnapshot` bytes or lockstep
+  hashes. It is copied by full in-memory `GameplaySnapshot` and rollback
+  presentation state, but rollback invalidates the lighting cache after
+  restoring presentation, and persisted debug recording IO currently does not
+  write the live cache. Treat this as quarantined presentation math unless
+  lighting cache values later feed gameplay branches or transmitted state.
+- Audited remaining `debug_moving_light.cpp` libm use: the debug lighting stress
+  entity writes position/rotation from `std::sin` / `std::cos`, but the type is
+  spawned only by the debug lighting stress tool. It can desync a debug stress
+  stage across ISAs if that stage is ever used as an authoritative multiplayer
+  test, but it is not part of normal quest gameplay. Leave it as a documented
+  debug-only boundary unless the stress entity is promoted into live content.
+- Remaining mostly-cosmetic math boundaries: particle/audio/render/debug
+  rendering paths still use libm for presentation outside live network lockstep
+  hashes and outside transmitted `SimSnapshot` bytes. Cross-platform debug
+  playback can still differ cosmetically until presentation state gets its own
   deterministic or explicitly host-local policy.
 
 ## Container And Iteration Order Audit
