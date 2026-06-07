@@ -156,6 +156,23 @@ The expected end state is:
   values now hash as explicit little-endian bytes, and float/double values hash
   through explicit IEEE bit payloads when they are intentionally included.
   This removes host byte order from canonical/gameplay/network fingerprints.
+- Remaining high-risk math boundaries after the simple cleanup pass:
+  `stage_fluids.cpp` still normalizes/clamps fluid velocity and gravity through
+  `Length` / `NormalizeOrZero`; `world_query.cpp` sweep/raycast stepping still
+  normalizes query directions; `ents/common/physics.cpp` still uses traveled
+  length while sweeping motion; bat, ghost-ball, piranha, and explosion logic
+  still normalize chase/knockback vectors. These are authoritative gameplay
+  paths and should move to fixed/integer vector math or explicit discrete
+  approximations in targeted follow-up work, not casual squared-threshold
+  rewrites.
+- Remaining mostly-cosmetic math boundaries: `stage_lighting.cpp` uses
+  `std::pow`, `std::floor`, and `Length`; `debug_moving_light.cpp` uses
+  `std::sin` / `std::cos`; arrow-trap rotation still uses `std::atan2` for
+  render rotation; web-cannon spray still normalizes particle direction. These
+  should stay outside network lockstep hashes, but stage lighting and particles
+  are preserved in local debug snapshots/replays, so cross-platform debug
+  playback may still differ cosmetically until presentation state gets its own
+  deterministic or quarantined serialization policy.
 
 ## Container And Iteration Order Audit
 
