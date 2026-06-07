@@ -744,6 +744,11 @@ The expected end state is:
   `std::optional<std::size_t>`. The debug recording format already stored these
   as optional `uint32_t`; this removes the host-width runtime field and keeps
   casts at the local `kResolutions` array-index boundary.
+- Fixed in local performance telemetry: `PerformanceStats::rollback_buffer_bytes`
+  now uses explicit `uint64_t` storage instead of `std::size_t`. The estimate
+  still uses local `sizeof` as intended because it reports approximate memory
+  usage, but the value copied through local state/debug views no longer carries
+  host-width integer storage.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn
@@ -785,8 +790,8 @@ The expected end state is:
   `std::optional<std::size_t>` runtime fields in gameplay or snapshot structs.
   The remaining `uintptr_t` / `long` uses are socket handles and platform socket
   calls inside `net_transport`, not synchronized gameplay state. Approximate
-  network memory accounting still uses `sizeof`, but only for diagnostics/
-  capacity estimates.
+  network memory accounting still uses `sizeof`, but only as a diagnostic input
+  to fixed-width telemetry.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

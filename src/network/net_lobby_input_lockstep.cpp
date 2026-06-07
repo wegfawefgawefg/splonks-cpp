@@ -282,13 +282,15 @@ std::uint32_t SuggestedLockstepDelayFrames(float ping_ms, float jitter_ms) {
     return ClampLockstepInputDelayFrames(static_cast<std::uint32_t>(std::max(0, frames)));
 }
 
-std::size_t ApproxRollbackBufferBytes(const State& state) {
-    std::size_t bytes = 0;
+std::uint64_t ApproxRollbackBufferBytes(const State& state) {
+    std::uint64_t bytes = 0;
     for (const LockstepRollbackSnapshot& entry : state.net_session.lockstep_rollback_snapshots) {
         if (entry.snapshot) {
-            bytes += sizeof(SimSnapshot);
-            bytes += entry.snapshot->ents.ents.capacity() * sizeof(Ent);
-            bytes += entry.snapshot->stage.tiles.capacity() * sizeof(std::vector<Tile>);
+            bytes += static_cast<std::uint64_t>(sizeof(SimSnapshot));
+            bytes += static_cast<std::uint64_t>(entry.snapshot->ents.ents.capacity()) *
+                     static_cast<std::uint64_t>(sizeof(Ent));
+            bytes += static_cast<std::uint64_t>(entry.snapshot->stage.tiles.capacity()) *
+                     static_cast<std::uint64_t>(sizeof(std::vector<Tile>));
         }
     }
     return bytes;

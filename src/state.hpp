@@ -251,7 +251,7 @@ struct PerformanceStats {
     std::uint32_t rollback_replay_frames_this_frame = 0;
     double rollback_replay_ms_per_frame = 0.0;
     double multiplayer_sim_total_ms = 0.0;
-    std::size_t rollback_buffer_bytes = 0;
+    std::uint64_t rollback_buffer_bytes = 0;
     double render_ms = 0.0;
     double imgui_ms = 0.0;
     double present_ms = 0.0;

@@ -827,8 +827,8 @@ void DrawPerformanceSettingsWindow(DebugPlayback& debug, State& state) {
         perf.rollback_replay_ms_per_frame
     );
     ImGui::Text(
-        "Rollback snapshots: %zu bytes approx, save %.3fms restore %.3fms",
-        perf.rollback_buffer_bytes,
+        "Rollback snapshots: %llu bytes approx, save %.3fms restore %.3fms",
+        static_cast<unsigned long long>(perf.rollback_buffer_bytes),
         perf.rollback_snapshot_save_ms,
         perf.rollback_snapshot_restore_ms
     );
