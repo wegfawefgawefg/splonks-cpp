@@ -18,7 +18,7 @@ struct SegmentedSpriteParticle {
     float alpha = 1.0F;
     bool horizontal_flip = false;
     std::array<Vec2, kMaxSegmentedSpriteParticlePoints> points{};
-    std::size_t point_count = 0;
+    std::uint32_t point_count = 0;
     AFrameAnimator aframe_animator{};
 
     void Step(const AFrameDb& aframe_db, float dt);

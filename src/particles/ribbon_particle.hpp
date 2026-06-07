@@ -16,7 +16,7 @@ struct RibbonParticle {
     RibbonParticleSpecId spec_id = kInvalidRibbonParticleSpecId;
     float alpha = 1.0F;
     std::array<Vec2, kMaxRibbonParticlePoints> points{};
-    std::size_t point_count = 0;
+    std::uint32_t point_count = 0;
     AFrameAnimator aframe_animator{};
 
     void Step(const AFrameDb& aframe_db, float dt);

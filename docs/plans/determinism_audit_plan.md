@@ -734,6 +734,11 @@ The expected end state is:
   local debug playback state. The emitter pool is capped at 256 ids, so the
   free-list now matches `VID::id` width and only casts at local vector-index
   boundaries.
+- Fixed in snapshot-preserved presentation state: ribbon and segmented-sprite
+  particle `point_count` fields now use explicit `uint32_t` storage instead of
+  `std::size_t`. These particles are not live network authority, but they are
+  copied by local debug/presentation snapshots, and their point arrays are
+  bounded at 32 and 64 entries.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn
