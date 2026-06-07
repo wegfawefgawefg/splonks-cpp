@@ -62,11 +62,11 @@ The expected end state is:
   and effect modifier values; retained reconnect player/item state mirrors of
   entity position/velocity/acceleration/size/counters/effect values.
 - Current lockstep hash behavior: entity position, velocity, acceleration,
-  size, counters, effect values, light values, and animation timers are
-  quantized through `sim::Scalar` / Fixed12 before hashing; entity rotation is
-  stored and hashed as raw Fixed12, and distance-traveled, travel-sound
-  countdown, support-ground-friction, push-acceleration, entity light state,
-  animation time, animation scale, animation speed, and stage gravity are also
+  size, and counters are quantized through `sim::Scalar` / Fixed12 before
+  hashing; entity rotation is stored and hashed as raw Fixed12, and
+  distance-traveled, travel-sound countdown, support-ground-friction,
+  push-acceleration, entity light state, animation time, animation scale,
+  animation speed, stage gravity, and runtime effect instance values are also
   stored and hashed as raw Fixed12. Runtime movement tuning scalars `max_speed`,
   `throw_velocity_scale`, and `buoyancy` are stored and hashed as raw Fixed12
   too. That reduces noisy float-bit hash mismatches, but the simulation and
@@ -245,6 +245,12 @@ The expected end state is:
   entity physics consumers convert it to float at the existing movement
   boundary until the broader `pos` / `vel` / `acc` migration. Recording format
   version is now 104.
+- Fixed in runtime effect instance state: `EffectInstance::value` and retained
+  reconnect effect mirrors are now stored as Fixed12, hashed as raw fixed
+  values, and recorded as raw fixed values. Authored `EffectModifier` values and
+  synchronized gameplay settings still enter as float data/tuning boundaries;
+  the runtime effect payload itself no longer carries arbitrary float state.
+  Recording format version is now 105.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash

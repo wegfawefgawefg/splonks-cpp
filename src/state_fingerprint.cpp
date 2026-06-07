@@ -248,7 +248,7 @@ void AddEffectFingerprint(FingerprintWriter& writer, const BoxedEntEffects& effe
         const EffectInstance& effect = effects->effects[i];
         writer.AddPod(static_cast<std::uint16_t>(effect.id));
         writer.AddPod(effect.count);
-        writer.AddQuantizedFloat(effect.value);
+        writer.AddFixedScalar(effect.value);
         writer.AddPod(effect.frames_remaining);
     }
 }

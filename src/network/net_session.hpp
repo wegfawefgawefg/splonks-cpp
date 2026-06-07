@@ -66,7 +66,7 @@ struct NetRetainedToolSlot {
 struct NetRetainedEffect {
     EffectId id = EffectId::None;
     std::int32_t count = 0;
-    float value = 0.0F;
+    sim::Scalar value = sim::Scalar::zero();
     std::uint32_t frames_remaining = 0;
 };
 

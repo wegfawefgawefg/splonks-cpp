@@ -112,7 +112,7 @@ std::string DescribeEntEffects(const BoxedEntEffects& effects_box) {
         output << " [" << i
                << " id=" << static_cast<int>(effect.id)
                << " count=" << effect.count
-               << " value=" << effect.value
+               << " value=" << sim::ToRenderScalar(effect.value)
                << " frames=" << effect.frames_remaining
                << "]";
     }

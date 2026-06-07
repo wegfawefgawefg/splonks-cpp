@@ -4,6 +4,7 @@
 #include "ent/spec_restore.hpp"
 #include "aframe.hpp"
 #include "player_queries.hpp"
+#include "sim/fxp.hpp"
 #include "tools/tool_spec.hpp"
 #include "world_ops.hpp"
 
@@ -131,14 +132,18 @@ bool DrawEntEffectsEditor(Ent& ent) {
                 effect.count = count;
                 changed = true;
             }
-            changed |= ImGui::DragFloat(
+            float effect_value = sim::ToRenderScalar(effect.value);
+            if (ImGui::DragFloat(
                 "Value##effect_value",
-                &effect.value,
+                &effect_value,
                 0.05F,
                 -1000.0F,
                 1000.0F,
                 "%.2f"
-            );
+            )) {
+                effect.value = sim::ToSimScalar(effect_value);
+                changed = true;
+            }
             int frames_remaining = static_cast<int>(effect.frames_remaining);
             if (ImGui::InputInt("Frames##effect_frames", &frames_remaining)) {
                 effect.frames_remaining = static_cast<std::uint32_t>(std::max(0, frames_remaining));

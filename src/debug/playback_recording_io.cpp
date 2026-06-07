@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 104;
+constexpr std::uint32_t kRecordingVersion = 105;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1378,18 +1378,18 @@ void WriteEffectInstance(std::ostream& out, const EffectInstance& effect) {
     const std::uint8_t id = static_cast<std::uint8_t>(effect.id);
     WriteUint8(out, id);
     WriteSigned32(out, effect.count);
-    WriteFloat(out, effect.value);
+    WriteSimScalar(out, effect.value);
     WriteUint32(out, effect.frames_remaining);
 }
 
 bool ReadEffectInstance(std::istream& in, EffectInstance& effect) {
     std::uint8_t id = 0;
     std::int32_t count = 0;
-    float value = 0.0F;
+    sim::Scalar value = sim::Scalar::zero();
     std::uint32_t frames_remaining = 0;
     if (!ReadUint8(in, id) ||
         !ReadSigned32(in, count) ||
-        !ReadFloat(in, value) ||
+        !ReadSimScalar(in, value) ||
         !ReadUint32(in, frames_remaining)) {
         return false;
     }
