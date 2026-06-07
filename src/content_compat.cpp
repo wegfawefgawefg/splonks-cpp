@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -51,6 +52,11 @@ void HashFileBytes(std::uint64_t& hash, const std::filesystem::path& path) {
 } // namespace
 
 std::uint64_t ComputeGameplayContentHash() {
+    static std::optional<std::uint64_t> cached_hash;
+    if (cached_hash.has_value()) {
+        return *cached_hash;
+    }
+
     const std::filesystem::path root(GetClassicQuestRootPath());
     if (!std::filesystem::exists(root)) {
         throw std::runtime_error("Gameplay content root is missing: " + root.string());
@@ -77,7 +83,8 @@ std::uint64_t ComputeGameplayContentHash() {
         HashString(hash, path.lexically_relative(root).generic_string());
         HashFileBytes(hash, path);
     }
-    return hash;
+    cached_hash = hash;
+    return *cached_hash;
 }
 
 } // namespace splonks
