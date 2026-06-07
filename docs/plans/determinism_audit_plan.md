@@ -731,6 +731,18 @@ The expected end state is:
   uses a width-explicit `uint16_t` mask. The ASan/UBSan binary then passed
   `--check-state-fingerprint-smoke` and `--check-state-equality-smoke` with
   leak detection disabled for short headless runs.
+- Validation 2026-06-07: ASan/UBSan build passed after the direct
+  join-barrier-protocol CLI smoke initialized runtime spec tables. The sanitizer
+  binary passed `--check-state-equality-smoke`,
+  `--check-state-fingerprint-smoke`,
+  `--check-gameplay-snapshot-callback-rebind-smoke`,
+  `--check-network-fresh-reload-ownership-smoke`,
+  `--check-join-barrier-protocol-smoke`, and
+  `--check-join-barrier-next-stage-restart-smoke` with leak detection disabled.
+  The broad `--check-det-replay-smoke` sanitizer run was stopped after several
+  minutes of CPU-bound execution without sanitizer output; keep that as a
+  runtime/perf follow-up rather than treating broad replay sanitizer coverage as
+  complete.
 - Deferred risk: sanitizer execution is not yet broad enough to close this
   section. Run sanitized headless smokes, local play, and two-client lockstep
   sessions before treating uninitialized/undefined behavior risk as audited.

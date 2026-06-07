@@ -3817,6 +3817,8 @@ bool CheckJoinBarrierNextStageRestartSmoke() {
 }
 
 bool CheckJoinBarrierProtocolSmoke() {
+    Graphics graphics;
+    InitCliSmokeRuntimeTables(graphics);
     return RunJoinBarrierProtocolSmoke();
 }
 
