@@ -122,7 +122,7 @@ extern const EntSpec kPotSpec{
     .can_be_stomped = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
-    .buoyancy = 0.35F,
+    .buoyancy = sim::ToSimScalar(0.35F),
     .draw_layer = DrawLayer::Foreground,
     .facing = Side::Left,
     .condition = EntCondition::Normal,

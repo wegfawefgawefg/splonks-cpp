@@ -465,7 +465,7 @@ extern const EntSpec kFleshGuySpec{
     .can_be_stunned = true,
     .stun_recovers_on_ground = true,
     .stun_recovers_while_held = false,
-    .throw_velocity_scale = 0.5F,
+    .throw_velocity_scale = sim::ToSimScalar(0.5F),
     .draw_layer = DrawLayer::Middle,
     .facing = Side::Right,
     .condition = EntCondition::Normal,

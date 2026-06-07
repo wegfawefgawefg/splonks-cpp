@@ -75,7 +75,7 @@ void UnlockPrize(Ent& prize) {
     prize.can_collide = spec.can_collide;
     prize.can_be_picked_up = spec.can_be_picked_up;
     prize.can_be_hit = spec.can_be_hit;
-    prize.alpha = sim::ToSimScalar(spec.alpha);
+    prize.alpha = spec.alpha;
     prize.vel = Vec2::New(0.0F, -2.25F);
     prize.acc = Vec2::New(0.0F, 0.0F);
 }

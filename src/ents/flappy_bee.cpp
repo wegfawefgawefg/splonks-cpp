@@ -70,7 +70,7 @@ extern const EntSpec kFlappyBeeSpec{
     .can_be_stunned = true,
     .stun_recovers_on_ground = true,
     .stun_recovers_while_held = false,
-    .throw_velocity_scale = 0.1F,
+    .throw_velocity_scale = sim::ToSimScalar(0.1F),
     .draw_layer = DrawLayer::Middle,
     .facing = Side::Right,
     .condition = EntCondition::Normal,

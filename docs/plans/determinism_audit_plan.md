@@ -278,6 +278,15 @@ The expected end state is:
   trap blocks, moving platforms, and monkeys; the debug moving-light stress
   entity converts them to float only at its debug presentation boundary.
   Recording format version is now 107.
+- Fixed in authored entity spec boundaries: spec-authored values for
+  support-ground friction, push acceleration, throw velocity scale, buoyancy,
+  alpha, self light, light strength, and light color are now stored as Fixed12
+  on `EntSpec`. Entity spawn/restore copies these fixed values directly instead
+  of requantizing raw float spec payloads every time an entity changes type.
+  Authored C++ literals still enter through explicit `sim::ToSimScalar` /
+  `sim::ToSimColor3` calls at spec construction, but the runtime spec table no
+  longer keeps duplicate raw float copies for fields whose live entity state is
+  already fixed-point.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes. `AddPod` now rejects

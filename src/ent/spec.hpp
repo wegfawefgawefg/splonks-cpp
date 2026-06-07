@@ -5,6 +5,7 @@
 #include "ent/callbacks.hpp"
 #include "aframe_id.hpp"
 #include "hud/types.hpp"
+#include "sim/fxp.hpp"
 
 namespace splonks {
 
@@ -39,14 +40,14 @@ struct EntSpec {
     bool stun_recovers_on_ground = true;
     bool stun_recovers_while_held = true;
     bool affected_by_ground_friction = true;
-    float support_ground_friction = 0.85F;
-    float push_acc = 0.0F;
-    float throw_velocity_scale = 1.0F;
-    float buoyancy = 0.0F;
-    float alpha = 1.0F;
-    float self_light = 0.0F;
-    float light_strength = 0.0F;
-    Color3 light_color = Color3::White();
+    sim::Scalar support_ground_friction = sim::ToSimScalar(0.85F);
+    sim::Scalar push_acc = sim::Scalar::zero();
+    sim::Scalar throw_velocity_scale = sim::Scalar::from_int(1);
+    sim::Scalar buoyancy = sim::Scalar::zero();
+    sim::Scalar alpha = sim::Scalar::from_int(1);
+    sim::Scalar self_light = sim::Scalar::zero();
+    sim::Scalar light_strength = sim::Scalar::zero();
+    sim::Color3 light_color = sim::ToSimColor3(Color3::White());
     int light_radius = 0;
     bool preserve_held_aim = false;
     bool predict_local_attach_use = false;

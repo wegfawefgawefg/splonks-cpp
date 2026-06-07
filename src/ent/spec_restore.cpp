@@ -1,7 +1,6 @@
 #include "ent/spec_restore.hpp"
 
 #include "ent/spec.hpp"
-#include "sim/fxp.hpp"
 
 namespace splonks {
 
@@ -22,14 +21,14 @@ void RestoreEntHurtOnContactFromSpec(Ent& ent) { ent.hurt_on_contact = GetSpecFo
 void RestoreEntVanishOnDeathFromSpec(Ent& ent) { ent.vanish_on_death = GetSpecForEnt(ent).vanish_on_death; }
 void RestoreEntAffectedByGroundFrictionFromSpec(Ent& ent) { ent.affected_by_ground_friction = GetSpecForEnt(ent).affected_by_ground_friction; }
 void RestoreEntSupportGroundFrictionFromSpec(Ent& ent) {
-    ent.support_ground_friction = sim::ToSimScalar(GetSpecForEnt(ent).support_ground_friction);
+    ent.support_ground_friction = GetSpecForEnt(ent).support_ground_friction;
 }
 void RestoreEntPushableFromSpec(Ent& ent) { ent.pushable = GetSpecForEnt(ent).pushable; }
 void RestoreEntPushAccFromSpec(Ent& ent) {
-    ent.push_acc = sim::ToSimScalar(GetSpecForEnt(ent).push_acc);
+    ent.push_acc = GetSpecForEnt(ent).push_acc;
 }
 void RestoreEntThrowVelocityScaleFromSpec(Ent& ent) {
-    ent.throw_velocity_scale = sim::ToSimScalar(GetSpecForEnt(ent).throw_velocity_scale);
+    ent.throw_velocity_scale = GetSpecForEnt(ent).throw_velocity_scale;
 }
 void RestoreEntPickupEffectFromSpec(Ent& ent) { ent.pickup_effect = GetSpecForEnt(ent).pickup_effect; }
 void RestoreEntBuyableFromSpec(Ent& ent) { ent.buyable = GetSpecForEnt(ent).buyable; }

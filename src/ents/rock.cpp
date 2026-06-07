@@ -79,7 +79,7 @@ extern const EntSpec kRockSpec{
     .hurt_on_contact = false,
     .can_be_stomped = false,
     .can_be_stunned = false,
-    .buoyancy = 0.0F,
+    .buoyancy = sim::ToSimScalar(0.0F),
     .draw_layer = DrawLayer::Foreground,
     .facing = Side::Left,
     .condition = EntCondition::Normal,

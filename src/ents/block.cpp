@@ -143,7 +143,7 @@ extern const EntSpec kBlockSpec{
     .pushable = true,
     .vanish_on_death = true,
     .can_be_stunned = false,
-    .push_acc = kBlockPushAcc,
+    .push_acc = sim::ToSimScalar(kBlockPushAcc),
     .draw_layer = DrawLayer::Middle,
     .facing = Side::Left,
     .condition = EntCondition::Normal,
