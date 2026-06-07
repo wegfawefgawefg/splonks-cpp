@@ -117,8 +117,6 @@ Ent Ent::New() {
     ent.transition_target.reset();
     ent.stage_exit_id = kInvalidStageExitId;
     ent.damage_vuln = DamageVuln::Vulnerable;
-    ent.attack_weight = 0.0F;
-    ent.weight = 0.0F;
     ent.bomb_throw_delay_countdown = 0;
     ent.rope_throw_delay_countdown = 0;
     ent.attack_delay_countdown = 0;

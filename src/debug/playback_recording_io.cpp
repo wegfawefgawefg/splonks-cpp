@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 105;
+constexpr std::uint32_t kRecordingVersion = 106;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1569,8 +1569,6 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalAudioAssetId(out, ent.death_sound);
     WriteOptionalStageTransitionTarget(out, ent.transition_target);
     WriteInt32(out, ent.stage_exit_id);
-    WriteFloat(out, ent.attack_weight);
-    WriteFloat(out, ent.weight);
     WriteUint32(out, ent.bomb_throw_delay_countdown);
     WriteUint32(out, ent.rope_throw_delay_countdown);
     WriteUint32(out, ent.attack_delay_countdown);
@@ -1697,8 +1695,6 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalAudioAssetId(in, ent.death_sound) &&
            ReadOptionalStageTransitionTarget(in, ent.transition_target) &&
            ReadInt32(in, ent.stage_exit_id) &&
-           ReadFloat(in, ent.attack_weight) &&
-           ReadFloat(in, ent.weight) &&
            ReadUint32(in, ent.bomb_throw_delay_countdown) &&
            ReadUint32(in, ent.rope_throw_delay_countdown) &&
            ReadUint32(in, ent.attack_delay_countdown) &&

@@ -265,6 +265,12 @@ The expected end state is:
   synchronized gameplay settings still enter as float data/tuning boundaries;
   the runtime effect payload itself no longer carries arbitrary float state.
   Recording format version is now 105.
+- Fixed in stale entity scalar state: unused `Ent::attack_weight` and
+  `Ent::weight` were removed instead of converted. A current code/data scan
+  found no gameplay readers and no authored data writers; the fields were only
+  reset and serialized through debug playback snapshots. Removing them deletes
+  two dead float payloads from entity state and bumps the recording format to
+  version 106.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash
@@ -637,7 +643,7 @@ The expected end state is:
 - Fixed in shared gameplay/simulation snapshot serialization: remaining
   `AFrameAnimator` and `Ent` scalar fields now route through named fixed-width
   integer/float writers instead of raw member POD calls. This covers animator
-  ids/timers/counts and entity timers, counters, weights, light values, health,
+  ids/timers/counts and entity timers, counters, light values, health,
   money, movement flags, damage amounts, and cooldowns. The emitted scalar
   bytes are unchanged for the current field types, so this remains within
   recording format version 95.
