@@ -169,10 +169,14 @@ The expected end state is:
   still write float acceleration/knockback into the current physics pipeline,
   but their direction choice no longer depends on cross-platform square-root
   behavior.
+- Fixed in world-query raycast stepping: general tile/entity/world raycasts now
+  use `NormalizeOrZeroDeterministic` for non-axis-aligned directions. Existing
+  horizontal and vertical raycasts were already integer-stepped; this removes
+  platform libm `sqrt` from the remaining arbitrary-direction world query
+  stepping while the query result still returns current integer pixel samples.
 - Remaining high-risk math boundaries after the simple cleanup pass:
   `stage_fluids.cpp` still normalizes/clamps fluid velocity and gravity through
-  `Length` / `NormalizeOrZero`; `world_query.cpp` sweep/raycast stepping still
-  normalizes query directions; and `ents/common/physics.cpp` still uses
+  `Length` / `NormalizeOrZero`; and `ents/common/physics.cpp` still uses
   traveled length while sweeping motion. These are authoritative gameplay paths
   and should move to fixed/integer vector math or explicit discrete
   approximations in targeted follow-up work, not casual squared-threshold

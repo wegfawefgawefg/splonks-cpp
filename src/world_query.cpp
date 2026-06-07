@@ -506,7 +506,7 @@ WorldRayHit RaycastTiles(
     int max_distance,
     const State& state
 ) {
-    const Vec2 step_dir = NormalizeOrZero(direction);
+    const Vec2 step_dir = NormalizeOrZeroDeterministic(direction);
     if (max_distance <= 0 || step_dir == Vec2::New(0.0F, 0.0F)) {
         return WorldRayHit{};
     }
@@ -612,7 +612,7 @@ WorldRayHit RaycastEnts(
     const Graphics& graphics,
     std::optional<VID> owner_vid
 ) {
-    const Vec2 step_dir = NormalizeOrZero(direction);
+    const Vec2 step_dir = NormalizeOrZeroDeterministic(direction);
     if (max_distance <= 0 || step_dir == Vec2::New(0.0F, 0.0F)) {
         return WorldRayHit{};
     }
@@ -667,7 +667,7 @@ WorldRayHit RaycastWorld(
         );
     }
 
-    const Vec2 step_dir = NormalizeOrZero(direction);
+    const Vec2 step_dir = NormalizeOrZeroDeterministic(direction);
     if (max_distance <= 0 || step_dir == Vec2::New(0.0F, 0.0F)) {
         return WorldRayHit{};
     }
