@@ -288,6 +288,15 @@ The expected end state is:
   is the vector index returned by `Stage::FindExitId`, so this removes
   `unordered_map` iteration order from exit id assignment and stage-transition
   routing.
+- Audit checkpoint 2026-06-07: a current `unordered_map` / `unordered_set` /
+  structured-binding iteration scan found no remaining high-confidence live
+  gameplay iteration order leak. The remaining unordered containers are
+  currently lookup/index caches (`Sid`, content-name maps, audio/animation
+  lookup maps, quest/spec lookup maps, render caches) or validation/debug/CLI
+  data. The one remaining gameplay-tree structured binding in
+  `ents/common/hang.cpp` iterates a fixed `std::array` of debug probe labels
+  only. Existing gameplay sorters checked in this pass use stable VID,
+  coordinate, id, or sequence tie-breakers where the order can affect state.
 - Deferred risk: continue auditing contact/collision tie ordering outside the
   common broadphase and moving-platform carry paths.
 
@@ -638,10 +647,10 @@ The expected end state is:
   `Ent::stage_spawn_index` and `EntPool::available_ids` still use
   `std::size_t` in runtime state because they index local arrays, but the
   snapshot byte format now stores them as explicit `uint32_t` values.
-- Fixed in shared gameplay/simulation snapshot serialization: `EntSpawn`
-  spawn-link indices and `Stage::next_light_vid` still use `std::size_t` in
-  runtime state because they index local arrays / id counters, but the snapshot
-  byte format now stores them as explicit `uint32_t` values.
+- Fixed in shared gameplay/simulation snapshot serialization: `Stage::next_light_vid`
+  initially still used `std::size_t` in runtime state because it is an id
+  counter, but the snapshot byte format stored it as an explicit `uint32_t`
+  value before runtime storage was later converted.
 - Fixed in fingerprints and shared gameplay/simulation snapshot serialization:
   `AFrameAnimator::current_frame` still uses `std::size_t` in runtime state
   because it indexes local animation frame arrays, but fingerprints and snapshot
@@ -728,6 +737,14 @@ The expected end state is:
 - Fixed in desync replay diagnostics: the SDRP `uint16_t` writer now masks with
   a width-explicit `uint16_t` constant before narrowing to bytes. This was
   caught by the ASan/UBSan strict build under `-Wsign-conversion`.
+- Audit checkpoint 2026-06-07: current targeted scan of deterministic-state
+  headers and snapshot/fingerprint/network code found the remaining
+  `std::optional<std::size_t>` runtime fields only in local video-settings menu
+  selection state. Those values are recorded with explicit optional `uint32_t`
+  helpers and are not authoritative gameplay. The remaining `uintptr_t` /
+  `long` uses are socket handles and platform socket calls inside
+  `net_transport`, not synchronized gameplay state. Approximate network memory
+  accounting still uses `sizeof`, but only for diagnostics/capacity estimates.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 
