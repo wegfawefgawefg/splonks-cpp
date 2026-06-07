@@ -8,7 +8,7 @@ namespace splonks::network {
 
 namespace {
 
-NetEntId MakeStageEntId(std::size_t stage_ent_index) {
+NetEntId MakeStageEntId(std::uint32_t stage_ent_index) {
     return static_cast<NetEntId>(stage_ent_index) + 1U;
 }
 

@@ -361,7 +361,7 @@ void SpawnAuthoredStageEnts(State& state) {
         }
 
         SetEntAs(*ent, spawn.type_);
-        ent->stage_spawn_index = i;
+        ent->stage_spawn_index = static_cast<std::uint32_t>(i);
         ent->pos = spawn.pos;
         if (spawn.size_override.has_value()) {
             ent->size = *spawn.size_override;

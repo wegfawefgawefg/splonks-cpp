@@ -754,7 +754,9 @@ void DrawPerformanceSettingsWindow(DebugPlayback& debug, State& state) {
     const std::size_t ent_slots = state.ents.ents.capacity();
     const std::size_t available_id_slots = state.ents.available_ids.capacity();
     const std::size_t ent_storage_bytes = ent_size * ent_slots;
-    const std::size_t available_id_storage_bytes = sizeof(std::size_t) * available_id_slots;
+    using AvailableEntId = decltype(state.ents.available_ids)::value_type;
+    const std::size_t available_id_storage_bytes =
+        sizeof(AvailableEntId) * available_id_slots;
     const std::size_t ents_total_bytes = ent_storage_bytes + available_id_storage_bytes;
     const std::size_t particle_count = state.particles.sprite_particles.size() +
                                        state.particles.scripted_particles.size() +
@@ -835,7 +837,12 @@ void DrawPerformanceSettingsWindow(DebugPlayback& debug, State& state) {
     ImGui::Text("Ent Size: %zu bytes", ent_size);
     ImGui::Text("Ent Pool: %u / %zu active", state.ents.NumActiveEnts(), ent_slots);
     ImGui::Text("Ent Slots: %zu x %zu = %s", ent_slots, ent_size, FormatBytes(ent_storage_bytes, buffer_a, sizeof(buffer_a)));
-    ImGui::Text("Free ID Stack: %zu x %zu = %s", available_id_slots, sizeof(std::size_t), FormatBytes(available_id_storage_bytes, buffer_b, sizeof(buffer_b)));
+    ImGui::Text(
+        "Free ID Stack: %zu x %zu = %s",
+        available_id_slots,
+        sizeof(AvailableEntId),
+        FormatBytes(available_id_storage_bytes, buffer_b, sizeof(buffer_b))
+    );
     ImGui::Text("Ent Manager Storage: %s", FormatBytes(ents_total_bytes, buffer_c, sizeof(buffer_c)));
 
     ImGui::SeparatorText("Other Counts");

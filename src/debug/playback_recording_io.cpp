@@ -95,27 +95,24 @@ bool ReadSizeIndex(std::istream& in, std::size_t& value) {
     return true;
 }
 
-void WriteSizeIndexVector(std::ostream& out, const std::vector<std::size_t>& values) {
+void WriteUint32Vector(std::ostream& out, const std::vector<std::uint32_t>& values) {
     const std::uint32_t count = static_cast<std::uint32_t>(values.size());
     WriteUint32(out, count);
-    for (const std::size_t value : values) {
-        const std::uint32_t stored = static_cast<std::uint32_t>(value);
-        WriteUint32(out, stored);
+    for (const std::uint32_t value : values) {
+        WriteUint32(out, value);
     }
 }
 
-bool ReadSizeIndexVector(std::istream& in, std::vector<std::size_t>& values) {
+bool ReadUint32Vector(std::istream& in, std::vector<std::uint32_t>& values) {
     std::uint32_t count = 0;
     if (!ReadUint32(in, count)) {
         return false;
     }
     values.resize(count);
-    for (std::size_t i = 0; i < values.size(); ++i) {
-        std::uint32_t loaded = 0;
-        if (!ReadUint32(in, loaded)) {
+    for (std::uint32_t& value : values) {
+        if (!ReadUint32(in, value)) {
             return false;
         }
-        values[i] = static_cast<std::size_t>(loaded);
     }
     return true;
 }
@@ -1550,7 +1547,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalEnumByte(out, ent.pickup_effect);
     WriteUint32(out, ent.money);
     WriteBuyable(out, ent.buyable);
-    WriteOptionalSizeIndex(out, ent.stage_spawn_index);
+    WriteOptionalUint32(out, ent.stage_spawn_index);
     WriteOptionalVid(out, ent.back_vid);
     WriteAttachMode(out, ent.attach_mode);
     WriteUseState(out, ent.use_state);
@@ -1678,7 +1675,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalEnumByte(in, ent.pickup_effect, EffectId::InWater) &&
            ReadUint32(in, ent.money) &&
            ReadBuyable(in, ent.buyable) &&
-           ReadOptionalSizeIndex(in, ent.stage_spawn_index) &&
+           ReadOptionalUint32(in, ent.stage_spawn_index) &&
            ReadOptionalVid(in, ent.back_vid) &&
            ReadAttachMode(in, ent.attach_mode) &&
            ReadUseState(in, ent.use_state) &&
@@ -2679,7 +2676,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     }
     WriteStageLights(out, stage.lights);
     WriteUint32(out, stage.block_anim_id);
-    WriteSizeIndex(out, stage.next_light_vid);
+    WriteUint32(out, stage.next_light_vid);
     WriteUint32(out, stage.tile_change_generation);
 }
 
@@ -2768,7 +2765,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
 
     return ReadStageLights(in, stage.lights) &&
            ReadUint32(in, stage.block_anim_id) &&
-           ReadSizeIndex(in, stage.next_light_vid) &&
+           ReadUint32(in, stage.next_light_vid) &&
            ReadUint32(in, stage.tile_change_generation);
 }
 
@@ -2778,7 +2775,7 @@ void WriteEntPool(std::ostream& out, const EntPool& ents) {
     for (const Ent& ent : ents.ents) {
         WriteEnt(out, ent);
     }
-    WriteSizeIndexVector(out, ents.available_ids);
+    WriteUint32Vector(out, ents.available_ids);
 }
 
 bool ReadEntPool(std::istream& in, EntPool& ents) {
@@ -2794,7 +2791,7 @@ bool ReadEntPool(std::istream& in, EntPool& ents) {
         }
     }
 
-    return ReadSizeIndexVector(in, ents.available_ids);
+    return ReadUint32Vector(in, ents.available_ids);
 }
 
 void WritePlayerRegistry(std::ostream& out, const PlayerRegistry& players) {

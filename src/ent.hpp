@@ -98,7 +98,7 @@ struct Ent {
     std::optional<EffectId> pickup_effect = std::nullopt;
     std::uint32_t money = 0;
     Buyable buyable;
-    std::optional<std::size_t> stage_spawn_index;
+    std::optional<std::uint32_t> stage_spawn_index;
     std::optional<VID> back_vid;
     AttachMode attach_mode = AttachMode::None;
     UseState use_state;

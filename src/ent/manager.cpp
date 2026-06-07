@@ -13,7 +13,7 @@ EntPool EntPool::New() {
         Ent new_ent = Ent::New();
         new_ent.vid.id = static_cast<std::uint32_t>(i);
         manager.ents.push_back(new_ent);
-        manager.available_ids.insert(manager.available_ids.begin(), i);
+        manager.available_ids.insert(manager.available_ids.begin(), static_cast<std::uint32_t>(i));
     }
 
     return manager;
@@ -21,7 +21,7 @@ EntPool EntPool::New() {
 
 std::optional<VID> EntPool::NewEnt() {
     if (!available_ids.empty()) {
-        const std::size_t id = available_ids.back();
+        const std::size_t id = static_cast<std::size_t>(available_ids.back());
         available_ids.pop_back();
         ents[id].active = true;
         ents[id].vid.version += 1;
@@ -37,7 +37,7 @@ void EntPool::SetInactive(std::size_t ent_id) {
         return;
     }
     ents[ent_id].active = false;
-    available_ids.insert(available_ids.begin(), ent_id);
+    available_ids.insert(available_ids.begin(), static_cast<std::uint32_t>(ent_id));
 }
 
 void EntPool::SetInactiveVid(const VID& vid) {
@@ -97,7 +97,7 @@ std::uint32_t EntPool::NumActiveEnts() const {
 void EntPool::ClearAllEnts() {
     available_ids.clear();
     for (std::size_t i = 0; i < kMaxNumEnts; ++i) {
-        available_ids.insert(available_ids.begin(), i);
+        available_ids.insert(available_ids.begin(), static_cast<std::uint32_t>(i));
         ents[i].active = false;
         ents[i].type_ = EntType::None;
     }
@@ -107,7 +107,7 @@ void EntPool::ClearAllNonPlayerEnts() {
     available_ids.clear();
     for (std::size_t i = 0; i < kMaxNumEnts; ++i) {
         if (!IsPlayerLikeEntType(ents[i].type_)) {
-            available_ids.insert(available_ids.begin(), i);
+            available_ids.insert(available_ids.begin(), static_cast<std::uint32_t>(i));
             ents[i].active = false;
             ents[i].type_ = EntType::None;
         }

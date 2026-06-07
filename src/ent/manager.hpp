@@ -9,7 +9,7 @@ namespace splonks {
 
 struct EntPool {
     std::vector<Ent> ents;
-    std::vector<std::size_t> available_ids;
+    std::vector<std::uint32_t> available_ids;
 
     static constexpr std::size_t kMaxNumEnts = 1024;
 

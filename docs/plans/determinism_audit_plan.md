@@ -660,6 +660,12 @@ The expected end state is:
 - Fixed in shared snapshot/replay format: entity and animator scalar fields now
   use typed scalar helpers, removing the remaining raw `Ent`/`AFrameAnimator`
   member POD calls from the recording writer.
+- Fixed in runtime deterministic state: `Ent::stage_spawn_index`,
+  `Stage::next_light_vid`, and `EntPool::available_ids` now use explicit
+  `uint32_t` storage instead of `std::size_t`. These values are bounded
+  gameplay ids rather than arbitrary host vector sizes, and their snapshot/
+  replay byte representation was already explicit `uint32_t`, so this removes
+  machine-width runtime state without changing recording format version 96.
 - Fixed in shared snapshot/replay format: stage scalar fields and contact
   cooldown expiry frames now use typed scalar helpers, removing raw
   `stage.*` / `entry.*` member POD calls from the recording writer.
@@ -780,6 +786,12 @@ The expected end state is:
   for joined players, removed players, and topology-ack peers. The catchup
   queue intentionally remains FIFO because it is scheduling state, not
   authoritative player ordering.
+- Validation 2026-06-07: release build passed, state equality and deterministic
+  replay smokes passed, `--check-join-barrier-next-stage-restart-smoke` passed,
+  and `--check-network-fresh-reload-ownership-smoke` passed after the
+  platform-sized id cleanup. The broader `--check-input-lockstep-smoke` did not
+  fail with a mismatch, but it produced no output before a 120 second local
+  timeout, so that broad validation remains open rather than counted as passed.
 - Deferred risk: topology changes during active play need broader validation
   with multiple local players per peer, high latency, reconnect, stage
   transition, restart run, and relay/NAT paths.
