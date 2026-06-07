@@ -227,8 +227,6 @@ SimSnapshot MakeSimSnapshot(const State& state) {
     snapshot.stage_rotation = state.stage_rotation;
     snapshot.player_tuning = state.player_tuning;
     snapshot.running = state.running;
-    snapshot.now = state.now;
-    snapshot.time_since_last_update = state.time_since_last_update;
     snapshot.scene_frame = state.scene_frame;
     snapshot.frame = state.frame;
     snapshot.stage_frame = state.stage_frame;
@@ -344,8 +342,6 @@ void RestoreSimSnapshot(const SimSnapshot& snapshot, State& state, Graphics& gra
     state.stage_rotation = snapshot.stage_rotation;
     state.player_tuning = snapshot.player_tuning;
     state.running = snapshot.running;
-    state.now = snapshot.now;
-    state.time_since_last_update = snapshot.time_since_last_update;
     state.scene_frame = snapshot.scene_frame;
     state.frame = snapshot.frame;
     state.stage_frame = snapshot.stage_frame;

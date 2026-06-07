@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 108;
+constexpr std::uint32_t kRecordingVersion = 109;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -3273,8 +3273,6 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WriteStageRotationState(out, snapshot.stage_rotation);
     WritePlayerTuningState(out, snapshot.player_tuning);
     WriteBoolByte(out, snapshot.running);
-    WriteDouble(out, snapshot.now);
-    WriteFloat(out, snapshot.time_since_last_update);
     WriteUint32(out, snapshot.scene_frame);
     WriteUint32(out, snapshot.frame);
     WriteUint32(out, snapshot.stage_frame);
@@ -3318,8 +3316,6 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadStageRotationState(in, snapshot.stage_rotation) &&
            ReadPlayerTuningState(in, snapshot.player_tuning) &&
            ReadBoolByte(in, snapshot.running) &&
-           ReadDouble(in, snapshot.now) &&
-           ReadFloat(in, snapshot.time_since_last_update) &&
            ReadUint32(in, snapshot.scene_frame) &&
            ReadUint32(in, snapshot.frame) &&
            ReadUint32(in, snapshot.stage_frame) &&

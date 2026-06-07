@@ -123,8 +123,6 @@ struct SimSnapshot {
     StageRotationState stage_rotation;
     PlayerTuningState player_tuning;
     bool running = true;
-    double now = 0.0;
-    float time_since_last_update = 0.0F;
     std::uint32_t scene_frame = 0;
     std::uint32_t frame = 0;
     std::uint32_t stage_frame = 0;

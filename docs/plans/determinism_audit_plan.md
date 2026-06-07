@@ -294,6 +294,13 @@ The expected end state is:
   in both gameplay and sim snapshots, so this removes another raw IEEE `Vec2`
   payload from rollback/resync/debug recording state. Recording format version
   is now 108.
+- Fixed in network sim snapshot timing state: `SimSnapshot` no longer stores or
+  restores `State::now` or `State::time_since_last_update`. Those fields belong
+  to the local outer-frame scheduler, not deterministic fixed-tick simulation,
+  and copying them through rollback/resync snapshots could import another
+  machine's wall-clock accumulator. Full local `GameplaySnapshot` still records
+  them for debug playback where local frame reconstruction is expected.
+  Recording format version is now 109.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes. `AddPod` now rejects
