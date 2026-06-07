@@ -585,6 +585,12 @@ The expected end state is:
 - Fixed in shared snapshot/replay format: those scalar helper implementations
   now write/read explicit little-endian fixed-width integers and explicit
   `float` / `double` bit payloads. Recording format version is now 96.
+- Fixed/guarded in byte-format scalar boundaries: the network packet encoder,
+  runtime fingerprint writer, and debug recording scalar helpers now require
+  IEC 559 / IEEE-754 `float` and `double` at compile time before encoding
+  floating payload bits. This keeps the byte-format portability assumption
+  explicit while the broader audit continues removing gameplay dependence on
+  cross-platform float arithmetic.
 - Fixed in desync replay diagnostics: SDRP reader/writer fields now use named
   fixed-width helpers for stage ids, frames, player ids, hash components, input
   counts, input records, and local entity hash diagnostics. This removes the
