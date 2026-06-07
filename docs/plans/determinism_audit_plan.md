@@ -92,6 +92,10 @@ The expected end state is:
   current spawn API boundary, and the authoritative join barrier snapshot still
   decides final synchronized topology, but this removes raw IEEE float payloads
   from the initial synchronized room-join handoff.
+- Follow-up cleanup: the generic packet `float` array read/write helpers were
+  removed after the join-accept migration. New protocol fields should use
+  explicit integer/fixed encodings unless there is a documented reason to send
+  presentation-only IEEE float data.
 
 ## Math Function Audit
 

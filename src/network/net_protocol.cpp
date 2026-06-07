@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <limits>
 
 namespace splonks::network {
 
@@ -66,14 +65,6 @@ public:
                 (value >> shift) & static_cast<std::uint64_t>(0xFFU)
             ));
         }
-    }
-
-    void WriteF32(float value) {
-        std::uint32_t bits = 0;
-        static_assert(sizeof(bits) == sizeof(value));
-        static_assert(std::numeric_limits<float>::is_iec559);
-        std::memcpy(&bits, &value, sizeof(bits));
-        WriteU32(bits);
     }
 
     void WriteScalar(sim::Scalar value) {
@@ -178,15 +169,6 @@ public:
         return value;
     }
 
-    float ReadF32() {
-        const std::uint32_t bits = ReadU32();
-        float value = 0.0F;
-        static_assert(sizeof(bits) == sizeof(value));
-        static_assert(std::numeric_limits<float>::is_iec559);
-        std::memcpy(&value, &bits, sizeof(value));
-        return value;
-    }
-
     sim::Scalar ReadScalar() {
         return sim::Scalar::from_raw(ReadI32());
     }
@@ -228,18 +210,6 @@ void WritePlayerIds(PacketWriter& writer, const std::array<PlayerId, kNetPlayers
 void ReadPlayerIds(PacketReader& reader, std::array<PlayerId, kNetPlayersPerProcess>& ids) {
     for (PlayerId& id : ids) {
         id = reader.ReadU32();
-    }
-}
-
-void WriteFloats(PacketWriter& writer, const std::array<float, kNetPlayersPerProcess>& values) {
-    for (float value : values) {
-        writer.WriteF32(value);
-    }
-}
-
-void ReadFloats(PacketReader& reader, std::array<float, kNetPlayersPerProcess>& values) {
-    for (float& value : values) {
-        value = reader.ReadF32();
     }
 }
 
