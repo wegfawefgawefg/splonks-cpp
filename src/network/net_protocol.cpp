@@ -46,7 +46,7 @@ public:
     }
 
     void WriteU32(std::uint32_t value) {
-        for (unsigned int shift = 0; shift < 32; shift += 8) {
+        for (std::uint32_t shift = 0; shift < 32; shift += 8) {
             WriteByte(static_cast<std::uint8_t>(
                 (value >> shift) & static_cast<std::uint32_t>(0xFFU)
             ));
@@ -54,7 +54,7 @@ public:
     }
 
     void WriteU64(std::uint64_t value) {
-        for (unsigned int shift = 0; shift < 64; shift += 8) {
+        for (std::uint32_t shift = 0; shift < 64; shift += 8) {
             WriteByte(static_cast<std::uint8_t>(
                 (value >> shift) & static_cast<std::uint64_t>(0xFFU)
             ));
@@ -133,7 +133,7 @@ public:
 
     std::uint16_t ReadU16() {
         std::uint16_t value = 0;
-        for (unsigned int shift = 0; shift < 16; shift += 8) {
+        for (std::uint32_t shift = 0; shift < 16; shift += 8) {
             value = static_cast<std::uint16_t>(
                 value | static_cast<std::uint16_t>(
                     static_cast<std::uint16_t>(ReadU8()) << shift
@@ -145,7 +145,7 @@ public:
 
     std::uint32_t ReadU32() {
         std::uint32_t value = 0;
-        for (unsigned int shift = 0; shift < 32; shift += 8) {
+        for (std::uint32_t shift = 0; shift < 32; shift += 8) {
             value |= static_cast<std::uint32_t>(ReadU8()) << shift;
         }
         return value;
@@ -153,7 +153,7 @@ public:
 
     std::uint64_t ReadU64() {
         std::uint64_t value = 0;
-        for (unsigned int shift = 0; shift < 64; shift += 8) {
+        for (std::uint32_t shift = 0; shift < 64; shift += 8) {
             value |= static_cast<std::uint64_t>(ReadU8()) << shift;
         }
         return value;

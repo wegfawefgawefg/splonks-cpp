@@ -583,6 +583,10 @@ The expected end state is:
   structs. This removes packet padding, host byte order, raw enum layout, and
   `sizeof(struct)` from live multiplayer packet compatibility. Network
   protocol version is now 2.
+- Fixed in UDP net protocol codec internals: integer packet writer/reader
+  byte-shift loops now use explicit `uint32_t` counters instead of
+  implementation-width `unsigned int`, without changing packet bytes or
+  protocol version.
 - Audit checkpoint 2026-06-07: current `SimSnapshot` field scan confirms
   `MakeSimSnapshot`, `RestoreSimSnapshot`, `WriteSimSnapshot`, and
   `ReadSimSnapshot` cover the same simulation snapshot fields. Omitted `State`
