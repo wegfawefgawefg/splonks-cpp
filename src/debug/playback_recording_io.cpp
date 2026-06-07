@@ -733,7 +733,12 @@ bool ReadUint8(std::istream& in, std::uint8_t& value) {
 
 void WriteUint16(std::ostream& out, std::uint16_t value) {
     for (unsigned int shift = 0; shift < 16; shift += 8) {
-        WriteRawByte(out, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+        WriteRawByte(
+            out,
+            static_cast<std::uint8_t>(
+                (value >> shift) & static_cast<std::uint16_t>(0xFFU)
+            )
+        );
     }
 }
 
@@ -753,7 +758,12 @@ bool ReadUint16(std::istream& in, std::uint16_t& value) {
 
 void WriteUint32(std::ostream& out, std::uint32_t value) {
     for (unsigned int shift = 0; shift < 32; shift += 8) {
-        WriteRawByte(out, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+        WriteRawByte(
+            out,
+            static_cast<std::uint8_t>(
+                (value >> shift) & static_cast<std::uint32_t>(0xFFU)
+            )
+        );
     }
 }
 
@@ -771,7 +781,12 @@ bool ReadUint32(std::istream& in, std::uint32_t& value) {
 
 void WriteUint64(std::ostream& out, std::uint64_t value) {
     for (unsigned int shift = 0; shift < 64; shift += 8) {
-        WriteRawByte(out, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+        WriteRawByte(
+            out,
+            static_cast<std::uint8_t>(
+                (value >> shift) & static_cast<std::uint64_t>(0xFFU)
+            )
+        );
     }
 }
 

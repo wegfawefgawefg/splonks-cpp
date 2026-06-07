@@ -45,19 +45,25 @@ struct FingerprintWriter {
 
     void AddUint16(std::uint16_t value_) {
         for (unsigned int shift = 0; shift < 16; shift += 8) {
-            AddByte(static_cast<std::uint8_t>((value_ >> shift) & 0xFFU));
+            AddByte(static_cast<std::uint8_t>(
+                (value_ >> shift) & static_cast<std::uint16_t>(0xFFU)
+            ));
         }
     }
 
     void AddUint32(std::uint32_t value_) {
         for (unsigned int shift = 0; shift < 32; shift += 8) {
-            AddByte(static_cast<std::uint8_t>((value_ >> shift) & 0xFFU));
+            AddByte(static_cast<std::uint8_t>(
+                (value_ >> shift) & static_cast<std::uint32_t>(0xFFU)
+            ));
         }
     }
 
     void AddUint64(std::uint64_t value_) {
         for (unsigned int shift = 0; shift < 64; shift += 8) {
-            AddByte(static_cast<std::uint8_t>((value_ >> shift) & 0xFFU));
+            AddByte(static_cast<std::uint8_t>(
+                (value_ >> shift) & static_cast<std::uint64_t>(0xFFU)
+            ));
         }
     }
 

@@ -541,6 +541,23 @@ The expected end state is:
 - [ ] Avoid shift undefined behavior.
 - [ ] Avoid aliasing assumptions that can differ by compiler.
 
+### Status 2026-06-07
+
+- Added a repeatable local sanitizer build path:
+  `SPLONKS_PRESET=asan ./scripts/build.sh`. This enables ASan/UBSan on
+  Clang/GCC-style toolchains through the `SPLONKS_SANITIZERS` CMake option.
+- First sanitizer build surfaced mixed-width byte-mask promotions in the
+  recording writer, network packet encoder, and state fingerprint writer.
+  These fixed-width byte boundaries now use width-explicit masks before
+  narrowing to bytes.
+- Validation so far: release build passed, ASan/UBSan build passed, release
+  state-fingerprint and gameplay snapshot smokes passed, and the ASan/UBSan
+  binary passed the state-fingerprint smoke with leak detection disabled for
+  the short headless run.
+- Deferred risk: sanitizer execution is not yet broad enough to close this
+  section. Run sanitized headless smokes, local play, and two-client lockstep
+  sessions before treating uninitialized/undefined behavior risk as audited.
+
 ## Platform-Sized Type Audit
 
 - [ ] Avoid `long`, `size_t`, pointer values, and address-derived order in

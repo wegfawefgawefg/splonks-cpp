@@ -39,19 +39,25 @@ public:
     }
 
     void WriteU16(std::uint16_t value) {
-        WriteByte(static_cast<std::uint8_t>(value & 0xFFU));
-        WriteByte(static_cast<std::uint8_t>((value >> 8U) & 0xFFU));
+        WriteByte(static_cast<std::uint8_t>(value & static_cast<std::uint16_t>(0xFFU)));
+        WriteByte(static_cast<std::uint8_t>(
+            (value >> 8U) & static_cast<std::uint16_t>(0xFFU)
+        ));
     }
 
     void WriteU32(std::uint32_t value) {
         for (unsigned int shift = 0; shift < 32; shift += 8) {
-            WriteByte(static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+            WriteByte(static_cast<std::uint8_t>(
+                (value >> shift) & static_cast<std::uint32_t>(0xFFU)
+            ));
         }
     }
 
     void WriteU64(std::uint64_t value) {
         for (unsigned int shift = 0; shift < 64; shift += 8) {
-            WriteByte(static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+            WriteByte(static_cast<std::uint8_t>(
+                (value >> shift) & static_cast<std::uint64_t>(0xFFU)
+            ));
         }
     }
 

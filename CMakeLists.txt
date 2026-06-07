@@ -18,6 +18,7 @@ endif()
 
 option(SPLONKS_STRICT "Enable stricter warning sets." ON)
 option(SPLONKS_WARN_AS_ERROR "Treat warnings as errors." ON)
+option(SPLONKS_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer for local audits." OFF)
 option(SPLONKS_FETCH_DEPS "Fetch missing SDL/imgui dependencies with CMake FetchContent" ON)
 set(SPLONKS_SDL_DEPS "auto" CACHE STRING "SDL dependency source: auto, system, or fetch")
 set_property(CACHE SPLONKS_SDL_DEPS PROPERTY STRINGS auto system fetch)
@@ -522,6 +523,14 @@ else()
             $<$<BOOL:${SPLONKS_STRICT}>:-Wnon-virtual-dtor>
             $<$<BOOL:${SPLONKS_WARN_AS_ERROR}>:-Werror>
     )
+endif()
+
+if (SPLONKS_SANITIZERS)
+    if (MSVC)
+        message(FATAL_ERROR "SPLONKS_SANITIZERS is currently supported only on Clang/GCC-style toolchains.")
+    endif()
+    target_compile_options(splonks-cpp PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(splonks-cpp PRIVATE -fsanitize=address,undefined)
 endif()
 
 if (NOT MSVC)
