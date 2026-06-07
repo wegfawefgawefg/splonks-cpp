@@ -677,6 +677,17 @@ The expected end state is:
   hashed or versioned as part of connection admission, so mismatched assets
   still rely on later state-fingerprint/desync detection rather than an early
   compatibility gate.
+- Fixed for current classic quest content: direct UDP join requests now carry a
+  deterministic hash of the loaded `assets/quests/classic` file tree. Hosts
+  reject mismatched content before assigning players or entering the join
+  barrier, and peers verify the host hash in the join accept before loading
+  into lockstep. This covers current data-driven classic quest/stage/room/pool
+  content, but not C++ gameplay code changes or future non-classic content
+  roots.
+- Deferred risk: this is an admission gate, not a full content-addressed asset
+  manifest. Future quest roots, mod/plugin content, and authored data outside
+  `assets/quests/classic` need to be added to the compatibility domain before
+  they can safely affect authoritative gameplay.
 
 ## Time/Input/UI Boundary Audit
 

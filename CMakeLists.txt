@@ -393,6 +393,7 @@ set(SPLONKS_SOURCES
     src/render/world_texture.cpp
     src/raw_audio_asset.cpp
     src/raw_aframe.cpp
+    src/content_compat.cpp
     src/quest.cpp
     src/quest_glyphs.cpp
     src/quest_parse_utils.cpp

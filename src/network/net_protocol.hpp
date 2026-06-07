@@ -14,7 +14,7 @@
 namespace splonks::network {
 
 constexpr std::uint32_t kNetProtocolMagic = 0x534C504B; // SLPK
-constexpr std::uint16_t kNetProtocolVersion = 2;
+constexpr std::uint16_t kNetProtocolVersion = 3;
 constexpr std::size_t kNetNameBytes = 32;
 constexpr std::size_t kNetQuestIdBytes = 32;
 constexpr std::size_t kNetQuestStageIdBytes = 64;
@@ -45,6 +45,7 @@ enum class NetPacketType : std::uint16_t {
 enum class JoinPendingReason : std::uint8_t {
     None = 0,
     StageTransition = 1,
+    ContentMismatch = 2,
 };
 
 struct NetPacketHeader {
@@ -58,6 +59,7 @@ struct JoinRequestPacket {
     std::uint32_t local_player_count = 1;
     std::uint32_t preferred_player_count = 0;
     std::array<PlayerId, kNetPlayersPerProcess> preferred_player_ids{};
+    std::uint64_t content_hash = 0;
     std::array<char, kNetNameBytes> display_name{};
 };
 
@@ -74,6 +76,7 @@ struct JoinAcceptPacket {
     std::uint64_t lockstep_start_frame = 0;
     std::uint32_t lockstep_input_delay_frames = kDefaultLockstepInputDelayFrames;
     std::uint32_t lockstep_max_rollback_frames = kDefaultLockstepMaxRollbackFrames;
+    std::uint64_t content_hash = 0;
     std::uint8_t multiplayer_respawn_mode = 0;
     std::array<char, kNetQuestIdBytes> quest_id{};
     std::array<char, kNetQuestStageIdBytes> quest_stage_id{};

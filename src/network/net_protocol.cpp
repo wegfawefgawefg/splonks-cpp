@@ -227,6 +227,7 @@ EncodedNetPacket EncodeJoinRequest(const JoinRequestPacket& packet) {
     writer.WriteU32(packet.local_player_count);
     writer.WriteU32(packet.preferred_player_count);
     WritePlayerIds(writer, packet.preferred_player_ids);
+    writer.WriteU64(packet.content_hash);
     writer.WriteChars(packet.display_name);
     return writer.Finish();
 }
@@ -245,6 +246,7 @@ EncodedNetPacket EncodeJoinAccept(const JoinAcceptPacket& packet) {
     writer.WriteU64(packet.lockstep_start_frame);
     writer.WriteU32(packet.lockstep_input_delay_frames);
     writer.WriteU32(packet.lockstep_max_rollback_frames);
+    writer.WriteU64(packet.content_hash);
     writer.WriteU8(packet.multiplayer_respawn_mode);
     writer.WriteChars(packet.quest_id);
     writer.WriteChars(packet.quest_stage_id);
@@ -428,6 +430,7 @@ std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes,
     packet.local_player_count = reader.ReadU32();
     packet.preferred_player_count = reader.ReadU32();
     ReadPlayerIds(reader, packet.preferred_player_ids);
+    packet.content_hash = reader.ReadU64();
     reader.ReadChars(packet.display_name);
     if (!reader.Done()) {
         return std::nullopt;
@@ -459,6 +462,7 @@ std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, s
     packet.lockstep_start_frame = reader.ReadU64();
     packet.lockstep_input_delay_frames = reader.ReadU32();
     packet.lockstep_max_rollback_frames = reader.ReadU32();
+    packet.content_hash = reader.ReadU64();
     packet.multiplayer_respawn_mode = reader.ReadU8();
     reader.ReadChars(packet.quest_id);
     reader.ReadChars(packet.quest_stage_id);
@@ -488,7 +492,8 @@ std::optional<JoinPendingPacket> TryDecodeJoinPending(const std::uint8_t* bytes,
     if (!reader.Done()) {
         return std::nullopt;
     }
-    if (packet.reason != JoinPendingReason::StageTransition) {
+    if (packet.reason != JoinPendingReason::StageTransition &&
+        packet.reason != JoinPendingReason::ContentMismatch) {
         packet.reason = JoinPendingReason::None;
     }
     return packet;

@@ -1,5 +1,6 @@
 #include "cli_state_smoke.hpp"
 
+#include "content_compat.hpp"
 #include "debug/shop_test_stage.hpp"
 #include "ent.hpp"
 #include "ent/spec.hpp"
@@ -1574,6 +1575,58 @@ bool RunRollbackRepairSmoke() {
 }
 
 bool RunJoinBarrierProtocolSmoke() {
+    network::JoinRequestPacket join_request;
+    join_request.local_player_count = 3;
+    join_request.preferred_player_count = 2;
+    join_request.preferred_player_ids[0] = 7;
+    join_request.preferred_player_ids[1] = 8;
+    join_request.content_hash = 0x123456789ABCDEF0ULL;
+    const network::EncodedNetPacket encoded_join_request =
+        network::EncodeJoinRequest(join_request);
+    const std::optional<network::JoinRequestPacket> decoded_join_request =
+        network::TryDecodeJoinRequest(
+            encoded_join_request.bytes.data(),
+            encoded_join_request.size
+        );
+    if (!decoded_join_request.has_value() ||
+        decoded_join_request->local_player_count != join_request.local_player_count ||
+        decoded_join_request->preferred_player_count != join_request.preferred_player_count ||
+        decoded_join_request->preferred_player_ids[0] != join_request.preferred_player_ids[0] ||
+        decoded_join_request->preferred_player_ids[1] != join_request.preferred_player_ids[1] ||
+        decoded_join_request->content_hash != join_request.content_hash) {
+        std::cerr << "join barrier protocol smoke failed: join request packet roundtrip mismatch\n";
+        return false;
+    }
+
+    network::JoinAcceptPacket join_accept;
+    join_accept.assigned_player_count = 2;
+    join_accept.assigned_player_ids[0] = 7;
+    join_accept.assigned_player_ids[1] = 8;
+    join_accept.host_player_id = 1;
+    join_accept.stage_instance_id = 44;
+    join_accept.stage_seed = 9876U;
+    join_accept.lockstep_start_frame = 120;
+    join_accept.content_hash = join_request.content_hash;
+    const network::EncodedNetPacket encoded_join_accept =
+        network::EncodeJoinAccept(join_accept);
+    const std::optional<network::JoinAcceptPacket> decoded_join_accept =
+        network::TryDecodeJoinAccept(
+            encoded_join_accept.bytes.data(),
+            encoded_join_accept.size
+        );
+    if (!decoded_join_accept.has_value() ||
+        decoded_join_accept->assigned_player_count != join_accept.assigned_player_count ||
+        decoded_join_accept->assigned_player_ids[0] != join_accept.assigned_player_ids[0] ||
+        decoded_join_accept->assigned_player_ids[1] != join_accept.assigned_player_ids[1] ||
+        decoded_join_accept->host_player_id != join_accept.host_player_id ||
+        decoded_join_accept->stage_instance_id != join_accept.stage_instance_id ||
+        decoded_join_accept->stage_seed != join_accept.stage_seed ||
+        decoded_join_accept->lockstep_start_frame != join_accept.lockstep_start_frame ||
+        decoded_join_accept->content_hash != join_accept.content_hash) {
+        std::cerr << "join barrier protocol smoke failed: join accept packet roundtrip mismatch\n";
+        return false;
+    }
+
     State host = State::New();
     host.net_session.role = network::NetRole::Host;
     host.net_session.local_player_id = 1;
@@ -1887,6 +1940,7 @@ bool RunJoinBarrierProtocolSmoke() {
     transition_join_packet.endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39105};
     network::JoinRequestPacket transition_join_request;
     transition_join_request.local_player_count = 1;
+    transition_join_request.content_hash = ComputeGameplayContentHash();
     network::HandleJoinRequestAsHost(
         transition_host,
         transition_graphics,
@@ -1922,6 +1976,52 @@ bool RunJoinBarrierProtocolSmoke() {
         transition_transport.remotes.size() != 1 ||
         transition_host.net_session.join_barrier_queue.empty()) {
         std::cerr << "join barrier protocol smoke failed: deferred join did not drain after transition\n";
+        return false;
+    }
+
+    State mismatch_host = State::New();
+    Graphics mismatch_graphics;
+    if (!LoadQuestStage(
+            mismatch_host,
+            "classic",
+            "classic_mines_1",
+            false,
+            9876U
+        )) {
+        std::cerr << "join barrier protocol smoke failed: mismatch host stage load failed\n";
+        return false;
+    }
+    mismatch_host.net_session.role = network::NetRole::Host;
+    mismatch_host.net_session.input_lockstep_enabled = true;
+    network::NetTransportRuntime mismatch_transport = network::NetTransportRuntime::New();
+    mismatch_transport.capture_outgoing_packets = true;
+    network::UdpPacket mismatch_join_packet;
+    mismatch_join_packet.endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39106};
+    network::JoinRequestPacket mismatch_join_request;
+    mismatch_join_request.local_player_count = 1;
+    mismatch_join_request.content_hash =
+        ComputeGameplayContentHash() ^ 0xA5A5A5A5A5A5A5A5ULL;
+    network::HandleJoinRequestAsHost(
+        mismatch_host,
+        mismatch_graphics,
+        mismatch_transport,
+        mismatch_join_packet,
+        mismatch_join_request
+    );
+    if (mismatch_transport.captured_packets.size() != 1 ||
+        !mismatch_transport.remotes.empty() ||
+        !mismatch_host.net_session.join_barrier_queue.empty()) {
+        std::cerr << "join barrier protocol smoke failed: content mismatch was not rejected before topology change\n";
+        return false;
+    }
+    const std::optional<network::JoinPendingPacket> decoded_mismatch =
+        network::TryDecodeJoinPending(
+            mismatch_transport.captured_packets.back().bytes.data(),
+            mismatch_transport.captured_packets.back().size
+        );
+    if (!decoded_mismatch.has_value() ||
+        decoded_mismatch->reason != network::JoinPendingReason::ContentMismatch) {
+        std::cerr << "join barrier protocol smoke failed: content mismatch did not send mismatch status\n";
         return false;
     }
 

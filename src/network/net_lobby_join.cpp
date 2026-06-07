@@ -1,5 +1,6 @@
 #include "network/net_lobby_internal.hpp"
 
+#include "content_compat.hpp"
 #include "graphics.hpp"
 #include "network/net_ent_links.hpp"
 #include "network/net_protocol.hpp"
@@ -8,6 +9,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <exception>
 #include <string>
 #include <vector>
 
@@ -17,6 +19,20 @@ namespace {
 
 constexpr PlayerId kFirstRemotePlayerId = 2;
 constexpr std::uint32_t kMaxPlayersPerEndpoint = 16;
+
+std::uint64_t TryComputeGameplayContentHash(std::string* status_out) {
+    try {
+        if (status_out != nullptr) {
+            status_out->clear();
+        }
+        return ComputeGameplayContentHash();
+    } catch (const std::exception& err) {
+        if (status_out != nullptr) {
+            *status_out = err.what();
+        }
+        return 0;
+    }
+}
 
 void RegisterRemoteEndpoint(
     NetTransportRuntime& transport,
@@ -113,6 +129,11 @@ void SendJoinRequest(State& state) {
 
     JoinRequestPacket request;
     request.local_player_count = CountLocalPlayers(state.players);
+    request.content_hash =
+        TryComputeGameplayContentHash(&state.net_transport->last_error);
+    if (request.content_hash == 0) {
+        return;
+    }
     if (state.net_transport) {
         request.preferred_player_count = static_cast<std::uint32_t>(std::min<std::size_t>(
             state.net_transport->preferred_player_ids.size(),
@@ -265,6 +286,28 @@ void HandleJoinRequestAsHost(
     }
     RemovePendingJoinEndpoint(transport, udp_packet.endpoint);
 
+    const std::uint64_t host_content_hash =
+        TryComputeGameplayContentHash(&transport.last_error);
+    if (host_content_hash == 0) {
+        SendJoinPendingPacket(
+            state,
+            transport,
+            udp_packet.endpoint,
+            JoinPendingReason::ContentMismatch
+        );
+        return;
+    }
+    if (request.content_hash != host_content_hash) {
+        transport.last_error = "Rejected join: gameplay content does not match host.";
+        SendJoinPendingPacket(
+            state,
+            transport,
+            udp_packet.endpoint,
+            JoinPendingReason::ContentMismatch
+        );
+        return;
+    }
+
     std::uint32_t player_count = std::clamp(
         request.local_player_count,
         1U,
@@ -365,6 +408,7 @@ void HandleJoinRequestAsHost(
     accept.lockstep_start_frame = state.net_session.lockstep_next_frame_to_step;
     accept.lockstep_input_delay_frames = state.net_session.lockstep_input_delay_frames;
     accept.lockstep_max_rollback_frames = state.net_session.lockstep_max_rollback_frames;
+    accept.content_hash = host_content_hash;
     accept.multiplayer_respawn_mode =
         static_cast<std::uint8_t>(state.multiplayer_respawn_mode);
     WriteFixedString(state.net_session.quest_id, accept.quest_id);
@@ -402,6 +446,17 @@ void HandleJoinAcceptAsPeer(
         static_cast<std::uint32_t>(accept.assigned_player_ids.size())
     );
     if (accept.assigned_player_ids[0] == kInvalidPlayerId) {
+        return;
+    }
+
+    const std::uint64_t local_content_hash =
+        TryComputeGameplayContentHash(&transport.last_error);
+    if (local_content_hash == 0 || local_content_hash != accept.content_hash) {
+        transport.last_error = "Join rejected: gameplay content does not match host.";
+        transport.join_request_pending = false;
+        transport.join_request_waiting_for_host = false;
+        transport.join_pending_reason = JoinPendingReason::None;
+        transport.join_request_retry_frames = 0;
         return;
     }
 
@@ -536,6 +591,14 @@ void HandleJoinPendingAsPeer(
     const JoinPendingPacket& pending
 ) {
     if (state.net_session.role != NetRole::Peer || !transport.join_request_pending) {
+        return;
+    }
+    if (pending.reason == JoinPendingReason::ContentMismatch) {
+        transport.last_error = "Join rejected: gameplay content does not match host.";
+        transport.join_request_pending = false;
+        transport.join_request_waiting_for_host = false;
+        transport.join_pending_reason = JoinPendingReason::None;
+        transport.join_request_retry_frames = 0;
         return;
     }
     transport.join_request_waiting_for_host = true;
