@@ -478,7 +478,7 @@ void StepEntLogicAsPlayer(
                 const bool walking_horizontally =
                     player.grounded &&
                     moving_with_input &&
-                    player.dist_traveled_this_frame > kPlayerWalkAnimDistanceEpsilon;
+                    player.dist_traveled_this_frame > sim::Scalar::zero();
                 const bool running_horizontally = walking_horizontally && control.run;
                 const bool pushing_into_blocker =
                     player.grounded &&

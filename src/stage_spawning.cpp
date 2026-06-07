@@ -83,7 +83,7 @@ void PrepareEntForStageEntry(Ent& ent) {
     ent.fall_timer = 0;
     ent.stun_timer = 0;
     ent.holding_timer = kDefaultHoldingTimer;
-    ent.dist_traveled_this_frame = 0.0F;
+    ent.dist_traveled_this_frame = sim::Scalar::zero();
     ent.jumped_this_frame = false;
     ent.hang_side.reset();
     ent.hang_count = 0;

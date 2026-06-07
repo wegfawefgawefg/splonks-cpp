@@ -431,12 +431,14 @@ void StepTravelSoundFleshGuy(std::size_t ent_idx, State& state) {
     Ent& ent = state.ents.ents[ent_idx];
     ent.travel_sound_countdown -= ent.dist_traveled_this_frame;
 
-    if ((!ent.grounded && !ent.IsClimbing()) || ent.dist_traveled_this_frame <= 0.0F) {
+    if ((!ent.grounded && !ent.IsClimbing()) ||
+        ent.dist_traveled_this_frame <= sim::Scalar::zero()) {
         return;
     }
 
-    if (ent.travel_sound_countdown < 0.0F) {
-        ent.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
+    if (ent.travel_sound_countdown < sim::Scalar::zero()) {
+        ent.travel_sound_countdown =
+            sim::Scalar::from_int(static_cast<std::int32_t>(kWalkerClimberTravelSoundDistInterval));
         const AudioAssetId sound = ent.travel_sound == TravelSound::One
                                        ? audio_asset_ids::FleshGuyStep0
                                        : audio_asset_ids::FleshGuyStep1;

@@ -81,7 +81,7 @@ struct Ent {
     float light_strength = 0.0F;
     Color3 light_color = Color3::White();
     int light_radius = 0;
-    float dist_traveled_this_frame = 0.0F;
+    sim::Scalar dist_traveled_this_frame = sim::Scalar::zero();
     Side facing = Side::Left;
     bool vertical_flip = false;
     DrawLayer draw_layer = DrawLayer::Middle;
@@ -103,7 +103,8 @@ struct Ent {
     std::optional<VID> back_vid;
     AttachMode attach_mode = AttachMode::None;
     UseState use_state;
-    float travel_sound_countdown = kTravelSoundDistInterval;
+    sim::Scalar travel_sound_countdown =
+        sim::Scalar::from_int(static_cast<std::int32_t>(kTravelSoundDistInterval));
     TravelSound travel_sound = TravelSound::One;
     EntCondition condition = EntCondition::Normal;
     EntCondition last_condition = EntCondition::Normal;

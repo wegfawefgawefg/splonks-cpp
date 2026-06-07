@@ -139,9 +139,10 @@ void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio
         }
     }
 
-    jetpack.travel_sound_countdown -= 1.0F;
-    if (jetpack.travel_sound_countdown < 0.0F) {
-        jetpack.travel_sound_countdown = kTravelSoundDistInterval;
+    jetpack.travel_sound_countdown -= sim::Scalar::from_int(1);
+    if (jetpack.travel_sound_countdown < sim::Scalar::zero()) {
+        jetpack.travel_sound_countdown =
+            sim::Scalar::from_int(static_cast<std::int32_t>(kTravelSoundDistInterval));
         const AudioAssetId sound_effect =
             jetpack.travel_sound == TravelSound::One ? audio_asset_ids::Jetpack1
                                                      : audio_asset_ids::Jetpack2;
@@ -191,7 +192,7 @@ void StepEntLogicAsJetpack(
     }
 
     if (jetpack.use_state.down == false) {
-        jetpack.travel_sound_countdown = 0.0F;
+        jetpack.travel_sound_countdown = sim::Scalar::zero();
     }
 }
 

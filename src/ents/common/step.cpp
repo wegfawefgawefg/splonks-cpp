@@ -100,10 +100,12 @@ void StepTravelSoundWalkerClimber(std::size_t ent_idx, State& state, Audio& audi
         return;
     }
 
-    if (ent.travel_sound_countdown < 0.0F) {
+    if (ent.travel_sound_countdown < sim::Scalar::zero()) {
         ent.travel_sound_countdown = ent.IsClimbing()
-                                            ? kClimberTravelSoundDistInterval
-                                            : kWalkerClimberTravelSoundDistInterval;
+                                            ? sim::Scalar::from_int(static_cast<std::int32_t>(
+                                                  kClimberTravelSoundDistInterval))
+                                            : sim::Scalar::from_int(static_cast<std::int32_t>(
+                                                  kWalkerClimberTravelSoundDistInterval));
 
         AudioAssetId which_step_sound;
         if (ent.IsClimbing()) {

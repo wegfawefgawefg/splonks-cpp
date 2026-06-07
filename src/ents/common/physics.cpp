@@ -30,7 +30,7 @@ void StoreDistanceTraveled(std::size_t ent_idx, State& state, const Vec2& start_
     if (dist_traveled < 1.0F) {
         dist_traveled = 0.0F;
     }
-    ent.dist_traveled_this_frame = dist_traveled;
+    ent.dist_traveled_this_frame = sim::ToSimScalar(dist_traveled);
 }
 
 void ResolveBlockingOverlap(

@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 97;
+constexpr std::uint32_t kRecordingVersion = 98;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1517,7 +1517,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteFloat(out, ent.light_strength);
     WriteColor3(out, ent.light_color);
     WriteInt32(out, ent.light_radius);
-    WriteFloat(out, ent.dist_traveled_this_frame);
+    WriteSimScalar(out, ent.dist_traveled_this_frame);
     WriteEnumByte(out, ent.facing);
     WriteBoolByte(out, ent.vertical_flip);
     WriteEnumByte(out, ent.draw_layer);
@@ -1538,7 +1538,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalVid(out, ent.back_vid);
     WriteAttachMode(out, ent.attach_mode);
     WriteUseState(out, ent.use_state);
-    WriteFloat(out, ent.travel_sound_countdown);
+    WriteSimScalar(out, ent.travel_sound_countdown);
     WriteEnumByte(out, ent.travel_sound);
     WriteEnumByte(out, ent.condition);
     WriteEnumByte(out, ent.last_condition);
@@ -1645,7 +1645,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadFloat(in, ent.light_strength) &&
            ReadColor3(in, ent.light_color) &&
            ReadInt32(in, ent.light_radius) &&
-           ReadFloat(in, ent.dist_traveled_this_frame) &&
+           ReadSimScalar(in, ent.dist_traveled_this_frame) &&
            ReadEnumByte(in, ent.facing, Side::Right) &&
            ReadBoolByte(in, ent.vertical_flip) &&
            ReadEnumByte(in, ent.draw_layer, DrawLayer::Foreground) &&
@@ -1666,7 +1666,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalVid(in, ent.back_vid) &&
            ReadAttachMode(in, ent.attach_mode) &&
            ReadUseState(in, ent.use_state) &&
-           ReadFloat(in, ent.travel_sound_countdown) &&
+           ReadSimScalar(in, ent.travel_sound_countdown) &&
            ReadEnumByte(in, ent.travel_sound, TravelSound::Two) &&
            ReadEnumByte(in, ent.condition, EntCondition::Stunned) &&
            ReadEnumByte(in, ent.last_condition, EntCondition::Stunned) &&

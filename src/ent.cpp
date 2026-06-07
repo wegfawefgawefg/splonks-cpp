@@ -65,7 +65,7 @@ Ent Ent::New() {
     ent.light_strength = 0.0F;
     ent.light_color = Color3::White();
     ent.light_radius = 0;
-    ent.dist_traveled_this_frame = 0.0F;
+    ent.dist_traveled_this_frame = sim::Scalar::zero();
     ent.facing = Side::Left;
     ent.vertical_flip = false;
     ent.draw_layer = DrawLayer::Middle;
@@ -87,7 +87,8 @@ Ent Ent::New() {
     ent.stage_spawn_index.reset();
     ent.attach_mode = AttachMode::None;
     ent.use_state = UseState{};
-    ent.travel_sound_countdown = kTravelSoundDistInterval;
+    ent.travel_sound_countdown =
+        sim::Scalar::from_int(static_cast<std::int32_t>(kTravelSoundDistInterval));
     ent.travel_sound = TravelSound::One;
     ent.condition = EntCondition::Normal;
     ent.last_condition = EntCondition::Normal;

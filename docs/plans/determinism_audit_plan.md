@@ -58,8 +58,7 @@ The expected end state is:
   explicit threshold quantization.
 - Current authoritative float-backed inventory:
   `Ent::pos`, `vel`, `acc`, `size`, `max_speed`, `throw_velocity_scale`,
-  `buoyancy`, `dist_traveled_this_frame`, `travel_sound_countdown`,
-  `support_ground_friction`, `push_acc`, `counter_a` through `counter_d`,
+  `buoyancy`, `support_ground_friction`, `push_acc`, `counter_a` through `counter_d`,
   `light_strength`, `light_color`, and
   `AFrameAnimator::current_time` / `scale` / `speed`; stage fluid amount,
   velocity, gravity, gravity strength, temporary gravity, and `Stage::gravity`;
@@ -69,9 +68,10 @@ The expected end state is:
 - Current lockstep hash behavior: entity position, velocity, acceleration,
   size, counters, effect values, light values, and animation timers are
   quantized through `sim::Scalar` / Fixed12 before hashing; entity rotation is
-  stored and hashed as raw Fixed12. That reduces noisy float-bit hash
-  mismatches, but the simulation and `SimSnapshot` still carry IEEE float
-  payloads for the remaining float-backed fields.
+  stored and hashed as raw Fixed12, and distance-traveled / travel-sound
+  countdown state is also stored and hashed as raw Fixed12. That reduces noisy
+  float-bit hash mismatches, but the simulation and `SimSnapshot` still carry
+  IEEE float payloads for the remaining float-backed fields.
 - Migration order should be narrow and mechanical: introduce fixed-point
   storage at authoritative boundaries, convert parsing/spec constants into
   fixed values, keep render/audio/UI conversion at the edge, and validate each
@@ -198,6 +198,13 @@ The expected end state is:
   Fixed12. This pass prevents rotation itself from carrying arbitrary IEEE
   payloads through hashes/snapshots; the broader movement/velocity migration
   must still remove the source float branch risks.
+- Fixed in authoritative travel-distance state: `Ent::dist_traveled_this_frame`
+  and `Ent::travel_sound_countdown` are now stored as Fixed12, hashed as raw
+  fixed values, and recorded as raw fixed values. Physics still derives the
+  per-frame traveled distance from float `pos` until the larger movement storage
+  migration, but the distance thresholds, sound countdowns, and animation gates
+  no longer carry raw float state between frames. Recording format version is
+  now 98.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash

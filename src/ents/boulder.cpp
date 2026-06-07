@@ -76,11 +76,12 @@ bool WouldBreakAnyTiles(const AABB& area, const State& state) {
 
 void StepRollingSound(State& state, Ent& boulder) {
     boulder.travel_sound_countdown -= boulder.dist_traveled_this_frame;
-    if (boulder.travel_sound_countdown >= 0.0F) {
+    if (boulder.travel_sound_countdown >= sim::Scalar::zero()) {
         return;
     }
 
-    boulder.travel_sound_countdown = kBoulderRollSoundDistInterval;
+    boulder.travel_sound_countdown =
+        sim::Scalar::from_int(static_cast<std::int32_t>(kBoulderRollSoundDistInterval));
     AudioEmitterPlayParams params;
     params.volume_scale = kBoulderRollingSoundVolumeScale;
     params.owner_ent_vid = boulder.vid;
@@ -377,7 +378,7 @@ void StepEntLogicAsBoulder(
 
     if (boulder.ai_state == EntAiState::Idle && boulder.grounded) {
         boulder.ai_state = EntAiState::Disturbed;
-        boulder.travel_sound_countdown = 0.0F;
+        boulder.travel_sound_countdown = sim::Scalar::zero();
         boulder.point_a = ToIVec2(boulder.pos);
         boulder.counter_b = 0.0F;
         boulder.counter_c = 0.0F;
@@ -439,15 +440,16 @@ void StepEntPhysicsAsBoulder(
             std::abs(pre_physics_vel_x) > kBoulderRollingSpeedThreshold &&
             std::abs(boulder.vel.x) <= kBoulderRollingSpeedThreshold &&
             boulder.grounded &&
-            boulder.dist_traveled_this_frame <= 0.0F;
+            boulder.dist_traveled_this_frame <= sim::Scalar::zero();
         if (hard_stopped_this_frame) {
                 PlayBoulderImpactSoundIfReady(boulder, state);
             AddBoulderWallHitShake(state, boulder);
         }
-        if (boulder.grounded && boulder.dist_traveled_this_frame > 0.0F) {
+        if (boulder.grounded && boulder.dist_traveled_this_frame > sim::Scalar::zero()) {
             StepRollingSound(state, boulder);
             AddBoulderRollingShake(state, boulder);
-            boulder.counter_c -= boulder.dist_traveled_this_frame;
+            const float dist_traveled = sim::ToRenderScalar(boulder.dist_traveled_this_frame);
+            boulder.counter_c -= dist_traveled;
             while (boulder.counter_c <= 0.0F) {
                 boulder.counter_c += kBoulderTrailSmokeDistInterval;
                 SpawnBoulderTrailSmoke(
@@ -457,7 +459,7 @@ void StepEntPhysicsAsBoulder(
                 );
             }
 
-            boulder.counter_d -= boulder.dist_traveled_this_frame;
+            boulder.counter_d -= dist_traveled;
             while (boulder.counter_d <= 0.0F) {
                 boulder.counter_d += kBoulderTrailPebbleDistInterval;
                 SpawnBoulderTrailPebbles(

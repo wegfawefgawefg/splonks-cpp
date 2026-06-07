@@ -198,8 +198,10 @@ void StepEntLogicAsBlock(
     }
 
     // TODO: extract into grounded movement sounds
-    if (ent.grounded && ent.dist_traveled_this_frame > 0.0F && ent.travel_sound_countdown < 0.0F) {
-        ent.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
+    if (ent.grounded && ent.dist_traveled_this_frame > sim::Scalar::zero() &&
+        ent.travel_sound_countdown < sim::Scalar::zero()) {
+        ent.travel_sound_countdown =
+            sim::Scalar::from_int(static_cast<std::int32_t>(kWalkerClimberTravelSoundDistInterval));
         const AudioAssetId sound =
             ent.travel_sound == TravelSound::One ? audio_asset_ids::BlockDrag1
                                                     : audio_asset_ids::BlockDrag2;
@@ -207,8 +209,8 @@ void StepEntLogicAsBlock(
         ent.IncTravelSound();
     }
 
-    if (ent.grounded && ent.dist_traveled_this_frame > 0.0F) {
-        ent.counter_c -= ent.dist_traveled_this_frame;
+    if (ent.grounded && ent.dist_traveled_this_frame > sim::Scalar::zero()) {
+        ent.counter_c -= sim::ToRenderScalar(ent.dist_traveled_this_frame);
         while (ent.counter_c <= 0.0F) {
             ent.counter_c += kBlockTrailSmokeDistInterval;
             SpawnBlockTrailSmoke(state, GetBlockTrailingBottomCorner(ent), ent.facing);
