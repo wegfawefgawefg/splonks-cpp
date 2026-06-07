@@ -271,7 +271,7 @@ void SpawnWebParticle(
 }
 
 void SpawnWebSpray(State& state, const Vec2& origin, const Vec2& direction) {
-    const Vec2 normalized_direction = NormalizeOrZero(direction);
+    const Vec2 normalized_direction = NormalizeOrZeroDeterministic(direction);
     for (int i = 0; i < 7; ++i) {
         const Vec2 spray_velocity =
             (normalized_direction * rng::RandomFloat(0.35F, 1.5F)) +

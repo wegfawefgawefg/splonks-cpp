@@ -21,11 +21,10 @@ namespace {
 
 Vec2 GetDirectionAxis(const IVec2& direction) {
     const Vec2 axis = Vec2::New(static_cast<float>(direction.x), static_cast<float>(direction.y));
-    const float length = Length(axis);
-    if (length <= 0.0F) {
+    if (axis.x == 0.0F && axis.y == 0.0F) {
         return Vec2::New(1.0F, 0.0F);
     }
-    return axis / length;
+    return NormalizeOrZeroDeterministic(axis);
 }
 
 Vec2 GetDirectionOrtho(const Vec2& axis) {
@@ -265,7 +264,7 @@ void SpawnTreasurePickupSparklesAt(State& state, const Vec2& center, Color3 colo
 
 void SpawnBaseballBatTrailAt(State& state, const Vec2& from, const Vec2& to) {
     const Vec2 wrapped_to = GetNearestWorldPoint(state.stage, from, to);
-    if (Length(wrapped_to - from) < 2.0F) {
+    if (LengthSquared(wrapped_to - from) < 2.0F * 2.0F) {
         return;
     }
 

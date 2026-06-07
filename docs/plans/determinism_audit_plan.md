@@ -138,6 +138,13 @@ The expected end state is:
   merge effect axes now use explicit cardinal/diagonal direction vectors
   instead of normalizing through `Length`. These effects are cosmetic for
   network lockstep, but they are present in local snapshots/replays.
+- Fixed in remaining snapshot-preserved presentation vector boundaries:
+  scripted teleporter phase effects now use deterministic normalization for
+  their discrete axis helper, baseball-bat trail emission uses squared distance
+  in `pres_commands.cpp`, and web-cannon spray particles use
+  `NormalizeOrZeroDeterministic`. These are still presentation effects, but
+  they no longer depend on platform libm `sqrt` when captured in local
+  debug snapshots/replays.
 - Deferred risk: those helpers make the float-to-integer conversion rule
   explicit, but the source positions are still authoritative floats. Two peers
   can still diverge if prior float math crosses a grid/branch threshold
