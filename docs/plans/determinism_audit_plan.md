@@ -279,6 +279,10 @@ The expected end state is:
   full VID id/version instead of id alone, and network tool/entity fingerprint
   sorters now fall back to full VID id/version when network ids tie. This keeps
   fingerprint byte order strict even across entity id reuse/generation cases.
+- Fixed in asset database construction: `AFrameDb::FromRaw` now sorts grouped
+  animation names before appending to `database.anims`. Animation ids were
+  already hashed from names, but the backing animation vector and index maps no
+  longer inherit `unordered_map` iteration order across standard libraries.
 - Deferred risk: continue auditing contact/collision tie ordering outside the
   common broadphase and moving-platform carry paths.
 

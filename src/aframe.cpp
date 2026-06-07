@@ -121,8 +121,16 @@ AFrameDb AFrameDb::FromRaw(const RawAFrameFile& raw_file) {
         grouped_indices[database.frames[i].name].push_back(i);
     }
 
+    std::vector<std::string> anim_names;
+    anim_names.reserve(grouped_indices.size());
+    for (const auto& grouped : grouped_indices) {
+        anim_names.push_back(grouped.first);
+    }
+    std::sort(anim_names.begin(), anim_names.end());
+
     database.anims.reserve(grouped_indices.size());
-    for (auto& [name, frame_indices] : grouped_indices) {
+    for (const std::string& name : anim_names) {
+        std::vector<std::size_t>& frame_indices = grouped_indices.at(name);
         std::sort(
             frame_indices.begin(),
             frame_indices.end(),
