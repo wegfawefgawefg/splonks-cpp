@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <limits>
 #include <sstream>
 
 namespace splonks::debug_playback_internal {
@@ -628,6 +629,7 @@ bool ReadUVec2Vector(std::istream& in, std::vector<UVec2>& values) {
 void WriteFloat(std::ostream& out, float value) {
     std::uint32_t bits = 0;
     static_assert(sizeof(bits) == sizeof(value));
+    static_assert(std::numeric_limits<float>::is_iec559);
     std::memcpy(&bits, &value, sizeof(bits));
     WriteUint32(out, bits);
 }
@@ -638,6 +640,7 @@ bool ReadFloat(std::istream& in, float& value) {
         return false;
     }
     static_assert(sizeof(bits) == sizeof(value));
+    static_assert(std::numeric_limits<float>::is_iec559);
     std::memcpy(&value, &bits, sizeof(value));
     return true;
 }
@@ -645,6 +648,7 @@ bool ReadFloat(std::istream& in, float& value) {
 void WriteDouble(std::ostream& out, double value) {
     std::uint64_t bits = 0;
     static_assert(sizeof(bits) == sizeof(value));
+    static_assert(std::numeric_limits<double>::is_iec559);
     std::memcpy(&bits, &value, sizeof(bits));
     WriteUint64(out, bits);
 }
@@ -655,6 +659,7 @@ bool ReadDouble(std::istream& in, double& value) {
         return false;
     }
     static_assert(sizeof(bits) == sizeof(value));
+    static_assert(std::numeric_limits<double>::is_iec559);
     std::memcpy(&value, &bits, sizeof(value));
     return true;
 }

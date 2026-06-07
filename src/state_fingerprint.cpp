@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <sstream>
 #include <type_traits>
 #include <vector>
@@ -84,11 +85,13 @@ struct FingerprintWriter {
         } else if constexpr (std::is_same_v<T, float>) {
             std::uint32_t bits = 0;
             static_assert(sizeof(bits) == sizeof(pod));
+            static_assert(std::numeric_limits<float>::is_iec559);
             std::memcpy(&bits, &pod, sizeof(bits));
             AddUint32(bits);
         } else if constexpr (std::is_same_v<T, double>) {
             std::uint64_t bits = 0;
             static_assert(sizeof(bits) == sizeof(pod));
+            static_assert(std::numeric_limits<double>::is_iec559);
             std::memcpy(&bits, &pod, sizeof(bits));
             AddUint64(bits);
         } else {

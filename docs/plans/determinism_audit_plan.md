@@ -472,6 +472,12 @@ The expected end state is:
   structs. This removes packet padding, host byte order, raw enum layout, and
   `sizeof(struct)` from live multiplayer packet compatibility. Network
   protocol version is now 2.
+- Fixed/guarded float byte boundaries: network packet float payloads, runtime
+  fingerprint float/double payloads, and debug recording float/double payloads
+  now assert IEC 559 / IEEE-754 scalar formats at compile time before copying
+  bits into explicit little-endian integer encoders. This makes the remaining
+  portability contract visible instead of silently accepting an incompatible
+  platform.
 - Quarantined boundary: `StageTileTrigger` carries runtime callback/debug
   pointer fields and is not serialized by the stage snapshot writer. Network
   resync currently preserves local tile triggers around `RestoreSimSnapshot`,
@@ -482,9 +488,10 @@ The expected end state is:
 - Deferred risk: `SerializeSimSnapshotToBytes` / `DeserializeSimSnapshotFromBytes`
   now avoid raw struct layout, raw enum storage, raw bool representation, host
   endian scalar bytes, and padding. They still preserve current `float` /
-  `double` bit patterns for remaining authoritative float fields, so the
-  snapshot format is portable as bytes but cannot by itself prevent gameplay
-  divergence caused by cross-platform float arithmetic before snapshot/resync.
+  `double` bit patterns for remaining authoritative float fields, guarded by
+  the explicit IEEE-754 compile-time contract above, so the snapshot format is
+  portable as bytes but cannot by itself prevent gameplay divergence caused by
+  cross-platform float arithmetic before snapshot/resync.
 
 ## Undefined And Uninitialized Behavior Audit
 

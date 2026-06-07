@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <limits>
 
 namespace splonks::network {
 
@@ -57,6 +58,7 @@ public:
     void WriteF32(float value) {
         std::uint32_t bits = 0;
         static_assert(sizeof(bits) == sizeof(value));
+        static_assert(std::numeric_limits<float>::is_iec559);
         std::memcpy(&bits, &value, sizeof(bits));
         WriteU32(bits);
     }
@@ -155,6 +157,7 @@ public:
         const std::uint32_t bits = ReadU32();
         float value = 0.0F;
         static_assert(sizeof(bits) == sizeof(value));
+        static_assert(std::numeric_limits<float>::is_iec559);
         std::memcpy(&value, &bits, sizeof(value));
         return value;
     }
