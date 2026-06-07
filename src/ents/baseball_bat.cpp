@@ -5,6 +5,7 @@
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
 #include "particles/ribbon_particle.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 #include "world_ops.hpp"
@@ -99,9 +100,9 @@ extern const EntSpec kBaseballBatSpec{
     .aframe_animator = AFrameAnimator{
         .anim_id = aframe_ids::BaseballBatSwing,
         .current_frame = 0,
-        .current_time = 0.0F,
-        .scale = 1.0F,
-        .speed = 1.0F,
+        .current_time = sim::Scalar::zero(),
+        .scale = sim::Scalar::from_int(1),
+        .speed = sim::Scalar::from_int(1),
         .animate = true,
         .loop = false,
         .finished = false,

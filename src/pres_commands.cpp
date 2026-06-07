@@ -7,6 +7,7 @@
 #include "graphics.hpp"
 #include "particles/ribbon_particle.hpp"
 #include "particles/sprite_particle.hpp"
+#include "sim/fxp.hpp"
 #include "stage_lighting.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
@@ -55,7 +56,7 @@ void SpawnEntPhaseParticleAt(
     particle.size = Vec2::New(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h)
-    ) * ent.aframe_animator.scale;
+    ) * sim::ToRenderScalar(ent.aframe_animator.scale);
     particle.rot = sim::ToRenderScalar(ent.rotation);
     particle.alpha = 0.85F;
     particle.tint_r = tint_r;

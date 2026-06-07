@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 102;
+constexpr std::uint32_t kRecordingVersion = 103;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1437,9 +1437,9 @@ bool ReadEntEffects(std::istream& in, BoxedEntEffects& effects_box) {
 void WriteAFrameAnimator(std::ostream& out, const AFrameAnimator& animator) {
     WriteUint32(out, animator.anim_id);
     WriteUint32(out, animator.current_frame);
-    WriteFloat(out, animator.current_time);
-    WriteFloat(out, animator.scale);
-    WriteFloat(out, animator.speed);
+    WriteSimScalar(out, animator.current_time);
+    WriteSimScalar(out, animator.scale);
+    WriteSimScalar(out, animator.speed);
     WriteBoolByte(out, animator.animate);
     WriteBoolByte(out, animator.loop);
     WriteBoolByte(out, animator.finished);
@@ -1460,9 +1460,9 @@ bool ReadAFrameAnimator(std::istream& in, AFrameAnimator& animator) {
     bool ping_pong_forward = false;
     if (!ReadUint32(in, animator.anim_id) ||
         !ReadUint32(in, animator.current_frame) ||
-        !ReadFloat(in, animator.current_time) ||
-        !ReadFloat(in, animator.scale) ||
-        !ReadFloat(in, animator.speed) ||
+        !ReadSimScalar(in, animator.current_time) ||
+        !ReadSimScalar(in, animator.scale) ||
+        !ReadSimScalar(in, animator.speed) ||
         !ReadBoolByte(in, animate) ||
         !ReadBoolByte(in, loop) ||
         !ReadBoolByte(in, finished) ||

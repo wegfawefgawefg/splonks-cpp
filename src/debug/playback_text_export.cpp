@@ -2,6 +2,7 @@
 
 #include "ent/spec.hpp"
 #include "aframe.hpp"
+#include "sim/fxp.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -188,7 +189,8 @@ bool ExportRecordingToTextFile(
                 if (anim != nullptr) {
                     out << "    anim: " << anim->name << "\n";
                     out << "    anim_frame: " << ent.aframe_animator.current_frame << "\n";
-                    out << "    anim_time: " << ent.aframe_animator.current_time << "\n";
+                    out << "    anim_time: "
+                        << sim::ToRenderScalar(ent.aframe_animator.current_time) << "\n";
                     const AFrame* aframe = graphics.aframe_db.FindFrame(
                         ent.aframe_animator.anim_id,
                         ent.aframe_animator.current_frame

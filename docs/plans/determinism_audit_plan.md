@@ -45,9 +45,8 @@ The expected end state is:
 - In progress. The network fingerprint no longer hashes raw float bits; it
   quantizes known hashed float fields through `sim::Scalar` / Fixed12.
 - Remaining authoritative float storage is still broad. `Ent::pos`, `vel`,
-  `acc`, `size`, `counter_a` through `counter_d`,
-  `AFrameAnimator::current_time`, `AFrameAnimator::speed`,
-  `Stage::gravity`, and `Stage::fluid_amount` are the highest-priority
+  `acc`, `size`, `counter_a` through `counter_d`, `Stage::gravity`, and
+  `Stage::fluid_amount` are the highest-priority
   simulation fields because they affect movement, contact, animation gates,
   world state, or lockstep fingerprints.
 - Deferred risk: these fields are still simulated as float. The current
@@ -57,8 +56,8 @@ The expected end state is:
   authoritative gameplay storage/math to fixed-point, integer counters, or
   explicit threshold quantization.
 - Current authoritative float-backed inventory:
-  `Ent::pos`, `vel`, `acc`, `size`, `counter_a` through `counter_d`, and
-  `AFrameAnimator::current_time` / `scale` / `speed`; stage fluid amount,
+  `Ent::pos`, `vel`, `acc`, `size`, and `counter_a` through `counter_d`;
+  stage fluid amount,
   velocity, gravity, gravity strength, temporary gravity, and `Stage::gravity`;
   synchronized gameplay settings for fluids, water movement, player tuning,
   and effect modifier values; retained reconnect player/item state mirrors of
@@ -67,12 +66,13 @@ The expected end state is:
   size, counters, effect values, light values, and animation timers are
   quantized through `sim::Scalar` / Fixed12 before hashing; entity rotation is
   stored and hashed as raw Fixed12, and distance-traveled, travel-sound
-  countdown, support-ground-friction, push-acceleration, and entity light state
-  are also stored and hashed as raw Fixed12. Runtime movement tuning scalars
-  `max_speed`, `throw_velocity_scale`, and `buoyancy` are stored and hashed as
-  raw Fixed12 too. That reduces noisy float-bit hash mismatches, but the
-  simulation and `SimSnapshot` still carry IEEE float payloads for the remaining
-  float-backed fields.
+  countdown, support-ground-friction, push-acceleration, entity light state,
+  animation time, animation scale, and animation speed are also stored and
+  hashed as raw Fixed12. Runtime movement tuning scalars `max_speed`,
+  `throw_velocity_scale`, and `buoyancy` are stored and hashed as raw Fixed12
+  too. That reduces noisy float-bit hash mismatches, but the simulation and
+  `SimSnapshot` still carry IEEE float payloads for the remaining float-backed
+  fields.
 - Migration order should be narrow and mechanical: introduce fixed-point
   storage at authoritative boundaries, convert parsing/spec constants into
   fixed values, keep render/audio/UI conversion at the edge, and validate each
@@ -235,6 +235,12 @@ The expected end state is:
   larger movement migration, but the runtime tuning state itself no longer
   carries arbitrary platform float payloads. Recording format version is now
   102.
+- Fixed in runtime animation state: `AFrameAnimator::current_time`, `scale`,
+  and `speed` are now stored as Fixed12, hashed as raw fixed values, and
+  recorded as raw fixed values. Animation frame gates now compare fixed
+  animation time against integer-authored frame durations, while rendering,
+  debug JSON, CLI diffs, and text export convert back to float only at their
+  presentation boundaries. Recording format version is now 103.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash

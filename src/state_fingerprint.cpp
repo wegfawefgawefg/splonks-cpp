@@ -312,8 +312,9 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddIVec2(ent.point_d);
     writer.AddPod(ent.aframe_animator.anim_id);
     writer.AddPod(ent.aframe_animator.current_frame);
-    writer.AddQuantizedFloat(ent.aframe_animator.current_time);
-    writer.AddQuantizedFloat(ent.aframe_animator.speed);
+    writer.AddFixedScalar(ent.aframe_animator.current_time);
+    writer.AddFixedScalar(ent.aframe_animator.scale);
+    writer.AddFixedScalar(ent.aframe_animator.speed);
     writer.AddBool(ent.aframe_animator.animate);
     writer.AddBool(ent.aframe_animator.loop);
     writer.AddBool(ent.aframe_animator.finished);

@@ -246,6 +246,7 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
             a.aframe_animator.anim_id != b.aframe_animator.anim_id ||
             a.aframe_animator.current_frame != b.aframe_animator.current_frame ||
             a.aframe_animator.current_time != b.aframe_animator.current_time ||
+            a.aframe_animator.scale != b.aframe_animator.scale ||
             a.aframe_animator.speed != b.aframe_animator.speed ||
             a.aframe_animator.animate != b.aframe_animator.animate ||
             a.aframe_animator.loop != b.aframe_animator.loop ||
@@ -305,8 +306,8 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << "/" << b.aframe_animator.anim_id
                    << " frame " << a.aframe_animator.current_frame
                    << "/" << b.aframe_animator.current_frame
-                   << " time " << a.aframe_animator.current_time
-                   << "/" << b.aframe_animator.current_time
+                   << " time " << sim::ToRenderScalar(a.aframe_animator.current_time)
+                   << "/" << sim::ToRenderScalar(b.aframe_animator.current_time)
                    << " effects " << DescribeEntEffects(a.effects)
                    << " / " << DescribeEntEffects(b.effects);
             return output.str();
@@ -3875,7 +3876,7 @@ bool CheckStateFingerprintSmoke() {
         presentation_ent->light_strength += sim::ToSimScalar(0.5F);
         presentation_ent->light_radius += 2;
         presentation_ent->aframe_animator.current_frame += 1;
-        presentation_ent->aframe_animator.current_time += 0.375F;
+        presentation_ent->aframe_animator.current_time += sim::ToSimScalar(0.375F);
         presentation_ent->aframe_animator.finished = !presentation_ent->aframe_animator.finished;
         const CanonicalStateFingerprint left_network =
             ComputeNetworkStateFingerprint(presentation_left);

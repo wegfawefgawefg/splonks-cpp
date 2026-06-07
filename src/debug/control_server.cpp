@@ -4,6 +4,7 @@
 #include "network/net_fuzzer.hpp"
 #include "network/net_lobby.hpp"
 #include "network/net_transport.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "state_fingerprint.hpp"
 #include "stage_progression.hpp"
@@ -318,8 +319,8 @@ void WriteEntJson(std::ostringstream& out, const State& state, const Ent& ent) {
         << ",\"facing\":" << JsonString(ent.facing == Side::Right ? "right" : "left")
         << ",\"anim\":{\"id\":" << ent.aframe_animator.anim_id
         << ",\"frame\":" << ent.aframe_animator.current_frame
-        << ",\"time\":" << ent.aframe_animator.current_time
-        << ",\"speed\":" << ent.aframe_animator.speed
+        << ",\"time\":" << sim::ToRenderScalar(ent.aframe_animator.current_time)
+        << ",\"speed\":" << sim::ToRenderScalar(ent.aframe_animator.speed)
         << ",\"animate\":" << (ent.aframe_animator.animate ? "true" : "false")
         << ",\"loop\":" << (ent.aframe_animator.loop ? "true" : "false")
         << ",\"finished\":" << (ent.aframe_animator.finished ? "true" : "false")

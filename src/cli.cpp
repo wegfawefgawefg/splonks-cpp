@@ -979,8 +979,18 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     );
     PrintNumericFieldDiff(
         "anim_time",
-        left->aframe_animator.current_time,
-        right->aframe_animator.current_time
+        sim::ToRenderScalar(left->aframe_animator.current_time),
+        sim::ToRenderScalar(right->aframe_animator.current_time)
+    );
+    PrintNumericFieldDiff(
+        "anim_scale",
+        sim::ToRenderScalar(left->aframe_animator.scale),
+        sim::ToRenderScalar(right->aframe_animator.scale)
+    );
+    PrintNumericFieldDiff(
+        "anim_speed",
+        sim::ToRenderScalar(left->aframe_animator.speed),
+        sim::ToRenderScalar(right->aframe_animator.speed)
     );
 }
 

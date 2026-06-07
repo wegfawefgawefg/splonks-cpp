@@ -1,6 +1,7 @@
 #pragma once
 
 #include "aframe.hpp"
+#include "sim/fxp.hpp"
 
 #include <cstdint>
 
@@ -15,9 +16,9 @@ enum class AnimPlaybackMode : std::uint8_t {
 struct AFrameAnimator {
     AFrameId anim_id = kInvalidAFrameId;
     std::uint32_t current_frame = 0;
-    float current_time = 0.0F;
-    float scale = 1.0F;
-    float speed = 1.0F;
+    sim::Scalar current_time = sim::Scalar::zero();
+    sim::Scalar scale = sim::Scalar::from_int(1);
+    sim::Scalar speed = sim::Scalar::from_int(1);
     bool animate = true;
     bool loop = true;
     bool finished = false;

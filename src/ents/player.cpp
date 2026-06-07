@@ -174,8 +174,10 @@ void UpdateClimbAnimPlayback(Ent& player, const Graphics& graphics) {
     if (anim != nullptr && animator.current_frame < anim->frame_indices.size()) {
         const AFrame& aframe =
             graphics.aframe_db.frames[anim->frame_indices[animator.current_frame]];
-        const float frame_duration = static_cast<float>(aframe.duration);
-        animator.current_time = std::clamp(frame_duration - animator.current_time, 0.0F, frame_duration);
+        const sim::Scalar frame_duration =
+            sim::Scalar::from_int(static_cast<std::int32_t>(aframe.duration));
+        animator.current_time =
+            std::clamp(frame_duration - animator.current_time, sim::Scalar::zero(), frame_duration);
     }
 
     animator.playback_mode = desired_mode;

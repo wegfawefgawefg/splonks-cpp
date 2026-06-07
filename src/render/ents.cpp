@@ -215,7 +215,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 static_cast<float>(aframe->sample_rect.h)
             );
             const Vec2 sprite_scaled_size =
-                sprite_world_size * ent.aframe_animator.scale;
+                sprite_world_size * sim::ToRenderScalar(ent.aframe_animator.scale);
             Ent render_ent = ent;
             render_ent.pos = GetSmoothedEntRenderPos(state, graphics, ent);
             const Vec2 render_position =

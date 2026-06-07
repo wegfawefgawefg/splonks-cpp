@@ -1,6 +1,7 @@
 #include "ents/common/common.hpp"
 
 #include "aframe_id.hpp"
+#include "sim/fxp.hpp"
 
 #include <algorithm>
 
@@ -96,7 +97,7 @@ Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const Vec2&
     const Vec2 sprite_world_size = Vec2::New(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h)
-    ) * ent.aframe_animator.scale;
+    ) * sim::ToRenderScalar(ent.aframe_animator.scale);
     return sprite_tl + (sprite_world_size * 0.5F);
 }
 
