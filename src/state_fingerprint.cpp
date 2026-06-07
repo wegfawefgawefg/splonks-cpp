@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
-#include <limits>
 #include <sstream>
 #include <type_traits>
 #include <vector>
@@ -88,20 +87,11 @@ struct FingerprintWriter {
             } else {
                 static_assert(sizeof(bits) <= 8, "Unsupported fingerprint integer width");
             }
-        } else if constexpr (std::is_same_v<T, float>) {
-            std::uint32_t bits = 0;
-            static_assert(sizeof(bits) == sizeof(pod));
-            static_assert(std::numeric_limits<float>::is_iec559);
-            std::memcpy(&bits, &pod, sizeof(bits));
-            AddUint32(bits);
-        } else if constexpr (std::is_same_v<T, double>) {
-            std::uint64_t bits = 0;
-            static_assert(sizeof(bits) == sizeof(pod));
-            static_assert(std::numeric_limits<double>::is_iec559);
-            std::memcpy(&bits, &pod, sizeof(bits));
-            AddUint64(bits);
         } else {
-            static_assert(std::is_integral_v<T>, "Fingerprint AddPod requires scalar values");
+            static_assert(
+                std::is_integral_v<T>,
+                "Fingerprint AddPod requires integer/bool/enum values; quantize floats first"
+            );
         }
     }
 

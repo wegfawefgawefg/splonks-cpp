@@ -280,9 +280,12 @@ The expected end state is:
   Recording format version is now 107.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
-  values now hash as explicit little-endian bytes, and float/double values hash
-  through explicit IEEE bit payloads when they are intentionally included.
-  This removes host byte order from canonical/gameplay/network fingerprints.
+  values now hash as explicit little-endian bytes. `AddPod` now rejects
+  `float`/`double` at compile time so future fingerprint additions must
+  explicitly quantize simulation scalars before hashing instead of silently
+  introducing raw IEEE float payloads. This removes host byte order from
+  canonical/gameplay/network fingerprints and guards the hash boundary against
+  accidental float-bit comparisons.
 - Fixed in runtime fingerprints: stage type now hashes as an explicit
   `uint8_t` instead of a plain `int` cast. This keeps the fingerprint enum
   boundary aligned with the snapshot writer's one-byte high-level mode/type
