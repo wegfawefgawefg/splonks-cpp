@@ -26,7 +26,7 @@ AABB GetAabbAtPosition(const Ent& ent, const Vec2& pos) {
 
 void StoreDistanceTraveled(std::size_t ent_idx, State& state, const Vec2& start_pos) {
     Ent& ent = state.ents.ents[ent_idx];
-    float dist_traveled = Length(ent.pos - start_pos);
+    float dist_traveled = LengthDeterministic(ent.pos - start_pos);
     if (dist_traveled < 1.0F) {
         dist_traveled = 0.0F;
     }

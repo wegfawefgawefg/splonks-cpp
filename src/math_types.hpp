@@ -243,6 +243,16 @@ inline Vec2 NormalizeOrZero(const Vec2& value) {
     return value / length;
 }
 
+inline float LengthDeterministic(const Vec2& value) {
+    constexpr std::int64_t kScale = 4096;
+    const std::int64_t x = static_cast<std::int64_t>(RoundToInt(value.x * static_cast<float>(kScale)));
+    const std::int64_t y = static_cast<std::int64_t>(RoundToInt(value.y * static_cast<float>(kScale)));
+    const std::uint64_t x_sq = static_cast<std::uint64_t>(x * x);
+    const std::uint64_t y_sq = static_cast<std::uint64_t>(y * y);
+    const std::uint64_t length = IntegerSqrtFloor(x_sq + y_sq);
+    return static_cast<float>(length) / static_cast<float>(kScale);
+}
+
 inline Vec2 NormalizeOrZeroDeterministic(const Vec2& value) {
     constexpr std::int64_t kScale = 4096;
     const std::int64_t x = static_cast<std::int64_t>(RoundToInt(value.x * static_cast<float>(kScale)));

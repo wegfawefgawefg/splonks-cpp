@@ -174,13 +174,16 @@ The expected end state is:
   horizontal and vertical raycasts were already integer-stepped; this removes
   platform libm `sqrt` from the remaining arbitrary-direction world query
   stepping while the query result still returns current integer pixel samples.
+- Fixed in physics traveled-distance bookkeeping: `Ent::dist_traveled_this_frame`
+  now uses `LengthDeterministic` instead of platform libm `sqrt`. This field
+  feeds gameplay-adjacent timers, sound countdowns, boulder counters, and player
+  animation gates, so its per-frame distance threshold is now quantized through
+  the same Fixed12-scale integer length path as deterministic normalization.
 - Remaining high-risk math boundaries after the simple cleanup pass:
   `stage_fluids.cpp` still normalizes/clamps fluid velocity and gravity through
-  `Length` / `NormalizeOrZero`; and `ents/common/physics.cpp` still uses
-  traveled length while sweeping motion. These are authoritative gameplay paths
-  and should move to fixed/integer vector math or explicit discrete
-  approximations in targeted follow-up work, not casual squared-threshold
-  rewrites.
+  `Length` / `NormalizeOrZero`. This is an authoritative gameplay path and
+  should move to fixed/integer vector math or explicit discrete approximations
+  in targeted follow-up work, not casual squared-threshold rewrites.
 - Remaining mostly-cosmetic math boundaries: `stage_lighting.cpp` uses
   `std::pow`, `std::floor`, and `Length`; `debug_moving_light.cpp` uses
   `std::sin` / `std::cos`; arrow-trap rotation still uses `std::atan2` for
