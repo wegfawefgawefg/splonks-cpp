@@ -20,8 +20,8 @@ int FloorDiv(int value, int divisor) {
 }
 
 float GetTileShakeFromGrid(const std::vector<std::vector<float>>& grid,
-                           unsigned int x,
-                           unsigned int y) {
+                           std::uint32_t x,
+                           std::uint32_t y) {
     if (y >= grid.size()) {
         return 0.0F;
     }
@@ -54,8 +54,8 @@ UVec2 Stage::GetRoomLayoutDims() const {
         return UVec2::New(1, 1);
     }
     return UVec2::New(
-        static_cast<unsigned int>(rooms.front().size()),
-        static_cast<unsigned int>(rooms.size())
+        static_cast<std::uint32_t>(rooms.front().size()),
+        static_cast<std::uint32_t>(rooms.size())
     );
 }
 
@@ -78,11 +78,11 @@ IVec2 Stage::GetRegularRoomGridTlWc(const IVec2& room) const {
     );
 }
 
-const Tile& Stage::GetTile(unsigned int x, unsigned int y) const {
+const Tile& Stage::GetTile(std::uint32_t x, std::uint32_t y) const {
     return tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
 }
 
-TileRotation Stage::GetTileRotation(unsigned int x, unsigned int y) const {
+TileRotation Stage::GetTileRotation(std::uint32_t x, std::uint32_t y) const {
     if (y >= tile_rotations.size()) {
         return kTileRotation0;
     }
@@ -93,7 +93,7 @@ TileRotation Stage::GetTileRotation(unsigned int x, unsigned int y) const {
     return row[static_cast<std::size_t>(x)] & kTileRotationMask;
 }
 
-Tile Stage::GetFluidTile(unsigned int x, unsigned int y) const {
+Tile Stage::GetFluidTile(std::uint32_t x, std::uint32_t y) const {
     if (y >= fluid_tiles.size()) {
         return Tile::Air;
     }
@@ -104,7 +104,7 @@ Tile Stage::GetFluidTile(unsigned int x, unsigned int y) const {
     return row[static_cast<std::size_t>(x)];
 }
 
-float Stage::GetFluidAmount(unsigned int x, unsigned int y) const {
+float Stage::GetFluidAmount(std::uint32_t x, std::uint32_t y) const {
     if (y >= fluid_amount.size()) {
         return 0.0F;
     }
@@ -115,23 +115,23 @@ float Stage::GetFluidAmount(unsigned int x, unsigned int y) const {
     return row[static_cast<std::size_t>(x)];
 }
 
-float Stage::GetTileShake(unsigned int x, unsigned int y) const {
+float Stage::GetTileShake(std::uint32_t x, std::uint32_t y) const {
     return GetForegroundTileShake(x, y);
 }
 
-float Stage::GetForegroundTileShake(unsigned int x, unsigned int y) const {
+float Stage::GetForegroundTileShake(std::uint32_t x, std::uint32_t y) const {
     return GetTileShakeFromGrid(tile_shake, x, y);
 }
 
-float Stage::GetBackgroundTileShake(unsigned int x, unsigned int y) const {
+float Stage::GetBackgroundTileShake(std::uint32_t x, std::uint32_t y) const {
     return GetTileShakeFromGrid(backwall_tile_shake, x, y);
 }
 
-const Tile& Stage::GetBackwallTile(unsigned int x, unsigned int y) const {
+const Tile& Stage::GetBackwallTile(std::uint32_t x, std::uint32_t y) const {
     return backwall_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
 }
 
-EmbeddedTreasure Stage::GetEmbeddedTreasure(unsigned int x, unsigned int y) const {
+EmbeddedTreasure Stage::GetEmbeddedTreasure(std::uint32_t x, std::uint32_t y) const {
     if (!EmbeddedTreasureCoordExists(
             embedded_treasures,
             static_cast<int>(x),
@@ -151,7 +151,7 @@ const Tile* Stage::GetTileAtWc(const IVec2& pos) const {
         return nullptr;
     }
 
-    return &GetTile(static_cast<unsigned int>(tile_coords.x), static_cast<unsigned int>(tile_coords.y));
+    return &GetTile(static_cast<std::uint32_t>(tile_coords.x), static_cast<std::uint32_t>(tile_coords.y));
 }
 
 std::vector<const Tile*> Stage::GetTilesInRectWc(const IVec2& tl, const IVec2& br) const {
@@ -175,7 +175,7 @@ std::vector<const Tile*> Stage::GetTilesInRect(const IVec2& tl, const IVec2& br)
             if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
                 continue;
             }
-            result.push_back(&GetTile(static_cast<unsigned int>(tile_pos.x), static_cast<unsigned int>(tile_pos.y)));
+            result.push_back(&GetTile(static_cast<std::uint32_t>(tile_pos.x), static_cast<std::uint32_t>(tile_pos.y)));
         }
     }
     return result;
@@ -199,7 +199,7 @@ std::vector<IAABB> Stage::GetAabbsForAllCollidableTilesInRect(const IVec2& tl,
     std::vector<IAABB> result;
     for (int y = tl_tc.y; y <= br_tc.y; ++y) {
         for (int x = tl_tc.x; x <= br_tc.x; ++x) {
-            const Tile tile = GetTile(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+            const Tile tile = GetTile(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y));
             if (IsTileCollidable(tile)) {
                 const IVec2 tile_pos = IVec2::New(x, y) * static_cast<int>(kTileSize);
                 IAABB aabb;
@@ -216,8 +216,8 @@ std::vector<IAABB> Stage::GetAabbsForAllCollidableTilesInRect(const IVec2& tl,
 UVec2 Stage::GetRandomRegularRoomGridCoord(DetRng& det_rng) const {
     const UVec2 room_layout_dims = GetRoomLayoutDims();
     return UVec2::New(
-        static_cast<unsigned int>(det_rng.RandomIntExclusive(0, static_cast<int>(room_layout_dims.x))),
-        static_cast<unsigned int>(det_rng.RandomIntExclusive(0, static_cast<int>(room_layout_dims.y)))
+        static_cast<std::uint32_t>(det_rng.RandomIntExclusive(0, static_cast<int>(room_layout_dims.x))),
+        static_cast<std::uint32_t>(det_rng.RandomIntExclusive(0, static_cast<int>(room_layout_dims.y)))
     );
 }
 
@@ -225,7 +225,7 @@ std::optional<IVec2> Stage::GetRandomNoncollidablePositionInStage(DetRng& det_rn
     std::vector<IVec2> noncollidable_tile_coords;
     for (int y = 0; y < static_cast<int>(GetTileHeight()); ++y) {
         for (int x = 0; x < static_cast<int>(GetTileWidth()); ++x) {
-            const Tile tile = GetTile(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+            const Tile tile = GetTile(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y));
             if (!IsTileCollidable(tile)) {
                 noncollidable_tile_coords.push_back(IVec2::New(x, y));
             }
@@ -267,7 +267,7 @@ std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRegularRoomGridCell(
     std::vector<IVec2> noncollidable_tile_coords;
     for (int y = tl.y; y <= br.y; ++y) {
         for (int x = tl.x; x <= br.x; ++x) {
-            const Tile tile = GetTile(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+            const Tile tile = GetTile(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y));
             if (!IsTileCollidable(tile)) {
                 noncollidable_tile_coords.push_back(IVec2::New(x, y));
             }

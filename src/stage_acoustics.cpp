@@ -153,8 +153,8 @@ void UpdateStageAcousticsForTileChanges(
         return;
     }
 
-    const unsigned int tile_width = state.stage.GetTileWidth();
-    const unsigned int tile_height = state.stage.GetTileHeight();
+    const std::uint32_t tile_width = state.stage.GetTileWidth();
+    const std::uint32_t tile_height = state.stage.GetTileHeight();
     if (tile_width == 0 || tile_height == 0) {
         return;
     }

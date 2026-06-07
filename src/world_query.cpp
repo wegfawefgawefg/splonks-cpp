@@ -153,8 +153,8 @@ bool WorldAabbsIntersect(const Stage& stage, const AABB& area, const AABB& other
 
 std::vector<IVec2> GetTileCoordsInRect(const Stage& stage, const IVec2& tl, const IVec2& br) {
     std::vector<IVec2> result;
-    const unsigned int tile_width = stage.GetTileWidth();
-    const unsigned int tile_height = stage.GetTileHeight();
+    const std::uint32_t tile_width = stage.GetTileWidth();
+    const std::uint32_t tile_height = stage.GetTileHeight();
     if (tile_width == 0 || tile_height == 0) {
         return result;
     }

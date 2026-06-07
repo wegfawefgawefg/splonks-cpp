@@ -958,6 +958,13 @@ The expected end state is:
 - Fixed in desync replay diagnostics: the SDRP `uint16_t` writer now masks with
   a width-explicit `uint16_t` constant before narrowing to bytes. This was
   caught by the ASan/UBSan strict build under `-Wsign-conversion`.
+- Fixed in stage dimension/query APIs: `Stage::GetWidth`, `GetHeight`,
+  `GetTileWidth`, `GetTileHeight`, and unsigned tile-grid accessor parameters
+  now use explicit `std::uint32_t` instead of implementation-width
+  `unsigned int`. Stage dimensions already store and serialize through
+  `UVec2` / `uint32_t`; the runtime query API now matches that deterministic
+  width, with native casts left only at local indexing or signed bounds-check
+  boundaries.
 - Audit checkpoint 2026-06-07: current targeted scan of deterministic-state
   headers and snapshot/fingerprint/network code found no remaining
   `std::optional<std::size_t>` runtime fields in gameplay or snapshot structs.

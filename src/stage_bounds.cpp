@@ -31,29 +31,29 @@ int FloorDiv(int value, int divisor) {
     return result;
 }
 
-unsigned int GetTileRowWidth(const std::vector<std::vector<Tile>>& tiles) {
+std::uint32_t GetTileRowWidth(const std::vector<std::vector<Tile>>& tiles) {
     if (tiles.empty()) {
         return 0;
     }
-    return static_cast<unsigned int>(tiles[0].size());
+    return static_cast<std::uint32_t>(tiles[0].size());
 }
 
 } // namespace
 
-unsigned int Stage::GetWidth() const {
+std::uint32_t Stage::GetWidth() const {
     return GetTileWidth() * kTileSize;
 }
 
-unsigned int Stage::GetHeight() const {
+std::uint32_t Stage::GetHeight() const {
     return GetTileHeight() * kTileSize;
 }
 
-unsigned int Stage::GetTileWidth() const {
+std::uint32_t Stage::GetTileWidth() const {
     return GetTileRowWidth(tiles);
 }
 
-unsigned int Stage::GetTileHeight() const {
-    return static_cast<unsigned int>(tiles.size());
+std::uint32_t Stage::GetTileHeight() const {
+    return static_cast<std::uint32_t>(tiles.size());
 }
 
 bool Stage::WrapsX() const {
@@ -137,7 +137,7 @@ std::optional<StageBorderSideKind> Stage::GetOutOfBoundsSideForWorldPos(const IV
 Tile Stage::GetTileOrBorder(int tile_x, int tile_y) const {
     const IVec2 wrapped = WrapTileCoord(IVec2::New(tile_x, tile_y));
     if (IsTileCoordInside(wrapped.x, wrapped.y)) {
-        return GetTile(static_cast<unsigned int>(wrapped.x), static_cast<unsigned int>(wrapped.y));
+        return GetTile(static_cast<std::uint32_t>(wrapped.x), static_cast<std::uint32_t>(wrapped.y));
     }
 
     const std::optional<StageBorderSideKind> side = GetOutOfBoundsSideForTileCoord(tile_x, tile_y);
