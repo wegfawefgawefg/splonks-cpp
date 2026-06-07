@@ -262,9 +262,8 @@ float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
             continue;
         }
 
-        friction = found_support_surface
-                       ? std::min(friction, other->support_ground_friction)
-                       : other->support_ground_friction;
+        const float other_friction = sim::ToRenderScalar(other->support_ground_friction);
+        friction = found_support_surface ? std::min(friction, other_friction) : other_friction;
         found_support_surface = true;
     }
 

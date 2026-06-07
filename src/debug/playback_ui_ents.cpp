@@ -737,7 +737,11 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
     }
     ent_state_changed |= ImGui::Checkbox("Crusher/Pusher", &ent.crusher_pusher);
     ent_state_changed |= ImGui::Checkbox("Pushable", &ent.pushable);
-    ent_state_changed |= ImGui::DragFloat("Push Acc", &ent.push_acc, 0.01F, 0.0F, 5.0F, "%.2f");
+    float push_acc = sim::ToRenderScalar(ent.push_acc);
+    if (ImGui::DragFloat("Push Acc", &push_acc, 0.01F, 0.0F, 5.0F, "%.2f")) {
+        ent.push_acc = sim::ToSimScalar(push_acc);
+        ent_state_changed = true;
+    }
     if (peer_mutation_disabled) {
         ImGui::EndDisabled();
         ImGui::TextDisabled("Ent edits are disabled on multiplayer peers until admin commands are host-routed.");

@@ -276,6 +276,8 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddPod(static_cast<std::uint8_t>(ent.damage_vuln));
     writer.AddPod(ent.movement_flags);
     writer.AddPod(ent.health);
+    writer.AddFixedScalar(ent.support_ground_friction);
+    writer.AddFixedScalar(ent.push_acc);
     writer.AddFixedScalar(ent.dist_traveled_this_frame);
     writer.AddFixedScalar(ent.travel_sound_countdown);
     writer.AddOptionalVid(ent.back_vid);

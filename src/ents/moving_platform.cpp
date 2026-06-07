@@ -3,6 +3,7 @@
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 
 #include <array>
@@ -72,7 +73,7 @@ int PositiveModulo(int value, int divisor) {
 bool IsIcyPlatform(const Ent& platform) {
     return platform.impassable &&
            !platform.can_be_hung_on &&
-           platform.support_ground_friction >= kIcyPlatformFriction;
+           platform.support_ground_friction >= sim::ToSimScalar(kIcyPlatformFriction);
 }
 
 void SpawnIcyPlatformParticles(const Ent& platform, State& state) {

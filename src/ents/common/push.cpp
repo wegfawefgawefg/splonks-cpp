@@ -151,10 +151,10 @@ void TryPushBlocks(
                 float block_x_acc_delta = 0.0F;
                 if (ent_vel.x > 0.0F && block_br.x > push_zone_left_x &&
                     block_tl.x > push_zone_left_x) {
-                    block_x_acc_delta = block_ent->push_acc;
+                    block_x_acc_delta = sim::ToRenderScalar(block_ent->push_acc);
                 } else if (ent_vel.x < 0.0F && block_tl.x < push_zone_right_x &&
                            block_br.x < push_zone_right_x) {
-                    block_x_acc_delta = -block_ent->push_acc;
+                    block_x_acc_delta = -sim::ToRenderScalar(block_ent->push_acc);
                 }
                 if (block_x_acc_delta != 0.0F) {
                     block_ent->acc.x += block_x_acc_delta;

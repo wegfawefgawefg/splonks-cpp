@@ -115,8 +115,8 @@ struct Ent {
     bool hurt_on_contact = false;
     bool vanish_on_death = false;
     bool affected_by_ground_friction = true;
-    float support_ground_friction = 0.85F;
-    float push_acc = 0.0F;
+    sim::Scalar support_ground_friction = sim::ToSimScalar(0.85F);
+    sim::Scalar push_acc = sim::Scalar::zero();
     std::optional<AFrameId> damage_anim = std::nullopt;
     std::optional<AudioAssetId> damage_sound = std::nullopt;
     std::optional<AudioAssetId> collide_sound = std::nullopt;

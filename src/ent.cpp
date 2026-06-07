@@ -99,8 +99,8 @@ Ent Ent::New() {
     ent.hurt_on_contact = false;
     ent.vanish_on_death = false;
     ent.affected_by_ground_friction = true;
-    ent.support_ground_friction = 0.85F;
-    ent.push_acc = 0.0F;
+    ent.support_ground_friction = sim::ToSimScalar(0.85F);
+    ent.push_acc = sim::Scalar::zero();
     ent.damage_anim.reset();
     ent.damage_sound.reset();
     ent.collide_sound.reset();

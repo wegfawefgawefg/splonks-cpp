@@ -1,6 +1,7 @@
 #include "ent/spec.hpp"
 
 #include "aframe_id.hpp"
+#include "sim/fxp.hpp"
 
 namespace splonks {
 
@@ -25,9 +26,9 @@ void SetEntAs(Ent& ent, EntType type_) {
     ent.can_be_stomped = spec.can_be_stomped;
     ent.vanish_on_death = spec.vanish_on_death;
     ent.affected_by_ground_friction = spec.affected_by_ground_friction;
-    ent.support_ground_friction = spec.support_ground_friction;
+    ent.support_ground_friction = sim::ToSimScalar(spec.support_ground_friction);
     ent.pushable = spec.pushable;
-    ent.push_acc = spec.push_acc;
+    ent.push_acc = sim::ToSimScalar(spec.push_acc);
     ent.jump_hold_gravity_frames_remaining = 0;
     ent.throw_velocity_scale = spec.throw_velocity_scale;
     ent.buoyancy = spec.buoyancy;

@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 98;
+constexpr std::uint32_t kRecordingVersion = 99;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1549,8 +1549,8 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.hurt_on_contact);
     WriteBoolByte(out, ent.vanish_on_death);
     WriteBoolByte(out, ent.affected_by_ground_friction);
-    WriteFloat(out, ent.support_ground_friction);
-    WriteFloat(out, ent.push_acc);
+    WriteSimScalar(out, ent.support_ground_friction);
+    WriteSimScalar(out, ent.push_acc);
     WriteOptionalAFrameId(out, ent.damage_anim);
     WriteOptionalAudioAssetId(out, ent.damage_sound);
     WriteOptionalAudioAssetId(out, ent.collide_sound);
@@ -1677,8 +1677,8 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.hurt_on_contact) &&
            ReadBoolByte(in, ent.vanish_on_death) &&
            ReadBoolByte(in, ent.affected_by_ground_friction) &&
-           ReadFloat(in, ent.support_ground_friction) &&
-           ReadFloat(in, ent.push_acc) &&
+           ReadSimScalar(in, ent.support_ground_friction) &&
+           ReadSimScalar(in, ent.push_acc) &&
            ReadOptionalAFrameId(in, ent.damage_anim) &&
            ReadOptionalAudioAssetId(in, ent.damage_sound) &&
            ReadOptionalAudioAssetId(in, ent.collide_sound) &&
