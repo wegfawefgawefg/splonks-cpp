@@ -7,6 +7,7 @@
 #include "network/lockstep_config.hpp"
 #include "network/net_fuzzer.hpp"
 #include "network/net_ids.hpp"
+#include "sim/fxp.hpp"
 #include "vid.hpp"
 #include "tools/tool_spec.hpp"
 
@@ -76,7 +77,7 @@ struct NetRetainedAttachedEntState {
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
     Vec2 size = Vec2::New(0.0F, 0.0F);
-    float rotation = 0.0F;
+    sim::Scalar rotation = sim::Scalar::zero();
     float counter_a = 0.0F;
     float counter_b = 0.0F;
     float counter_c = 0.0F;

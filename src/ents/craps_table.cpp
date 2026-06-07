@@ -110,7 +110,7 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
     dice.grounded = false;
     dice.counter_a = static_cast<float>(RollDicePairTotal(state));
     dice.counter_b = kDiceRollState;
-    dice.rotation = static_cast<float>(state.drng.RandomIntInclusive(0, 359));
+    dice.rotation = sim::ToSimScalar(static_cast<float>(state.drng.RandomIntInclusive(0, 359)));
 
     const Vec2 table_center = table.GetCenter();
     dice.SetCenter(table_center + Vec2::New(0.0F, -10.0F));

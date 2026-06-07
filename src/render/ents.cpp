@@ -261,7 +261,8 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                     render_position + render_offset + shake_offset,
                     sprite_scaled_size
                 );
-                if (std::abs(ent.rotation) <= 0.01F) {
+                const float rotation = sim::ToRenderScalar(ent.rotation);
+                if (std::abs(rotation) <= 0.01F) {
                     RenderWorldTextureRotated(renderer, graphics, sprite_texture, &src, dst, 0.0, nullptr, flip);
                 } else {
                     const Vec2 rotation_world =
@@ -282,7 +283,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                         sprite_texture,
                         &src,
                         dst,
-                        ent.rotation,
+                        rotation,
                         &rotation_center,
                         flip
                     );

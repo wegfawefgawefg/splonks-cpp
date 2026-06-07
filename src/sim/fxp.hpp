@@ -14,6 +14,10 @@ using Vec2 = gfxp::BasicVec2<Scalar>;
     return Scalar::from_float_for_boundary(value, rounding);
 }
 
+[[nodiscard]] inline float ToRenderScalar(Scalar value) {
+    return value.to_float();
+}
+
 [[nodiscard]] inline Vec2 ToSimVec2(const splonks::Vec2& value,
                                     gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
     return Vec2{ToSimScalar(value.x, rounding), ToSimScalar(value.y, rounding)};

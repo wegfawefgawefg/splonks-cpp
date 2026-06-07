@@ -7,6 +7,7 @@
 #include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
@@ -43,7 +44,7 @@ constexpr float kDiagonalAimComponent = 0.707106769F;
 struct WebGunAim {
     Vec2 direction = Vec2::New(1.0F, 0.0F);
     Side facing = Side::Right;
-    float rotation = 0.0F;
+    sim::Scalar rotation = sim::Scalar::zero();
 };
 
 float NormalizeDegrees(float degrees) {
@@ -124,7 +125,7 @@ WebGunAim GetWebGunAim(const Ent& weapon, const Ent* holder, const State& state)
     return WebGunAim{
         .direction = direction,
         .facing = facing,
-        .rotation = NormalizeDegrees(world_angle - base_angle),
+        .rotation = sim::ToSimScalar(NormalizeDegrees(world_angle - base_angle)),
     };
 }
 
@@ -684,7 +685,7 @@ void StepEntLogicAsWebCannon(
         holder = state.ents.GetEnt(*weapon.held_by_vid);
     }
     if (holder == nullptr) {
-        weapon.rotation = 0.0F;
+        weapon.rotation = sim::Scalar::zero();
         return;
     }
 

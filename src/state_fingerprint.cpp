@@ -265,7 +265,7 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddVec2(ent.vel);
     writer.AddVec2(ent.acc);
     writer.AddVec2(ent.size);
-    writer.AddQuantizedFloat(ent.rotation);
+    writer.AddFixedScalar(ent.rotation);
     writer.AddPod(ent.coyote_time);
     writer.AddPod(ent.stun_timer);
     writer.AddPod(ent.fall_timer);

@@ -2,6 +2,7 @@
 
 #include "buying.hpp"
 #include "ents/damsel.hpp"
+#include "sim/fxp.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -14,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 96;
+constexpr std::uint32_t kRecordingVersion = 97;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -39,6 +40,8 @@ bool ReadRawByte(std::istream& in, std::uint8_t& value) {
 
 void WriteFloat(std::ostream& out, float value);
 bool ReadFloat(std::istream& in, float& value);
+void WriteSimScalar(std::ostream& out, sim::Scalar value);
+bool ReadSimScalar(std::istream& in, sim::Scalar& value);
 void WriteInt32(std::ostream& out, int value);
 bool ReadInt32(std::istream& in, int& value);
 void WriteSigned32(std::ostream& out, std::int32_t value);
@@ -624,6 +627,19 @@ bool ReadFloat(std::istream& in, float& value) {
     static_assert(sizeof(bits) == sizeof(value));
     static_assert(std::numeric_limits<float>::is_iec559);
     std::memcpy(&value, &bits, sizeof(value));
+    return true;
+}
+
+void WriteSimScalar(std::ostream& out, sim::Scalar value) {
+    WriteSigned32(out, value.raw_value());
+}
+
+bool ReadSimScalar(std::istream& in, sim::Scalar& value) {
+    std::int32_t raw_value = 0;
+    if (!ReadSigned32(in, raw_value)) {
+        return false;
+    }
+    value = sim::Scalar::from_raw(raw_value);
     return true;
 }
 
@@ -1476,7 +1492,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.can_go_on_back);
     WriteBoolByte(out, ent.grounded);
     WriteFloat(out, ent.shake);
-    WriteFloat(out, ent.rotation);
+    WriteSimScalar(out, ent.rotation);
     WriteFloat(out, ent.alpha);
     WriteUint32(out, ent.coyote_time);
     WriteUint32(out, ent.stun_timer);
@@ -1604,7 +1620,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.can_go_on_back) &&
            ReadBoolByte(in, ent.grounded) &&
            ReadFloat(in, ent.shake) &&
-           ReadFloat(in, ent.rotation) &&
+           ReadSimScalar(in, ent.rotation) &&
            ReadFloat(in, ent.alpha) &&
            ReadUint32(in, ent.coyote_time) &&
            ReadUint32(in, ent.stun_timer) &&

@@ -68,13 +68,14 @@ void UpdateBombRotation(Ent& bomb) {
         return;
     }
 
-    bomb.rotation += bomb.vel.x * kBombRotationDegreesPerPixel;
-    while (bomb.rotation >= 360.0F) {
-        bomb.rotation -= 360.0F;
+    float rotation = sim::ToRenderScalar(bomb.rotation) + bomb.vel.x * kBombRotationDegreesPerPixel;
+    while (rotation >= 360.0F) {
+        rotation -= 360.0F;
     }
-    while (bomb.rotation < 0.0F) {
-        bomb.rotation += 360.0F;
+    while (rotation < 0.0F) {
+        rotation += 360.0F;
     }
+    bomb.rotation = sim::ToSimScalar(rotation);
 }
 
 void UpdateBombFuseLight(Ent& bomb) {

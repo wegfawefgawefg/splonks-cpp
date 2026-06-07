@@ -266,7 +266,8 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << " holding " << a.holding << "/" << b.holding
                    << " wanted " << a.wanted << "/" << b.wanted
                    << " render " << a.render_enabled << "/" << b.render_enabled
-                   << " rotation " << a.rotation << "/" << b.rotation
+                   << " rotation " << sim::ToRenderScalar(a.rotation) << "/"
+                   << sim::ToRenderScalar(b.rotation)
                    << " coyote " << a.coyote_time << "/" << b.coyote_time
                    << " stun " << a.stun_timer << "/" << b.stun_timer
                    << " fall " << a.fall_timer << "/" << b.fall_timer

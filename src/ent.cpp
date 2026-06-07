@@ -41,7 +41,7 @@ Ent Ent::New() {
     ent.can_collect_pickups = false;
     ent.grounded = false;
     ent.shake = 0.0F;
-    ent.rotation = 0.0F;
+    ent.rotation = sim::Scalar::zero();
     ent.alpha = 1.0F;
     ent.coyote_time = 0;
     ent.stun_timer = 0;

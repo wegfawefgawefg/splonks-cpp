@@ -314,7 +314,7 @@ void WriteEntJson(std::ostringstream& out, const State& state, const Ent& ent) {
         << ",\"can_apply_proj_contact\":"
         << (ent.can_apply_proj_contact ? "true" : "false")
         << ",\"proj_contact_timer\":" << ent.proj_contact_timer
-        << ",\"rotation\":" << ent.rotation
+        << ",\"rotation\":" << sim::ToRenderScalar(ent.rotation)
         << ",\"facing\":" << JsonString(ent.facing == Side::Right ? "right" : "left")
         << ",\"anim\":{\"id\":" << ent.aframe_animator.anim_id
         << ",\"frame\":" << ent.aframe_animator.current_frame

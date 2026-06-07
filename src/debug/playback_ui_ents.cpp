@@ -343,7 +343,7 @@ bool SwapControlledCharacter(
     SetEntAs(*source_ent, target_type);
     source_ent->vel = Vec2::New(0.0F, 0.0F);
     source_ent->acc = Vec2::New(0.0F, 0.0F);
-    source_ent->rotation = 0.0F;
+    source_ent->rotation = sim::Scalar::zero();
     source_ent->facing = facing;
     source_ent->SetCenter(spawn_center);
 

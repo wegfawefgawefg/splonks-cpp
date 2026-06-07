@@ -186,20 +186,17 @@ The expected end state is:
   can still diverge if prior float math crosses a grid/branch threshold
   differently. The fixed-point migration must move these source values or their
   threshold decisions to fixed/integer state.
-- Clarified in network fingerprints: `Ent::rotation` is not included in the
-  live network lockstep hash, but it is not globally cosmetic. Held weapons
-  store discrete aim pose in `rotation`, and canonical/debug snapshots still
-  preserve it. Current gameplay uses discrete input/facing/direction when
-  spawning projectiles rather than reading `rotation` back as the source of
-  authoritative aim, so live hashes can omit it for now. Deferred risk: if a
-  future weapon or mechanic reads `Ent::rotation` to choose gameplay behavior,
-  that path must either move rotation into deterministic fixed/integer storage
-  and the network hash or split the field into explicit `aim_rotation` and
-  render-only rotation.
-- Fixed in snapshot-preserved cosmetic rotation: bomb and dice rotation wraps
-  now use local bounded loops instead of platform libm `std::fmod`. Rotation
-  remains presentation state for network lockstep, but this keeps local replay
-  bytes less platform-sensitive.
+- Fixed in authoritative entity rotation: `Ent::rotation` is now stored as
+  Fixed12 state instead of a raw float, and live network lockstep hashes add the
+  raw fixed value directly. Held weapons still use it for discrete aim pose,
+  rolling/spinning entities quantize velocity-derived visual rotation at the
+  assignment edge, and rendering/debug/particle systems convert to float only at
+  presentation boundaries. Recording format version is now 97.
+- Deferred risk: some rotation writers still derive their input from
+  authoritative float velocity or libm angle calculations before quantizing to
+  Fixed12. This pass prevents rotation itself from carrying arbitrary IEEE
+  payloads through hashes/snapshots; the broader movement/velocity migration
+  must still remove the source float branch risks.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash

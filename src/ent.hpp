@@ -6,6 +6,7 @@
 #include "aframe_animator.hpp"
 #include "aframe_id.hpp"
 #include "math_types.hpp"
+#include "sim/fxp.hpp"
 #include "stage_progression.hpp"
 #include "stage.hpp"
 #include "utils.hpp"
@@ -56,7 +57,7 @@ struct Ent {
     bool can_go_on_back = false;
     bool grounded = false;
     float shake = 0.0F;
-    float rotation = 0.0F;
+    sim::Scalar rotation = sim::Scalar::zero();
     float alpha = 1.0F;
     std::uint32_t coyote_time = 0;
     std::uint32_t stun_timer = 0;

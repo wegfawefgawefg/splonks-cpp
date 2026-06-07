@@ -352,7 +352,7 @@ void SpawnTelefragPhaseParticle(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h)
     ) * ent.aframe_animator.scale;
-    particle.rot = ent.rotation;
+    particle.rot = sim::ToRenderScalar(ent.rotation);
     particle.alpha = 0.85F;
     particle.tint_r = tint_r;
     particle.tint_g = tint_g;

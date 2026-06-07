@@ -42,15 +42,15 @@ void SetBeeAnim(Ent& bee) {
 
 void UpdateBeeRotation(Ent& bee) {
     if (bee.grounded) {
-        bee.rotation = 0.0F;
+        bee.rotation = sim::Scalar::zero();
         return;
     }
 
-    bee.rotation = std::clamp(
+    bee.rotation = sim::ToSimScalar(std::clamp(
         bee.vel.y * kRotationDegreesPerYVelocity,
         kMinRotation,
         kMaxRotation
-    );
+    ));
 }
 
 } // namespace

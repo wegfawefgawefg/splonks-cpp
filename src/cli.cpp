@@ -896,7 +896,10 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintFieldDiff("vel", Vec2DebugString(left->vel), Vec2DebugString(right->vel));
     PrintFieldDiff("acc", Vec2DebugString(left->acc), Vec2DebugString(right->acc));
     PrintFieldDiff("size", Vec2DebugString(left->size), Vec2DebugString(right->size));
-    PrintNumericFieldDiff("rotation", left->rotation, right->rotation);
+    if (left->rotation != right->rotation) {
+        std::cout << "    rotation: " << sim::ToRenderScalar(left->rotation)
+                  << " != " << sim::ToRenderScalar(right->rotation) << '\n';
+    }
     PrintNumericFieldDiff("coyote_time", left->coyote_time, right->coyote_time);
     PrintNumericFieldDiff("stun_timer", left->stun_timer, right->stun_timer);
     PrintNumericFieldDiff("fall_timer", left->fall_timer, right->fall_timer);

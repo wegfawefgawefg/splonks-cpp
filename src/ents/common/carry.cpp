@@ -28,7 +28,7 @@ void ApplyHeldState(Ent& ent, bool reset_anim = true) {
     ent.vel = Vec2::New(0.0F, 0.0F);
     ent.acc = Vec2::New(0.0F, 0.0F);
     RemoveEffect(ent, EffectId::NoGravityUntilContact);
-    ent.rotation = 0.0F;
+    ent.rotation = sim::Scalar::zero();
     ent.hang_side.reset();
     ent.hang_count = 0;
     ent.climb_detach_cooldown = 0;
@@ -144,7 +144,7 @@ void SyncHeldAttachForHolder(
     const EntSpec& holding_spec = GetEntSpec(holding->type_);
     const bool preserve_held_aim = holding_spec.preserve_held_aim;
     const Side aimed_facing = holding->facing;
-    const float aimed_rotation = holding->rotation;
+    const sim::Scalar aimed_rotation = holding->rotation;
 
     holding->has_physics = false;
     holding->can_collide = false;

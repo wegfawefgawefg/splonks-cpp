@@ -162,7 +162,7 @@ Ent* SpawnArrow(State& state, const Vec2& center, int direction, const VID& trap
         arrow.vel = Vec2::New(static_cast<float>(direction) * kArrowTrapArrowSpeed, 0.0F);
         arrow.acc = Vec2::New(0.0F, 0.0F);
         arrow.facing = direction < 0 ? Side::Left : Side::Right;
-        arrow.rotation = 0.0F;
+        arrow.rotation = sim::Scalar::zero();
         arrow.thrown_by = trap_vid;
         arrow.thrown_immunity_timer = ents::common::kThrownByImmunityDuration;
         arrow.proj_contact_damage_type = DamageType::Attack;
@@ -249,7 +249,7 @@ void StepEntLogicAsArrow(
     Ent& arrow = state.ents.ents[ent_idx];
     if (arrow.held_by_vid.has_value()) {
         arrow.ent_a.reset();
-        arrow.rotation = 0.0F;
+        arrow.rotation = sim::Scalar::zero();
         SnapArrowPositionToPixels(arrow);
         return;
     }
@@ -291,7 +291,8 @@ void StepEntLogicAsArrow(
         const float horizontal_speed = std::max(std::abs(arrow.vel.x), kArrowRotationVelocityEpsilon);
         const float relative_rotation =
             std::atan2(arrow.vel.y, horizontal_speed) * (180.0F / 3.14159265F);
-        arrow.rotation = arrow.facing == Side::Left ? -relative_rotation : relative_rotation;
+        arrow.rotation =
+            sim::ToSimScalar(arrow.facing == Side::Left ? -relative_rotation : relative_rotation);
     }
     const float gravity_scale =
         GetModifiedEffectValue(arrow, EffectModifierTarget::GravityScale, 1.0F);
