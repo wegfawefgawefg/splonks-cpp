@@ -19,17 +19,17 @@ int FloorDiv(int value, int divisor) {
     return result;
 }
 
-float GetTileShakeFromGrid(const std::vector<std::vector<float>>& grid,
+float GetTileShakeFromGrid(const std::vector<std::vector<sim::Scalar>>& grid,
                            std::uint32_t x,
                            std::uint32_t y) {
     if (y >= grid.size()) {
         return 0.0F;
     }
-    const std::vector<float>& row = grid[static_cast<std::size_t>(y)];
+    const std::vector<sim::Scalar>& row = grid[static_cast<std::size_t>(y)];
     if (x >= row.size()) {
         return 0.0F;
     }
-    return row[static_cast<std::size_t>(x)];
+    return sim::ToRenderScalar(row[static_cast<std::size_t>(x)]);
 }
 
 bool EmbeddedTreasureCoordExists(

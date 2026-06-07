@@ -58,8 +58,7 @@ The expected end state is:
   `Ent::pos`, `vel`, `acc`, `size`, and `counter_a` through `counter_d`;
   stage fluid amount, velocity, gravity, gravity strength, and temporary gravity;
   synchronized gameplay settings for fluids, water movement, player tuning,
-  and effect modifier values; retained reconnect player/item state mirrors of
-  entity position/velocity/acceleration/size/counters.
+  and effect modifier values.
 - Current lockstep hash behavior: entity position, velocity, acceleration,
   size, and counters are quantized through `sim::Scalar` / Fixed12 before
   hashing; entity rotation is stored and hashed as raw Fixed12, and
@@ -308,6 +307,13 @@ The expected end state is:
   entity-spawn boundary. This does not replace the broader entity movement
   migration, but it prevents delayed reconnect/topology state from preserving
   arbitrary IEEE float payloads after a player disconnects.
+- Fixed in snapshot-preserved tile shake state: `Stage::tile_shake` and
+  `Stage::backwall_tile_shake` are now stored as Fixed12 grids and recorded as
+  raw fixed values. Tile shake remains presentation state and the public stage
+  API still accepts/returns float at render/caller boundaries, but local replay,
+  gameplay snapshots, and stage wrap/rotation transforms no longer carry raw
+  IEEE float payloads for this presentation state. Recording format version is
+  now 110.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes. `AddPod` now rejects

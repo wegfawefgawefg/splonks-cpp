@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 109;
+constexpr std::uint32_t kRecordingVersion = 110;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -2662,8 +2662,8 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteGridExplicit(out, stage.fluid_gravity, WriteVec2);
     WriteGridExplicit(out, stage.fluid_gravity_strength, WriteFloat);
     WriteGridExplicit(out, stage.fluid_temp_gravity, WriteVec2);
-    WriteGridExplicit(out, stage.tile_shake, WriteFloat);
-    WriteGridExplicit(out, stage.backwall_tile_shake, WriteFloat);
+    WriteGridExplicit(out, stage.tile_shake, WriteSimScalar);
+    WriteGridExplicit(out, stage.backwall_tile_shake, WriteSimScalar);
     WriteGridExplicit(out, stage.backwall_tiles, WriteTile);
     WriteTileVector(out, stage.backwall_fill_tiles);
     WriteGridExplicit(out, stage.embedded_treasures, WriteEmbeddedTreasure);
@@ -2735,8 +2735,8 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadGridExplicit(in, stage.fluid_gravity, ReadVec2) ||
         !ReadGridExplicit(in, stage.fluid_gravity_strength, ReadFloat) ||
         !ReadGridExplicit(in, stage.fluid_temp_gravity, ReadVec2) ||
-        !ReadGridExplicit(in, stage.tile_shake, ReadFloat) ||
-        !ReadGridExplicit(in, stage.backwall_tile_shake, ReadFloat) ||
+        !ReadGridExplicit(in, stage.tile_shake, ReadSimScalar) ||
+        !ReadGridExplicit(in, stage.backwall_tile_shake, ReadSimScalar) ||
         !ReadGridExplicit(in, stage.backwall_tiles, ReadTile) ||
         !ReadTileVector(in, stage.backwall_fill_tiles) ||
         !ReadGridExplicit(in, stage.embedded_treasures, ReadEmbeddedTreasure) ||

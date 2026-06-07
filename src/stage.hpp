@@ -184,8 +184,8 @@ struct Stage {
     std::vector<std::vector<Vec2>> fluid_gravity;
     std::vector<std::vector<float>> fluid_gravity_strength;
     std::vector<std::vector<Vec2>> fluid_temp_gravity;
-    std::vector<std::vector<float>> tile_shake;
-    std::vector<std::vector<float>> backwall_tile_shake;
+    std::vector<std::vector<sim::Scalar>> tile_shake;
+    std::vector<std::vector<sim::Scalar>> backwall_tile_shake;
     std::vector<std::vector<Tile>> backwall_tiles;
     std::vector<Tile> backwall_fill_tiles;
     std::vector<std::vector<EmbeddedTreasure>> embedded_treasures;

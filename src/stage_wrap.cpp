@@ -203,13 +203,13 @@ void ExpandStageForWrap(
             Vec2::New(0.0F, 0.0F)
         )
     );
-    std::vector<std::vector<float>> tile_shake(
+    std::vector<std::vector<sim::Scalar>> tile_shake(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<float>(static_cast<std::size_t>(new_tile_dims.x), 0.0F)
+        std::vector<sim::Scalar>(static_cast<std::size_t>(new_tile_dims.x), sim::Scalar::zero())
     );
-    std::vector<std::vector<float>> backwall_tile_shake(
+    std::vector<std::vector<sim::Scalar>> backwall_tile_shake(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<float>(static_cast<std::size_t>(new_tile_dims.x), 0.0F)
+        std::vector<sim::Scalar>(static_cast<std::size_t>(new_tile_dims.x), sim::Scalar::zero())
     );
     std::vector<std::vector<EmbeddedTreasure>> embedded_treasures(
         static_cast<std::size_t>(new_tile_dims.y),
@@ -336,13 +336,13 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
         static_cast<std::size_t>(core_size.y),
         std::vector<Vec2>(static_cast<std::size_t>(core_size.x), Vec2::New(0.0F, 0.0F))
     );
-    std::vector<std::vector<float>> tile_shake(
+    std::vector<std::vector<sim::Scalar>> tile_shake(
         static_cast<std::size_t>(core_size.y),
-        std::vector<float>(static_cast<std::size_t>(core_size.x), 0.0F)
+        std::vector<sim::Scalar>(static_cast<std::size_t>(core_size.x), sim::Scalar::zero())
     );
-    std::vector<std::vector<float>> backwall_tile_shake(
+    std::vector<std::vector<sim::Scalar>> backwall_tile_shake(
         static_cast<std::size_t>(core_size.y),
-        std::vector<float>(static_cast<std::size_t>(core_size.x), 0.0F)
+        std::vector<sim::Scalar>(static_cast<std::size_t>(core_size.x), sim::Scalar::zero())
     );
     std::vector<std::vector<EmbeddedTreasure>> embedded_treasures(
         static_cast<std::size_t>(core_size.y),

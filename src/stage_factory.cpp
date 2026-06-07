@@ -23,13 +23,13 @@ std::vector<std::vector<EmbeddedTreasure>> MakeEmptyEmbeddedTreasures(
     return embedded_treasures;
 }
 
-std::vector<std::vector<float>> MakeEmptyTileShakeGrid(
+std::vector<std::vector<sim::Scalar>> MakeEmptyTileShakeGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<float>> tile_shake;
+    std::vector<std::vector<sim::Scalar>> tile_shake;
     tile_shake.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        tile_shake.push_back(std::vector<float>(row.size(), 0.0F));
+        tile_shake.push_back(std::vector<sim::Scalar>(row.size(), sim::Scalar::zero()));
     }
     return tile_shake;
 }
