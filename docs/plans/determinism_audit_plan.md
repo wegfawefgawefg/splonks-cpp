@@ -651,6 +651,11 @@ The expected end state is:
 - Partially fixed. Gameplay-affecting runtime settings now round-trip through
   simulation snapshots, including fluid simulation, water movement, stage
   lighting, and player tuning settings.
+- Audited current config container-order boundaries. Quest, glyph, item-pool,
+  shop-type, room-pool, and pass-property `unordered_map` storage is currently
+  used as keyed lookup/cache data in stage generation, not as randomized
+  iteration order for gameplay choices. `LoadRoomTemplatesFromDirectory`
+  canonicalizes `directory_iterator` results by sorting paths before loading.
 - Deferred risk: loaded quest/spec/profile files are not yet independently
   hashed or versioned as part of connection admission, so mismatched assets
   still rely on later state-fingerprint/desync detection rather than an early
