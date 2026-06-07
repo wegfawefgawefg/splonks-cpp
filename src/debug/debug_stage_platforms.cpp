@@ -45,7 +45,7 @@ std::optional<VID> SpawnMovingPlatform(
     platform->point_b = point_b;
     platform->counter_a = counter_a;
     platform->counter_b = counter_b;
-    platform->threshold_a = threshold_a;
+    platform->threshold_a = sim::ToSimScalar(threshold_a);
     return vid;
 }
 

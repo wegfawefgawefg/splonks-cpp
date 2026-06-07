@@ -147,8 +147,8 @@ Ent Ent::New() {
     ent.counter_b = 0.0F;
     ent.counter_c = 0.0F;
     ent.counter_d = 0.0F;
-    ent.threshold_a = 0.0F;
-    ent.threshold_b = 0.0F;
+    ent.threshold_a = sim::Scalar::zero();
+    ent.threshold_b = sim::Scalar::zero();
     return ent;
 }
 

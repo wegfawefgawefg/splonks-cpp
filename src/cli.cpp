@@ -955,6 +955,16 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintNumericFieldDiff("counter_c", left->counter_c, right->counter_c);
     PrintNumericFieldDiff("counter_d", left->counter_d, right->counter_d);
     PrintNumericFieldDiff(
+        "threshold_a",
+        sim::ToRenderScalar(left->threshold_a),
+        sim::ToRenderScalar(right->threshold_a)
+    );
+    PrintNumericFieldDiff(
+        "threshold_b",
+        sim::ToRenderScalar(left->threshold_b),
+        sim::ToRenderScalar(right->threshold_b)
+    );
+    PrintNumericFieldDiff(
         "self_light",
         sim::ToRenderScalar(left->self_light),
         sim::ToRenderScalar(right->self_light)

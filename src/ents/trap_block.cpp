@@ -28,8 +28,8 @@ constexpr float kWindupShake = 0.08F;
 constexpr float kImpactShake = 0.34F;
 constexpr float kImpactTileShake = 0.28F;
 constexpr float kImpactShakeRadiusTiles = 1.1F;
-constexpr float kOneShotMode = 1.0F;
-constexpr float kHasFired = 1.0F;
+constexpr sim::Scalar kOneShotMode = sim::Scalar::from_int(1);
+constexpr sim::Scalar kHasFired = sim::Scalar::from_int(1);
 
 struct DirectionInfo {
     IVec2 tile_dir;
@@ -400,7 +400,7 @@ void StopMove(Ent& block, State& state) {
 
 void MakeTrapBlockOneShot(Ent& block) {
     block.threshold_a = kOneShotMode;
-    block.threshold_b = 0.0F;
+    block.threshold_b = sim::Scalar::zero();
     ShowSleepingFrame(block);
 }
 

@@ -82,8 +82,8 @@ void SpawnDebugMovingLight(State& state, int index, int count) {
     light->counter_a = static_cast<float>(index) * 0.67F;
     light->counter_b = 0.018F + (static_cast<float>(index % 7) * 0.003F);
     light->counter_c = static_cast<float>(index % 11) * 0.41F;
-    light->threshold_a = 8.0F + static_cast<float>((index * 5) % 22);
-    light->threshold_b = 8.0F + static_cast<float>((index * 7) % 18);
+    light->threshold_a = sim::ToSimScalar(8.0F + static_cast<float>((index * 5) % 22));
+    light->threshold_b = sim::ToSimScalar(8.0F + static_cast<float>((index * 7) % 18));
     const std::size_t color_index =
         static_cast<std::size_t>(index) % kDebugLightColors.size();
     light->light_color = sim::ToSimColor3(kDebugLightColors[color_index]);

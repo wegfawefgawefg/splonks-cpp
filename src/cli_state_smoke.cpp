@@ -233,6 +233,8 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
             a.counter_b != b.counter_b ||
             a.counter_c != b.counter_c ||
             a.counter_d != b.counter_d ||
+            a.threshold_a != b.threshold_a ||
+            a.threshold_b != b.threshold_b ||
             a.self_light != b.self_light ||
             a.light_strength != b.light_strength ||
             a.light_color.r != b.light_color.r ||
@@ -297,6 +299,10 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << "," << a.counter_c << "," << a.counter_d
                    << "/" << b.counter_a << "," << b.counter_b
                    << "," << b.counter_c << "," << b.counter_d
+                   << " thresholds " << sim::ToRenderScalar(a.threshold_a) << ","
+                   << sim::ToRenderScalar(a.threshold_b) << "/"
+                   << sim::ToRenderScalar(b.threshold_a) << ","
+                   << sim::ToRenderScalar(b.threshold_b)
                    << " lights " << sim::ToRenderScalar(a.light_strength) << ","
                    << a.light_radius << "/" << sim::ToRenderScalar(b.light_strength) << ","
                    << b.light_radius

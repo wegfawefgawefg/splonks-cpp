@@ -61,7 +61,7 @@ float GetTargetTopY(const Ent& door) {
 }
 
 float GetMoveDirection(const Ent& door) {
-    return door.threshold_a < 0.0F ? -1.0F : 1.0F;
+    return door.threshold_a < sim::Scalar::zero() ? -1.0F : 1.0F;
 }
 
 Vec2 GetTopEmitPos(const Ent& door) {

@@ -483,8 +483,8 @@ void StepEntLogicAsMonkey(
     if (monkey.counter_c > 0.0F) {
         monkey.counter_c -= 1.0F;
     }
-    if (monkey.threshold_a > 0.0F) {
-        monkey.threshold_a -= 1.0F;
+    if (monkey.threshold_a > sim::Scalar::zero()) {
+        monkey.threshold_a -= sim::Scalar::from_int(1);
     }
 
     const std::optional<Vec2> player_delta = GetNearestPlayerDelta(monkey, state);
@@ -681,11 +681,11 @@ common::ContactResult OnEntContactAsMonkey(
         return {};
     }
 
-    if (monkey.threshold_a <= 0.0F && other.can_be_picked_up && !other.held_by_vid.has_value() &&
+    if (monkey.threshold_a <= sim::Scalar::zero() && other.can_be_picked_up && !other.held_by_vid.has_value() &&
         other.attach_mode == AttachMode::None && other.type_ != EntType::Monkey &&
         other.type_ != EntType::Player && !other.impassable) {
         ThrowSpawnedEnt(other, monkey);
-        monkey.threshold_a = static_cast<float>(kMonkeyThrowCooldownFrames);
+        monkey.threshold_a = sim::Scalar::from_int(kMonkeyThrowCooldownFrames);
         SetMonkeyState(monkey, MonkeyState::Idle);
         monkey.counter_a = static_cast<float>(state.drng.RandomIntInclusive(20, 60));
     }

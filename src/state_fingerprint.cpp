@@ -302,6 +302,8 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddQuantizedFloat(ent.counter_b);
     writer.AddQuantizedFloat(ent.counter_c);
     writer.AddQuantizedFloat(ent.counter_d);
+    writer.AddFixedScalar(ent.threshold_a);
+    writer.AddFixedScalar(ent.threshold_b);
     writer.AddFixedScalar(ent.self_light);
     writer.AddFixedScalar(ent.light_strength);
     writer.AddFixedColor3(ent.light_color);
@@ -443,6 +445,8 @@ void AddNetworkEntFingerprint(FingerprintWriter& writer, const State& state, con
         AddNetworkOptionalVid(writer, state, ent.held_by_vid);
         writer.AddPod(ent.health);
         writer.AddPod(ent.money);
+        writer.AddFixedScalar(ent.threshold_a);
+        writer.AddFixedScalar(ent.threshold_b);
         AddEffectFingerprint(writer, ent.effects);
         return;
     }
@@ -482,6 +486,8 @@ void AddNetworkEntFingerprint(FingerprintWriter& writer, const State& state, con
     writer.AddQuantizedFloat(ent.counter_b);
     writer.AddQuantizedFloat(ent.counter_c);
     writer.AddQuantizedFloat(ent.counter_d);
+    writer.AddFixedScalar(ent.threshold_a);
+    writer.AddFixedScalar(ent.threshold_b);
     writer.AddIVec2(ent.point_a);
     writer.AddIVec2(ent.point_b);
     writer.AddIVec2(ent.point_c);

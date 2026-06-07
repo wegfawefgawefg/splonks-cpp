@@ -142,7 +142,7 @@ void StepVerticalPingPong(Ent& platform) {
 
 void StepCircle(Ent& platform) {
     const Vec2 center = ToVec2(platform.point_a);
-    const int radius = RoundFloatToInt(platform.threshold_a);
+    const int radius = RoundToInt(sim::ToRenderScalar(platform.threshold_a));
     const int path_idx = PositiveModulo(
         static_cast<int>(platform.counter_a),
         static_cast<int>(kCirclePath.size())

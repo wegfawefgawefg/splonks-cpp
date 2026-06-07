@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 106;
+constexpr std::uint32_t kRecordingVersion = 107;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1607,8 +1607,8 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteFloat(out, ent.counter_b);
     WriteFloat(out, ent.counter_c);
     WriteFloat(out, ent.counter_d);
-    WriteFloat(out, ent.threshold_a);
-    WriteFloat(out, ent.threshold_b);
+    WriteSimScalar(out, ent.threshold_a);
+    WriteSimScalar(out, ent.threshold_b);
 }
 
 bool ReadEnt(std::istream& in, Ent& ent) {
@@ -1733,8 +1733,8 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadFloat(in, ent.counter_b) &&
            ReadFloat(in, ent.counter_c) &&
            ReadFloat(in, ent.counter_d) &&
-           ReadFloat(in, ent.threshold_a) &&
-           ReadFloat(in, ent.threshold_b);
+           ReadSimScalar(in, ent.threshold_a) &&
+           ReadSimScalar(in, ent.threshold_b);
 }
 
 void WriteVideoSettings(std::ostream& out, const VideoSettings& settings) {

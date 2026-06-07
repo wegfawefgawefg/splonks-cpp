@@ -170,8 +170,8 @@ struct Ent {
     float counter_b = 0.0F;
     float counter_c = 0.0F;
     float counter_d = 0.0F;
-    float threshold_a = 0.0F;
-    float threshold_b = 0.0F;
+    sim::Scalar threshold_a = sim::Scalar::zero();
+    sim::Scalar threshold_b = sim::Scalar::zero();
 
     static constexpr Vec2 kHangHandSize = {1.0F, 4.0F};
 

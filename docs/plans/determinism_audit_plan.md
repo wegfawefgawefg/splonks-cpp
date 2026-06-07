@@ -271,6 +271,13 @@ The expected end state is:
   reset and serialized through debug playback snapshots. Removing them deletes
   two dead float payloads from entity state and bumps the recording format to
   version 106.
+- Fixed in generic entity threshold state: `Ent::threshold_a` and
+  `Ent::threshold_b` are now stored as Fixed12, recorded as raw fixed values,
+  and included in canonical plus live network fingerprints. Current live
+  gameplay uses are discrete sign/flag/radius/cooldown values for doors,
+  trap blocks, moving platforms, and monkeys; the debug moving-light stress
+  entity converts them to float only at its debug presentation boundary.
+  Recording format version is now 107.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash
