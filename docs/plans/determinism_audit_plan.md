@@ -287,6 +287,13 @@ The expected end state is:
   `sim::ToSimColor3` calls at spec construction, but the runtime spec table no
   longer keeps duplicate raw float copies for fields whose live entity state is
   already fixed-point.
+- Fixed in stage-rotation snapshot state: `StageRotationState::pivot` is now
+  stored as Fixed12 and recorded as raw fixed values. The pivot is derived from
+  integer stage pixel dimensions and only converted back to `Vec2` at the
+  renderer boundary. Stage rotation is presentation-oriented, but it is present
+  in both gameplay and sim snapshots, so this removes another raw IEEE `Vec2`
+  payload from rollback/resync/debug recording state. Recording format version
+  is now 108.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes. `AddPod` now rejects

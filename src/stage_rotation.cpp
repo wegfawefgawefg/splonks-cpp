@@ -315,7 +315,7 @@ void SyncRenderRotation(State& state, Graphics& graphics) {
     const float denom = static_cast<float>(std::max(1, state.stage_rotation.duration_frames));
     const float t = static_cast<float>(state.stage_rotation.elapsed_frames) / denom;
     graphics.world_rotation_active = true;
-    graphics.world_rotation_pivot = state.stage_rotation.pivot;
+    graphics.world_rotation_pivot = sim::ToRenderVec2(state.stage_rotation.pivot);
     graphics.world_rotation_degrees =
         static_cast<float>(state.stage_rotation.quarter_turns * 90) * Smoothstep(t);
 }
@@ -336,7 +336,7 @@ void StartStageRotation(State& state, Graphics& graphics, Audio& audio, int quar
     state.stage_rotation.elapsed_frames = 0;
     state.stage_rotation.duration_frames = kDefaultStageRotationFrames;
     state.stage_rotation.quarter_turns = normalized == 3 ? -1 : normalized;
-    state.stage_rotation.pivot = GetStagePixelDims(state.stage) / 2.0F;
+    state.stage_rotation.pivot = sim::ToSimVec2(GetStagePixelDims(state.stage) / 2.0F);
     audio.PlayAudioAsset(audio_asset_ids::BigMachineRotate);
     SyncRenderRotation(state, graphics);
 }

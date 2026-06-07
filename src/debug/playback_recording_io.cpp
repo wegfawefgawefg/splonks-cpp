@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 107;
+constexpr std::uint32_t kRecordingVersion = 108;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -42,6 +42,8 @@ void WriteFloat(std::ostream& out, float value);
 bool ReadFloat(std::istream& in, float& value);
 void WriteSimScalar(std::ostream& out, sim::Scalar value);
 bool ReadSimScalar(std::istream& in, sim::Scalar& value);
+void WriteSimVec2(std::ostream& out, const sim::Vec2& value);
+bool ReadSimVec2(std::istream& in, sim::Vec2& value);
 void WriteInt32(std::ostream& out, int value);
 bool ReadInt32(std::istream& in, int& value);
 void WriteSigned32(std::ostream& out, std::int32_t value);
@@ -599,6 +601,16 @@ bool ReadSimColor3(std::istream& in, sim::Color3& color) {
     return ReadSimScalar(in, color.r) &&
            ReadSimScalar(in, color.g) &&
            ReadSimScalar(in, color.b);
+}
+
+void WriteSimVec2(std::ostream& out, const sim::Vec2& value) {
+    WriteSimScalar(out, value.x);
+    WriteSimScalar(out, value.y);
+}
+
+bool ReadSimVec2(std::istream& in, sim::Vec2& value) {
+    return ReadSimScalar(in, value.x) &&
+           ReadSimScalar(in, value.y);
 }
 
 void WriteUVec2Vector(std::ostream& out, const std::vector<UVec2>& values) {
@@ -2229,7 +2241,7 @@ void WriteStageRotationState(std::ostream& out, const StageRotationState& rotati
     WriteInt32(out, rotation.elapsed_frames);
     WriteInt32(out, rotation.duration_frames);
     WriteInt32(out, rotation.quarter_turns);
-    WriteVec2(out, rotation.pivot);
+    WriteSimVec2(out, rotation.pivot);
     WriteStageRotationWrapPolicy(out, rotation.wrap_policy);
 }
 
@@ -2238,7 +2250,7 @@ bool ReadStageRotationState(std::istream& in, StageRotationState& rotation) {
            ReadInt32(in, rotation.elapsed_frames) &&
            ReadInt32(in, rotation.duration_frames) &&
            ReadInt32(in, rotation.quarter_turns) &&
-           ReadVec2(in, rotation.pivot) &&
+           ReadSimVec2(in, rotation.pivot) &&
            ReadStageRotationWrapPolicy(in, rotation.wrap_policy);
 }
 
