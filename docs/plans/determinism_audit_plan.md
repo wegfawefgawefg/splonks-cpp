@@ -45,7 +45,7 @@ The expected end state is:
 - In progress. The network fingerprint no longer hashes raw float bits; it
   quantizes known hashed float fields through `sim::Scalar` / Fixed12.
 - Remaining authoritative float storage is still broad. `Ent::pos`, `vel`,
-  `acc`, `size`, `rotation`, `counter_a` through `counter_d`,
+  `acc`, `size`, `counter_a` through `counter_d`,
   `AFrameAnimator::current_time`, `AFrameAnimator::speed`,
   `Stage::gravity`, and `Stage::fluid_amount` are the highest-priority
   simulation fields because they affect movement, contact, animation gates,
@@ -186,10 +186,16 @@ The expected end state is:
   can still diverge if prior float math crosses a grid/branch threshold
   differently. The fixed-point migration must move these source values or their
   threshold decisions to fixed/integer state.
-- Fixed in network fingerprints: `Ent::rotation` is treated as cosmetic/render
-  state and no longer participates in the network lockstep hash. This removes
-  render-only `std::atan2` / `std::fmod` rotation drift from desync detection
-  while preserving rotation in canonical/debug snapshots and rendering.
+- Clarified in network fingerprints: `Ent::rotation` is not included in the
+  live network lockstep hash, but it is not globally cosmetic. Held weapons
+  store discrete aim pose in `rotation`, and canonical/debug snapshots still
+  preserve it. Current gameplay uses discrete input/facing/direction when
+  spawning projectiles rather than reading `rotation` back as the source of
+  authoritative aim, so live hashes can omit it for now. Deferred risk: if a
+  future weapon or mechanic reads `Ent::rotation` to choose gameplay behavior,
+  that path must either move rotation into deterministic fixed/integer storage
+  and the network hash or split the field into explicit `aim_rotation` and
+  render-only rotation.
 - Fixed in snapshot-preserved cosmetic rotation: bomb and dice rotation wraps
   now use local bounded loops instead of platform libm `std::fmod`. Rotation
   remains presentation state for network lockstep, but this keeps local replay
