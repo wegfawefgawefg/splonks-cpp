@@ -99,9 +99,12 @@ bool EntToolInventoryState::AddToolCount(
     }
 
     if (slot == nullptr) {
-        const std::optional<std::size_t> preferred_slot_index = GetToolSpec(kind).preferred_slot_index;
-        if (preferred_slot_index.has_value() && *preferred_slot_index < tool_state->slots.size()) {
-            ToolSlot& preferred_slot = tool_state->slots[*preferred_slot_index];
+        const std::optional<std::uint32_t> preferred_slot_index =
+            GetToolSpec(kind).preferred_slot_index;
+        if (preferred_slot_index.has_value() &&
+            *preferred_slot_index < tool_state->slots.size()) {
+            ToolSlot& preferred_slot =
+                tool_state->slots[static_cast<std::size_t>(*preferred_slot_index)];
             if (!preferred_slot.active) {
                 slot = &preferred_slot;
             }
@@ -156,10 +159,11 @@ bool EntToolInventoryState::UpgradeBombsToSticky(const VID& owner_vid) {
         }
     }
 
-    const std::optional<std::size_t> preferred_slot_index =
+    const std::optional<std::uint32_t> preferred_slot_index =
         GetToolSpec(ToolKind::ThrowStickyBomb).preferred_slot_index;
     if (preferred_slot_index.has_value() && *preferred_slot_index < tool_state->slots.size()) {
-        ToolSlot& preferred_slot = tool_state->slots[*preferred_slot_index];
+        ToolSlot& preferred_slot =
+            tool_state->slots[static_cast<std::size_t>(*preferred_slot_index)];
         if (!preferred_slot.active) {
             FillToolSlot(preferred_slot, ToolKind::ThrowStickyBomb, 0, true);
             return true;

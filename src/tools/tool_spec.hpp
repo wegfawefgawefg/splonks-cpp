@@ -49,7 +49,7 @@ struct ToolSpec {
     const char* debug_name = "Unknown";
     AFrameId icon_anim_id = kInvalidAFrameId;
     std::uint16_t use_cooldown_frames = 0;
-    std::optional<std::size_t> preferred_slot_index = std::nullopt;
+    std::optional<std::uint32_t> preferred_slot_index = std::nullopt;
     ToolUseFn use_fn = nullptr;
 };
 
