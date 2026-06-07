@@ -78,6 +78,14 @@ The expected end state is:
   `pos` / `vel` / `acc` / `size` and common physics/contact helpers are the
   first real migration target; stage fluids and gameplay settings are a second
   target because they are broader and more tuning-sensitive.
+- Audit checkpoint 2026-06-07: generic entity counters are mixed-use, so they
+  are not safe to convert wholesale. Most `counter_a` through `counter_d` uses
+  are integer frame countdowns, small enum/state encodings, ammo/value counts,
+  or cooldown flags, but some counters are distance accumulators driven by
+  `dist_traveled_this_frame` for smoke/pebble/trail intervals. The follow-up
+  migration should split these generic float counters into typed per-entity
+  integer frame counters, explicit enum fields, and fixed/quantized distance
+  accumulators rather than changing the four shared fields in one pass.
 
 ## Math Function Audit
 
@@ -355,11 +363,14 @@ The expected end state is:
   that creates audio emitters, mutates `SimSnapshot`, changes entity/world
   state, or affects synchronized branch decisions must move to `state.drng` or
   another synchronized `DetRng` stream.
-- Audited stale process-global direction helpers: `Side`, `DownOrUp`,
-  `SideOrDown`, and `RandomDirection` in `direction.cpp` currently have no
-  callers, so their process-global RNG use is not a live gameplay determinism
-  risk. If these helpers are reused for gameplay later, they should accept a
-  synchronized `DetRng&` or be removed.
+- Removed stale process-global direction helpers: `Side`, `DownOrUp`,
+  `SideOrDown`, and `RandomDirection` in `direction.cpp` had no callers and
+  returned gameplay-shaped values from process-global RNG. `Direction` remains
+  as a plain enum, but the dead RNG helper entry points are gone instead of
+  being left as a future deterministic-gameplay footgun.
+- Validation 2026-06-07: release build, `--check-state-equality-smoke`,
+  `--check-det-replay-smoke`, and `--check-join-barrier-next-stage-restart-smoke`
+  passed after removing the stale process-global direction helpers.
 - Audited stale sprite animation randomization: `SpriteAnimator::RandomizeFrame`
   currently has no callers. If it is reused for gameplay-visible or
   snapshot-visible animation state later, it should accept a synchronized

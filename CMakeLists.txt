@@ -217,7 +217,6 @@ set(SPLONKS_SOURCES
     src/debug/debug_stage_traps.cpp
     src/debug/debug_stage_init.cpp
     src/debug/shop_test_stage.cpp
-    src/direction.cpp
     src/effects.cpp
     src/effects/specs.cpp
     src/effects/render.cpp
