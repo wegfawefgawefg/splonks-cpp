@@ -3,6 +3,8 @@
 #include "tile.hpp"
 #include "world_query.hpp"
 
+#include <algorithm>
+
 namespace splonks::ents::common {
 
 namespace {
@@ -41,6 +43,13 @@ bool TouchesStageBounds(const AABB& aabb, const Stage& stage) {
 bool AreDirectlyAttached(const Ent& first, const Ent& second) {
     return (first.held_by_vid.has_value() && *first.held_by_vid == second.vid) ||
            (second.held_by_vid.has_value() && *second.held_by_vid == first.vid);
+}
+
+bool TileContactLess(const TileContact& left, const TileContact& right) {
+    if (left.tile_pos.y != right.tile_pos.y) {
+        return left.tile_pos.y < right.tile_pos.y;
+    }
+    return left.tile_pos.x < right.tile_pos.x;
 }
 
 ContactResult ResolveBlockingTileContacts(const BlockingContactSet& contacts) {
@@ -109,6 +118,11 @@ BlockingContactSet GatherBlockingContactsForAabb(
                                    IsTileCollidable(*tile_query.tile),
             });
         }
+        std::sort(
+            contacts.tile_contacts.begin(),
+            contacts.tile_contacts.end(),
+            TileContactLess
+        );
     }
 
     if (check_ents) {

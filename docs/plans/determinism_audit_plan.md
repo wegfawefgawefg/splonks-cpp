@@ -240,6 +240,12 @@ The expected end state is:
   positions now use VID as a deterministic tie-breaker. The old comparator left
   equal-position riders equivalent under `std::sort`, so their displacement
   order was not explicitly defined.
+- Fixed in blocking tile-contact ordering: `GatherBlockingContactsForAabb`
+  now sorts gathered tile contacts by wrapped tile coordinate before callers
+  resolve collision, tile contact callbacks, and collision sounds. The query
+  loops were already deterministic, but wrapped-stage queries could otherwise
+  expose first-seen wrap order to contact handling instead of a canonical tile
+  order.
 - Fixed in fingerprint diagnostic/network ordering: stage lights now sort by
   full VID id/version instead of id alone, and network tool/entity fingerprint
   sorters now fall back to full VID id/version when network ids tie. This keeps
