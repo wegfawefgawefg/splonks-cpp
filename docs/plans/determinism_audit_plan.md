@@ -739,6 +739,11 @@ The expected end state is:
   `std::size_t`. These particles are not live network authority, but they are
   copied by local debug/presentation snapshots, and their point arrays are
   bounded at 32 and 64 entries.
+- Fixed in local menu snapshot state: pending video-settings resolution/window
+  size indices now use `std::optional<uint32_t>` at runtime instead of
+  `std::optional<std::size_t>`. The debug recording format already stored these
+  as optional `uint32_t`; this removes the host-width runtime field and keeps
+  casts at the local `kResolutions` array-index boundary.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn
@@ -776,13 +781,12 @@ The expected end state is:
   a width-explicit `uint16_t` constant before narrowing to bytes. This was
   caught by the ASan/UBSan strict build under `-Wsign-conversion`.
 - Audit checkpoint 2026-06-07: current targeted scan of deterministic-state
-  headers and snapshot/fingerprint/network code found the remaining
-  `std::optional<std::size_t>` runtime fields only in local video-settings menu
-  selection state. Those values are recorded with explicit optional `uint32_t`
-  helpers and are not authoritative gameplay. The remaining `uintptr_t` /
-  `long` uses are socket handles and platform socket calls inside
-  `net_transport`, not synchronized gameplay state. Approximate network memory
-  accounting still uses `sizeof`, but only for diagnostics/capacity estimates.
+  headers and snapshot/fingerprint/network code found no remaining
+  `std::optional<std::size_t>` runtime fields in gameplay or snapshot structs.
+  The remaining `uintptr_t` / `long` uses are socket handles and platform socket
+  calls inside `net_transport`, not synchronized gameplay state. Approximate
+  network memory accounting still uses `sizeof`, but only for diagnostics/
+  capacity estimates.
 - Deferred risk: continue auditing snapshot/replay formats for any remaining
   platform-sized values before treating recordings as portable artifacts.
 

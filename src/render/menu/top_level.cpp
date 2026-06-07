@@ -191,7 +191,8 @@ void RenderVideoSettingsMenu(SDL_Renderer* renderer, State& state, Graphics& gra
 
     char line[128];
     const UVec2 resolution = state.video_settings_target_resolution_index
-                                 ? kResolutions[*state.video_settings_target_resolution_index]
+                                 ? kResolutions[static_cast<std::size_t>(
+                                       *state.video_settings_target_resolution_index)]
                                  : graphics.dims;
     std::snprintf(line, sizeof(line), "Resolution: %u x %u", resolution.x, resolution.y);
     RenderMenuLine(
@@ -206,7 +207,8 @@ void RenderVideoSettingsMenu(SDL_Renderer* renderer, State& state, Graphics& gra
     );
 
     const UVec2 window_size = state.video_settings_target_window_size_index
-                                  ? kResolutions[*state.video_settings_target_window_size_index]
+                                  ? kResolutions[static_cast<std::size_t>(
+                                        *state.video_settings_target_window_size_index)]
                                   : graphics.window_dims;
     std::snprintf(line, sizeof(line), "Window Size: %u x %u", window_size.x, window_size.y);
     y += ten_percent;

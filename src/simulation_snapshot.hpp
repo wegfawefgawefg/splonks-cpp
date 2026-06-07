@@ -29,8 +29,8 @@ struct GameplaySnapshot {
     PostFxSettingsMenuOption post_fx_settings_menu_selection = PostFxSettingsMenuOption::Effect;
     LightingSettingsMenuOption lighting_settings_menu_selection =
         LightingSettingsMenuOption::TerrainLighting;
-    std::optional<std::size_t> video_settings_target_window_size_index;
-    std::optional<std::size_t> video_settings_target_resolution_index;
+    std::optional<std::uint32_t> video_settings_target_window_size_index;
+    std::optional<std::uint32_t> video_settings_target_resolution_index;
     std::optional<bool> video_settings_target_fullscreen;
     bool rebuild_render_texture = false;
     bool choosing_control_binding = false;

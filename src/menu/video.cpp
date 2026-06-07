@@ -6,6 +6,8 @@
 #include "settings.hpp"
 #include "state.hpp"
 
+#include <cstdint>
+
 namespace splonks {
 
 const std::array<UVec2, 11> kResolutions = {
@@ -79,13 +81,13 @@ void ProcessInputVideoSettingsMenu(
             if (!state.video_settings_target_resolution_index) {
                 for (std::size_t i = 0; i < kResolutions.size(); ++i) {
                     if (kResolutions[i] == graphics.dims) {
-                        state.video_settings_target_resolution_index = i;
+                        state.video_settings_target_resolution_index = static_cast<std::uint32_t>(i);
                         break;
                     }
                 }
             }
             if (state.video_settings_target_resolution_index) {
-                std::size_t index = *state.video_settings_target_resolution_index;
+                std::uint32_t index = *state.video_settings_target_resolution_index;
                 if (left_right == VideoSideOrNeither::Left) {
                     if (index > 0) {
                         state.video_settings_target_resolution_index = index - 1;
@@ -102,7 +104,8 @@ void ProcessInputVideoSettingsMenu(
                     }
                 }
                 if (state.video_settings_target_resolution_index &&
-                    kResolutions[*state.video_settings_target_resolution_index] == graphics.dims) {
+                    kResolutions[static_cast<std::size_t>(*state.video_settings_target_resolution_index)] ==
+                        graphics.dims) {
                     state.video_settings_target_resolution_index.reset();
                 }
             }
@@ -119,13 +122,13 @@ void ProcessInputVideoSettingsMenu(
             if (!state.video_settings_target_window_size_index) {
                 for (std::size_t i = 0; i < kResolutions.size(); ++i) {
                     if (kResolutions[i] == graphics.window_dims) {
-                        state.video_settings_target_window_size_index = i;
+                        state.video_settings_target_window_size_index = static_cast<std::uint32_t>(i);
                         break;
                     }
                 }
             }
             if (state.video_settings_target_window_size_index) {
-                std::size_t index = *state.video_settings_target_window_size_index;
+                std::uint32_t index = *state.video_settings_target_window_size_index;
                 if (left_right == VideoSideOrNeither::Left) {
                     if (index > 0) {
                         state.video_settings_target_window_size_index = index - 1;
@@ -142,7 +145,8 @@ void ProcessInputVideoSettingsMenu(
                     }
                 }
                 if (state.video_settings_target_window_size_index &&
-                    kResolutions[*state.video_settings_target_window_size_index] == graphics.window_dims) {
+                    kResolutions[static_cast<std::size_t>(*state.video_settings_target_window_size_index)] ==
+                        graphics.window_dims) {
                     state.video_settings_target_window_size_index.reset();
                 }
             }
@@ -178,7 +182,8 @@ void ProcessInputVideoSettingsMenu(
     case VideoSettingsMenuOption::Apply:
         if (confirm_pressed) {
             if (state.video_settings_target_resolution_index) {
-                graphics.dims = kResolutions[*state.video_settings_target_resolution_index];
+                graphics.dims =
+                    kResolutions[static_cast<std::size_t>(*state.video_settings_target_resolution_index)];
                 state.settings.video.resolution = graphics.dims;
                 state.rebuild_render_texture = true;
                 state.video_settings_target_resolution_index.reset();
@@ -190,7 +195,8 @@ void ProcessInputVideoSettingsMenu(
                 state.video_settings_target_fullscreen.reset();
             }
             if (!graphics.fullscreen && state.video_settings_target_window_size_index) {
-                graphics.window_dims = kResolutions[*state.video_settings_target_window_size_index];
+                graphics.window_dims =
+                    kResolutions[static_cast<std::size_t>(*state.video_settings_target_window_size_index)];
                 SDL_SetWindowSize(window, static_cast<int>(graphics.window_dims.x), static_cast<int>(graphics.window_dims.y));
                 state.video_settings_target_window_size_index.reset();
             }

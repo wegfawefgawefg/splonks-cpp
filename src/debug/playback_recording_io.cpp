@@ -52,16 +52,15 @@ bool ReadUint32(std::istream& in, std::uint32_t& value);
 void WriteUint64(std::ostream& out, std::uint64_t value);
 bool ReadUint64(std::istream& in, std::uint64_t& value);
 
-void WriteOptionalSizeIndex(std::ostream& out, const std::optional<std::size_t>& value) {
+void WriteOptionalUint32Index(std::ostream& out, const std::optional<std::uint32_t>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
     WriteUint8(out, has_value);
     if (has_value) {
-        const std::uint32_t stored = static_cast<std::uint32_t>(*value);
-        WriteUint32(out, stored);
+        WriteUint32(out, *value);
     }
 }
 
-bool ReadOptionalSizeIndex(std::istream& in, std::optional<std::size_t>& value) {
+bool ReadOptionalUint32Index(std::istream& in, std::optional<std::uint32_t>& value) {
     std::uint8_t has_value = 0;
     if (!ReadUint8(in, has_value)) {
         return false;
@@ -77,7 +76,7 @@ bool ReadOptionalSizeIndex(std::istream& in, std::optional<std::size_t>& value) 
     if (!ReadUint32(in, loaded)) {
         return false;
     }
-    value = static_cast<std::size_t>(loaded);
+    value = loaded;
     return true;
 }
 
@@ -3041,8 +3040,8 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteUiSettingsMenuOption(out, snapshot.ui_settings_menu_selection);
     WritePostFxSettingsMenuOption(out, snapshot.post_fx_settings_menu_selection);
     WriteLightingSettingsMenuOption(out, snapshot.lighting_settings_menu_selection);
-    WriteOptionalSizeIndex(out, snapshot.video_settings_target_window_size_index);
-    WriteOptionalSizeIndex(out, snapshot.video_settings_target_resolution_index);
+    WriteOptionalUint32Index(out, snapshot.video_settings_target_window_size_index);
+    WriteOptionalUint32Index(out, snapshot.video_settings_target_resolution_index);
     WriteOptionalBoolByte(out, snapshot.video_settings_target_fullscreen);
     WriteBoolByte(out, snapshot.rebuild_render_texture);
     WriteBoolByte(out, snapshot.choosing_control_binding);
@@ -3103,8 +3102,8 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadUiSettingsMenuOption(in, snapshot.ui_settings_menu_selection) &&
            ReadPostFxSettingsMenuOption(in, snapshot.post_fx_settings_menu_selection) &&
            ReadLightingSettingsMenuOption(in, snapshot.lighting_settings_menu_selection) &&
-           ReadOptionalSizeIndex(in, snapshot.video_settings_target_window_size_index) &&
-           ReadOptionalSizeIndex(in, snapshot.video_settings_target_resolution_index) &&
+           ReadOptionalUint32Index(in, snapshot.video_settings_target_window_size_index) &&
+           ReadOptionalUint32Index(in, snapshot.video_settings_target_resolution_index) &&
            ReadOptionalBoolByte(in, snapshot.video_settings_target_fullscreen) &&
            ReadBoolByte(in, snapshot.rebuild_render_texture) &&
            ReadBoolByte(in, snapshot.choosing_control_binding) &&
