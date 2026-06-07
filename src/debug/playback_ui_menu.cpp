@@ -138,7 +138,7 @@ void ApplyBorderTestWrapConfig(State& state, Graphics& graphics) {
         graphics,
         border_test.wrap_x,
         border_test.wrap_y,
-        static_cast<unsigned int>(std::max(0, border_test.wrap_padding_tiles)),
+        static_cast<std::uint32_t>(std::max(0, border_test.wrap_padding_tiles)),
         border_test.camera_clamp_enabled
     );
 }
@@ -702,7 +702,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
                 graphics,
                 wrap_x,
                 wrap_y,
-                static_cast<unsigned int>(wrap_padding_tiles),
+                static_cast<std::uint32_t>(wrap_padding_tiles),
                 camera_clamp_enabled
             );
         }

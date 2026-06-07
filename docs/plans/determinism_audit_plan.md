@@ -766,6 +766,11 @@ The expected end state is:
   match that contract directly. A money-pickup amount helper was tightened to
   the same explicit width because it feeds `Ent::money`, which is already
   `uint32_t`.
+- Fixed in stage wrap runtime state: `Stage::wrap_padding_tiles` and the
+  toroidal-wrap setup API now use explicit `uint32_t` instead of
+  implementation-width `unsigned int`. Snapshot/replay bytes already stored the
+  field as 32 bits, so runtime storage now matches the serialized stage
+  contract.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn

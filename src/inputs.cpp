@@ -243,7 +243,7 @@ void ProcessInputPlaying(SDL_Window* window, State& state, Audio& audio, Graphic
             const BorderTestLevelConfig& border_test = state.debug_level.border_test;
             ApplyToroidalWrapSettings(
                 state, graphics, border_test.wrap_x, border_test.wrap_y,
-                static_cast<unsigned int>(std::max(0, border_test.wrap_padding_tiles)),
+                static_cast<std::uint32_t>(std::max(0, border_test.wrap_padding_tiles)),
                 border_test.camera_clamp_enabled);
         }
         graphics.ResetTileVariations();

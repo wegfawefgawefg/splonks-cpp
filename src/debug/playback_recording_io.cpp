@@ -2628,7 +2628,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteBoolByte(out, stage.camera_clamp_enabled);
     WriteVec2(out, stage.camera_clamp_margin);
     WriteBoolByte(out, stage.wrap_transform_active);
-    WriteUnsigned32(out, stage.wrap_padding_tiles);
+    WriteUint32(out, stage.wrap_padding_tiles);
     WriteUVec2(out, stage.wrap_core_origin_tiles);
     WriteUVec2(out, stage.wrap_core_size_tiles);
     WriteGridExplicit(out, stage.tiles, WriteTile);
@@ -2698,7 +2698,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadBoolByte(in, stage.camera_clamp_enabled) ||
         !ReadVec2(in, stage.camera_clamp_margin) ||
         !ReadBoolByte(in, stage.wrap_transform_active) ||
-        !ReadUnsigned32(in, stage.wrap_padding_tiles) ||
+        !ReadUint32(in, stage.wrap_padding_tiles) ||
         !ReadUVec2(in, stage.wrap_core_origin_tiles) ||
         !ReadUVec2(in, stage.wrap_core_size_tiles)) {
         return false;

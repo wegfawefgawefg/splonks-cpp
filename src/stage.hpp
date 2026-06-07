@@ -201,7 +201,7 @@ struct Stage {
     bool camera_clamp_enabled = true;
     Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);
     bool wrap_transform_active = false;
-    unsigned int wrap_padding_tiles = 0;
+    std::uint32_t wrap_padding_tiles = 0;
     UVec2 wrap_core_origin_tiles = UVec2::New(0, 0);
     UVec2 wrap_core_size_tiles = UVec2::New(0, 0);
     std::uint32_t next_light_vid = 0;

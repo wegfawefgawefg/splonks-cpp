@@ -136,7 +136,7 @@ void ExpandStageForWrap(
     Graphics& graphics,
     bool wrap_x,
     bool wrap_y,
-    unsigned int padding_tiles
+    std::uint32_t padding_tiles
 ) {
     Stage& stage = state.stage;
     stage.SyncTileShakeGrid();
@@ -419,13 +419,13 @@ void ApplyToroidalWrapSettings(
     Graphics& graphics,
     bool wrap_x,
     bool wrap_y,
-    unsigned int padding_tiles,
+    std::uint32_t padding_tiles,
     bool camera_clamp_enabled
 ) {
     const bool current_wrap_x = state.stage.border.wrap_x;
     const bool current_wrap_y = state.stage.border.wrap_y;
-    const unsigned int desired_padding = (wrap_x || wrap_y) ? padding_tiles : 0U;
-    const unsigned int current_padding = state.stage.wrap_padding_tiles;
+    const std::uint32_t desired_padding = (wrap_x || wrap_y) ? padding_tiles : 0U;
+    const std::uint32_t current_padding = state.stage.wrap_padding_tiles;
     const bool wrap_config_changed = current_wrap_x != wrap_x ||
                                      current_wrap_y != wrap_y ||
                                      current_padding != desired_padding;
