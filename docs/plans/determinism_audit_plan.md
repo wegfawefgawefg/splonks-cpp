@@ -202,6 +202,11 @@ The expected end state is:
   rolling/spinning entities quantize velocity-derived visual rotation at the
   assignment edge, and rendering/debug/particle systems convert to float only at
   presentation boundaries. Recording format version is now 97.
+- Audit checkpoint 2026-06-07: verified and re-aligned the live network
+  fingerprint boundary for `Ent::rotation`. Full canonical fingerprints and
+  snapshots already included the Fixed12 field; `AddNetworkEntFingerprint` now
+  includes the raw fixed rotation for both normal entities and player/held
+  entities whose motion is otherwise prediction-ignored.
 - Deferred risk: some rotation writers still derive their input from
   authoritative float velocity or libm angle calculations before quantizing to
   Fixed12. This pass prevents rotation itself from carrying arbitrary IEEE

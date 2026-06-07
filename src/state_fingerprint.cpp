@@ -437,6 +437,7 @@ void AddNetworkEntFingerprint(FingerprintWriter& writer, const State& state, con
 
     if (ignore_motion) {
         writer.AddBool(ent.holding);
+        writer.AddFixedScalar(ent.rotation);
         AddNetworkOptionalVid(writer, state, ent.back_vid);
         AddNetworkOptionalVid(writer, state, ent.holding_vid);
         AddNetworkOptionalVid(writer, state, ent.held_by_vid);
@@ -455,6 +456,7 @@ void AddNetworkEntFingerprint(FingerprintWriter& writer, const State& state, con
     writer.AddVec2(ent.vel);
     writer.AddVec2(ent.acc);
     writer.AddVec2(ent.size);
+    writer.AddFixedScalar(ent.rotation);
     writer.AddPod(ent.coyote_time);
     writer.AddPod(ent.stun_timer);
     writer.AddPod(ent.fall_timer);
