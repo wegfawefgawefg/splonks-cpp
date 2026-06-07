@@ -56,9 +56,9 @@ struct Ent {
     bool can_collect_pickups = false;
     bool can_go_on_back = false;
     bool grounded = false;
-    float shake = 0.0F;
+    sim::Scalar shake = sim::Scalar::zero();
     sim::Scalar rotation = sim::Scalar::zero();
-    float alpha = 1.0F;
+    sim::Scalar alpha = sim::Scalar::from_int(1);
     std::uint32_t coyote_time = 0;
     std::uint32_t stun_timer = 0;
     bool stun_recovers_on_ground = true;

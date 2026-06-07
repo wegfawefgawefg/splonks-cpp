@@ -32,7 +32,7 @@ void SetEntAs(Ent& ent, EntType type_) {
     ent.jump_hold_gravity_frames_remaining = 0;
     ent.throw_velocity_scale = spec.throw_velocity_scale;
     ent.buoyancy = spec.buoyancy;
-    ent.alpha = spec.alpha;
+    ent.alpha = sim::ToSimScalar(spec.alpha);
     ent.self_light = sim::ToSimScalar(spec.self_light);
     ent.light_strength = sim::ToSimScalar(spec.light_strength);
     ent.light_color = sim::ToSimColor3(spec.light_color);

@@ -40,9 +40,9 @@ Ent Ent::New() {
     ent.can_be_stomped = true;
     ent.can_collect_pickups = false;
     ent.grounded = false;
-    ent.shake = 0.0F;
+    ent.shake = sim::Scalar::zero();
     ent.rotation = sim::Scalar::zero();
-    ent.alpha = 1.0F;
+    ent.alpha = sim::Scalar::from_int(1);
     ent.coyote_time = 0;
     ent.stun_timer = 0;
     ent.stun_recovers_on_ground = true;
@@ -162,12 +162,12 @@ void Ent::Reset() {
 }
 
 void AddEntShake(Ent& ent, float amount) {
-    constexpr float kMaxEntShake = 8.0F;
-    ent.shake = std::clamp(ent.shake + amount, 0.0F, kMaxEntShake);
+    const sim::Scalar max_ent_shake = sim::ToSimScalar(8.0F);
+    ent.shake = std::clamp(ent.shake + sim::ToSimScalar(amount), sim::Scalar::zero(), max_ent_shake);
 }
 
 void AttenuateEntShake(Ent& ent, float amount) {
-    ent.shake = std::max(0.0F, ent.shake - amount);
+    ent.shake = std::max(sim::Scalar::zero(), ent.shake - sim::ToSimScalar(amount));
 }
 
 void UseEnt(Ent& ent, std::optional<VID> user_vid, AttachMode source) {

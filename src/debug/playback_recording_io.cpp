@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 100;
+constexpr std::uint32_t kRecordingVersion = 101;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1503,9 +1503,9 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.can_collect_pickups);
     WriteBoolByte(out, ent.can_go_on_back);
     WriteBoolByte(out, ent.grounded);
-    WriteFloat(out, ent.shake);
+    WriteSimScalar(out, ent.shake);
     WriteSimScalar(out, ent.rotation);
-    WriteFloat(out, ent.alpha);
+    WriteSimScalar(out, ent.alpha);
     WriteUint32(out, ent.coyote_time);
     WriteUint32(out, ent.stun_timer);
     WriteBoolByte(out, ent.stun_recovers_on_ground);
@@ -1631,9 +1631,9 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.can_collect_pickups) &&
            ReadBoolByte(in, ent.can_go_on_back) &&
            ReadBoolByte(in, ent.grounded) &&
-           ReadFloat(in, ent.shake) &&
+           ReadSimScalar(in, ent.shake) &&
            ReadSimScalar(in, ent.rotation) &&
-           ReadFloat(in, ent.alpha) &&
+           ReadSimScalar(in, ent.alpha) &&
            ReadUint32(in, ent.coyote_time) &&
            ReadUint32(in, ent.stun_timer) &&
            ReadBoolByte(in, ent.stun_recovers_on_ground) &&

@@ -219,6 +219,13 @@ The expected end state is:
   not carry arbitrary platform float payloads. Spec-authored constants and
   render/stage-lighting code still use float `Color3` at their boundaries.
   Recording format version is now 100.
+- Fixed in snapshot-preserved entity presentation state: `Ent::alpha` and
+  `Ent::shake` are now stored and recorded as Fixed12. These fields affect
+  render opacity and visual shake, not gameplay authority, but they are
+  captured by debug playback snapshots, so fixed storage removes another pair
+  of arbitrary platform float payloads from replay state. Spec-authored alpha
+  and render/debug consumers still convert through float boundaries. Recording
+  format version is now 101.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash

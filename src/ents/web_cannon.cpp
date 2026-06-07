@@ -777,7 +777,7 @@ void StepEntLogicAsCobweb(
     const float lifetime_ratio = cobweb.counter_a > 0.0F
         ? std::clamp(cobweb.counter_a / kTemporaryCobwebLifetimeFrames, 0.0F, 1.0F)
         : 1.0F;
-    cobweb.alpha = std::clamp(std::min(health_ratio, lifetime_ratio), 0.0F, 1.0F);
+    cobweb.alpha = sim::ToSimScalar(std::clamp(std::min(health_ratio, lifetime_ratio), 0.0F, 1.0F));
 
     const AABB cobweb_aabb = common::GetContactAabbForEnt(cobweb, graphics);
     const std::vector<VID> overlapped_vids = QueryEntsInAabb(state, cobweb_aabb, cobweb.vid);

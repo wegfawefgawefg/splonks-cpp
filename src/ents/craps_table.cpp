@@ -8,6 +8,7 @@
 #include "aframe_animator.hpp"
 #include "aframe_id.hpp"
 #include "player_queries.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 #include "world_ops.hpp"
@@ -65,7 +66,7 @@ void LockPrize(Ent& prize) {
     prize.can_collide = false;
     prize.can_be_picked_up = false;
     prize.can_be_hit = false;
-    prize.alpha = kPrizeAlphaLocked;
+    prize.alpha = sim::ToSimScalar(kPrizeAlphaLocked);
 }
 
 void UnlockPrize(Ent& prize) {
@@ -74,7 +75,7 @@ void UnlockPrize(Ent& prize) {
     prize.can_collide = spec.can_collide;
     prize.can_be_picked_up = spec.can_be_picked_up;
     prize.can_be_hit = spec.can_be_hit;
-    prize.alpha = spec.alpha;
+    prize.alpha = sim::ToSimScalar(spec.alpha);
     prize.vel = Vec2::New(0.0F, -2.25F);
     prize.acc = Vec2::New(0.0F, 0.0F);
 }

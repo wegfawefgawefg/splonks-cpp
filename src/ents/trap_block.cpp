@@ -4,6 +4,7 @@
 #include "ents/block.hpp"
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -357,7 +358,7 @@ void StartWindup(Ent& block, std::uint32_t direction_idx, State& state) {
     block.counter_b = kWindupFrames;
     block.vel = Vec2::New(0.0F, 0.0F);
     block.acc = Vec2::New(0.0F, 0.0F);
-    block.shake = std::max(block.shake, kWindupShake);
+    block.shake = std::max(block.shake, sim::ToSimScalar(kWindupShake));
     block.aframe_animator.PlayLoop(aframe_ids::SquisherBlock);
     (void)PlayEntCenterSoundEmitter(state, block, audio_asset_ids::BoulderLatch);
 }
@@ -367,7 +368,7 @@ void StartMove(Ent& block) {
     block.ai_state = EntAiState::Disturbed;
     block.vel = ToVec2(tile_dir) * kMoveSpeed;
     block.acc = Vec2::New(0.0F, 0.0F);
-    block.shake = std::max(block.shake, kStartShake);
+    block.shake = std::max(block.shake, sim::ToSimScalar(kStartShake));
 }
 
 void StopMove(Ent& block, State& state) {
@@ -381,7 +382,7 @@ void StopMove(Ent& block, State& state) {
     }
     block.vel = Vec2::New(0.0F, 0.0F);
     block.acc = Vec2::New(0.0F, 0.0F);
-    block.shake = std::max(block.shake, kImpactShake);
+    block.shake = std::max(block.shake, sim::ToSimScalar(kImpactShake));
     InvalidateOpenSensorCache(block);
     ShowSleepingFrame(block);
     AddShake(
@@ -444,7 +445,7 @@ void StepEntLogicAsTrapBlock(
         ShowAwakeAnim(block);
         block.vel = Vec2::New(0.0F, 0.0F);
         block.acc = Vec2::New(0.0F, 0.0F);
-        block.shake = std::max(block.shake, kWindupShake);
+        block.shake = std::max(block.shake, sim::ToSimScalar(kWindupShake));
         block.counter_b -= 1.0F;
         if (block.counter_b <= 0.0F) {
             StartMove(block);

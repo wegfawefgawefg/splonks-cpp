@@ -7,6 +7,7 @@
 #include "aframe_animator.hpp"
 #include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -82,7 +83,7 @@ Vec2 GetLeadingEmitPos(const Ent& door) {
 }
 
 void SetDoorShake(Ent& door, float amount) {
-    door.shake = std::max(door.shake, amount);
+    door.shake = std::max(door.shake, sim::ToSimScalar(amount));
 }
 
 void SpawnSmokeParticle(

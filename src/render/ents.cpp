@@ -230,7 +230,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
             const SDL_FlipMode flip =
                 ent.facing == Side::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
             const Uint8 ent_alpha = static_cast<Uint8>(
-                std::clamp(ent.alpha, 0.0F, 1.0F) * 255.0F);
+                std::clamp(sim::ToRenderScalar(ent.alpha), 0.0F, 1.0F) * 255.0F);
             const Color3 ent_brightness = GetEntLightingColor(state, ent, graphics);
             SDL_SetTextureAlphaMod(sprite_texture, ent_alpha);
             SDL_SetTextureColorModFloat(
@@ -257,7 +257,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 }
             }
             for (const Vec2& render_offset : render_offsets) {
-                const Vec2 shake_offset = GetShakeOffset(ent.shake);
+                const Vec2 shake_offset = GetShakeOffset(sim::ToRenderScalar(ent.shake));
                 SDL_FRect dst = WorldRectToScreen(
                     graphics,
                     render_position + render_offset + shake_offset,
