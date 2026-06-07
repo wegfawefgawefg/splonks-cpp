@@ -3,12 +3,13 @@
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
 #include "player_queries.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
-#include <limits>
+#include <cstdint>
 #include <vector>
 
 namespace splonks {
@@ -19,14 +20,21 @@ Vec2 GetAabbCenter(const AABB& aabb) {
     return (aabb.tl + aabb.br) / 2.0F;
 }
 
-float GetBuyPromptDistanceSq(const Vec2& buyer_center, const Vec2& item_center, const Stage& stage) {
+std::int64_t GetBuyPromptDistanceSq(
+    const Vec2& buyer_center,
+    const Vec2& item_center,
+    const Stage& stage
+) {
     const Vec2 delta = GetNearestWorldDelta(stage, buyer_center, item_center);
-    return delta.x * delta.x + delta.y * delta.y;
+    const sim::Vec2 fixed_delta = sim::ToSimVec2(delta);
+    const std::int64_t dx = fixed_delta.x.raw_value();
+    const std::int64_t dy = fixed_delta.y.raw_value();
+    return (dx * dx) + (dy * dy);
 }
 
 struct OverlappingBuyableEnt {
     std::size_t ent_idx = 0;
-    float distance_sq = 0.0F;
+    std::int64_t distance_sq = 0;
     AABB nearest_aabb = AABB::New(Vec2::New(0.0F, 0.0F), Vec2::New(0.0F, 0.0F));
 };
 

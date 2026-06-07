@@ -382,6 +382,12 @@ The expected end state is:
   is the vector index returned by `Stage::FindExitId`, so this removes
   `unordered_map` iteration order from exit id assignment and stage-transition
   routing.
+- Fixed in buyable overlap selection: overlapping shop items now sort by a
+  Fixed12-quantized squared distance and then stable entity id instead of
+  comparing raw float squared distances. The selected overlap controls both the
+  buy prompt and which item `TryBuyEnt` targets, so this branch now uses the
+  same position quantization grid as lockstep fingerprints while the broader
+  entity-position migration remains open.
 - Audit checkpoint 2026-06-07: a current `unordered_map` / `unordered_set` /
   structured-binding iteration scan found no remaining high-confidence live
   gameplay iteration order leak. The remaining unordered containers are
