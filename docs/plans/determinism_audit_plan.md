@@ -191,6 +191,10 @@ The expected end state is:
   values now hash as explicit little-endian bytes, and float/double values hash
   through explicit IEEE bit payloads when they are intentionally included.
   This removes host byte order from canonical/gameplay/network fingerprints.
+- Fixed in runtime fingerprints: stage type now hashes as an explicit
+  `uint8_t` instead of a plain `int` cast. This keeps the fingerprint enum
+  boundary aligned with the snapshot writer's one-byte high-level mode/type
+  encodings.
 - Fixed in vendored fixed-point boundary conversion: `gfxp::BasicFixed::
   from_float_for_boundary` now uses local deterministic floor/ceil/nearest
   helpers instead of platform libm `std::floor`, `std::ceil`, and `std::round`.
@@ -634,6 +638,8 @@ The expected end state is:
 - Fixed in runtime fingerprints: scalar hash inputs now pass through explicit
   little-endian byte encoders instead of host memory order, including the
   remaining fixed-width integer fields and fixed-point raw values.
+- Fixed in runtime fingerprints: `StageType` now uses an explicit byte
+  encoding instead of a platform-width `int` cast.
 - Fixed in shared snapshot/replay format: VID-bearing vectors and structs now
   serialize VIDs field-by-field instead of relying on host raw layout for
   vector payloads or optional payloads.
