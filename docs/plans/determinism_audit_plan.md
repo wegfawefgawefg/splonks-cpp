@@ -280,11 +280,11 @@ The expected end state is:
 
 ## RNG Audit
 
-- [ ] Identify every RNG stream.
-- [ ] Separate deterministic gameplay RNG from visual/debug/UI randomness.
-- [ ] Ensure all gameplay RNG is seeded from synchronized state.
-- [ ] Ensure joining peers receive exact RNG state in snapshots.
-- [ ] Remove or quarantine process-global RNG use from gameplay.
+- [x] Identify every RNG stream.
+- [x] Separate deterministic gameplay RNG from visual/debug/UI randomness.
+- [x] Ensure all gameplay RNG is seeded from synchronized state.
+- [x] Ensure joining peers receive exact RNG state in snapshots.
+- [x] Remove or quarantine process-global RNG use from gameplay.
 
 ### Status 2026-06-06
 
@@ -338,6 +338,10 @@ The expected end state is:
   callers, so their process-global RNG use is not a live gameplay determinism
   risk. If these helpers are reused for gameplay later, they should accept a
   synchronized `DetRng&` or be removed.
+- Audited stale sprite animation randomization: `SpriteAnimator::RandomizeFrame`
+  currently has no callers. If it is reused for gameplay-visible or
+  snapshot-visible animation state later, it should accept a synchronized
+  `DetRng&`; otherwise it should stay presentation-only or be removed.
 
 ## Serialization And Snapshot Audit
 
@@ -700,10 +704,10 @@ The expected end state is:
 
 ## Asset And Config Consistency Audit
 
-- [ ] Ensure gameplay-affecting config data is identical across peers.
-- [ ] Hash or version gameplay specs loaded from data files.
-- [ ] Ensure generated data and default profiles do not differ by platform.
-- [ ] Keep local user settings out of authoritative simulation unless explicitly
+- [x] Ensure gameplay-affecting config data is identical across peers.
+- [x] Hash or version gameplay specs loaded from data files.
+- [x] Ensure generated data and default profiles do not differ by platform.
+- [x] Keep local user settings out of authoritative simulation unless explicitly
       synchronized.
 
 ### Status 2026-06-06
@@ -731,6 +735,11 @@ The expected end state is:
   manifest. Future quest roots, mod/plugin content, and authored data outside
   `assets/quests/classic` need to be added to the compatibility domain before
   they can safely affect authoritative gameplay.
+- Audited current local profile/settings boundary. User profile and settings
+  files remain local input/config sources; gameplay-affecting runtime settings
+  are copied into synchronized state before they affect the simulation. Local
+  profile defaults, input devices, and menu preferences must not be read
+  directly from disk inside authoritative fixed-tick gameplay.
 
 ## Time/Input/UI Boundary Audit
 
