@@ -167,7 +167,7 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
         writer.AddPod(*stage.generation_seed);
     }
     writer.AddPod(static_cast<std::uint8_t>(stage.stage_type));
-    writer.AddQuantizedFloat(stage.gravity);
+    writer.AddFixedScalar(stage.gravity);
     if (include_cache_generation) {
         writer.AddPod(stage.tile_change_generation);
     }

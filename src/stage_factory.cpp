@@ -145,7 +145,7 @@ Stage Stage::NewBlank() {
     stage.rooms = {};
     stage.path = {};
     stage.lights = {};
-    stage.gravity = kDefaultStageGravity;
+    stage.gravity = sim::ToSimScalar(kDefaultStageGravity);
     stage.border = MakeUniformBorder(Tile::Air);
     stage.camera_clamp_margin = Vec2::New(0.0F, 0.0F);
     stage.camera_clamp_enabled = true;
@@ -287,7 +287,7 @@ Stage Stage::New(StageType stage_type, DetRng& det_rng) {
     stage.rooms = std::move(rooms);
     stage.path = std::move(path);
     stage.lights = {};
-    stage.gravity = kDefaultStageGravity;
+    stage.gravity = sim::ToSimScalar(kDefaultStageGravity);
     stage.border = MakeUniformBorder(border_tile);
     stage.camera_clamp_margin = ToVec2(kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;

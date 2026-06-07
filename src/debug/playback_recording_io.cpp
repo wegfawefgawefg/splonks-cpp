@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 103;
+constexpr std::uint32_t kRecordingVersion = 104;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -2631,7 +2631,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     for (const StageExit& exit : stage.exits) {
         WriteStageExit(out, exit);
     }
-    WriteFloat(out, stage.gravity);
+    WriteSimScalar(out, stage.gravity);
     WriteTile(out, stage.border.left.tile);
     WriteTile(out, stage.border.right.tile);
     WriteTile(out, stage.border.top.tile);
@@ -2701,7 +2701,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         }
     }
 
-    if (!ReadFloat(in, stage.gravity) ||
+    if (!ReadSimScalar(in, stage.gravity) ||
         !ReadTile(in, stage.border.left.tile) ||
         !ReadTile(in, stage.border.right.tile) ||
         !ReadTile(in, stage.border.top.tile) ||

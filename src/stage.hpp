@@ -4,6 +4,7 @@
 #include "ent/core_types.hpp"
 #include "aframe_id.hpp"
 #include "math_types.hpp"
+#include "sim/fxp.hpp"
 #include "tile.hpp"
 #include "utils.hpp"
 
@@ -196,7 +197,7 @@ struct Stage {
     std::vector<StageGenAnnotation> stagegen_annotations;
     std::vector<StageLight> lights;
     AFrameId block_anim_id = aframe_ids::CaveBlock;
-    float gravity = kDefaultStageGravity;
+    sim::Scalar gravity = sim::ToSimScalar(kDefaultStageGravity);
     StageBorder border{};
     bool camera_clamp_enabled = true;
     Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);

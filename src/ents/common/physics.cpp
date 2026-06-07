@@ -949,14 +949,15 @@ void ApplyGravity(std::size_t ent_idx, State& state, float dt) {
     }
     const float gravity_scale =
         GetModifiedEffectValue(ent, EffectModifierTarget::GravityScale, 1.0F, &state);
+    const float stage_gravity = sim::ToRenderScalar(state.stage.gravity);
     if (gravity_scale != 0.0F) {
-        ent.acc.y += state.stage.gravity * gravity_scale;
+        ent.acc.y += stage_gravity * gravity_scale;
     }
     const float buoyancy_strength =
         GetModifiedEffectValue(ent, EffectModifierTarget::BuoyancyStrength, 0.0F, &state);
     const float buoyancy = sim::ToRenderScalar(ent.buoyancy);
     if (buoyancy > 0.0F && buoyancy_strength > 0.0F) {
-        ent.acc.y -= state.stage.gravity * buoyancy * buoyancy_strength;
+        ent.acc.y -= stage_gravity * buoyancy * buoyancy_strength;
     }
 }
 

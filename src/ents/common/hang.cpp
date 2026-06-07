@@ -1,6 +1,7 @@
 #include "ents/common/common.hpp"
 
 #include "controls.hpp"
+#include "sim/fxp.hpp"
 #include "tile.hpp"
 #include "tile_spec.hpp"
 #include "world_query.hpp"
@@ -447,7 +448,7 @@ void ApplyAirGravity(
     const controls::ControlIntent& control,
     const JumpAndClimbTuning& tuning
 ) {
-    float gravity = state.stage.gravity * tuning.gravity_scale;
+    float gravity = sim::ToRenderScalar(state.stage.gravity) * tuning.gravity_scale;
     if (tuning.jump_hold_gravity_frames > 0 && ent.jump_hold_gravity_frames_remaining > 0 &&
         control.jump && ent.vel.y < 0.0F) {
         gravity = 0.0F;

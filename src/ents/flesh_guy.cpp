@@ -8,6 +8,7 @@
 #include "aframe_id.hpp"
 #include "particles/particle_specs.hpp"
 #include "particles/scripted_particle.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 #include "tile_spec.hpp"
@@ -680,7 +681,9 @@ void StepEntPhysicsAsFleshGuy(
     }
 
     if (!flesh_guy.grounded && !flesh_guy.IsClimbing()) {
-        flesh_guy.acc.y += state.stage.gravity * (wall_sliding ? kWallSlideGravityScale : kGravityScale);
+        flesh_guy.acc.y +=
+            sim::ToRenderScalar(state.stage.gravity) *
+            (wall_sliding ? kWallSlideGravityScale : kGravityScale);
     }
 
     common::PrePartialEulerStep(ent_idx, state, dt);

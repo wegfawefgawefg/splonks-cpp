@@ -57,8 +57,7 @@ The expected end state is:
   explicit threshold quantization.
 - Current authoritative float-backed inventory:
   `Ent::pos`, `vel`, `acc`, `size`, and `counter_a` through `counter_d`;
-  stage fluid amount,
-  velocity, gravity, gravity strength, temporary gravity, and `Stage::gravity`;
+  stage fluid amount, velocity, gravity, gravity strength, and temporary gravity;
   synchronized gameplay settings for fluids, water movement, player tuning,
   and effect modifier values; retained reconnect player/item state mirrors of
   entity position/velocity/acceleration/size/counters/effect values.
@@ -67,8 +66,8 @@ The expected end state is:
   quantized through `sim::Scalar` / Fixed12 before hashing; entity rotation is
   stored and hashed as raw Fixed12, and distance-traveled, travel-sound
   countdown, support-ground-friction, push-acceleration, entity light state,
-  animation time, animation scale, and animation speed are also stored and
-  hashed as raw Fixed12. Runtime movement tuning scalars `max_speed`,
+  animation time, animation scale, animation speed, and stage gravity are also
+  stored and hashed as raw Fixed12. Runtime movement tuning scalars `max_speed`,
   `throw_velocity_scale`, and `buoyancy` are stored and hashed as raw Fixed12
   too. That reduces noisy float-bit hash mismatches, but the simulation and
   `SimSnapshot` still carry IEEE float payloads for the remaining float-backed
@@ -241,6 +240,11 @@ The expected end state is:
   animation time against integer-authored frame durations, while rendering,
   debug JSON, CLI diffs, and text export convert back to float only at their
   presentation boundaries. Recording format version is now 103.
+- Fixed in stage gravity state: `Stage::gravity` is now stored as Fixed12,
+  hashed as a raw fixed value, and recorded as a raw fixed value. Current
+  entity physics consumers convert it to float at the existing movement
+  boundary until the broader `pos` / `vel` / `acc` migration. Recording format
+  version is now 104.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash
