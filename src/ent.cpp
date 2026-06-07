@@ -56,10 +56,10 @@ Ent Ent::New() {
     ent.pos = Vec2::New(0.0F, 0.0F);
     ent.vel = Vec2::New(0.0F, 0.0F);
     ent.acc = Vec2::New(0.0F, 0.0F);
-    ent.max_speed = 7.0F;
+    ent.max_speed = sim::ToSimScalar(7.0F);
     ent.jump_hold_gravity_frames_remaining = 0;
-    ent.throw_velocity_scale = 1.0F;
-    ent.buoyancy = 0.0F;
+    ent.throw_velocity_scale = sim::Scalar::from_int(1);
+    ent.buoyancy = sim::Scalar::zero();
     ent.size = Vec2::New(8.0F, 8.0F);
     ent.self_light = sim::Scalar::zero();
     ent.light_strength = sim::Scalar::zero();

@@ -57,8 +57,7 @@ The expected end state is:
   authoritative gameplay storage/math to fixed-point, integer counters, or
   explicit threshold quantization.
 - Current authoritative float-backed inventory:
-  `Ent::pos`, `vel`, `acc`, `size`, `max_speed`, `throw_velocity_scale`,
-  `buoyancy`, `counter_a` through `counter_d`, and
+  `Ent::pos`, `vel`, `acc`, `size`, `counter_a` through `counter_d`, and
   `AFrameAnimator::current_time` / `scale` / `speed`; stage fluid amount,
   velocity, gravity, gravity strength, temporary gravity, and `Stage::gravity`;
   synchronized gameplay settings for fluids, water movement, player tuning,
@@ -69,9 +68,11 @@ The expected end state is:
   quantized through `sim::Scalar` / Fixed12 before hashing; entity rotation is
   stored and hashed as raw Fixed12, and distance-traveled, travel-sound
   countdown, support-ground-friction, push-acceleration, and entity light state
-  are also stored and hashed as raw Fixed12. That reduces noisy float-bit hash
-  mismatches, but the simulation and `SimSnapshot` still carry IEEE float
-  payloads for the remaining float-backed fields.
+  are also stored and hashed as raw Fixed12. Runtime movement tuning scalars
+  `max_speed`, `throw_velocity_scale`, and `buoyancy` are stored and hashed as
+  raw Fixed12 too. That reduces noisy float-bit hash mismatches, but the
+  simulation and `SimSnapshot` still carry IEEE float payloads for the remaining
+  float-backed fields.
 - Migration order should be narrow and mechanical: introduce fixed-point
   storage at authoritative boundaries, convert parsing/spec constants into
   fixed values, keep render/audio/UI conversion at the edge, and validate each
@@ -226,6 +227,14 @@ The expected end state is:
   of arbitrary platform float payloads from replay state. Spec-authored alpha
   and render/debug consumers still convert through float boundaries. Recording
   format version is now 101.
+- Fixed in gameplay movement tuning state: `Ent::max_speed`,
+  `Ent::throw_velocity_scale`, and `Ent::buoyancy` are now stored as Fixed12,
+  hashed as raw fixed values in both canonical and network fingerprints, and
+  recorded as raw fixed values. Current physics/throw code still converts these
+  values to float at the existing `pos` / `vel` / `acc` boundary until the
+  larger movement migration, but the runtime tuning state itself no longer
+  carries arbitrary platform float payloads. Recording format version is now
+  102.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash

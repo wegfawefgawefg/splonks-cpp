@@ -217,6 +217,9 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
             a.damage_vuln != b.damage_vuln ||
             a.movement_flags != b.movement_flags ||
             a.health != b.health ||
+            a.max_speed != b.max_speed ||
+            a.throw_velocity_scale != b.throw_velocity_scale ||
+            a.buoyancy != b.buoyancy ||
             a.back_vid != b.back_vid ||
             a.holding_vid != b.holding_vid ||
             a.held_by_vid != b.held_by_vid ||

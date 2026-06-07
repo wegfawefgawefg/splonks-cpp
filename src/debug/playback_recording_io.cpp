@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 101;
+constexpr std::uint32_t kRecordingVersion = 102;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1519,10 +1519,10 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteVec2(out, ent.pos);
     WriteVec2(out, ent.vel);
     WriteVec2(out, ent.acc);
-    WriteFloat(out, ent.max_speed);
+    WriteSimScalar(out, ent.max_speed);
     WriteUint32(out, ent.jump_hold_gravity_frames_remaining);
-    WriteFloat(out, ent.throw_velocity_scale);
-    WriteFloat(out, ent.buoyancy);
+    WriteSimScalar(out, ent.throw_velocity_scale);
+    WriteSimScalar(out, ent.buoyancy);
     WriteEntEffects(out, ent.effects);
     WriteVec2(out, ent.size);
     WriteSimScalar(out, ent.self_light);
@@ -1647,10 +1647,10 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadVec2(in, ent.pos) &&
            ReadVec2(in, ent.vel) &&
            ReadVec2(in, ent.acc) &&
-           ReadFloat(in, ent.max_speed) &&
+           ReadSimScalar(in, ent.max_speed) &&
            ReadUint32(in, ent.jump_hold_gravity_frames_remaining) &&
-           ReadFloat(in, ent.throw_velocity_scale) &&
-           ReadFloat(in, ent.buoyancy) &&
+           ReadSimScalar(in, ent.throw_velocity_scale) &&
+           ReadSimScalar(in, ent.buoyancy) &&
            ReadEntEffects(in, ent.effects) &&
            ReadVec2(in, ent.size) &&
            ReadSimScalar(in, ent.self_light) &&

@@ -5,6 +5,7 @@
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
+#include "sim/fxp.hpp"
 #include "stage_break.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
@@ -374,7 +375,7 @@ void StepEntLogicAsBoulder(
     (void)audio;
     (void)dt;
     Ent& boulder = state.ents.ents[ent_idx];
-    boulder.max_speed = kBoulderRollVelocity;
+    boulder.max_speed = sim::ToSimScalar(kBoulderRollVelocity);
 
     if (boulder.ai_state == EntAiState::Idle && boulder.grounded) {
         boulder.ai_state = EntAiState::Disturbed;

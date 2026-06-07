@@ -4,6 +4,7 @@
 #include "ent/spec.hpp"
 #include "ents/common/common.hpp"
 #include "player_queries.hpp"
+#include "sim/fxp.hpp"
 #include "stage_spawning.hpp"
 
 #include <array>
@@ -65,7 +66,7 @@ std::optional<VID> SpawnOpposingBodySmackCaveman(State& state, const Vec2& cente
     caveman->proj_contact_damage_type = DamageType::Attack;
     caveman->proj_contact_damage_amount = 1;
     caveman->proj_contact_timer = 600;
-    caveman->max_speed = 12.0F;
+    caveman->max_speed = sim::ToSimScalar(12.0F);
     TrySetAnim(*caveman, EntDisplayState::Stunned);
     return vid;
 }
@@ -278,7 +279,7 @@ void InitBowlingTestStage(State& state) {
             ent.condition != EntCondition::Stunned) {
             continue;
         }
-        ent.max_speed = 24.0F;
+        ent.max_speed = sim::ToSimScalar(24.0F);
         ent.affected_by_ground_friction = false;
         ent.proj_contact_damage_type = DamageType::Attack;
         ent.proj_contact_damage_amount = 1;

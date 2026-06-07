@@ -282,6 +282,9 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddPod(static_cast<std::uint8_t>(ent.damage_vuln));
     writer.AddPod(ent.movement_flags);
     writer.AddPod(ent.health);
+    writer.AddFixedScalar(ent.max_speed);
+    writer.AddFixedScalar(ent.throw_velocity_scale);
+    writer.AddFixedScalar(ent.buoyancy);
     writer.AddFixedScalar(ent.support_ground_friction);
     writer.AddFixedScalar(ent.push_acc);
     writer.AddFixedScalar(ent.dist_traveled_this_frame);
@@ -460,6 +463,9 @@ void AddNetworkEntFingerprint(FingerprintWriter& writer, const State& state, con
     writer.AddPod(static_cast<std::uint8_t>(ent.damage_vuln));
     writer.AddPod(ent.movement_flags);
     writer.AddPod(ent.health);
+    writer.AddFixedScalar(ent.max_speed);
+    writer.AddFixedScalar(ent.throw_velocity_scale);
+    writer.AddFixedScalar(ent.buoyancy);
     AddNetworkOptionalVid(writer, state, ent.back_vid);
     AddNetworkOptionalVid(writer, state, ent.holding_vid);
     AddNetworkOptionalVid(writer, state, ent.held_by_vid);

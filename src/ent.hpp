@@ -72,10 +72,10 @@ struct Ent {
     Vec2 pos;
     Vec2 vel;
     Vec2 acc;
-    float max_speed = 7.0F;
+    sim::Scalar max_speed = sim::ToSimScalar(7.0F);
     std::uint32_t jump_hold_gravity_frames_remaining = 0;
-    float throw_velocity_scale = 1.0F;
-    float buoyancy = 0.0F;
+    sim::Scalar throw_velocity_scale = sim::Scalar::from_int(1);
+    sim::Scalar buoyancy = sim::Scalar::zero();
     Vec2 size;
     sim::Scalar self_light = sim::Scalar::zero();
     sim::Scalar light_strength = sim::Scalar::zero();

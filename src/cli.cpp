@@ -918,6 +918,21 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     );
     PrintNumericFieldDiff("movement_flags", left->movement_flags, right->movement_flags);
     PrintNumericFieldDiff("health", left->health, right->health);
+    PrintNumericFieldDiff(
+        "max_speed",
+        sim::ToRenderScalar(left->max_speed),
+        sim::ToRenderScalar(right->max_speed)
+    );
+    PrintNumericFieldDiff(
+        "throw_velocity_scale",
+        sim::ToRenderScalar(left->throw_velocity_scale),
+        sim::ToRenderScalar(right->throw_velocity_scale)
+    );
+    PrintNumericFieldDiff(
+        "buoyancy",
+        sim::ToRenderScalar(left->buoyancy),
+        sim::ToRenderScalar(right->buoyancy)
+    );
     PrintFieldDiff("back_vid", OptionalVidDebugString(left->back_vid), OptionalVidDebugString(right->back_vid));
     PrintFieldDiff(
         "holding_vid",

@@ -28,7 +28,9 @@ void RestoreEntPushableFromSpec(Ent& ent) { ent.pushable = GetSpecForEnt(ent).pu
 void RestoreEntPushAccFromSpec(Ent& ent) {
     ent.push_acc = sim::ToSimScalar(GetSpecForEnt(ent).push_acc);
 }
-void RestoreEntThrowVelocityScaleFromSpec(Ent& ent) { ent.throw_velocity_scale = GetSpecForEnt(ent).throw_velocity_scale; }
+void RestoreEntThrowVelocityScaleFromSpec(Ent& ent) {
+    ent.throw_velocity_scale = sim::ToSimScalar(GetSpecForEnt(ent).throw_velocity_scale);
+}
 void RestoreEntPickupEffectFromSpec(Ent& ent) { ent.pickup_effect = GetSpecForEnt(ent).pickup_effect; }
 void RestoreEntBuyableFromSpec(Ent& ent) { ent.buyable = GetSpecForEnt(ent).buyable; }
 void RestoreEntDamageAnimFromSpec(Ent& ent) { ent.damage_anim = GetSpecForEnt(ent).damage_anim; }

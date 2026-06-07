@@ -1,6 +1,7 @@
 #include "ents/common/common.hpp"
 #include "world_query.hpp"
 
+#include "sim/fxp.hpp"
 #include "tile.hpp"
 #include "tile_spec.hpp"
 
@@ -953,8 +954,9 @@ void ApplyGravity(std::size_t ent_idx, State& state, float dt) {
     }
     const float buoyancy_strength =
         GetModifiedEffectValue(ent, EffectModifierTarget::BuoyancyStrength, 0.0F, &state);
-    if (ent.buoyancy > 0.0F && buoyancy_strength > 0.0F) {
-        ent.acc.y -= state.stage.gravity * ent.buoyancy * buoyancy_strength;
+    const float buoyancy = sim::ToRenderScalar(ent.buoyancy);
+    if (buoyancy > 0.0F && buoyancy_strength > 0.0F) {
+        ent.acc.y -= state.stage.gravity * buoyancy * buoyancy_strength;
     }
 }
 
@@ -967,7 +969,12 @@ void ApplyEffectVelocityModifiers(Ent& ent, const State& state) {
     ent.vel.y *= std::clamp(damping_y, 0.0F, 1.0F);
 
     const float max_fall_speed =
-        GetModifiedEffectValue(ent, EffectModifierTarget::MaxFallSpeed, ent.max_speed, &state);
+        GetModifiedEffectValue(
+            ent,
+            EffectModifierTarget::MaxFallSpeed,
+            sim::ToRenderScalar(ent.max_speed),
+            &state
+        );
     ent.vel.y = std::min(ent.vel.y, max_fall_speed);
 }
 
@@ -975,8 +982,9 @@ void PostPartialEulerStep(std::size_t ent_idx, State& state, float dt) {
     (void)dt;
     Ent& ent = state.ents.ents[ent_idx];
     ApplyEffectVelocityModifiers(ent, state);
-    ent.vel.x = std::clamp(ent.vel.x, -ent.max_speed, ent.max_speed);
-    ent.vel.y = std::clamp(ent.vel.y, -ent.max_speed, ent.max_speed);
+    const float max_speed = sim::ToRenderScalar(ent.max_speed);
+    ent.vel.x = std::clamp(ent.vel.x, -max_speed, max_speed);
+    ent.vel.y = std::clamp(ent.vel.y, -max_speed, max_speed);
     ent.acc = Vec2::New(0.0F, 0.0F);
 }
 

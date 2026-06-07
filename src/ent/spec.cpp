@@ -30,8 +30,8 @@ void SetEntAs(Ent& ent, EntType type_) {
     ent.pushable = spec.pushable;
     ent.push_acc = sim::ToSimScalar(spec.push_acc);
     ent.jump_hold_gravity_frames_remaining = 0;
-    ent.throw_velocity_scale = spec.throw_velocity_scale;
-    ent.buoyancy = spec.buoyancy;
+    ent.throw_velocity_scale = sim::ToSimScalar(spec.throw_velocity_scale);
+    ent.buoyancy = sim::ToSimScalar(spec.buoyancy);
     ent.alpha = sim::ToSimScalar(spec.alpha);
     ent.self_light = sim::ToSimScalar(spec.self_light);
     ent.light_strength = sim::ToSimScalar(spec.light_strength);

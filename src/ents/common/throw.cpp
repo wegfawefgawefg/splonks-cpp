@@ -2,6 +2,7 @@
 
 #include "controls.hpp"
 #include "ent/spec.hpp"
+#include "sim/fxp.hpp"
 #include "world_ops.hpp"
 
 namespace splonks::ents::common {
@@ -70,7 +71,9 @@ bool TrySpawnAndThrowEntForToolUse(
         spawned.proj_contact_timer = kProjContactDuration;
         spawned.SetCenter(thrower.GetCenter());
         const Vec2 throw_velocity =
-            throw_velocity_override.value_or(velocity_builder(control) * thrower.throw_velocity_scale);
+            throw_velocity_override.value_or(
+                velocity_builder(control) * sim::ToRenderScalar(thrower.throw_velocity_scale)
+            );
         spawned.acc += throw_velocity;
         if (spawned.on_use != nullptr) {
             spawned.on_use(spawned.vid.id, state, graphics, audio);

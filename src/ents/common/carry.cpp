@@ -4,6 +4,7 @@
 #include "ent/spec.hpp"
 #include "ent/spec_restore.hpp"
 #include "controls.hpp"
+#include "sim/fxp.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
@@ -789,7 +790,8 @@ void UpdateCarryAndBackItems(
                         }
                     }
 
-                    const Vec2 scaled_throw_vel = throw_vel * ent.throw_velocity_scale;
+                    const Vec2 scaled_throw_vel =
+                        throw_vel * sim::ToRenderScalar(ent.throw_velocity_scale);
                     (void)TryThrowEntByVid(
                         ent.vid,
                         thrown->vid,
