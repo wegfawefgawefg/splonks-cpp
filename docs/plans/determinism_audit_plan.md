@@ -789,9 +789,11 @@ The expected end state is:
 - Validation 2026-06-07: release build passed, state equality and deterministic
   replay smokes passed, `--check-join-barrier-next-stage-restart-smoke` passed,
   and `--check-network-fresh-reload-ownership-smoke` passed after the
-  platform-sized id cleanup. The broader `--check-input-lockstep-smoke` did not
-  fail with a mismatch, but it produced no output before a 120 second local
-  timeout, so that broad validation remains open rather than counted as passed.
+  platform-sized id cleanup. The broader `--check-input-lockstep-smoke` also
+  passed under a 300 second cap, covering clean, impaired, same-house, same-city,
+  same-state, cross-country, Japan/Texas, run-rate-skew, join barrier, retained
+  reconnect, carry transition, respawn policy, rollback repair, snapshot resync,
+  hash exchange, transition resync-block, and rollback-latency cases.
 - Deferred risk: topology changes during active play need broader validation
   with multiple local players per peer, high latency, reconnect, stage
   transition, restart run, and relay/NAT paths.
