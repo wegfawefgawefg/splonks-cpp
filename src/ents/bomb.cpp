@@ -5,6 +5,7 @@
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
 #include "math_types.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 
 namespace splonks::ents::bomb {
@@ -80,16 +81,16 @@ void UpdateBombRotation(Ent& bomb) {
 
 void UpdateBombFuseLight(Ent& bomb) {
     if (bomb.counter_a <= 0.0F) {
-        bomb.self_light = 0.0F;
-        bomb.light_strength = 0.0F;
-        bomb.light_color = Color3::White();
+        bomb.self_light = sim::Scalar::zero();
+        bomb.light_strength = sim::Scalar::zero();
+        bomb.light_color = sim::ToSimColor3(Color3::White());
         bomb.light_radius = 0;
         return;
     }
 
-    bomb.self_light = kLitBombSelfLight;
-    bomb.light_strength = kLitBombLightStrength;
-    bomb.light_color = kLitBombLightColor;
+    bomb.self_light = sim::ToSimScalar(kLitBombSelfLight);
+    bomb.light_strength = sim::ToSimScalar(kLitBombLightStrength);
+    bomb.light_color = sim::ToSimColor3(kLitBombLightColor);
     bomb.light_radius = kLitBombLightRadius;
 }
 

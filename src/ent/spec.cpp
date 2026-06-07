@@ -33,9 +33,9 @@ void SetEntAs(Ent& ent, EntType type_) {
     ent.throw_velocity_scale = spec.throw_velocity_scale;
     ent.buoyancy = spec.buoyancy;
     ent.alpha = spec.alpha;
-    ent.self_light = spec.self_light;
-    ent.light_strength = spec.light_strength;
-    ent.light_color = spec.light_color;
+    ent.self_light = sim::ToSimScalar(spec.self_light);
+    ent.light_strength = sim::ToSimScalar(spec.light_strength);
+    ent.light_color = sim::ToSimColor3(spec.light_color);
     ent.light_radius = spec.light_radius;
     ent.pickup_effect = spec.pickup_effect;
     ent.buyable = spec.buyable;

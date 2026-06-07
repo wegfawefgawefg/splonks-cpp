@@ -3,6 +3,7 @@
 #include "debug/debug_stage_common.hpp"
 #include "ent/spec.hpp"
 #include "player_queries.hpp"
+#include "sim/fxp.hpp"
 #include "stage_spawning.hpp"
 
 #include <algorithm>
@@ -85,9 +86,9 @@ void SpawnDebugMovingLight(State& state, int index, int count) {
     light->threshold_b = 8.0F + static_cast<float>((index * 7) % 18);
     const std::size_t color_index =
         static_cast<std::size_t>(index) % kDebugLightColors.size();
-    light->light_color = kDebugLightColors[color_index];
-    light->self_light = 0.65F;
-    light->light_strength = 0.85F + static_cast<float>(index % 5) * 0.08F;
+    light->light_color = sim::ToSimColor3(kDebugLightColors[color_index]);
+    light->self_light = sim::ToSimScalar(0.65F);
+    light->light_strength = sim::ToSimScalar(0.85F + static_cast<float>(index % 5) * 0.08F);
     light->light_radius = 5 + (index % 5);
 }
 

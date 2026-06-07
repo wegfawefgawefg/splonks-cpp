@@ -7,6 +7,7 @@
 #include "render/stone_overlay.hpp"
 #include "render/tile_lighting.hpp"
 #include "render/world_texture.hpp"
+#include "sim/fxp.hpp"
 #include "stage_lighting.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
@@ -92,8 +93,9 @@ Color3 GetEntLightingColor(State& state, const Ent& ent, Graphics& graphics) {
     const Vec2 visual_center =
         ents::common::GetVisualCenterForEnt(ent, graphics, ent.GetCenter());
     Color3 color = SampleForegroundLightColorForRender(state, visual_center);
-    if (ent.self_light > 0.0F) {
-        color = color + (ent.light_color * ent.self_light);
+    const float self_light = sim::ToRenderScalar(ent.self_light);
+    if (self_light > 0.0F) {
+        color = color + (sim::ToRenderColor3(ent.light_color) * self_light);
     }
     return ClampRenderColor(color);
 }

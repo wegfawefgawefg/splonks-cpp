@@ -230,6 +230,7 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
             a.counter_b != b.counter_b ||
             a.counter_c != b.counter_c ||
             a.counter_d != b.counter_d ||
+            a.self_light != b.self_light ||
             a.light_strength != b.light_strength ||
             a.light_color.r != b.light_color.r ||
             a.light_color.g != b.light_color.g ||
@@ -292,8 +293,9 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << "," << a.counter_c << "," << a.counter_d
                    << "/" << b.counter_a << "," << b.counter_b
                    << "," << b.counter_c << "," << b.counter_d
-                   << " lights " << a.light_strength << "," << a.light_radius
-                   << "/" << b.light_strength << "," << b.light_radius
+                   << " lights " << sim::ToRenderScalar(a.light_strength) << ","
+                   << a.light_radius << "/" << sim::ToRenderScalar(b.light_strength) << ","
+                   << b.light_radius
                    << " points " << a.point_a.x << "," << a.point_a.y
                    << "/" << b.point_a.x << "," << b.point_a.y
                    << " anim " << a.aframe_animator.anim_id
@@ -3867,7 +3869,7 @@ bool CheckStateFingerprintSmoke() {
         }
         presentation_ent->render_enabled = !presentation_ent->render_enabled;
         presentation_ent->draw_layer = DrawLayer::Foreground;
-        presentation_ent->light_strength += 0.5F;
+        presentation_ent->light_strength += sim::ToSimScalar(0.5F);
         presentation_ent->light_radius += 2;
         presentation_ent->aframe_animator.current_frame += 1;
         presentation_ent->aframe_animator.current_time += 0.375F;

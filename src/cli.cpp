@@ -17,6 +17,7 @@
 #include "stage_gen/classic/tile_palette.hpp"
 #include "stage_gen/room_template_loader.hpp"
 #include "stage_spawning.hpp"
+#include "sim/fxp.hpp"
 #include "state_fingerprint.hpp"
 #include "step.hpp"
 #include "state.hpp"
@@ -938,7 +939,16 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintNumericFieldDiff("counter_b", left->counter_b, right->counter_b);
     PrintNumericFieldDiff("counter_c", left->counter_c, right->counter_c);
     PrintNumericFieldDiff("counter_d", left->counter_d, right->counter_d);
-    PrintNumericFieldDiff("light_strength", left->light_strength, right->light_strength);
+    PrintNumericFieldDiff(
+        "self_light",
+        sim::ToRenderScalar(left->self_light),
+        sim::ToRenderScalar(right->self_light)
+    );
+    PrintNumericFieldDiff(
+        "light_strength",
+        sim::ToRenderScalar(left->light_strength),
+        sim::ToRenderScalar(right->light_strength)
+    );
     PrintNumericFieldDiff("light_radius", left->light_radius, right->light_radius);
     PrintFieldDiff("point_a", IVec2DebugString(left->point_a), IVec2DebugString(right->point_a));
     PrintFieldDiff("point_b", IVec2DebugString(left->point_b), IVec2DebugString(right->point_b));

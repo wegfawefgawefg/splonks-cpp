@@ -132,6 +132,12 @@ struct FingerprintWriter {
         AddFixedScalar(fixed.y);
     }
 
+    void AddFixedColor3(const sim::Color3& color) {
+        AddFixedScalar(color.r);
+        AddFixedScalar(color.g);
+        AddFixedScalar(color.b);
+    }
+
     void AddIVec2(const IVec2& vec) {
         AddPod(vec.x);
         AddPod(vec.y);
@@ -293,10 +299,9 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddQuantizedFloat(ent.counter_b);
     writer.AddQuantizedFloat(ent.counter_c);
     writer.AddQuantizedFloat(ent.counter_d);
-    writer.AddQuantizedFloat(ent.light_strength);
-    writer.AddQuantizedFloat(ent.light_color.r);
-    writer.AddQuantizedFloat(ent.light_color.g);
-    writer.AddQuantizedFloat(ent.light_color.b);
+    writer.AddFixedScalar(ent.self_light);
+    writer.AddFixedScalar(ent.light_strength);
+    writer.AddFixedColor3(ent.light_color);
     writer.AddPod(ent.light_radius);
     writer.AddIVec2(ent.point_a);
     writer.AddIVec2(ent.point_b);

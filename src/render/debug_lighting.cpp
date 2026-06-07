@@ -7,6 +7,7 @@
 #include "state.hpp"
 #include "text.hpp"
 #include "tile.hpp"
+#include "sim/fxp.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -161,9 +162,10 @@ void RenderLightOverlay(
         }
 
         for (const Ent& ent : state.ents.ents) {
+            const float light_strength = sim::ToRenderScalar(ent.light_strength);
             if (!ent.active || !ent.render_enabled ||
                 ent.condition == EntCondition::Dead ||
-                ent.light_strength <= 0.0F || ent.light_radius <= 0) {
+                light_strength <= 0.0F || ent.light_radius <= 0) {
                 continue;
             }
             RenderLightMarker(
@@ -172,8 +174,8 @@ void RenderLightOverlay(
                 pres,
                 ent.GetCenter() + render_offset,
                 ent.light_radius,
-                ent.light_strength,
-                ent.light_color,
+                light_strength,
+                sim::ToRenderColor3(ent.light_color),
                 GetEntTypeName(ent.type_)
             );
         }

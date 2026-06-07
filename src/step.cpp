@@ -15,6 +15,7 @@
 #include "network/net_lobby.hpp"
 #include "network/net_progression.hpp"
 #include "player_queries.hpp"
+#include "sim/fxp.hpp"
 #include "utils.hpp"
 #include "world_ops.hpp"
 
@@ -304,16 +305,18 @@ void RefreshPlayableCharacterLamp(State& state) {
         const bool emits_lamp = slot != nullptr && slot->connected;
 
         if (!emits_lamp || ent.condition == EntCondition::Dead) {
-            ent.light_strength = 0.0F;
+            ent.light_strength = sim::Scalar::zero();
             ent.light_radius = 0;
-            ent.light_color = Color3::White();
+            ent.light_color = sim::ToSimColor3(Color3::White());
             continue;
         }
 
-        ent.light_strength = kPlayerLampLightStrength *
-                                std::max(state.settings.post_process.player_lamp_strength, 0.0F);
+        ent.light_strength = sim::ToSimScalar(
+            kPlayerLampLightStrength *
+            std::max(state.settings.post_process.player_lamp_strength, 0.0F)
+        );
         ent.light_radius = kPlayerLampLightRadius;
-        ent.light_color = Color3::White();
+        ent.light_color = sim::ToSimColor3(Color3::White());
     }
 }
 

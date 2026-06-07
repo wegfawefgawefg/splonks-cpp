@@ -3,6 +3,7 @@
 #include "state.hpp"
 #include "tile.hpp"
 #include "tile_spec.hpp"
+#include "sim/fxp.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -331,16 +332,17 @@ std::vector<LiveLightSource> BuildLiveLightSources(State& state) {
     }
 
     for (const Ent& light_ent : state.ents.ents) {
+        const float light_strength = sim::ToRenderScalar(light_ent.light_strength);
         if (!light_ent.active || !light_ent.render_enabled ||
             light_ent.condition == EntCondition::Dead ||
-            light_ent.light_strength <= 0.0F || light_ent.light_radius <= 0) {
+            light_strength <= 0.0F || light_ent.light_radius <= 0) {
             continue;
         }
         sources.push_back(LiveLightSource{
             .world_pos = light_ent.GetCenter(),
             .radius = light_ent.light_radius,
-            .source = light_ent.light_strength,
-            .color = light_ent.light_color,
+            .source = light_strength,
+            .color = sim::ToRenderColor3(light_ent.light_color),
         });
     }
 

@@ -58,7 +58,7 @@ The expected end state is:
   explicit threshold quantization.
 - Current authoritative float-backed inventory:
   `Ent::pos`, `vel`, `acc`, `size`, `max_speed`, `throw_velocity_scale`,
-  `buoyancy`, `counter_a` through `counter_d`, `light_strength`, `light_color`, and
+  `buoyancy`, `counter_a` through `counter_d`, and
   `AFrameAnimator::current_time` / `scale` / `speed`; stage fluid amount,
   velocity, gravity, gravity strength, temporary gravity, and `Stage::gravity`;
   synchronized gameplay settings for fluids, water movement, player tuning,
@@ -68,8 +68,8 @@ The expected end state is:
   size, counters, effect values, light values, and animation timers are
   quantized through `sim::Scalar` / Fixed12 before hashing; entity rotation is
   stored and hashed as raw Fixed12, and distance-traveled, travel-sound
-  countdown, support-ground-friction, and push-acceleration state are also
-  stored and hashed as raw Fixed12. That reduces noisy float-bit hash
+  countdown, support-ground-friction, push-acceleration, and entity light state
+  are also stored and hashed as raw Fixed12. That reduces noisy float-bit hash
   mismatches, but the simulation and `SimSnapshot` still carry IEEE float
   payloads for the remaining float-backed fields.
 - Migration order should be narrow and mechanical: introduce fixed-point
@@ -211,6 +211,14 @@ The expected end state is:
   float data-loading boundaries, and current physics friction/push acceleration
   converts back to float until the broader `pos` / `vel` / `acc` migration.
   Recording format version is now 99.
+- Fixed in snapshot-preserved entity light state: `Ent::self_light`,
+  `Ent::light_strength`, and `Ent::light_color` are now stored as Fixed12,
+  hashed as raw fixed values, and recorded as raw fixed values. These fields are
+  presentation/lighting state rather than gameplay authority, but they are part
+  of canonical local fingerprints and debug playback snapshots, so they should
+  not carry arbitrary platform float payloads. Spec-authored constants and
+  render/stage-lighting code still use float `Color3` at their boundaries.
+  Recording format version is now 100.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes, and float/double values hash

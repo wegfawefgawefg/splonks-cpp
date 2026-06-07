@@ -61,9 +61,9 @@ Ent Ent::New() {
     ent.throw_velocity_scale = 1.0F;
     ent.buoyancy = 0.0F;
     ent.size = Vec2::New(8.0F, 8.0F);
-    ent.self_light = 0.0F;
-    ent.light_strength = 0.0F;
-    ent.light_color = Color3::White();
+    ent.self_light = sim::Scalar::zero();
+    ent.light_strength = sim::Scalar::zero();
+    ent.light_color = sim::ToSimColor3(Color3::White());
     ent.light_radius = 0;
     ent.dist_traveled_this_frame = sim::Scalar::zero();
     ent.facing = Side::Left;

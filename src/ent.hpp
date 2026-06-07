@@ -77,9 +77,9 @@ struct Ent {
     float throw_velocity_scale = 1.0F;
     float buoyancy = 0.0F;
     Vec2 size;
-    float self_light = 0.0F;
-    float light_strength = 0.0F;
-    Color3 light_color = Color3::White();
+    sim::Scalar self_light = sim::Scalar::zero();
+    sim::Scalar light_strength = sim::Scalar::zero();
+    sim::Color3 light_color = sim::ToSimColor3(Color3::White());
     int light_radius = 0;
     sim::Scalar dist_traveled_this_frame = sim::Scalar::zero();
     Side facing = Side::Left;
