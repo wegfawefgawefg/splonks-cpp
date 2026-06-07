@@ -5,6 +5,7 @@
 #include "vid.hpp"
 
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <vector>
 
@@ -72,7 +73,7 @@ struct AudioEmitter {
 
 struct AudioEmitterManager {
     std::vector<AudioEmitter> emitters;
-    std::vector<std::size_t> available_ids;
+    std::vector<std::uint32_t> available_ids;
 
     static constexpr std::size_t kMaxNumAudioEmitters = 256;
 

@@ -127,10 +127,11 @@ AudioEmitterManager AudioEmitterManager::New() {
     manager.emitters.reserve(kMaxNumAudioEmitters);
     manager.available_ids.reserve(kMaxNumAudioEmitters);
     for (std::size_t i = 0; i < kMaxNumAudioEmitters; ++i) {
+        const auto id = static_cast<std::uint32_t>(i);
         AudioEmitter emitter;
-        emitter.vid = VID{static_cast<std::uint32_t>(i), 0};
+        emitter.vid = VID{id, 0};
         manager.emitters.push_back(emitter);
-        manager.available_ids.insert(manager.available_ids.begin(), i);
+        manager.available_ids.insert(manager.available_ids.begin(), id);
     }
     return manager;
 }
@@ -141,9 +142,9 @@ std::optional<VID> AudioEmitterManager::NewEmitter() {
         return std::nullopt;
     }
 
-    const std::size_t id = available_ids.back();
+    const std::uint32_t id = available_ids.back();
     available_ids.pop_back();
-    AudioEmitter& emitter = emitters[id];
+    AudioEmitter& emitter = emitters[static_cast<std::size_t>(id)];
     emitter.active = true;
     emitter.vid.version += 1;
     emitter.started = false;
@@ -164,11 +165,12 @@ void AudioEmitterManager::SetInactiveVid(const VID& vid) {
 }
 
 AudioEmitter* AudioEmitterManager::GetEmitterMut(const VID& vid) {
-    if (!IsValidAudioEmitterVID(vid) || vid.id >= emitters.size()) {
+    if (!IsValidAudioEmitterVID(vid) ||
+        static_cast<std::size_t>(vid.id) >= emitters.size()) {
         return nullptr;
     }
 
-    AudioEmitter& emitter = emitters[vid.id];
+    AudioEmitter& emitter = emitters[static_cast<std::size_t>(vid.id)];
     if (!emitter.active || emitter.vid.version != vid.version) {
         return nullptr;
     }
@@ -176,11 +178,12 @@ AudioEmitter* AudioEmitterManager::GetEmitterMut(const VID& vid) {
 }
 
 const AudioEmitter* AudioEmitterManager::GetEmitter(const VID& vid) const {
-    if (!IsValidAudioEmitterVID(vid) || vid.id >= emitters.size()) {
+    if (!IsValidAudioEmitterVID(vid) ||
+        static_cast<std::size_t>(vid.id) >= emitters.size()) {
         return nullptr;
     }
 
-    const AudioEmitter& emitter = emitters[vid.id];
+    const AudioEmitter& emitter = emitters[static_cast<std::size_t>(vid.id)];
     if (!emitter.active || emitter.vid.version != vid.version) {
         return nullptr;
     }
@@ -194,7 +197,7 @@ void AudioEmitterManager::ClearAll() {
         ClearEmitterRuntime(emitters[i]);
         emitters[i].owner_ent_vid.reset();
         emitters[i].attached_ent_vid.reset();
-        available_ids.insert(available_ids.begin(), i);
+        available_ids.insert(available_ids.begin(), static_cast<std::uint32_t>(i));
     }
 }
 

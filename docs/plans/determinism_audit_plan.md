@@ -727,6 +727,13 @@ The expected end state is:
   gameplay ids rather than arbitrary host vector sizes, and their snapshot/
   replay byte representation was already explicit `uint32_t`, so this removes
   machine-width runtime state without changing recording format version 96.
+- Fixed in snapshot-preserved presentation state: `AudioEmitterManager::
+  available_ids` now uses explicit `uint32_t` storage instead of
+  `std::size_t`. Audio emitters are outside live network `SimSnapshot`
+  authority, but they are copied through rollback/presentation snapshots and
+  local debug playback state. The emitter pool is capped at 256 ids, so the
+  free-list now matches `VID::id` width and only casts at local vector-index
+  boundaries.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn
