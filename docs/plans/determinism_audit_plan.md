@@ -156,6 +156,11 @@ The expected end state is:
   values now hash as explicit little-endian bytes, and float/double values hash
   through explicit IEEE bit payloads when they are intentionally included.
   This removes host byte order from canonical/gameplay/network fingerprints.
+- Fixed in vendored fixed-point boundary conversion: `gfxp::BasicFixed::
+  from_float_for_boundary` now uses local deterministic floor/ceil/nearest
+  helpers instead of platform libm `std::floor`, `std::ceil`, and `std::round`.
+  This keeps float-to-Fixed12 quantization explicit for fingerprints and other
+  current fixed-point boundary crossings.
 - Remaining high-risk math boundaries after the simple cleanup pass:
   `stage_fluids.cpp` still normalizes/clamps fluid velocity and gravity through
   `Length` / `NormalizeOrZero`; `world_query.cpp` sweep/raycast stepping still

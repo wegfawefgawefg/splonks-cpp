@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cmath>
 #include <cstdint>
 #include <functional>
 #include <limits>
@@ -66,6 +65,23 @@ template <typename Raw> constexpr std::optional<Raw> checked_raw(int64_t value) 
         return std::nullopt;
     }
     return static_cast<Raw>(value);
+}
+
+inline int64_t floor_to_int64(float value) {
+    const int64_t truncated = static_cast<int64_t>(value);
+    return static_cast<float>(truncated) > value ? truncated - 1 : truncated;
+}
+
+inline int64_t ceil_to_int64(float value) {
+    const int64_t floored = floor_to_int64(value);
+    return static_cast<float>(floored) < value ? floored + 1 : floored;
+}
+
+inline int64_t round_to_int64(float value) {
+    if (value >= 0.0F) {
+        return floor_to_int64(value + 0.5F);
+    }
+    return -floor_to_int64((-value) + 0.5F);
 }
 
 } // namespace detail
@@ -184,11 +200,11 @@ template <typename Raw, int FracBits> struct BasicFixed {
         case Rounding::TowardZero:
             return BasicFixed{static_cast<Raw>(scaled)};
         case Rounding::Floor:
-            return BasicFixed{static_cast<Raw>(std::floor(scaled))};
+            return BasicFixed{static_cast<Raw>(detail::floor_to_int64(scaled))};
         case Rounding::Ceil:
-            return BasicFixed{static_cast<Raw>(std::ceil(scaled))};
+            return BasicFixed{static_cast<Raw>(detail::ceil_to_int64(scaled))};
         case Rounding::Nearest:
-            return BasicFixed{static_cast<Raw>(std::round(scaled))};
+            return BasicFixed{static_cast<Raw>(detail::round_to_int64(scaled))};
         }
         return BasicFixed{};
     }
