@@ -788,6 +788,11 @@ The expected end state is:
   simulation fields now use explicit `uint32_t` instead of
   implementation-width `unsigned int`. Local loop counters and vector indexes
   remain native index types where they do not become gameplay state.
+- Fixed in synchronized settings state: control-binding ids now use explicit
+  `uint32_t` runtime storage, and the settings parser plus snapshot/replay
+  controls/debug-ui writers route through typed `uint32_t` helpers instead of
+  implementation-width `unsigned int` helpers. The old unsigned recording
+  helper path was removed.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn

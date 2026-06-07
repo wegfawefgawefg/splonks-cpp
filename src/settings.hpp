@@ -45,8 +45,8 @@ struct AudioSettings {
 };
 
 struct ControlsSettings {
-    unsigned int jump = 0;
-    unsigned int shoot = 1;
+    std::uint32_t jump = 0;
+    std::uint32_t shoot = 1;
 
     static ControlsSettings New();
 };

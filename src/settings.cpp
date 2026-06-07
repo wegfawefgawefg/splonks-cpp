@@ -23,9 +23,9 @@ bool ParseBool(const std::string& value, bool fallback) {
     return fallback;
 }
 
-unsigned int ParseUnsigned(const std::string& value, unsigned int fallback) {
+std::uint32_t ParseUnsigned(const std::string& value, std::uint32_t fallback) {
     try {
-        return static_cast<unsigned int>(std::stoul(value));
+        return static_cast<std::uint32_t>(std::stoul(value));
     } catch (...) {
         return fallback;
     }
@@ -322,7 +322,7 @@ Settings LoadSettings() {
             settings.post_process.effect =
                 static_cast<PostProcessEffect>(ParseUnsigned(
                     value,
-                    static_cast<unsigned int>(settings.post_process.effect)
+                    static_cast<std::uint32_t>(settings.post_process.effect)
                 ));
         } else if (key == "post_process.terrain_lighting") {
             settings.post_process.terrain_lighting =

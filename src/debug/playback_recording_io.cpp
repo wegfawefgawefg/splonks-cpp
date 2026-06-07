@@ -784,20 +784,6 @@ bool ReadUint64(std::istream& in, std::uint64_t& value) {
     return true;
 }
 
-void WriteUnsigned32(std::ostream& out, unsigned int value) {
-    const std::uint32_t stored = static_cast<std::uint32_t>(value);
-    WriteUint32(out, stored);
-}
-
-bool ReadUnsigned32(std::istream& in, unsigned int& value) {
-    std::uint32_t stored = 0;
-    if (!ReadUint32(in, stored)) {
-        return false;
-    }
-    value = static_cast<unsigned int>(stored);
-    return true;
-}
-
 void WriteOptionalUint32(std::ostream& out, const std::optional<std::uint32_t>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
     WriteUint8(out, has_value);
@@ -1780,13 +1766,13 @@ bool ReadAudioSettings(std::istream& in, AudioSettings& settings) {
 }
 
 void WriteControlsSettings(std::ostream& out, const ControlsSettings& settings) {
-    WriteUnsigned32(out, settings.jump);
-    WriteUnsigned32(out, settings.shoot);
+    WriteUint32(out, settings.jump);
+    WriteUint32(out, settings.shoot);
 }
 
 bool ReadControlsSettings(std::istream& in, ControlsSettings& settings) {
-    return ReadUnsigned32(in, settings.jump) &&
-           ReadUnsigned32(in, settings.shoot);
+    return ReadUint32(in, settings.jump) &&
+           ReadUint32(in, settings.shoot);
 }
 
 void WriteUiSettings(std::ostream& out, const UiSettings& settings) {
@@ -1975,8 +1961,8 @@ void WriteDebugUiSettings(std::ostream& out, const DebugUiSettings& settings) {
     WriteBoolByte(out, settings.camera_settings_visible);
     WriteBoolByte(out, settings.performance_settings_visible);
     WriteBoolByte(out, settings.player_tuning_visible);
-    WriteUnsigned32(out, settings.ent_swap_type);
-    WriteUnsigned32(out, settings.default_spawn_type);
+    WriteUint32(out, settings.ent_swap_type);
+    WriteUint32(out, settings.default_spawn_type);
     WriteBoolByte(out, settings.default_spawn_enabled);
     WriteBoolByte(out, settings.ent_swap_fresh);
     WriteBoolByte(out, settings.ent_swap_keep_passives);
@@ -2009,8 +1995,8 @@ bool ReadDebugUiSettings(std::istream& in, DebugUiSettings& settings) {
            ReadBoolByte(in, settings.camera_settings_visible) &&
            ReadBoolByte(in, settings.performance_settings_visible) &&
            ReadBoolByte(in, settings.player_tuning_visible) &&
-           ReadUnsigned32(in, settings.ent_swap_type) &&
-           ReadUnsigned32(in, settings.default_spawn_type) &&
+           ReadUint32(in, settings.ent_swap_type) &&
+           ReadUint32(in, settings.default_spawn_type) &&
            ReadBoolByte(in, settings.default_spawn_enabled) &&
            ReadBoolByte(in, settings.ent_swap_fresh) &&
            ReadBoolByte(in, settings.ent_swap_keep_passives) &&
