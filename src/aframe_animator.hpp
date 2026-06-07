@@ -14,7 +14,7 @@ enum class AnimPlaybackMode : std::uint8_t {
 
 struct AFrameAnimator {
     AFrameId anim_id = kInvalidAFrameId;
-    std::size_t current_frame = 0;
+    std::uint32_t current_frame = 0;
     float current_time = 0.0F;
     float scale = 1.0F;
     float speed = 1.0F;
@@ -34,7 +34,7 @@ struct AFrameAnimator {
     // Raw anim control path.
     // Use this when ent-owned logic knows the exact authored anim id it wants.
     void SetAnim(AFrameId anim_id_value);
-    void SetForcedFrame(std::size_t frame_index);
+    void SetForcedFrame(std::uint32_t frame_index);
     void SetSpeed(float speed_value);
     void ResetSpeed();
     void SetPlaybackMode(AnimPlaybackMode playback_mode_value);

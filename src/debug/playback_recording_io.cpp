@@ -80,20 +80,6 @@ bool ReadOptionalUint32Index(std::istream& in, std::optional<std::uint32_t>& val
     return true;
 }
 
-void WriteSizeIndex(std::ostream& out, const std::size_t value) {
-    const std::uint32_t stored = static_cast<std::uint32_t>(value);
-    WriteUint32(out, stored);
-}
-
-bool ReadSizeIndex(std::istream& in, std::size_t& value) {
-    std::uint32_t loaded = 0;
-    if (!ReadUint32(in, loaded)) {
-        return false;
-    }
-    value = static_cast<std::size_t>(loaded);
-    return true;
-}
-
 void WriteUint32Vector(std::ostream& out, const std::vector<std::uint32_t>& values) {
     const std::uint32_t count = static_cast<std::uint32_t>(values.size());
     WriteUint32(out, count);
@@ -1436,7 +1422,7 @@ bool ReadEntEffects(std::istream& in, BoxedEntEffects& effects_box) {
 
 void WriteAFrameAnimator(std::ostream& out, const AFrameAnimator& animator) {
     WriteUint32(out, animator.anim_id);
-    WriteSizeIndex(out, animator.current_frame);
+    WriteUint32(out, animator.current_frame);
     WriteFloat(out, animator.current_time);
     WriteFloat(out, animator.scale);
     WriteFloat(out, animator.speed);
@@ -1459,7 +1445,7 @@ bool ReadAFrameAnimator(std::istream& in, AFrameAnimator& animator) {
     bool playback_dirty = false;
     bool ping_pong_forward = false;
     if (!ReadUint32(in, animator.anim_id) ||
-        !ReadSizeIndex(in, animator.current_frame) ||
+        !ReadUint32(in, animator.current_frame) ||
         !ReadFloat(in, animator.current_time) ||
         !ReadFloat(in, animator.scale) ||
         !ReadFloat(in, animator.speed) ||

@@ -75,7 +75,8 @@ const AFrame* GetAnimatedParticleAFrame(
 ) {
     const AFrameId anim_id =
         animator.HasAnim() ? animator.anim_id : fallback_anim_id;
-    const std::size_t frame_index = animator.HasAnim() ? animator.current_frame : 0;
+    const std::size_t frame_index =
+        animator.HasAnim() ? static_cast<std::size_t>(animator.current_frame) : 0;
     if (anim_id == kInvalidAFrameId) {
         return nullptr;
     }
@@ -311,4 +312,3 @@ void RenderParticlesForLayer(
 }
 
 } // namespace splonks
-

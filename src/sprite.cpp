@@ -249,17 +249,18 @@ void SpriteAnimator::Step(const std::vector<SpriteData>& sprites, float dt) {
     }
 
     const SpriteData& sprite_data = sprites[SpriteIndex(sprite)];
-    const Frame& frame = sprite_data.frames[current_frame];
+    const Frame& frame = sprite_data.frames[static_cast<std::size_t>(current_frame)];
     current_time += dt * speed;
     if (current_time >= frame.duration) {
         current_time = 0.0F;
-        current_frame = (current_frame + 1) % sprite_data.frames.size();
+        current_frame = static_cast<std::uint32_t>(
+            (static_cast<std::size_t>(current_frame) + 1) % sprite_data.frames.size());
     }
 }
 
 void SpriteAnimator::RandomizeFrame(const std::vector<SpriteData>& sprites) {
     const SpriteData& sprite_data = sprites[SpriteIndex(sprite)];
-    current_frame = static_cast<std::size_t>(
+    current_frame = static_cast<std::uint32_t>(
         rng::RandomIntExclusive(0, static_cast<int>(sprite_data.frames.size())));
 }
 

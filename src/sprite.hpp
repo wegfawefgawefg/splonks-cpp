@@ -3,6 +3,7 @@
 #include "math_types.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -61,7 +62,7 @@ SpriteData LoadSpriteData(const std::string& json_path);
 
 struct SpriteAnimator {
     Sprite sprite = Sprite::NoSprite;
-    std::size_t current_frame = 0;
+    std::uint32_t current_frame = 0;
     float current_time = 0.0F;
     float scale = 1.0F;
     float speed = 1.0F;

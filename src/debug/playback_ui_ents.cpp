@@ -861,13 +861,13 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
         if (anim != nullptr) {
             ImGui::Text("Anim: %s", anim->name.c_str());
             ImGui::Text(
-                "Anim Frame: %zu / %zu",
+                "Anim Frame: %u / %zu",
                 ent.aframe_animator.current_frame,
                 anim->frame_indices.empty() ? 0 : anim->frame_indices.size() - 1
             );
             const AFrame* aframe = graphics.aframe_db.FindFrame(
                 ent.aframe_animator.anim_id,
-                ent.aframe_animator.current_frame
+                static_cast<std::size_t>(ent.aframe_animator.current_frame)
             );
             if (aframe != nullptr) {
                 ImGui::Text("Frame Duration: %d", aframe->duration);

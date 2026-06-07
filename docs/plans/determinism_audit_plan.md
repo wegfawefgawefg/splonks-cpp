@@ -409,10 +409,8 @@ The expected end state is:
   optional/single `uint32_t` values instead of raw host `size_t`. Recording
   format version is now 75.
 - Fixed in network fingerprints and shared gameplay/simulation snapshot
-  serialization: `AFrameAnimator::current_frame` still uses `std::size_t` in
-  runtime state, but fingerprints and snapshot bytes now encode it as an
-  explicit `uint32_t` instead of raw host `size_t`. Recording format version is
-  now 76.
+  serialization: `AFrameAnimator::current_frame` is encoded as an explicit
+  `uint32_t` instead of raw host `size_t`. Recording format version is now 76.
 - Fixed in runtime fingerprints and shared gameplay/simulation snapshot
   serialization: `VID::id` now uses explicit `uint32_t` storage instead of raw
   host `size_t`. Entity, audio-emitter, audio-instance, light, optional VID, and
@@ -678,9 +676,9 @@ The expected end state is:
   counter, but the snapshot byte format stored it as an explicit `uint32_t`
   value before runtime storage was later converted.
 - Fixed in fingerprints and shared gameplay/simulation snapshot serialization:
-  `AFrameAnimator::current_frame` still uses `std::size_t` in runtime state
-  because it indexes local animation frame arrays, but fingerprints and snapshot
-  bytes now store it as an explicit `uint32_t` value.
+  `AFrameAnimator::current_frame` now uses explicit `uint32_t` runtime storage,
+  and fingerprints and snapshot bytes store it as the same explicit width. Local
+  animation-frame vector indexing casts only at the lookup boundary.
 - Fixed in runtime deterministic state: `VID::id` now uses `uint32_t` rather
   than `std::size_t`. This removes a broad platform-sized value from entity,
   light, audio-emitter, and audio-instance hashes/snapshots without changing
@@ -749,6 +747,17 @@ The expected end state is:
   still uses local `sizeof` as intended because it reports approximate memory
   usage, but the value copied through local state/debug views no longer carries
   host-width integer storage.
+- Fixed in runtime animation state: `AFrameAnimator::current_frame` now uses
+  explicit `uint32_t` storage instead of `std::size_t`. This field is entity and
+  particle state, participates in fingerprints/snapshots, and was already
+  serialized as `uint32_t`; the runtime representation now matches that
+  contract. Display-state forced animation-frame selections now use the same
+  explicit width.
+- Fixed in local sprite presentation state: `SpriteAnimator::current_frame` now
+  uses explicit `uint32_t` storage instead of `std::size_t`. This animator is
+  not the entity authoritative animation state, but the index is bounded by
+  authored sprite frame counts and no longer leaves a host-width counter in
+  presentation/runtime animation state.
 - Fixed in authored stage runtime state: `EntSpawn` link indices and
   `StageTileTrigger::target_spawn_index` now use explicit optional `uint32_t`
   storage instead of optional `std::size_t`. These are bounded authored spawn

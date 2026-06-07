@@ -43,9 +43,10 @@ void InitializePlayback(
         animator.current_time = 0.0F;
         break;
     case AnimPlaybackMode::Reverse:
-        animator.current_frame = anim.frame_indices.size() - 1;
+        animator.current_frame = static_cast<std::uint32_t>(anim.frame_indices.size() - 1);
         animator.current_time = static_cast<float>(
-            aframe_db.frames[anim.frame_indices[animator.current_frame]].duration
+            aframe_db.frames[anim.frame_indices[static_cast<std::size_t>(animator.current_frame)]]
+                .duration
         );
         break;
     }
@@ -88,13 +89,13 @@ void StepForward(
     const AFrameDb& aframe_db
 ) {
     const AFrame& aframe =
-        aframe_db.frames[anim.frame_indices[animator.current_frame]];
+        aframe_db.frames[anim.frame_indices[static_cast<std::size_t>(animator.current_frame)]];
     animator.current_time += animator.speed;
     if (animator.current_time < static_cast<float>(aframe.duration)) {
         return;
     }
 
-    if (animator.current_frame + 1 < anim.frame_indices.size()) {
+    if (static_cast<std::size_t>(animator.current_frame) + 1 < anim.frame_indices.size()) {
         animator.current_frame += 1;
         animator.current_time = 0.0F;
         return;
@@ -121,7 +122,7 @@ void StepReverse(
     if (animator.current_frame > 0) {
         animator.current_frame -= 1;
         const AFrame& aframe =
-            aframe_db.frames[anim.frame_indices[animator.current_frame]];
+            aframe_db.frames[anim.frame_indices[static_cast<std::size_t>(animator.current_frame)]];
         animator.current_time = static_cast<float>(aframe.duration);
         return;
     }
@@ -141,13 +142,13 @@ void StepPingPong(
 
     if (animator.ping_pong_forward) {
         const AFrame& aframe =
-            aframe_db.frames[anim.frame_indices[animator.current_frame]];
+            aframe_db.frames[anim.frame_indices[static_cast<std::size_t>(animator.current_frame)]];
         animator.current_time += animator.speed;
         if (animator.current_time < static_cast<float>(aframe.duration)) {
             return;
         }
 
-        if (animator.current_frame + 1 < anim.frame_indices.size()) {
+        if (static_cast<std::size_t>(animator.current_frame) + 1 < anim.frame_indices.size()) {
             animator.current_frame += 1;
             animator.current_time = 0.0F;
             return;
@@ -166,7 +167,7 @@ void StepPingPong(
     if (animator.current_frame > 0) {
         animator.current_frame -= 1;
         const AFrame& aframe =
-            aframe_db.frames[anim.frame_indices[animator.current_frame]];
+            aframe_db.frames[anim.frame_indices[static_cast<std::size_t>(animator.current_frame)]];
         animator.current_time = static_cast<float>(aframe.duration);
         return;
     }
@@ -213,7 +214,7 @@ void AFrameAnimator::SetAnim(AFrameId anim_id_value) {
     ResetPlaybackState(*this);
 }
 
-void AFrameAnimator::SetForcedFrame(std::size_t frame_index) {
+void AFrameAnimator::SetForcedFrame(std::uint32_t frame_index) {
     current_frame = frame_index;
     current_time = 0.0F;
     finished = false;

@@ -54,7 +54,7 @@ const AFrame* GetCurrentAFrameForEnt(const Ent& ent, const Graphics& graphics) {
         }
     }
 
-    std::size_t frame_index = ent.aframe_animator.current_frame;
+    std::size_t frame_index = static_cast<std::size_t>(ent.aframe_animator.current_frame);
     if (frame_index >= anim->frame_indices.size()) {
         frame_index = 0;
     }
