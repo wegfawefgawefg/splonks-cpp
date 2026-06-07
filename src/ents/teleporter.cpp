@@ -11,7 +11,6 @@
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
-#include <cmath>
 #include <optional>
 #include <string>
 #include <vector>
@@ -25,6 +24,7 @@ constexpr int kTeleportCardinalMaxTiles = 8;
 constexpr int kTeleportDiagonalMinTiles = 3;
 constexpr int kTeleportDiagonalMaxTiles = 6;
 constexpr unsigned int kTelefragDamage = 9999;
+constexpr float kDiagonalAxisComponent = 0.707106769F;
 
 enum class TeleportProbeBlockReason {
     None,
@@ -67,12 +67,18 @@ Vec2 TileCenterForTilePos(const IVec2& tile_pos) {
 
 
 Vec2 GetTeleportAxis(const IVec2& direction) {
-    const Vec2 axis = Vec2::New(static_cast<float>(direction.x), static_cast<float>(direction.y));
-    const float length = Length(axis);
-    if (length <= 0.0F) {
+    const int x = std::clamp(direction.x, -1, 1);
+    const int y = std::clamp(direction.y, -1, 1);
+    if (x == 0 && y == 0) {
         return Vec2::New(1.0F, 0.0F);
     }
-    return axis / length;
+    if (x != 0 && y != 0) {
+        return Vec2::New(
+            static_cast<float>(x) * kDiagonalAxisComponent,
+            static_cast<float>(y) * kDiagonalAxisComponent
+        );
+    }
+    return Vec2::New(static_cast<float>(x), static_cast<float>(y));
 }
 
 Vec2 GetTeleportOrtho(const Vec2& axis) {

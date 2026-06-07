@@ -20,10 +20,11 @@ namespace {
 
 constexpr std::uint32_t kBatTrailLifetimeFrames = 6;
 constexpr float kBatTrailMinDistance = 2.0F;
+constexpr float kBatTrailMinDistanceSq = kBatTrailMinDistance * kBatTrailMinDistance;
 
 void SpawnBatTrailSegment(State& state, const Vec2& from, const Vec2& to) {
     const Vec2 wrapped_to = GetNearestWorldPoint(state.stage, from, to);
-    if (Length(wrapped_to - from) < kBatTrailMinDistance) {
+    if (LengthSquared(wrapped_to - from) < kBatTrailMinDistanceSq) {
         return;
     }
 

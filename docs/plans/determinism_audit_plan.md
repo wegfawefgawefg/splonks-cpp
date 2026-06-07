@@ -133,6 +133,11 @@ The expected end state is:
   spacing, and arrow-trap entrance spacing now compare squared lengths. The
   shared nearest-spawn helper now returns squared distance so callers do not
   reintroduce a `sqrt` boundary for radius checks.
+- Fixed in snapshot-preserved presentation branches: baseball-bat trail
+  distance gating now compares squared length, and teleporter telefrag split /
+  merge effect axes now use explicit cardinal/diagonal direction vectors
+  instead of normalizing through `Length`. These effects are cosmetic for
+  network lockstep, but they are present in local snapshots/replays.
 - Deferred risk: those helpers make the float-to-integer conversion rule
   explicit, but the source positions are still authoritative floats. Two peers
   can still diverge if prior float math crosses a grid/branch threshold
