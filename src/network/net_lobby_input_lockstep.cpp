@@ -58,16 +58,27 @@ void WriteReplayBytes(std::ostream& out, const void* data, std::size_t size) {
     out.write(static_cast<const char*>(data), static_cast<std::streamsize>(size));
 }
 
+void WriteReplayByte(std::ostream& out, std::uint8_t value) {
+    const char byte = static_cast<char>(value);
+    out.write(&byte, 1);
+}
+
 void WriteReplayUint16(std::ostream& out, std::uint16_t value) {
-    WriteReplayBytes(out, &value, sizeof(value));
+    for (unsigned shift = 0; shift < 16; shift += 8) {
+        WriteReplayByte(out, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+    }
 }
 
 void WriteReplayUint32(std::ostream& out, std::uint32_t value) {
-    WriteReplayBytes(out, &value, sizeof(value));
+    for (unsigned shift = 0; shift < 32; shift += 8) {
+        WriteReplayByte(out, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+    }
 }
 
 void WriteReplayUint64(std::ostream& out, std::uint64_t value) {
-    WriteReplayBytes(out, &value, sizeof(value));
+    for (unsigned shift = 0; shift < 64; shift += 8) {
+        WriteReplayByte(out, static_cast<std::uint8_t>((value >> shift) & 0xFFULL));
+    }
 }
 
 void WriteReplayString(std::ostream& out, const std::string& value) {

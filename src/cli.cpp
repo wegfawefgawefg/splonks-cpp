@@ -94,16 +94,50 @@ bool ReadReplayBytes(std::istream& in, void* data, std::size_t size) {
     return in.good();
 }
 
+bool ReadReplayByte(std::istream& in, std::uint8_t& value) {
+    char byte = 0;
+    in.read(&byte, 1);
+    if (!in.good()) {
+        return false;
+    }
+    value = static_cast<std::uint8_t>(static_cast<unsigned char>(byte));
+    return true;
+}
+
 bool ReadReplayUint16(std::istream& in, std::uint16_t& value) {
-    return ReadReplayBytes(in, &value, sizeof(value));
+    value = 0;
+    for (unsigned shift = 0; shift < 16; shift += 8) {
+        std::uint8_t byte = 0;
+        if (!ReadReplayByte(in, byte)) {
+            return false;
+        }
+        value |= static_cast<std::uint16_t>(static_cast<std::uint16_t>(byte) << shift);
+    }
+    return true;
 }
 
 bool ReadReplayUint32(std::istream& in, std::uint32_t& value) {
-    return ReadReplayBytes(in, &value, sizeof(value));
+    value = 0;
+    for (unsigned shift = 0; shift < 32; shift += 8) {
+        std::uint8_t byte = 0;
+        if (!ReadReplayByte(in, byte)) {
+            return false;
+        }
+        value |= static_cast<std::uint32_t>(byte) << shift;
+    }
+    return true;
 }
 
 bool ReadReplayUint64(std::istream& in, std::uint64_t& value) {
-    return ReadReplayBytes(in, &value, sizeof(value));
+    value = 0;
+    for (unsigned shift = 0; shift < 64; shift += 8) {
+        std::uint8_t byte = 0;
+        if (!ReadReplayByte(in, byte)) {
+            return false;
+        }
+        value |= static_cast<std::uint64_t>(byte) << shift;
+    }
+    return true;
 }
 
 bool ReadReplayString(std::istream& in, std::string& value) {

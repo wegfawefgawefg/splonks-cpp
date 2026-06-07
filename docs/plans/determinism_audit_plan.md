@@ -530,10 +530,11 @@ The expected end state is:
   instead of raw host-endian POD writes. Recording format version is now 96.
 - Fixed in desync replay diagnostics: SDRP metadata, hash components, replayed
   input records, and captured local entity hashes now route through explicit
-  `uint16_t` / `uint32_t` / `uint64_t` writer and reader helpers instead of a
-  generic raw POD helper. The current SDRP version remains byte-compatible
-  because all affected fields already had fixed-width runtime types; this makes
-  the diagnostic artifact contract explicit for cross-platform desync work.
+  little-endian `uint16_t` / `uint32_t` / `uint64_t` writer and reader helpers
+  instead of a generic raw POD helper or host memory order. The current SDRP
+  version remains byte-compatible on the little-endian developer machines used
+  so far, but the diagnostic artifact contract is now explicit for
+  cross-platform desync work.
 - Fixed in UDP net protocol packets: packet headers and all lobby/lockstep/
   snapshot-resync/topology/restart packet payloads now encode fields
   explicitly in little-endian fixed-width form instead of raw-copying local C++
