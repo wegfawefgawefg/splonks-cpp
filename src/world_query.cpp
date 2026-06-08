@@ -167,6 +167,14 @@ bool PointInAabb(const IVec2& point, const AABB& aabb) {
            static_cast<float>(point.y) <= aabb.br.y;
 }
 
+bool PointInAabb(const IVec2& point, sim::AABB aabb) {
+    const sim::Vec2 sim_point = sim::PixelVec2(point.x, point.y);
+    return sim_point.x >= aabb.tl.x &&
+           sim_point.x <= aabb.br.x &&
+           sim_point.y >= aabb.tl.y &&
+           sim_point.y <= aabb.br.y;
+}
+
 } // namespace
 
 Vec2 GetNearestWorldDelta(const Stage& stage, const Vec2& from, const Vec2& to) {
@@ -552,7 +560,7 @@ std::vector<VID> QueryEntsInAabb(
 
 struct RaycastTarget {
     VID vid;
-    AABB aabb;
+    sim::AABB aabb;
 };
 
 std::vector<RaycastTarget> CollectRaycastTargets(
@@ -564,6 +572,7 @@ std::vector<RaycastTarget> CollectRaycastTargets(
     std::optional<VID> owner_vid
 ) {
     const std::vector<VID> hits = QueryEntsInAabb(state, ray_aabb, source_ent.vid);
+    const sim::Vec2 sim_start_pos = sim::ToSimVec2(start_pos);
 
     std::vector<RaycastTarget> targets;
     targets.reserve(hits.size());
@@ -588,8 +597,8 @@ std::vector<RaycastTarget> CollectRaycastTargets(
             .vid = vid,
             .aabb = GetNearestWorldAabb(
                 state.stage,
-                start_pos,
-                ents::common::GetRenderContactAabbForEnt(*ent, graphics)
+                sim_start_pos,
+                ents::common::GetContactAabbForEnt(*ent, graphics)
             ),
         });
     }

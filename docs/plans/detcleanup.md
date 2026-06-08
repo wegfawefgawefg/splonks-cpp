@@ -148,9 +148,12 @@ Current state:
 - Completed 2026-06-08: the old float `AabbHitsImpassableEnts(...)` overload
   now delegates to the fixed query path instead of doing its own render-contact
   collision checks.
-- Remaining code references to `GetRenderContactAabbForEnt(...)` are in
-  world-query raycast target collection, debug rendering, the helper
-  declaration/definition, and a mattock debug annotation.
+- Completed 2026-06-08: world-query raycast target collection now stores fixed
+  target AABBs and uses fixed contact cboxes. The public raycast APIs and
+  point-walking remain float/int and are tracked under the separate raycast
+  cleanup item.
+- Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
+  rendering, the helper declaration/definition, and a mattock debug annotation.
 
 Cleanup:
 
