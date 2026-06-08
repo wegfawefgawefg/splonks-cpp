@@ -520,10 +520,10 @@ void SacrificeVictim(
         return;
     }
 
-    const AABB victim_aabb = ToRenderAABB(common::GetContactAabbForEnt(victim, graphics));
+    const AABB render_victim_aabb = ToRenderAABB(common::GetContactAabbForEnt(victim, graphics));
     const Vec2 victim_effect_pos = Vec2::New(
-        (victim_aabb.tl.x + victim_aabb.br.x) * 0.5F,
-        victim_aabb.br.y - 2.0F
+        (render_victim_aabb.tl.x + render_victim_aabb.br.x) * 0.5F,
+        render_victim_aabb.br.y - 2.0F
     );
     const Vec2 altar_emit = GetAltarEffectPos(altar, state, graphics);
     const Vec2 altar_sound = GetAltarSoundPos(altar, state, graphics);

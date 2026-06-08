@@ -90,7 +90,7 @@ Cleanup:
 - Do not allow unqualified float `AABB` in authoritative gameplay after the
   migration.
 - Consider moving render-only AABB helpers out of `utils.hpp` into a
-  presentation/adapter header once call sites are reduced.
+  presentation geometry header once call sites are reduced.
 
 ### 3. Contact AABB render wrappers leaked through gameplay
 
@@ -202,6 +202,11 @@ Current state:
 - Completed 2026-06-08: entity shake queries now use fixed query AABBs, fixed
   entity centers, and fixed zero-radius containment instead of generic render
   `GetAABB()` geometry.
+- Completed 2026-06-08: explosion damage broadphase no longer builds a
+  temporary old float `AABB`; it converts explicit render-space corners into a
+  fixed query AABB while preserving the previous floor/ceil bounds.
+- Completed 2026-06-08: teleporter tile-center lookup no longer constructs an
+  old float tile `AABB`.
 - Remaining contact AABB render conversions are explicit `ToRenderAABB(...)`
   calls at render/debug presentation boundaries.
 
@@ -255,11 +260,12 @@ Cleanup:
 - [x] Add fixed water-query overloads and migrate piranha swim probes to fixed
       body geometry.
 - [x] Migrate entity shake broadphase and containment checks to fixed geometry.
+- [x] Remove incidental old float AABB construction from explosion and
+      teleporter helper code.
 - Migrate these systems one at a time to fixed contact geometry.
 - [x] Remove common-layer render contact/broadphase wrappers after gameplay
       callers moved to fixed geometry.
-- Keep render conversions only in render/debug and temporary float adapter
-  boundaries.
+- Keep render conversions only in render/debug/tooling boundaries.
 - Prefer fixed overloads in `world_query` rather than calling `ToRenderAABB`
   for query broadphase unless the underlying spatial index still requires it.
 
@@ -319,7 +325,7 @@ Cleanup:
 
 - Prefer direct fixed fields or fixed helpers in gameplay.
 - Keep render accessors explicitly named and limit them to presentation or
-  temporary adapter boundaries.
+  migration boundary code.
 - [x] Rename old render `GetAABB()` to explicit `GetRenderAABB()`.
 - [x] Remove unused old render `GetFeet()` and `GetGroundProbe()` adapters.
 - [x] Rename old render `GetBounds()` to explicit `GetRenderBounds()` and move
@@ -457,7 +463,7 @@ Current state:
 Cleanup:
 
 - Treat conversions inside authoritative gameplay as migration debt unless the
-  function is clearly an authoring/debug adapter.
+  function is clearly authoring, debug, tooling, audio, or rendering code.
 - Prefer fixed constructors such as `sim::Scalar::from_int`,
   `sim::Vec2::from_pixels`, and `sim::PixelVec2` for gameplay constants.
 - Keep `ToRender*` near render/debug/audio/UI, not in collision, damage,
@@ -482,7 +488,8 @@ function can change entities, tiles, damage, pickups, AI, topology, or any other
 lockstep-visible state, its public API should use fixed/int simulation types,
 not old float `AABB` or render `Vec2`.
 
-Float adapters are only for crossing into or out of that boundary: rendering,
-debug UI, audio, tooling, asset/data import, tests, or short-lived migration
-shims. Those adapter functions must be clearly named as adapters and must not
-decide gameplay outcomes.
+Conversions are for boundary code only: rendering, debug UI, audio, tooling,
+asset/data import, tests, or temporary migration code while a caller is being
+cleaned up. Boundary functions should say what they cross into, such as
+`ToRenderAABB(...)`, `GetRenderCenter(...)`, or `SpawnDebug...(...)`. They should
+not be hidden inside gameplay decisions.

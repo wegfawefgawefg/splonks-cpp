@@ -53,17 +53,13 @@ bool IsDiagonalDirection(const IVec2& direction) {
     return direction.x != 0 && direction.y != 0;
 }
 
-AABB TileAabbForTilePos(const IVec2& tile_pos) {
-    const Vec2 tile_top_left = Vec2::New(
-        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
-        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
-    );
-    return AABB::New(tile_top_left, tile_top_left + Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize)));
-}
-
 Vec2 TileCenterForTilePos(const IVec2& tile_pos) {
-    const AABB tile_aabb = TileAabbForTilePos(tile_pos);
-    return (tile_aabb.tl + tile_aabb.br) * 0.5F;
+    return Vec2::New(
+        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) +
+                           static_cast<int>(kTileSize / 2)),
+        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) +
+                           static_cast<int>(kTileSize / 2))
+    );
 }
 
 

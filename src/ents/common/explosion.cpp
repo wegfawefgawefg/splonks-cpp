@@ -133,13 +133,11 @@ void DoExplosion(
     BreakStageTilesAtCoords(explosion_tiles, state, audio);
 
     const float explosion_size = size * static_cast<float>(kTileSize);
-    const AABB render_area = {
-        .tl = center - (Vec2::New(1.0F, 1.0F) * explosion_size),
-        .br = center + (Vec2::New(1.0F, 1.0F) * explosion_size),
-    };
+    const Vec2 render_tl = center - (Vec2::New(1.0F, 1.0F) * explosion_size);
+    const Vec2 render_br = center + (Vec2::New(1.0F, 1.0F) * explosion_size);
     const sim::AABB area = sim::AABB::from_corners(
-        sim::ToSimVec2(render_area.tl, gfxp::Rounding::Floor),
-        sim::ToSimVec2(render_area.br, gfxp::Rounding::Ceil)
+        sim::ToSimVec2(render_tl, gfxp::Rounding::Floor),
+        sim::ToSimVec2(render_br, gfxp::Rounding::Ceil)
     );
 
     const VID this_vid = state.ents.GetVid(ent_idx);

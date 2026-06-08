@@ -56,7 +56,7 @@ bool IsSwinging(const Ent& mattock) {
     return mattock.aframe_animator.anim_id == aframe_ids::MattockSwing;
 }
 
-AABB TileAabbForTilePos(const IVec2& tile_pos) {
+[[nodiscard]] AABB RenderTileAabbForTilePos(const IVec2& tile_pos) {
     const Vec2 tile_tl = Vec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
@@ -220,7 +220,7 @@ void AddMattockDebugAnnotations(
         const Vec2 fallback = GetFallbackStrikePoint(mattock);
         const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToIVec2(fallback));
         state.AddDebugRectAnnotation(DebugRectAnnotation{
-            .area = TileAabbForTilePos(fallback_tile),
+            .area = RenderTileAabbForTilePos(fallback_tile),
             .color = DebugAnnotationColor{255, 0, 0, 255},
         });
         state.AddDebugLabelAnnotation(DebugLabelAnnotation{
@@ -232,14 +232,14 @@ void AddMattockDebugAnnotations(
     }
 
     const MattockTileTargets targets = GetMattockTileTargets(*holder, state.stage);
-    const AABB primary_aabb = TileAabbForTilePos(targets.primary);
-    const AABB secondary_aabb = TileAabbForTilePos(targets.secondary);
+    const AABB primary_render_aabb = RenderTileAabbForTilePos(targets.primary);
+    const AABB secondary_render_aabb = RenderTileAabbForTilePos(targets.secondary);
     state.AddDebugRectAnnotation(DebugRectAnnotation{
-        .area = primary_aabb,
+        .area = primary_render_aabb,
         .color = DebugAnnotationColor{0, 255, 0, 255},
     });
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-        .world_pos = (primary_aabb.tl + primary_aabb.br) * 0.5F,
+        .world_pos = (primary_render_aabb.tl + primary_render_aabb.br) * 0.5F,
         .text = "dig 1 (" + std::to_string(targets.primary.x) + ", " + std::to_string(targets.primary.y) + ")",
         .color = DebugAnnotationColor{0, 255, 0, 255},
     });
@@ -249,11 +249,11 @@ void AddMattockDebugAnnotations(
         .color = DebugAnnotationColor{0, 255, 0, 255},
     });
     state.AddDebugRectAnnotation(DebugRectAnnotation{
-        .area = secondary_aabb,
+        .area = secondary_render_aabb,
         .color = DebugAnnotationColor{255, 255, 0, 255},
     });
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-        .world_pos = (secondary_aabb.tl + secondary_aabb.br) * 0.5F,
+        .world_pos = (secondary_render_aabb.tl + secondary_render_aabb.br) * 0.5F,
         .text = "dig 2 (" + std::to_string(targets.secondary.x) + ", " + std::to_string(targets.secondary.y) + ")",
         .color = DebugAnnotationColor{255, 255, 0, 255},
     });

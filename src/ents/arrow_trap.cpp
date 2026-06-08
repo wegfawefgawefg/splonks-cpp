@@ -177,13 +177,13 @@ void AddArrowTrapDebugAnnotations(Ent& trap, State& state) {
         return;
     }
 
-    const AABB sensor_aabb = ToRenderAABB(GetOpenSensorAabb(trap, state));
+    const AABB render_sensor_aabb = ToRenderAABB(GetOpenSensorAabb(trap, state));
     state.AddDebugRectAnnotation(DebugRectAnnotation{
-        .area = sensor_aabb,
+        .area = render_sensor_aabb,
         .color = DebugAnnotationColor{255, 192, 0, 255},
     });
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-        .world_pos = sensor_aabb.tl + Vec2::New(2.0F, -6.0F),
+        .world_pos = render_sensor_aabb.tl + Vec2::New(2.0F, -6.0F),
         .text = "arrow sensor",
         .color = DebugAnnotationColor{255, 192, 0, 255},
     });

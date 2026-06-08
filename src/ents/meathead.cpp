@@ -121,13 +121,13 @@ void AddMeatheadDebugAnnotations(const Ent& player, State& state) {
         return;
     }
 
-    const AABB sensor = ToRenderAABB(ExpandAabb(player.GetSimAABB(), kMeatheadPickupRange));
+    const AABB render_sensor = ToRenderAABB(ExpandAabb(player.GetSimAABB(), kMeatheadPickupRange));
     state.AddDebugRectAnnotation(DebugRectAnnotation{
-        .area = sensor,
+        .area = render_sensor,
         .color = DebugAnnotationColor{255, 64, 192, 255},
     });
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-        .world_pos = (sensor.tl + sensor.br) * 0.5F,
+        .world_pos = (render_sensor.tl + render_sensor.br) * 0.5F,
         .text = "meathead sensor",
         .color = DebugAnnotationColor{255, 64, 192, 255},
     });
