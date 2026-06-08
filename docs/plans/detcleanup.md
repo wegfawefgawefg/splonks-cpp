@@ -368,6 +368,8 @@ Current state:
 - Completed 2026-06-08: teleporter candidate destination centers and holder
   probe placement now stay in fixed space; render conversion remains only for
   debug labels and shake/effect presentation.
+- Completed 2026-06-08: arrow-trap arrow spawn, loose-arrow spawn, and stuck
+  arrow attachment now use fixed centers and fixed rounded pixel offsets.
 
 Cleanup:
 
