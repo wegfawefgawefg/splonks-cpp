@@ -141,9 +141,13 @@ Current state:
   checks now use fixed contact AABBs.
 - Completed 2026-06-08: spike-foot contact and authored spike tile contact
   cbox overlap now use fixed contact AABBs.
-- Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
-  including contact damage, ent contact, weapons, traps,
-  sacrifice altar, teleporter, and web/cobweb logic.
+- Completed 2026-06-08: trap-block sensor construction, player sensing,
+  crusher-blocker checks, and trigger-distance selection now use fixed contact
+  AABBs and fixed vectors. Trap-block debug rectangles convert to render AABBs
+  only when adding debug annotations.
+- Remaining code references to `GetRenderContactAabbForEnt(...)` are in
+  world-query raycast/temporary float query paths, debug rendering, the helper
+  declaration/definition, and a mattock debug annotation.
 
 Cleanup:
 
@@ -172,6 +176,8 @@ Cleanup:
 - [x] Migrate hurt-on-contact body overlap checks to fixed contact geometry.
 - [x] Migrate spike-foot and spike tile contact cbox overlap checks to fixed
       contact geometry.
+- [x] Migrate trap-block sensor and blocker overlap checks to fixed contact
+      geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.
@@ -340,7 +346,7 @@ Cleanup:
 
 If a function can change entities, tiles, damage, pickups, AI, topology, or
 lockstep-visible state, it should accept and return fixed/int simulation types.
-Old float `AABB` and render `Vec2` are allowed only in explicit boundary
-adapters for render, debug, UI, audio, tooling, data import, or temporary
-migration bridges. Those adapters should be named as adapters and should not
-contain authoritative gameplay decisions.
+Old float `AABB` and render `Vec2` should stay outside those gameplay-facing
+APIs. Conversion code belongs at named render, debug, UI, audio, tooling, data
+import, or temporary migration boundaries, and those boundaries should not make
+authoritative gameplay decisions.
