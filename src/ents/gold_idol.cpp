@@ -55,7 +55,7 @@ std::optional<VID> GetRewardTargetVid(const Ent& idol, const State& state) {
             return holder->vid;
         }
     }
-    return FindNearestPlayerVid(state, idol.GetRenderCenter(), false);
+    return FindNearestPlayerVid(state, idol.GetSimCenter(), false);
 }
 
 Vec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& state, const Ent& idol) {

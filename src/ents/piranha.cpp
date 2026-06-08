@@ -25,9 +25,7 @@ constexpr float kPiranhaMaxSwimSpeed = 1.70F;
 constexpr float kPiranhaWaterDamping = 0.98F;
 constexpr float kPiranhaSurfaceDiveSpeed = 0.55F;
 constexpr float kPiranhaTargetDistance = 96.0F;
-constexpr float kPiranhaTargetDistanceSq = kPiranhaTargetDistance * kPiranhaTargetDistance;
 constexpr float kPiranhaBiteDistance = 12.0F;
-constexpr float kPiranhaBiteDistanceSq = kPiranhaBiteDistance * kPiranhaBiteDistance;
 
 bool IsPiranhaInWater(const Ent& piranha, const State& state) {
     const sim::Vec2 center = piranha.GetSimCenter();
@@ -40,17 +38,18 @@ bool IsPiranhaInWater(const Ent& piranha, const State& state) {
            );
 }
 
-std::optional<Vec2> FindPiranhaTarget(const Ent& piranha, const State& state) {
-    const Ent* const player = FindNearestPlayer(state, piranha.GetRenderCenter());
+std::optional<sim::Vec2> FindPiranhaTarget(const Ent& piranha, const State& state) {
+    const Ent* const player = FindNearestPlayer(state, piranha.GetSimCenter());
     if (player == nullptr) {
         return std::nullopt;
     }
 
-    const Vec2 delta = GetNearestWorldDelta(state.stage, piranha.GetRenderCenter(), player->GetRenderCenter());
-    if (LengthSquared(delta) > kPiranhaTargetDistanceSq) {
+    const sim::Vec2 delta = GetNearestWorldDelta(state.stage, piranha.GetSimCenter(), player->GetSimCenter());
+    if (gfxp::length_sq(delta) >
+        sim::ToSimScalar(kPiranhaTargetDistance * kPiranhaTargetDistance)) {
         return std::nullopt;
     }
-    return piranha.GetRenderCenter() + delta;
+    return piranha.GetSimCenter() + delta;
 }
 
 void PatrolWater(Ent& piranha) {
@@ -62,13 +61,13 @@ void PatrolWater(Ent& piranha) {
     piranha.acc.y += gfxp::clamp(-piranha.vel.y, -swim_acc, swim_acc);
 }
 
-void ChaseTarget(Ent& piranha, const Vec2& target, const Stage& stage) {
-    const Vec2 delta = GetNearestWorldDelta(stage, piranha.GetRenderCenter(), target);
-    const Vec2 direction = NormalizeOrZeroDeterministic(delta);
-    piranha.acc += sim::ToSimVec2(direction * kPiranhaChaseAcceleration);
-    if (delta.x < 0.0F) {
+void ChaseTarget(Ent& piranha, sim::Vec2 target, const Stage& stage) {
+    const sim::Vec2 delta = GetNearestWorldDelta(stage, piranha.GetSimCenter(), target);
+    const sim::Vec2 direction = sim::NormalizeOrZero(delta);
+    piranha.acc += direction * sim::ToSimScalar(kPiranhaChaseAcceleration);
+    if (delta.x < sim::Scalar::zero()) {
         piranha.facing = Side::Left;
-    } else if (delta.x > 0.0F) {
+    } else if (delta.x > sim::Scalar::zero()) {
         piranha.facing = Side::Right;
     }
 }
@@ -114,9 +113,9 @@ void StepEntLogicAsPiranha(
     }
 
     bool biting = false;
-    if (const std::optional<Vec2> target = FindPiranhaTarget(piranha, state)) {
-        biting = LengthSquared(GetNearestWorldDelta(state.stage, piranha.GetRenderCenter(), *target)) <=
-                 kPiranhaBiteDistanceSq;
+    if (const std::optional<sim::Vec2> target = FindPiranhaTarget(piranha, state)) {
+        biting = gfxp::length_sq(GetNearestWorldDelta(state.stage, piranha.GetSimCenter(), *target)) <=
+                 sim::ToSimScalar(kPiranhaBiteDistance * kPiranhaBiteDistance);
         ChaseTarget(piranha, *target, state.stage);
     } else {
         PatrolWater(piranha);

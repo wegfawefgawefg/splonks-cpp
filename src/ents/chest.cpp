@@ -334,7 +334,7 @@ EntDamageEffectResult OnDamageEffectAsChest(
             chest.GetRenderCenter(),
             state,
             audio,
-            FindNearestPlayerVid(state, chest.GetRenderCenter(), false))) {
+            FindNearestPlayerVid(state, chest.GetSimCenter(), false))) {
         return EntDamageEffectResult::None;
     }
     return EntDamageEffectResult::Consumed;
@@ -374,7 +374,7 @@ bool TryOpenKeyChestWithKey(
             state,
             udjat_eye,
             holder != nullptr ? std::optional<VID>(holder->vid)
-                              : FindNearestPlayerVid(state, chest.GetRenderCenter(), false));
+                              : FindNearestPlayerVid(state, chest.GetSimCenter(), false));
     });
     if (holder != nullptr && key != nullptr) {
         ConsumeHeldChestKey(holder, *key, state, graphics);

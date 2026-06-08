@@ -324,6 +324,12 @@ Current state:
   `GetRenderCenter()` and `SetRenderCenter()`. This removes the ambiguous
   neutral names; remaining render-center use in gameplay files is still
   visible migration debt.
+- Completed 2026-06-08: nearest-player queries gained fixed `sim::Vec2`
+  overloads, and spider, hanging-spider, skeleton, piranha, ghost-ball,
+  DVD-logo, damsel, chest, gold-idol, and sacrifice-altar nearest-player or
+  chase checks now use fixed positions/deltas where the decision is
+  authoritative. Render-center calls remain only where presentation, raycast,
+  audio, or still-unmigrated gameplay code requires them.
 
 Cleanup:
 
@@ -336,6 +342,8 @@ Cleanup:
       gameplay callers to fixed body AABBs.
 - [x] Rename old generic helpers (`GetCenter`, `SetCenter`) to render-named
       wrappers.
+- [x] Add fixed nearest-player query overloads and migrate a first pass of AI
+      chase/distance/target lookup callers to fixed centers and deltas.
 - Migrate authoritative gameplay callers of `GetRenderCenter()` and
   `SetRenderCenter()` to fixed center helpers or fixed placement APIs.
 

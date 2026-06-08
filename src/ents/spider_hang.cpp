@@ -29,17 +29,17 @@ bool HasCeilingSupport(const Ent& ent, const State& state) {
     return tile_query.has_value() && tile_query->tile != nullptr && IsTileCollidable(*tile_query->tile);
 }
 
-std::optional<Vec2> GetPlayerDeltaBelow(const Ent& ent, const State& state, int max_distance) {
-    const Ent* const player = FindNearestPlayer(state, ent.GetRenderCenter(), false);
+std::optional<sim::Vec2> GetPlayerDeltaBelow(const Ent& ent, const State& state, int max_distance) {
+    const Ent* const player = FindNearestPlayer(state, ent.GetSimCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const Vec2 ent_center = ent.GetRenderCenter();
-    const Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetRenderCenter());
-    const Vec2 delta = player_center - ent_center;
-    const float max_distance_f = static_cast<float>(max_distance);
-    if (delta.y <= 0.0F || LengthSquared(delta) >= max_distance_f * max_distance_f) {
+    const sim::Vec2 ent_center = ent.GetSimCenter();
+    const sim::Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetSimCenter());
+    const sim::Vec2 delta = player_center - ent_center;
+    if (delta.y <= sim::Scalar::zero() ||
+        gfxp::length_sq(delta) >= sim::Scalar::from_int(max_distance * max_distance)) {
         return std::nullopt;
     }
     return delta;
@@ -63,10 +63,10 @@ void ConvertHangEntToLiveSpider(std::size_t ent_idx, State& state, EntType live_
     hang_spider.thrown_by = thrown_by;
     hang_spider.grounded = false;
 
-    if (const std::optional<Vec2> player_delta = GetPlayerDeltaBelow(hang_spider, state, 9999)) {
-        if (player_delta->x < 0.0F) {
+    if (const std::optional<sim::Vec2> player_delta = GetPlayerDeltaBelow(hang_spider, state, 9999)) {
+        if (player_delta->x < sim::Scalar::zero()) {
             hang_spider.facing = Side::Left;
-        } else if (player_delta->x > 0.0F) {
+        } else if (player_delta->x > sim::Scalar::zero()) {
             hang_spider.facing = Side::Right;
         }
     }
@@ -111,8 +111,9 @@ void StepHangSpider(
         return;
     }
 
-    const std::optional<Vec2> player_delta = GetPlayerDeltaBelow(hang_spider, state, drop_distance);
-    const bool player_below = player_delta.has_value() && std::abs(player_delta->x) < drop_x_tolerance;
+    const std::optional<sim::Vec2> player_delta = GetPlayerDeltaBelow(hang_spider, state, drop_distance);
+    const bool player_below =
+        player_delta.has_value() && player_delta->x.abs() < sim::ToSimScalar(drop_x_tolerance);
     const bool hurt_but_alive = convert_when_hurt && hang_spider.health < GetEntSpec(hang_spider.type_).health;
     if (hurt_but_alive || !HasCeilingSupport(hang_spider, state) || player_below) {
         ConvertHangEntToLiveSpider(ent_idx, state, live_type);

@@ -222,7 +222,7 @@ EntType PickAccessoryReward(std::optional<VID> reward_target_vid, State& state) 
 }
 
 std::optional<VID> GetRewardTargetVid(const State& state, const Ent& altar) {
-    return FindNearestPlayerVid(state, altar.GetRenderCenter(), true);
+    return FindNearestPlayerVid(state, altar.GetSimCenter(), true);
 }
 
 Vec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics& graphics) {

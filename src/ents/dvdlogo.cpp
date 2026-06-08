@@ -63,7 +63,7 @@ void MaybeQueueTransitionOnPlayerContact(
         return;
     }
 
-    const Ent* const player = FindNearestPlayer(state, ent.GetRenderCenter(), false);
+    const Ent* const player = FindNearestPlayer(state, ent.GetSimCenter(), false);
     if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
         return;
     }

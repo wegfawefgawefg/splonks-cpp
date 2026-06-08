@@ -30,14 +30,14 @@ constexpr float kSkeletonWalkSpeed = 1.0F;
 constexpr float kSkeletonWalkAcceleration = 0.2F;
 constexpr float kSkullBreakImpactSpeed = 2.25F;
 
-std::optional<Vec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
-    const Ent* const player = FindNearestPlayer(state, ent.GetRenderCenter(), false);
+std::optional<sim::Vec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
+    const Ent* const player = FindNearestPlayer(state, ent.GetSimCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const Vec2 ent_center = ent.GetRenderCenter();
-    const Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetRenderCenter());
+    const sim::Vec2 ent_center = ent.GetSimCenter();
+    const sim::Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetSimCenter());
     return player_center - ent_center;
 }
 
@@ -90,35 +90,35 @@ void EnterWalkingState(Ent& ent, const State& state) {
 }
 
 bool IsPlayerInWakeRange(const Ent& ent, const State& state) {
-    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
+    const std::optional<sim::Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value()) {
         return false;
     }
 
-    return std::abs(player_delta->x) <= kWakeHorizontalDistance &&
-           player_delta->y >= -kWakeVerticalAbove &&
-           player_delta->y <= kWakeVerticalBelow;
+    return player_delta->x.abs() <= sim::ToSimScalar(kWakeHorizontalDistance) &&
+           player_delta->y >= -sim::ToSimScalar(kWakeVerticalAbove) &&
+           player_delta->y <= sim::ToSimScalar(kWakeVerticalBelow);
 }
 
 bool IsPlayerOutsideReturnRange(const Ent& ent, const State& state) {
-    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
+    const std::optional<sim::Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value()) {
         return true;
     }
 
-    return std::abs(player_delta->x) > kReturnHorizontalDistance ||
-           std::abs(player_delta->y) > kReturnVerticalDistance;
+    return player_delta->x.abs() > sim::ToSimScalar(kReturnHorizontalDistance) ||
+           player_delta->y.abs() > sim::ToSimScalar(kReturnVerticalDistance);
 }
 
 void FaceNearestPlayerIfAny(Ent& ent, const State& state) {
-    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
+    const std::optional<sim::Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value()) {
         return;
     }
 
-    if (player_delta->x < 0.0F) {
+    if (player_delta->x < sim::Scalar::zero()) {
         ent.facing = Side::Left;
-    } else if (player_delta->x > 0.0F) {
+    } else if (player_delta->x > sim::Scalar::zero()) {
         ent.facing = Side::Right;
     }
 }

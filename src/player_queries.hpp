@@ -90,11 +90,11 @@ inline bool HasAnyConnectedLivingPlayer(const State& state) {
 
 inline std::optional<VID> FindNearestPlayerVid(
     const State& state,
-    Vec2 world_pos,
+    sim::Vec2 world_pos,
     bool require_normal_condition = true
 ) {
     std::optional<VID> best_vid;
-    float best_dist_sq = std::numeric_limits<float>::max();
+    std::optional<sim::Scalar> best_dist_sq;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -106,9 +106,9 @@ inline std::optional<VID> FindNearestPlayerVid(
         if (require_normal_condition && player->condition != EntCondition::Normal) {
             continue;
         }
-        const Vec2 delta = GetNearestWorldDelta(state.stage, world_pos, player->GetRenderPos());
-        const float dist_sq = delta.x * delta.x + delta.y * delta.y;
-        if (dist_sq < best_dist_sq) {
+        const sim::Vec2 delta = GetNearestWorldDelta(state.stage, world_pos, player->GetSimPos());
+        const sim::Scalar dist_sq = gfxp::length_sq(delta);
+        if (!best_dist_sq.has_value() || dist_sq < *best_dist_sq) {
             best_dist_sq = dist_sq;
             best_vid = player->vid;
         }
@@ -116,9 +116,17 @@ inline std::optional<VID> FindNearestPlayerVid(
     return best_vid;
 }
 
-inline const Ent* FindNearestPlayer(
+inline std::optional<VID> FindNearestPlayerVid(
     const State& state,
     Vec2 world_pos,
+    bool require_normal_condition = true
+) {
+    return FindNearestPlayerVid(state, sim::ToSimVec2(world_pos), require_normal_condition);
+}
+
+inline const Ent* FindNearestPlayer(
+    const State& state,
+    sim::Vec2 world_pos,
     bool require_normal_condition = true
 ) {
     const std::optional<VID> vid =
@@ -128,12 +136,28 @@ inline const Ent* FindNearestPlayer(
 
 inline Ent* FindNearestPlayerMut(
     State& state,
-    Vec2 world_pos,
+    sim::Vec2 world_pos,
     bool require_normal_condition = true
 ) {
     const std::optional<VID> vid =
         FindNearestPlayerVid(state, world_pos, require_normal_condition);
     return vid.has_value() ? state.ents.GetEntMut(*vid) : nullptr;
+}
+
+inline const Ent* FindNearestPlayer(
+    const State& state,
+    Vec2 world_pos,
+    bool require_normal_condition = true
+) {
+    return FindNearestPlayer(state, sim::ToSimVec2(world_pos), require_normal_condition);
+}
+
+inline Ent* FindNearestPlayerMut(
+    State& state,
+    Vec2 world_pos,
+    bool require_normal_condition = true
+) {
+    return FindNearestPlayerMut(state, sim::ToSimVec2(world_pos), require_normal_condition);
 }
 
 } // namespace splonks

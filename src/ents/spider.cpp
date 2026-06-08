@@ -28,14 +28,14 @@ constexpr float kRageSpiderHopSpeedX = 2.5F;
 constexpr float kGiantSpiderHopSpeedX = 2.5F;
 constexpr float kSpiderIdleSpeedThreshold = 0.1F;
 
-std::optional<Vec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
-    const Ent* const player = FindNearestPlayer(state, ent.GetRenderCenter(), false);
+std::optional<sim::Vec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
+    const Ent* const player = FindNearestPlayer(state, ent.GetSimCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const Vec2 ent_center = ent.GetRenderCenter();
-    const Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetRenderCenter());
+    const sim::Vec2 ent_center = ent.GetSimCenter();
+    const sim::Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetSimCenter());
     return player_center - ent_center;
 }
 
@@ -85,14 +85,14 @@ void HandleGiantSpiderDeath(std::size_t ent_idx, State& state, Audio& audio) {
 }
 
 void FaceTowardNearestPlayer(Ent& ent, const State& state) {
-    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
+    const std::optional<sim::Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value()) {
         return;
     }
 
-    if (player_delta->x < 0.0F) {
+    if (player_delta->x < sim::Scalar::zero()) {
         ent.facing = Side::Left;
-    } else if (player_delta->x > 0.0F) {
+    } else if (player_delta->x > sim::Scalar::zero()) {
         ent.facing = Side::Right;
     }
 }
@@ -137,10 +137,9 @@ void TryHopTowardPlayer(
     int hop_speed_y_min,
     int hop_speed_y_max
 ) {
-    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
-    const float aggro_distance_f = static_cast<float>(aggro_distance);
+    const std::optional<sim::Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value() ||
-        LengthSquared(*player_delta) > aggro_distance_f * aggro_distance_f) {
+        gfxp::length_sq(*player_delta) > sim::Scalar::from_int(aggro_distance * aggro_distance)) {
         ent.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
             kAggroSpiderCooldownMinFrames,
             kAggroSpiderCooldownMaxFrames

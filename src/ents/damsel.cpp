@@ -83,7 +83,7 @@ Vec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, c
 
 Vec2 GetRescueKissPos(const State& state, const Ent& damsel) {
     return GetRescueKissPosForEnt(
-        FindNearestPlayerVid(state, damsel.GetRenderCenter(), false),
+        FindNearestPlayerVid(state, damsel.GetSimCenter(), false),
         state,
         damsel
     );
@@ -200,7 +200,7 @@ bool TryRescueDamsel(std::size_t ent_idx, State& state, const Graphics& graphics
 
     RescueDamsel(
         ent_idx,
-        FindNearestPlayerVid(state, damsel.GetRenderCenter(), false),
+        FindNearestPlayerVid(state, damsel.GetSimCenter(), false),
         state,
         graphics,
         audio
