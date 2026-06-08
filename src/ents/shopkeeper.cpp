@@ -30,6 +30,8 @@ constexpr float kShopkeeperSightVerticalTolerance = 20.0F;
 constexpr float kShopkeeperJumpCooldownFrames = 20.0F;
 constexpr float kShopkeeperShootCooldownFrames = 45.0F;
 constexpr float kShopkeeperRecoverPistolJumpHeightThreshold = 8.0F;
+const sim::Scalar kSimShopkeeperRecoverPistolJumpHeightThreshold =
+    sim::ToSimScalar(kShopkeeperRecoverPistolJumpHeightThreshold);
 
 std::optional<std::size_t> GetShopIdxForShopkeeper(const Ent& shopkeeper, const State& state) {
     if (!shopkeeper.ent_a.has_value()) {
@@ -180,14 +182,16 @@ bool TryRecoverDroppedPistol(
         return false;
     }
 
-    const Vec2 delta = GetNearestWorldDelta(state.stage, shopkeeper.GetRenderCenter(), pistol->GetRenderCenter());
-    if (delta.x < 0.0F) {
+    const sim::Vec2 delta =
+        GetNearestWorldDelta(state.stage, shopkeeper.GetSimCenter(), pistol->GetSimCenter());
+    if (delta.x < sim::Scalar::zero()) {
         shopkeeper.facing = Side::Left;
-    } else if (delta.x > 0.0F) {
+    } else if (delta.x > sim::Scalar::zero()) {
         shopkeeper.facing = Side::Right;
     }
 
-    const int move_direction = delta.x < 0.0F ? -1 : (delta.x > 0.0F ? 1 : 0);
+    const int move_direction =
+        delta.x < sim::Scalar::zero() ? -1 : (delta.x > sim::Scalar::zero() ? 1 : 0);
     if (shopkeeper.grounded) {
         common::AccelerateHorizontallyTowardSpeed(
             shopkeeper,
@@ -197,7 +201,7 @@ bool TryRecoverDroppedPistol(
         );
     }
 
-    const bool pistol_above = delta.y < -kShopkeeperRecoverPistolJumpHeightThreshold;
+    const bool pistol_above = delta.y < -kSimShopkeeperRecoverPistolJumpHeightThreshold;
     const bool blocked_ahead =
         shopkeeper.grounded &&
         IsShopkeeperBlockedMovingTowardPistol(shopkeeper, move_direction, state, graphics);

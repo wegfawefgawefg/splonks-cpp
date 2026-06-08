@@ -337,6 +337,10 @@ Current state:
 - Completed 2026-06-08: bat target detection, target ranking, and chase
   acceleration now stay in fixed positions/deltas instead of selecting a render
   target and converting it back to sim space.
+- Completed 2026-06-08: shopkeeper dropped-pistol recovery now uses fixed
+  positions/deltas for facing, movement direction, and jump decisions. The
+  remaining shopkeeper sight checks are still tied to the render-space raycast
+  API and belong to the raycast cleanup item.
 
 Cleanup:
 
