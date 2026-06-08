@@ -176,6 +176,33 @@ void BreakStageTilesInRectWc(
     );
 }
 
+void BreakStageTilesInRectWc(
+    sim::AABB area,
+    State& state,
+    Audio& audio,
+    std::optional<AudioAssetId> override_break_sound,
+    bool suppress_tile_break_sound,
+    bool suppress_drop_spawns
+) {
+    std::vector<IVec2> tile_positions;
+    const std::vector<WorldTileQueryResult> tile_queries = QueryTilesInAabb(state.stage, area);
+    tile_positions.reserve(tile_queries.size());
+    for (const WorldTileQueryResult& tile_query : tile_queries) {
+        if (tile_query.tile != nullptr) {
+            tile_positions.push_back(tile_query.tile_pos);
+        }
+    }
+    BreakStageTilesAtCoordsInternal(
+        tile_positions,
+        state,
+        audio,
+        override_break_sound,
+        suppress_tile_break_sound,
+        sim::ToRenderVec2(area.center()),
+        suppress_drop_spawns
+    );
+}
+
 void BreakStageTilesAtCoords(
     const std::vector<IVec2>& tile_positions,
     State& state,

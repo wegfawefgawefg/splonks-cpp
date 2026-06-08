@@ -159,6 +159,8 @@ Current state:
 - Completed 2026-06-08: tile-overlap effect queries now use fixed body AABBs.
 - Completed 2026-06-08: fixed `QueryTileAtWorldPos(stage, sim::Vec2)` was added,
   and hanging-spider ceiling support now samples from fixed body bounds.
+- Completed 2026-06-08: fixed `BreakStageTilesInRectWc(sim::AABB, ...)` was
+  added, and mattock tile breaking now uses the fixed rectangle path.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -271,6 +273,9 @@ Current state:
   `Stage::SetTilesInRect(const AABB& area, ...)` accept old float AABB.
 - Stage break and several entity systems still construct float tile/world
   rectangles for gameplay mutation.
+- `BreakStageTilesInRectWc(sim::AABB, ...)` now exists for fixed gameplay
+  callers. Mattock tile breaking uses it; boulder tile breaking still builds a
+  float break strip.
 
 Cleanup:
 

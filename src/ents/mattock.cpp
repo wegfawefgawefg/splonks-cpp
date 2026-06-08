@@ -70,6 +70,17 @@ AABB TileAabbForTilePos(const IVec2& tile_pos) {
     );
 }
 
+sim::AABB SimTileAabbForTilePos(const IVec2& tile_pos) {
+    const sim::Vec2 tile_tl = sim::PixelVec2(
+        tile_pos.x * static_cast<int>(kTileSize),
+        tile_pos.y * static_cast<int>(kTileSize)
+    );
+    return sim::AABB::from_corners(
+        tile_tl,
+        tile_tl + sim::PixelVec2(static_cast<int>(kTileSize - 1), static_cast<int>(kTileSize - 1))
+    );
+}
+
 Vec2 GetFallbackStrikePoint(const Ent& mattock) {
     const float direction = mattock.facing == Side::Left ? -1.0F : 1.0F;
     return mattock.GetCenter() + Vec2::New(10.0F * direction, 0.0F);
@@ -133,7 +144,7 @@ StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& aud
         }
 
         BreakStageTilesInRectWc(
-            TileAabbForTilePos(tile_query->tile_pos),
+            SimTileAabbForTilePos(tile_query->tile_pos),
             state,
             audio,
             audio_asset_ids::SuccessfulDig,
