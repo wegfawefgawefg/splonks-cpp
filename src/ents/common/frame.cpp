@@ -203,6 +203,28 @@ Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fa
     return emit_point;
 }
 
+sim::Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::Vec2 fallback) {
+    const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
+    if (aframe == nullptr) {
+        return fallback;
+    }
+
+    const sim::Vec2 sprite_tl = GetSimSpriteTopLeftForEnt(ent, *aframe);
+    int emit_x = aframe->emit_point.x;
+    if (ent.facing == Side::Right) {
+        emit_x = aframe->sample_rect.w - 1 - aframe->emit_point.x;
+    }
+
+    const sim::Vec2 emit_point = sprite_tl + sim::Vec2::from_pixels(
+                                                 emit_x,
+                                                 aframe->emit_point.y
+                                             );
+    if (aframe->emit_point.x == 0 && aframe->emit_point.y == 0) {
+        return fallback;
+    }
+    return emit_point;
+}
+
 sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {

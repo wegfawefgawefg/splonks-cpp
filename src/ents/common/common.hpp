@@ -143,6 +143,7 @@ sim::Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::V
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, const Vec2& center);
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::Vec2 center);
 Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback);
+sim::Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::Vec2 fallback);
 sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics);
 sim::AABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);
 bool CanCollectPickupFromContact(

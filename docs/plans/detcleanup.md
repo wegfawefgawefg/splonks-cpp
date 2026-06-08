@@ -394,6 +394,9 @@ Current state:
 - Completed 2026-06-08: stage-entry attached item snapping, ankh back-item
   snapping, embedded-treasure drops, and big-gold tile drops now place entities
   with fixed centers and fixed pixel offsets instead of render-center setters.
+- Completed 2026-06-08: fixed `GetEmitPointForEnt(...)` was added, and cobra
+  sight checks plus spit spawn placement now use fixed emit points instead of
+  render emit points converted back into simulation space.
 
 Cleanup:
 

@@ -72,8 +72,8 @@ bool ShouldRunSightScan(const Ent& cobra, std::uint64_t stage_frame) {
 }
 
 bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& graphics) {
-    const Vec2 spit_origin = common::GetEmitPointForEnt(cobra, graphics, cobra.GetRenderCenter());
-    const sim::Vec2 sim_spit_origin = sim::ToSimVec2(spit_origin);
+    const sim::Vec2 spit_origin =
+        common::GetEmitPointForEnt(cobra, graphics, cobra.GetSimCenter());
     const int direction = cobra.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -84,8 +84,8 @@ bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& gra
             continue;
         }
         const sim::Vec2 player_center =
-            GetNearestWorldPoint(state.stage, sim_spit_origin, player->GetSimCenter());
-        const sim::Vec2 player_delta = player_center - sim_spit_origin;
+            GetNearestWorldPoint(state.stage, spit_origin, player->GetSimCenter());
+        const sim::Vec2 player_delta = player_center - spit_origin;
         if (player_delta.y.abs() > sim::Scalar::from_int(kCobraSightVerticalTolerance) ||
             player_delta.x.abs() > sim::Scalar::from_int(kCobraSightDistance)) {
             continue;
@@ -96,7 +96,7 @@ bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& gra
         }
         const WorldRayHit hit = RaycastHorizontal(
             cobra,
-            sim_spit_origin,
+            spit_origin,
             direction,
             player_delta.x.abs().trunc_int(),
             state,
@@ -186,10 +186,11 @@ void SpawnSpitImpact(State& state, const Vec2& origin) {
 void FireCobraSpit(std::size_t ent_idx, State& state, Graphics& graphics) {
     Ent& cobra = state.ents.ents[ent_idx];
     const int direction = cobra.facing == Side::Left ? -1 : 1;
-    const Vec2 spit_origin = common::GetEmitPointForEnt(cobra, graphics, cobra.GetRenderCenter());
+    const sim::Vec2 spit_origin =
+        common::GetEmitPointForEnt(cobra, graphics, cobra.GetSimCenter());
 
     Ent* const spit = world_ops::SpawnEnt(state, EntType::CobraSpit, [&](Ent& spawned_spit) {
-        spawned_spit.SetRenderCenter(spit_origin);
+        spawned_spit.SetSimCenter(spit_origin);
         spawned_spit.facing = cobra.facing;
         spawned_spit.vel = CobraSpitVelocity(direction);
         spawned_spit.acc = sim::Vec2::zero();
@@ -205,8 +206,9 @@ void FireCobraSpit(std::size_t ent_idx, State& state, Graphics& graphics) {
         return;
     }
 
-    (void)PlayWorldSoundEmitter(state, spit_origin, audio_asset_ids::Tube);
-    SpawnSpitSpray(state, spit_origin, direction);
+    const Vec2 render_spit_origin = sim::ToRenderVec2(spit_origin);
+    (void)PlayWorldSoundEmitter(state, render_spit_origin, audio_asset_ids::Tube);
+    SpawnSpitSpray(state, render_spit_origin, direction);
 }
 
 void DestroyCobraSpit(std::size_t ent_idx, State& state) {
