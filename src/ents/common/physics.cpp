@@ -233,10 +233,10 @@ int FloorDiv(int value, int divisor) {
 float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
     constexpr float kDefaultGroundFriction = 0.85F;
     const Ent& ent = state.ents.ents[ent_idx];
-    const auto [ent_tl, ent_br] = ent.GetBounds();
-    const int support_y = FloorToInt(ent_br.y + 1.0F);
-    const int min_tile_x = FloorDiv(FloorToInt(ent_tl.x), static_cast<int>(kTileSize));
-    const int max_tile_x = FloorDiv(FloorToInt(ent_br.x), static_cast<int>(kTileSize));
+    const sim::AABB ent_aabb = ent.GetSimAABB();
+    const int support_y = (ent_aabb.br.y + sim::Scalar::from_int(1)).to_pixels_floor();
+    const int min_tile_x = FloorDiv(ent_aabb.tl.x.to_pixels_floor(), static_cast<int>(kTileSize));
+    const int max_tile_x = FloorDiv(ent_aabb.br.x.to_pixels_floor(), static_cast<int>(kTileSize));
     const int support_tile_y = FloorDiv(support_y, static_cast<int>(kTileSize));
 
     float friction = 0.0F;
@@ -247,7 +247,7 @@ float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
             continue;
         }
         if (IsTileOneWayTopSolid(tile) &&
-            ent_br.y >= static_cast<float>(support_tile_y * static_cast<int>(kTileSize))) {
+            ent_aabb.br.y >= sim::Scalar::from_int(support_tile_y * static_cast<int>(kTileSize))) {
             continue;
         }
         const float tile_friction = GetTileFriction(tile);
@@ -256,9 +256,9 @@ float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
     }
 
     const VID vid = ent.vid;
-    const AABB feet_aabb = {
-        .tl = Vec2::New(ent_tl.x, ent_br.y),
-        .br = ent_br + Vec2::New(0.0F, 1.0F),
+    const sim::AABB feet_aabb = {
+        .tl = sim::Vec2{ent_aabb.tl.x, ent_aabb.br.y},
+        .br = ent_aabb.br + sim::PixelVec2(0, 1),
     };
     for (const VID& other_vid : QueryEntsInAabb(state, feet_aabb, vid)) {
         const Ent* const other = state.ents.GetEnt(other_vid);
@@ -266,8 +266,9 @@ float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
             continue;
         }
 
-        const AABB other_aabb = GetNearestWorldAabb(state.stage, ent.GetCenter(), other->GetAABB());
-        if (!AabbsIntersect(feet_aabb, other_aabb)) {
+        const sim::AABB other_aabb =
+            GetNearestWorldAabb(state.stage, ent_aabb.center(), other->GetSimAABB());
+        if (!gfxp::aabbs_intersect(feet_aabb, other_aabb)) {
             continue;
         }
 
@@ -913,13 +914,12 @@ void MoveEntPixelStep(
 }
 
 bool IsGroundedOnEnts(std::size_t ent_idx, State& state) {
-    const auto [ent_tl, ent_br] = state.ents.ents[ent_idx].GetBounds();
-    const VID vid = state.ents.ents[ent_idx].vid;
-    const Vec2 feet_tl = Vec2::New(ent_tl.x, ent_br.y);
-    const Vec2 feet_br = ent_br + Vec2::New(0.0F, 1.0F);
-    const AABB feet_aabb = {
-        .tl = feet_tl,
-        .br = feet_br,
+    const Ent& ent = state.ents.ents[ent_idx];
+    const sim::AABB ent_aabb = ent.GetSimAABB();
+    const VID vid = ent.vid;
+    const sim::AABB feet_aabb = {
+        .tl = sim::Vec2{ent_aabb.tl.x, ent_aabb.br.y},
+        .br = ent_aabb.br + sim::PixelVec2(0, 1),
     };
     const std::vector<VID> ents_at_feet =
         QueryEntsInAabb(state, feet_aabb, vid);
@@ -1082,15 +1082,12 @@ void GroundedCheck(
 bool IsGroundedOnTiles(std::size_t ent_idx, State& state) {
     Ent& ent = state.ents.ents[ent_idx];
 
-    const AABB feet_aabb = ent.GetGroundProbe();
+    const sim::AABB feet_aabb = ent.GetSimGroundProbe();
     if (ent.TrySnapToBlockingStageBottom(state.stage)) {
         return true;
     }
 
-    for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
-             state.stage,
-             ToIVec2(feet_aabb.tl),
-             ToIVec2(feet_aabb.br))) {
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, feet_aabb)) {
         if (tile_query.tile != nullptr &&
             (IsTileCollidable(*tile_query.tile) ||
              (!ent.IsClimbing() && IsOneWayTopTileSupportingAabb(state.stage, tile_query, feet_aabb)))) {
