@@ -303,6 +303,9 @@ Current state:
 - Completed 2026-06-08: `Ent::GetAABB()` was renamed to
   `Ent::GetRenderAABB()`, and the remaining callers are render/debug
   presentation boundaries.
+- Completed 2026-06-08: unused old float `Ent::GetFeet()` and
+  `Ent::GetGroundProbe()` adapters were removed; fixed `GetSimFeet()` and
+  `GetSimGroundProbe()` remain.
 
 Cleanup:
 
@@ -310,9 +313,9 @@ Cleanup:
 - Keep render accessors explicitly named and limit them to presentation or
   temporary adapter boundaries.
 - [x] Rename old render `GetAABB()` to explicit `GetRenderAABB()`.
-- Migrate old generic helpers (`GetCenter`, `SetCenter`,
-  `GetBounds`, `GetFeet`, `GetGroundProbe`) to fixed defaults or render-named
-  wrappers.
+- [x] Remove unused old render `GetFeet()` and `GetGroundProbe()` adapters.
+- Migrate old generic helpers (`GetCenter`, `SetCenter`, `GetBounds`) to fixed
+  defaults or render-named wrappers.
 
 ### 6. World query has duplicate float/fixed overload sets
 

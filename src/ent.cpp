@@ -334,14 +334,6 @@ bool Ent::IsClimbing() const {
     return HasMovementFlag(*this, EntMovementFlag::Climbing);
 }
 
-AABB Ent::GetFeet() const {
-    return ToRenderAABB(GetSimFeet());
-}
-
-AABB Ent::GetGroundProbe() const {
-    return ToRenderAABB(GetSimGroundProbe());
-}
-
 bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
     if (!stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
         return false;

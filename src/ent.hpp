@@ -202,8 +202,6 @@ struct Ent {
     void IncTravelSound();
     bool IsHanging() const;
     bool IsClimbing() const;
-    AABB GetFeet() const;
-    AABB GetGroundProbe() const;
     bool TrySnapToBlockingStageBottom(const Stage& stage);
     void SetGrounded(const Stage& stage);
     std::tuple<Vec2, Vec2> GetTlAndTrCorners() const;
