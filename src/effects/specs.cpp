@@ -22,109 +22,109 @@ namespace splonks {
 
 namespace {
 
-constexpr EffectModifier kNoGravityUntilContactModifiers[]{
+const EffectModifier kNoGravityUntilContactModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::GravityScale,
         .op = EffectModifierOp::Override,
-        .value = 0.0F,
+        .value = sim::Scalar::zero(),
     },
 };
 
-constexpr EffectModifier kSpectaclesModifiers[]{
+const EffectModifier kSpectaclesModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::HiddenTreasureVisibility,
         .op = EffectModifierOp::Max,
-        .value = 1.0F,
+        .value = sim::Scalar::from_int(1),
     },
 };
 
-constexpr EffectModifier kUdjatEyeModifiers[]{
+const EffectModifier kUdjatEyeModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::HiddenTreasureVisibility,
         .op = EffectModifierOp::Max,
-        .value = 1.0F,
+        .value = sim::Scalar::from_int(1),
     },
 };
 
-constexpr EffectModifier kSpikeShoesModifiers[]{
+const EffectModifier kSpikeShoesModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::SpikeDamageTaken,
         .op = EffectModifierOp::Override,
-        .value = 0.0F,
+        .value = sim::Scalar::zero(),
     },
     EffectModifier{
         .target = EffectModifierTarget::StompDamage,
         .op = EffectModifierOp::Max,
-        .value = 2.0F,
+        .value = sim::Scalar::from_int(2),
     },
 };
 
-constexpr EffectModifier kSpringShoesModifiers[]{
+const EffectModifier kSpringShoesModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::JumpImpulse,
         .op = EffectModifierOp::Add,
-        .value = 1.0F,
+        .value = sim::Scalar::from_int(1),
     },
     EffectModifier{
         .target = EffectModifierTarget::StompBounceImpulse,
         .op = EffectModifierOp::Add,
-        .value = 1.0F,
+        .value = sim::Scalar::from_int(1),
     },
 };
 
-constexpr EffectModifier kMittModifiers[]{
+const EffectModifier kMittModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::ThrowHorizontalBoost,
         .op = EffectModifierOp::Add,
-        .value = 6.0F,
+        .value = sim::Scalar::from_int(6),
     },
 };
 
-constexpr EffectModifier kInWaterModifiers[]{
+const EffectModifier kInWaterModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::GravityScale,
         .op = EffectModifierOp::Multiply,
-        .value = 0.35F,
+        .value = sim::ToSimScalar(0.35F),
     },
     EffectModifier{
         .target = EffectModifierTarget::VelocityDampingX,
         .op = EffectModifierOp::Multiply,
-        .value = 0.82F,
+        .value = sim::ToSimScalar(0.82F),
     },
     EffectModifier{
         .target = EffectModifierTarget::VelocityDampingY,
         .op = EffectModifierOp::Multiply,
-        .value = 0.55F,
+        .value = sim::ToSimScalar(0.55F),
     },
     EffectModifier{
         .target = EffectModifierTarget::MoveSpeedScale,
         .op = EffectModifierOp::Multiply,
-        .value = 0.5F,
+        .value = sim::ToSimScalar(0.5F),
     },
     EffectModifier{
         .target = EffectModifierTarget::MaxFallSpeed,
         .op = EffectModifierOp::Min,
-        .value = 1.35F,
+        .value = sim::ToSimScalar(1.35F),
     },
     EffectModifier{
         .target = EffectModifierTarget::BuoyancyStrength,
         .op = EffectModifierOp::Max,
-        .value = 0.55F,
+        .value = sim::ToSimScalar(0.55F),
     },
     EffectModifier{
         .target = EffectModifierTarget::FallTimerRate,
         .op = EffectModifierOp::Override,
-        .value = 0.0F,
+        .value = sim::Scalar::zero(),
     },
     EffectModifier{
         .target = EffectModifierTarget::StompDamageScale,
         .op = EffectModifierOp::Override,
-        .value = 0.0F,
+        .value = sim::Scalar::zero(),
     },
     EffectModifier{
         .target = EffectModifierTarget::SwimImpulse,
         .op = EffectModifierOp::Max,
-        .value = 8.70F,
+        .value = sim::ToSimScalar(8.70F),
     },
 };
 

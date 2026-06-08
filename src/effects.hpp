@@ -124,7 +124,7 @@ struct BoxedEntEffects {
 struct EffectModifier {
     EffectModifierTarget target = EffectModifierTarget::GravityScale;
     EffectModifierOp op = EffectModifierOp::Add;
-    float value = 0.0F;
+    sim::Scalar value = sim::Scalar::zero();
 };
 
 struct EffectHookContext {

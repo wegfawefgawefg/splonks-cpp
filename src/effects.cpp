@@ -23,7 +23,7 @@ void RemoveEffectAt(Ent& ent, std::size_t effect_index) {
     }
 }
 
-void ApplyModifier(float& value, const EffectModifier& modifier) {
+void ApplyModifier(sim::Scalar& value, const EffectModifier& modifier) {
     switch (modifier.op) {
     case EffectModifierOp::Add:
         value += modifier.value;
@@ -43,27 +43,31 @@ void ApplyModifier(float& value, const EffectModifier& modifier) {
     }
 }
 
-float GetWaterTunedModifierValue(EffectModifierTarget target, const State& state, float fallback) {
+sim::Scalar GetWaterTunedModifierValue(
+    EffectModifierTarget target,
+    const State& state,
+    sim::Scalar fallback
+) {
     const WaterEffectSettings& water = state.settings.water_effect;
     switch (target) {
     case EffectModifierTarget::GravityScale:
-        return water.gravity_scale;
+        return sim::ToSimScalar(water.gravity_scale);
     case EffectModifierTarget::VelocityDampingX:
-        return water.velocity_damping_x;
+        return sim::ToSimScalar(water.velocity_damping_x);
     case EffectModifierTarget::VelocityDampingY:
-        return water.velocity_damping_y;
+        return sim::ToSimScalar(water.velocity_damping_y);
     case EffectModifierTarget::MoveSpeedScale:
-        return water.move_speed_scale;
+        return sim::ToSimScalar(water.move_speed_scale);
     case EffectModifierTarget::MaxFallSpeed:
-        return water.max_fall_speed;
+        return sim::ToSimScalar(water.max_fall_speed);
     case EffectModifierTarget::BuoyancyStrength:
-        return water.buoyancy_strength;
+        return sim::ToSimScalar(water.buoyancy_strength);
     case EffectModifierTarget::FallTimerRate:
-        return water.fall_timer_rate;
+        return sim::ToSimScalar(water.fall_timer_rate);
     case EffectModifierTarget::StompDamageScale:
-        return water.stomp_damage_scale;
+        return sim::ToSimScalar(water.stomp_damage_scale);
     case EffectModifierTarget::SwimImpulse:
-        return water.swim_impulse;
+        return sim::ToSimScalar(water.swim_impulse);
     case EffectModifierTarget::HiddenTreasureVisibility:
     case EffectModifierTarget::JumpImpulse:
     case EffectModifierTarget::SpikeDamageTaken:
@@ -216,9 +220,9 @@ float GetModifiedEffectValue(
     float base_value,
     const State* state
 ) {
-    float value = base_value;
+    sim::Scalar value = sim::ToSimScalar(base_value);
     if (ent.effects.get() == nullptr) {
-        return value;
+        return sim::ToRenderScalar(value);
     }
     for (std::size_t effect_index = 0; effect_index < ent.effects->count; ++effect_index) {
         const EffectInstance& effect = ent.effects->effects[effect_index];
@@ -229,7 +233,7 @@ float GetModifiedEffectValue(
             }
         }
     }
-    return value;
+    return sim::ToRenderScalar(value);
 }
 
 void ApplyEffectHookToEnt(Ent& ent, State& state, Audio* audio, const EffectHookContext& hook) {

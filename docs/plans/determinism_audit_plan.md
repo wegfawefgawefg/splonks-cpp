@@ -264,6 +264,13 @@ The expected end state is:
   synchronized gameplay settings still enter as float data/tuning boundaries;
   the runtime effect payload itself no longer carries arbitrary float state.
   Recording format version is now 105.
+- Fixed in authored effect modifier values: `EffectModifier::value` is now
+  stored as Fixed12 and modifier application runs in fixed-point before
+  returning to the current float-backed gameplay APIs. Item/passive modifier
+  specs no longer retain raw float payloads. Runtime water-effect overrides
+  still read synchronized float settings and quantize them at the effect
+  boundary; moving those settings themselves to fixed remains part of the
+  synchronized gameplay settings pass.
 - Fixed in stale entity scalar state: unused `Ent::attack_weight` and
   `Ent::weight` were removed instead of converted. A current code/data scan
   found no gameplay readers and no authored data writers; the fields were only
