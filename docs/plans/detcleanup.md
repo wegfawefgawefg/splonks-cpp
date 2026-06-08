@@ -379,6 +379,9 @@ Current state:
 - Completed 2026-06-08: barrier emitter support probes, beam segment spawn,
   and beam segment sync now use fixed centers; emitter death shake converts to
   render at the presentation boundary.
+- Completed 2026-06-08: craps-table prize spawn, dice launch placement, and
+  result prompt anchor now use fixed center offsets, with prompt position
+  converted to render only for UI.
 
 Cleanup:
 
