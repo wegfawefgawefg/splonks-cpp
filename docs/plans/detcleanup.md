@@ -129,6 +129,9 @@ Current state:
   The remaining mattock render contact wrapper use is debug annotation.
 - Completed 2026-06-08: cobweb contact and occupancy overlap checks now use
   fixed contact AABBs, and an unused float cobweb-overlap helper was removed.
+- Completed 2026-06-08: arrow-trap sensor overlap now uses fixed sensor and
+  contact AABBs. Sensor debug drawing converts fixed bounds at the render
+  boundary.
 - Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
   including contact damage, ent contact, weapons, traps,
   sacrifice altar, teleporter, and web/cobweb logic.
@@ -153,6 +156,7 @@ Cleanup:
 - [x] Migrate mattock strike overlap checks to fixed contact geometry.
 - [x] Migrate cobweb contact and occupancy overlap checks to fixed contact
       geometry.
+- [x] Migrate arrow-trap sensor overlap checks to fixed contact geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.

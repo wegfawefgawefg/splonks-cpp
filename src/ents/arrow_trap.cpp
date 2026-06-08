@@ -6,6 +6,7 @@
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
 #include "state.hpp"
+#include "utils.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
@@ -19,7 +20,7 @@ namespace {
 
 constexpr int kArrowTrapMaxSensorDistance = 96;
 constexpr int kArrowTrapMaxSensorTileSteps = kArrowTrapMaxSensorDistance / static_cast<int>(kTileSize);
-constexpr float kArrowTrapSensorHalfHeight = 3.0F;
+constexpr int kArrowTrapSensorHalfHeight = 3;
 constexpr float kArrowTrapMovingEntSpeed = 0.05F;
 constexpr float kArrowTrapMovingEntSpeedSq =
     kArrowTrapMovingEntSpeed * kArrowTrapMovingEntSpeed;
@@ -43,9 +44,9 @@ int DirectionForTrap(const Ent& trap) {
     return trap.facing == Side::Left ? -1 : 1;
 }
 
-Vec2 GetSensorStart(const Ent& trap) {
+sim::Vec2 GetSensorStart(const Ent& trap) {
     const int direction = DirectionForTrap(trap);
-    return trap.GetCenter() + Vec2::New(static_cast<float>(direction) * 9.0F, 0.0F);
+    return trap.GetSimCenter() + sim::PixelVec2(direction * 9, 0);
 }
 
 bool ShouldTriggerOnEnt(const Ent& ent) {
@@ -127,8 +128,11 @@ int GetOpenSensorCacheMarker(const Stage& stage) {
 
 int ComputeOpenSensorDistance(const Ent& trap, const State& state) {
     const int direction = DirectionForTrap(trap);
-    const Vec2 start = GetSensorStart(trap);
-    const IVec2 origin_tile = state.stage.GetTileCoordAtWc(ToIVec2(start));
+    const sim::Vec2 start = GetSensorStart(trap);
+    const IVec2 origin_tile = state.stage.GetTileCoordAtWc(IVec2::New(
+        start.x.to_pixels_trunc(),
+        start.y.to_pixels_trunc()
+    ));
     const TileStepRaycastResult ray = RaycastTileSteps(
         state.stage,
         origin_tile,
@@ -151,14 +155,20 @@ int GetCachedOpenSensorDistance(Ent& trap, const State& state) {
     return trap.point_a.y;
 }
 
-AABB GetOpenSensorAabb(Ent& trap, const State& state) {
+sim::AABB GetOpenSensorAabb(Ent& trap, const State& state) {
     const int direction = DirectionForTrap(trap);
-    const Vec2 start = GetSensorStart(trap);
+    const sim::Vec2 start = GetSensorStart(trap);
     const int open_distance = GetCachedOpenSensorDistance(trap, state);
-    const float end_x = start.x + static_cast<float>(direction * open_distance);
-    return AABB::New(
-        Vec2::New(std::min(start.x, end_x), start.y - kArrowTrapSensorHalfHeight),
-        Vec2::New(std::max(start.x, end_x), start.y + kArrowTrapSensorHalfHeight)
+    const sim::Scalar end_x = start.x + sim::Scalar::from_int(direction * open_distance);
+    return sim::AABB::from_corners(
+        sim::Vec2{
+            std::min(start.x, end_x),
+            start.y - sim::Scalar::from_int(kArrowTrapSensorHalfHeight),
+        },
+        sim::Vec2{
+            std::max(start.x, end_x),
+            start.y + sim::Scalar::from_int(kArrowTrapSensorHalfHeight),
+        }
     );
 }
 
@@ -167,7 +177,7 @@ void AddArrowTrapDebugAnnotations(Ent& trap, State& state) {
         return;
     }
 
-    const AABB sensor_aabb = GetOpenSensorAabb(trap, state);
+    const AABB sensor_aabb = ToRenderAABB(GetOpenSensorAabb(trap, state));
     state.AddDebugRectAnnotation(DebugRectAnnotation{
         .area = sensor_aabb,
         .color = DebugAnnotationColor{255, 192, 0, 255},
@@ -184,7 +194,7 @@ bool SensorTouchesMovingEnt(
     const State& state,
     const Graphics& graphics
 ) {
-    const AABB sensor_aabb = GetOpenSensorAabb(trap, state);
+    const sim::AABB sensor_aabb = GetOpenSensorAabb(trap, state);
     if (sensor_aabb.br.x <= sensor_aabb.tl.x) {
         return false;
     }
@@ -201,7 +211,7 @@ bool SensorTouchesMovingEnt(
         if (!WorldAabbsIntersect(
                 state.stage,
                 sensor_aabb,
-                ents::common::GetRenderContactAabbForEnt(*ent, graphics)
+                ents::common::GetContactAabbForEnt(*ent, graphics)
             )) {
             continue;
         }
