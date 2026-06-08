@@ -447,23 +447,7 @@ bool AabbHitsImpassableEnts(
     const AABB& area,
     std::optional<VID> exclude_vid
 ) {
-    const Vec2 anchor = (area.tl + area.br) / 2.0F;
-    for (const VID& vid : QueryEntsInAabb(state, area, exclude_vid)) {
-        const Ent* const ent = state.ents.GetEnt(vid);
-        if (ent == nullptr || !ent->active || !ent->impassable) {
-            continue;
-        }
-
-        const AABB ent_aabb = GetNearestWorldAabb(
-            state.stage,
-            anchor,
-            ents::common::GetRenderContactAabbForEnt(*ent, graphics)
-        );
-        if (AabbsIntersect(area, ent_aabb)) {
-            return true;
-        }
-    }
-    return false;
+    return AabbHitsImpassableEnts(state, graphics, ToSimQueryAABB(area), exclude_vid);
 }
 
 bool AabbHitsImpassableEnts(
@@ -479,8 +463,11 @@ bool AabbHitsImpassableEnts(
             continue;
         }
 
-        const sim::AABB ent_aabb =
-            GetNearestWorldAabb(state.stage, anchor, ents::common::GetContactAabbForEnt(*ent, graphics));
+        const sim::AABB ent_aabb = GetNearestWorldAabb(
+            state.stage,
+            anchor,
+            ents::common::GetContactAabbForEnt(*ent, graphics)
+        );
         if (gfxp::aabbs_intersect(area, ent_aabb)) {
             return true;
         }

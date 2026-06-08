@@ -145,8 +145,11 @@ Current state:
   crusher-blocker checks, and trigger-distance selection now use fixed contact
   AABBs and fixed vectors. Trap-block debug rectangles convert to render AABBs
   only when adding debug annotations.
+- Completed 2026-06-08: the old float `AabbHitsImpassableEnts(...)` overload
+  now delegates to the fixed query path instead of doing its own render-contact
+  collision checks.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in
-  world-query raycast/temporary float query paths, debug rendering, the helper
+  world-query raycast target collection, debug rendering, the helper
   declaration/definition, and a mattock debug annotation.
 
 Cleanup:
