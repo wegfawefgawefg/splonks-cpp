@@ -47,21 +47,21 @@ constexpr AFrameId kBoulderParticleAnimId = kBoulderAnimId;
 Vec2 GetBoulderBottomCenter(const Ent& boulder);
 Vec2 GetBoulderFrontFaceCenter(const Ent& boulder);
 
-AABB GetLeadingBreakStrip(const Ent& boulder) {
-    const AABB aabb = boulder.GetAABB();
+sim::AABB GetLeadingBreakStrip(const Ent& boulder) {
+    const sim::AABB aabb = boulder.GetSimAABB();
     if (boulder.facing == Side::Right) {
-        return AABB::New(
-            Vec2::New(aabb.br.x + 1.0F, aabb.tl.y),
-            Vec2::New(aabb.br.x + 1.0F, aabb.br.y)
+        return sim::AABB::from_corners(
+            sim::Vec2{aabb.br.x + sim::Scalar::from_pixels(1), aabb.tl.y},
+            sim::Vec2{aabb.br.x + sim::Scalar::from_pixels(1), aabb.br.y}
         );
     }
-    return AABB::New(
-        Vec2::New(aabb.tl.x - 1.0F, aabb.tl.y),
-        Vec2::New(aabb.tl.x - 1.0F, aabb.br.y)
+    return sim::AABB::from_corners(
+        sim::Vec2{aabb.tl.x - sim::Scalar::from_pixels(1), aabb.tl.y},
+        sim::Vec2{aabb.tl.x - sim::Scalar::from_pixels(1), aabb.br.y}
     );
 }
 
-bool WouldBreakAnyTiles(const AABB& area, const State& state) {
+bool WouldBreakAnyTiles(sim::AABB area, const State& state) {
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, area)) {
         if (tile_query.tile == nullptr) {
             continue;
@@ -413,7 +413,7 @@ void StepEntPhysicsAsBoulder(
         }
     }
     if (boulder.ai_state == EntAiState::Disturbed) {
-        const AABB break_strip = GetLeadingBreakStrip(boulder);
+        const sim::AABB break_strip = GetLeadingBreakStrip(boulder);
         const bool will_break_tiles = WouldBreakAnyTiles(break_strip, state);
         if (will_break_tiles && boulder.counter_a <= 0.0F) {
             (void)PlayWorldSoundEmitter(

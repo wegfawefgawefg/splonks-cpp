@@ -161,6 +161,8 @@ Current state:
   and hanging-spider ceiling support now samples from fixed body bounds.
 - Completed 2026-06-08: fixed `BreakStageTilesInRectWc(sim::AABB, ...)` was
   added, and mattock tile breaking now uses the fixed rectangle path.
+- Completed 2026-06-08: boulder leading break-strip queries and tile breaking
+  now use fixed body bounds and the fixed stage-break rectangle path.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -274,8 +276,7 @@ Current state:
 - Stage break and several entity systems still construct float tile/world
   rectangles for gameplay mutation.
 - `BreakStageTilesInRectWc(sim::AABB, ...)` now exists for fixed gameplay
-  callers. Mattock tile breaking uses it; boulder tile breaking still builds a
-  float break strip.
+  callers. Mattock and boulder tile breaking use it.
 
 Cleanup:
 
