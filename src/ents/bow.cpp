@@ -26,6 +26,7 @@ constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct BowAim {
     Vec2 direction = Vec2::New(1.0F, 0.0F);
+    sim::Vec2 sim_direction = sim::Vec2{sim::Scalar::from_int(1), sim::Scalar::zero()};
     Side facing = Side::Right;
     sim::Scalar rotation = sim::Scalar::zero();
 };
@@ -90,6 +91,25 @@ Vec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
     return Vec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
 }
 
+sim::Vec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
+    if (aim_x == 0 && aim_y == 0) {
+        return sim::Vec2{
+            sim::Scalar::from_int(facing == Side::Left ? -1 : 1),
+            sim::Scalar::zero(),
+        };
+    }
+    if (aim_x != 0 && aim_y != 0) {
+        return sim::Vec2{
+            sim::Scalar::from_int(aim_x) * sim::ToSimScalar(kDiagonalAimComponent),
+            sim::Scalar::from_int(aim_y) * sim::ToSimScalar(kDiagonalAimComponent),
+        };
+    }
+    return sim::Vec2{
+        sim::Scalar::from_int(aim_x),
+        sim::Scalar::from_int(aim_y),
+    };
+}
+
 float DiscreteAimWorldAngle(int aim_x, int aim_y, Side facing) {
     if (aim_x == 0 && aim_y == 0) {
         return facing == Side::Left ? 180.0F : 0.0F;
@@ -147,6 +167,7 @@ BowAim GetBowAim(const Ent& bow, const State& state) {
     const float base_angle = facing == Side::Left ? 180.0F : 0.0F;
     return BowAim{
         .direction = direction,
+        .sim_direction = DiscreteSimAimDirection(aim_x, aim_y, facing),
         .facing = facing,
         .rotation = sim::ToSimScalar(NormalizeDegrees(world_angle - base_angle)),
     };
@@ -172,7 +193,7 @@ void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
         const Vec2 spawn_center = bow.GetRenderCenter() + direction * 12.0F;
         arrow.SetRenderCenter(Vec2::New(static_cast<float>(RoundToInt(spawn_center.x)),
                                   static_cast<float>(RoundToInt(spawn_center.y))));
-        arrow.vel = sim::ToSimVec2(direction * kBowArrowSpeed);
+        arrow.vel = aim.sim_direction * sim::ToSimScalar(kBowArrowSpeed);
         arrow.acc = sim::Vec2::zero();
         arrow.facing = aim.facing;
         arrow.rotation = aim.rotation;

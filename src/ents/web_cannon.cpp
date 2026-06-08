@@ -43,6 +43,7 @@ constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct WebGunAim {
     Vec2 direction = Vec2::New(1.0F, 0.0F);
+    sim::Vec2 sim_direction = sim::Vec2{sim::Scalar::from_int(1), sim::Scalar::zero()};
     Side facing = Side::Right;
     sim::Scalar rotation = sim::Scalar::zero();
 };
@@ -68,6 +69,25 @@ Vec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
         );
     }
     return Vec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
+}
+
+sim::Vec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
+    if (aim_x == 0 && aim_y == 0) {
+        return sim::Vec2{
+            sim::Scalar::from_int(facing == Side::Left ? -1 : 1),
+            sim::Scalar::zero(),
+        };
+    }
+    if (aim_x != 0 && aim_y != 0) {
+        return sim::Vec2{
+            sim::Scalar::from_int(aim_x) * sim::ToSimScalar(kDiagonalAimComponent),
+            sim::Scalar::from_int(aim_y) * sim::ToSimScalar(kDiagonalAimComponent),
+        };
+    }
+    return sim::Vec2{
+        sim::Scalar::from_int(aim_x),
+        sim::Scalar::from_int(aim_y),
+    };
 }
 
 float DiscreteAimWorldAngle(int aim_x, int aim_y, Side facing) {
@@ -124,6 +144,7 @@ WebGunAim GetWebGunAim(const Ent& weapon, const Ent* holder, const State& state)
     const float base_angle = facing == Side::Left ? 180.0F : 0.0F;
     return WebGunAim{
         .direction = direction,
+        .sim_direction = DiscreteSimAimDirection(aim_x, aim_y, facing),
         .facing = facing,
         .rotation = sim::ToSimScalar(NormalizeDegrees(world_angle - base_angle)),
     };
@@ -385,7 +406,7 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
         (void)PlayWorldSoundEmitter(state, holder->GetRenderCenter(), audio_asset_ids::PistolShoot);
         SpawnWebSpray(state, holder->GetRenderCenter(), aim.direction);
         if (holder != nullptr) {
-            holder->vel -= sim::ToSimVec2(aim.direction * 0.12F);
+            holder->vel -= aim.sim_direction * sim::ToSimScalar(0.12F);
         }
         return;
     }
@@ -393,7 +414,7 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
     (void)world_ops::SpawnEnt(state, EntType::WebBall, [&](Ent& spawned_web_ball) {
         spawned_web_ball.SetRenderCenter(spawn_pos);
         spawned_web_ball.facing = aim.facing;
-        spawned_web_ball.vel = sim::ToSimVec2(aim.direction * kWebBallSpeedX) +
+        spawned_web_ball.vel = aim.sim_direction * sim::ToSimScalar(kWebBallSpeedX) +
                                (holder != nullptr
                                     ? holder->vel * sim::ToSimScalar(0.35F)
                                     : sim::Vec2::zero());
@@ -409,7 +430,7 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
     (void)PlayWorldSoundEmitter(state, muzzle_pos, audio_asset_ids::PistolShoot);
     SpawnWebSpray(state, muzzle_pos, aim.direction);
     if (holder != nullptr) {
-        holder->vel -= sim::ToSimVec2(aim.direction * 0.12F);
+        holder->vel -= aim.sim_direction * sim::ToSimScalar(0.12F);
     }
 }
 
