@@ -35,7 +35,7 @@ void ApplyTileOverlapEffects(std::size_t ent_idx, State& state) {
     }
 
     Ent& ent = state.ents.ents[ent_idx];
-    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent.GetAABB())) {
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent.GetSimAABB())) {
         if (tile_query.tile == nullptr) {
             continue;
         }
