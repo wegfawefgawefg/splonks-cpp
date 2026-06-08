@@ -7,9 +7,6 @@
 #include "state.hpp"
 #include "world_query.hpp"
 
-#include <algorithm>
-#include <cmath>
-
 namespace splonks::ents::thwomp_trap {
 
 namespace {
@@ -23,6 +20,8 @@ constexpr float kWaitFrames = 100.0F;
 constexpr float kImpactShake = 0.45F;
 constexpr float kImpactTileShake = 0.36F;
 constexpr float kImpactShakeRadiusTiles = 1.2F;
+const sim::Scalar kSimTriggerDistance = sim::ToSimScalar(kTriggerDistance);
+const sim::Scalar kSimTriggerHalfWidth = sim::ToSimScalar(kTriggerHalfWidth);
 
 bool HasHomePosition(const Ent& thwomp) {
     return thwomp.point_label_a == PointLabel::Target;
@@ -53,16 +52,17 @@ bool IsReturning(const Ent& thwomp) {
 }
 
 bool ShouldDrop(const Ent& thwomp, const State& state) {
-    const Vec2 thwomp_center = thwomp.GetRenderCenter();
+    const sim::Vec2 thwomp_center = thwomp.GetSimCenter();
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !IsPlayerLikeEntType(ent.type_) ||
             ent.condition == EntCondition::Dead) {
             continue;
         }
 
-        const Vec2 delta = GetNearestWorldDelta(state.stage, thwomp_center, ent.GetRenderCenter());
-        if (delta.y <= 0.0F || delta.y > kTriggerDistance ||
-            std::abs(delta.x) > kTriggerHalfWidth) {
+        const sim::Vec2 delta =
+            GetNearestWorldDelta(state.stage, thwomp_center, ent.GetSimCenter());
+        if (delta.y <= sim::Scalar::zero() || delta.y > kSimTriggerDistance ||
+            delta.x.abs() > kSimTriggerHalfWidth) {
             continue;
         }
         return true;

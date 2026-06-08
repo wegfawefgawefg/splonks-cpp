@@ -39,6 +39,10 @@ constexpr int kTopSmokeIntervalFrames = 8;
 constexpr int kSealSmokeCount = 8;
 constexpr int kSealShardCount = 5;
 constexpr float kDoorSealWaitFrames = 100.0F;
+const sim::Scalar kSimRightSensorMinX = sim::ToSimScalar(kRightSensorMinX);
+const sim::Scalar kSimRightSensorMaxX = sim::ToSimScalar(kRightSensorMaxX);
+const sim::Scalar kSimRightSensorMinY = sim::ToSimScalar(kRightSensorMinY);
+const sim::Scalar kSimRightSensorMaxY = sim::ToSimScalar(kRightSensorMaxY);
 
 bool IsRumbling(const Ent& door) {
     return door.ai_state == EntAiState::Pursuing;
@@ -175,16 +179,17 @@ void SpawnSealParticles(State& state, const Ent& door) {
 }
 
 bool ShouldStartDrop(const Ent& door, const State& state) {
-    const Vec2 door_center = door.GetRenderCenter();
+    const sim::Vec2 door_center = door.GetSimCenter();
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !IsPlayerLikeEntType(ent.type_) ||
             ent.condition == EntCondition::Dead) {
             continue;
         }
-        const Vec2 delta = GetNearestWorldDelta(state.stage, door_center, ent.GetRenderCenter());
-        if (delta.x >= kRightSensorMinX && delta.x <= kRightSensorMaxX &&
-            delta.y >= kRightSensorMinY &&
-            delta.y <= kRightSensorMaxY) {
+        const sim::Vec2 delta =
+            GetNearestWorldDelta(state.stage, door_center, ent.GetSimCenter());
+        if (delta.x >= kSimRightSensorMinX && delta.x <= kSimRightSensorMaxX &&
+            delta.y >= kSimRightSensorMinY &&
+            delta.y <= kSimRightSensorMaxY) {
             return true;
         }
     }

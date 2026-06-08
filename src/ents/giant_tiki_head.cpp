@@ -4,11 +4,10 @@
 #include "audio.hpp"
 #include "ent/spec.hpp"
 #include "aframe_id.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
-
-#include <limits>
 
 namespace splonks::ents::giant_tiki_head {
 
@@ -49,8 +48,8 @@ void AddTikiHeadReleaseShake(State& state, const Ent& head) {
 
 const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
     const Ent* best_player = nullptr;
-    float best_distance_sq = std::numeric_limits<float>::max();
-    const Vec2 head_center = head.GetRenderCenter();
+    sim::Scalar best_distance_sq{};
+    const sim::Vec2 head_center = head.GetSimCenter();
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -60,8 +59,9 @@ const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
             continue;
         }
 
-        const Vec2 delta = GetNearestWorldDelta(state.stage, head_center, player->GetRenderCenter());
-        const float distance_sq = delta.x * delta.x + delta.y * delta.y;
+        const sim::Vec2 delta =
+            GetNearestWorldDelta(state.stage, head_center, player->GetSimCenter());
+        const sim::Scalar distance_sq = gfxp::length_sq(delta);
         if (best_player == nullptr || distance_sq < best_distance_sq) {
             best_player = player;
             best_distance_sq = distance_sq;
@@ -78,8 +78,9 @@ std::optional<VID> SpawnBoulderForHead(Ent& head, State& state, Audio& audio) {
 
         const Ent* const player = FindClosestPlayerToHead(head, state);
         if (player != nullptr) {
-            const Vec2 delta = GetNearestWorldDelta(state.stage, head.GetRenderCenter(), player->GetRenderCenter());
-            spawned_boulder.facing = delta.x < 0.0F ? Side::Left : Side::Right;
+            const sim::Vec2 delta =
+                GetNearestWorldDelta(state.stage, head.GetSimCenter(), player->GetSimCenter());
+            spawned_boulder.facing = delta.x < sim::Scalar::zero() ? Side::Left : Side::Right;
         } else {
             spawned_boulder.facing = Side::Right;
         }

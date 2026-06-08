@@ -330,6 +330,10 @@ Current state:
   sacrifice-altar nearest-player or chase checks now use fixed positions/deltas
   where the decision is authoritative. Render-center calls remain only where
   presentation, raycast, audio, or still-unmigrated gameplay code requires them.
+- Completed 2026-06-08: thwomp trap drop detection, drop-door sensor detection,
+  and giant-tiki-head closest-player/facing decisions now use fixed
+  positions/deltas. Their remaining render-center calls are presentation or
+  spawn-placement boundaries.
 
 Cleanup:
 
