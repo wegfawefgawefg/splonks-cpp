@@ -32,8 +32,8 @@ constexpr std::int32_t kAltarBreakFavorPenalty = 8;
 constexpr std::int32_t kBallAndChainPunishmentFavorThreshold = -16;
 constexpr std::int32_t kGoldIdolSacrificeFavor = 8;
 constexpr std::uint32_t kHealthRewardAmount = 8;
-constexpr float kSacrificeSurfaceTopOffset = 20.0F;
-constexpr float kSacrificeSurfaceBottomOffset = 2.0F;
+constexpr int kSacrificeSurfaceTopOffset = 20;
+constexpr int kSacrificeSurfaceBottomOffset = 2;
 constexpr float kSacrificeSmokeScaleBias = 1.0F;
 constexpr float kTopperSacAnimHoldFrames = 60.0F;
 constexpr float kBallAndChainSpawnOffsetY = 18.0F;
@@ -71,11 +71,11 @@ bool BelongsToOwnerAltar(const Ent& ent, const Ent& owner) {
     return false;
 }
 
-AABB GetSacrificeArea(const Ent& altar) {
-    const Vec2 altar_pos = altar.GetRenderPos();
-    return AABB::New(
-        altar_pos + Vec2::New(-1.0F, -kSacrificeSurfaceTopOffset),
-        altar_pos + Vec2::New(31.0F, kSacrificeSurfaceBottomOffset)
+sim::AABB GetSacrificeArea(const Ent& altar) {
+    const sim::Vec2 altar_pos = altar.GetSimPos();
+    return sim::AABB::from_corners(
+        altar_pos + sim::PixelVec2(-1, -kSacrificeSurfaceTopOffset),
+        altar_pos + sim::PixelVec2(31, kSacrificeSurfaceBottomOffset)
     );
 }
 
@@ -520,7 +520,7 @@ void SacrificeVictim(
         return;
     }
 
-    const AABB victim_aabb = common::GetRenderContactAabbForEnt(victim, graphics);
+    const AABB victim_aabb = ToRenderAABB(common::GetContactAabbForEnt(victim, graphics));
     const Vec2 victim_effect_pos = Vec2::New(
         (victim_aabb.tl.x + victim_aabb.br.x) * 0.5F,
         victim_aabb.br.y - 2.0F
@@ -651,7 +651,7 @@ void StepEntLogicAsSacAltar(
         return;
     }
 
-    const AABB sacrifice_area = GetSacrificeArea(altar);
+    const sim::AABB sacrifice_area = GetSacrificeArea(altar);
     const std::vector<VID> candidates = QueryEntsInAabb(state, sacrifice_area, altar.vid);
     for (const VID& candidate_vid : candidates) {
         Ent* const victim = state.ents.GetEntMut(candidate_vid);
@@ -672,7 +672,7 @@ void StepEntLogicAsSacAltar(
             continue;
         }
 
-        const AABB victim_aabb = common::GetRenderContactAabbForEnt(*victim, graphics);
+        const sim::AABB victim_aabb = common::GetContactAabbForEnt(*victim, graphics);
         if (victim_aabb.br.y < sacrifice_area.tl.y || victim_aabb.br.y > sacrifice_area.br.y) {
             continue;
         }

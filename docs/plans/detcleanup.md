@@ -122,6 +122,9 @@ Current state:
   particle/audio presentation boundary.
 - Completed 2026-06-08: shopkeeper pistol recovery blocking and pickup overlap
   checks now use fixed contact AABBs.
+- Completed 2026-06-08: sacrifice-altar sacrifice area and victim overlap
+  checks now use fixed contact AABBs. Victim effect placement converts fixed
+  bounds to render coordinates only at the presentation boundary.
 - Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
   including contact damage, ent contact, weapons, traps,
   sacrifice altar, teleporter, and web/cobweb logic.
@@ -141,6 +144,8 @@ Cleanup:
 - [x] Migrate machete strike and sacrifice-altar deposit checks to fixed
       contact/body geometry.
 - [x] Migrate shopkeeper pistol recovery checks to fixed contact geometry.
+- [x] Migrate sacrifice-altar sacrifice area and victim overlap checks to fixed
+      contact geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.
