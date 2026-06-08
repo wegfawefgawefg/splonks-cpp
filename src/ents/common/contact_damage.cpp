@@ -179,8 +179,8 @@ void MaybeHurtAndStunOnContact(
 ) {
     const Ent& ent = state.ents.ents[ent_idx];
     const VID ent_vid = ent.vid;
-    const AABB ent_aabb = GetRenderContactAabbForEnt(ent, graphics);
-    const Vec2 ent_pos = ent.GetRenderPos();
+    const sim::AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const sim::Vec2 ent_pos = ent.GetSimPos();
     const EntCondition condition = ent.condition;
     const bool hurt_on_contact = ent.hurt_on_contact;
     const std::optional<VID> thrown_by = ent.thrown_by;
@@ -199,18 +199,21 @@ void MaybeHurtAndStunOnContact(
                 continue;
             }
             if (Ent* const other_ent = state.ents.GetEntMut(vid)) {
-                const AABB other_aabb = GetNearestWorldAabb(
+                const sim::AABB other_aabb = GetNearestWorldAabb(
                     state.stage,
-                    ent.GetCenter(),
-                    GetRenderContactAabbForEnt(*other_ent, graphics)
+                    ent_aabb.center(),
+                    GetContactAabbForEnt(*other_ent, graphics)
                 );
-                if (!AabbsIntersect(ent_aabb, other_aabb)) {
+                if (!gfxp::aabbs_intersect(ent_aabb, other_aabb)) {
                     continue;
                 }
                 if (IsPlayerLikeEntType(other_ent->type_)) {
-                    const AABB player_aabb = other_aabb;
-                    const AABB player_foot = {
-                        .tl = Vec2::New(player_aabb.tl.x, player_aabb.br.y - 4.0F),
+                    const sim::AABB player_aabb = other_aabb;
+                    const sim::AABB player_foot = {
+                        .tl = sim::Vec2{
+                            player_aabb.tl.x,
+                            player_aabb.br.y - sim::Scalar::from_int(4),
+                        },
                         .br = player_aabb.br,
                     };
                     if (ent_pos.x >= player_foot.tl.x && ent_pos.x <= player_foot.br.x &&
