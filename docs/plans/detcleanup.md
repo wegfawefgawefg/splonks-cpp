@@ -397,6 +397,9 @@ Current state:
 - Completed 2026-06-08: fixed `GetEmitPointForEnt(...)` was added, and cobra
   sight checks plus spit spawn placement now use fixed emit points instead of
   render emit points converted back into simulation space.
+- Completed 2026-06-08: chest trap bomb, treasure, and Udjat Eye spawn
+  placement now use fixed emit centers. Chest sparkles and sounds convert that
+  fixed emit point to render coordinates only at presentation boundaries.
 
 Cleanup:
 
