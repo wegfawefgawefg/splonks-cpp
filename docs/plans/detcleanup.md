@@ -528,18 +528,20 @@ Current state:
   mattock, machete, bat return, door drop, thwomp return, explosion fallback,
   body-contact, and stomp gameplay velocities now build fixed vectors directly
   instead of detouring through render vectors or deterministic float RNG.
+- Completed 2026-06-08: bow and web-cannon aim now carry fixed aim vectors for
+  projectile/recoil velocities, and common tool/carry throw APIs accept fixed
+  `sim::Vec2` velocities instead of render `Vec2`.
 - Remaining conversion hits are mostly explicit authoring/spawn boundaries,
-  raycast adapters, debug/render rectangles, or aim-vector APIs that still
-  produce render `Vec2` directions before simulation consumes them.
+  raycast adapters, debug/render rectangles, test fixture setup, or a small
+  number of visual-authoring-to-gameplay bridges.
 - `stage_spawning.cpp` still exposes render-position spawn overloads that
   convert into fixed positions. These are authoring/tooling boundaries, but
   fixed overloads should stay preferred for gameplay callers.
 - `world_query.cpp` raycast APIs still bridge render/int ray inputs into fixed
   target AABBs. This is the largest remaining conversion cluster and should be
   handled as a deliberate raycast API cleanup, not incidental call-site churn.
-- Bow/web-cannon/common throw/carry still consume render aim vectors and convert
-  them to fixed velocities. These need a small fixed aim/direction abstraction
-  rather than one-off casts at every weapon.
+- Ball-and-chain uses a local raw-fixed delta helper; this is fixed data but the
+  helper name should be cleaned up if it survives the final API pass.
 - Cobra sight currently converts an animation-derived emit point into a fixed
   ray origin. That is a real boundary between visual emit-point authoring and
   gameplay ray logic; clean replacement likely needs fixed emit points or a
@@ -560,7 +562,7 @@ Cleanup:
       velocities.
 - [x] Replace simple gameplay velocity/knockback vector conversions with direct
       fixed vector construction.
-- [ ] Add fixed aim/direction APIs for bow, web cannon, throw/carry aiming, and
+- [x] Add fixed aim/direction APIs for bow, web cannon, throw/carry aiming, and
       similar projectile launch paths.
 - [ ] Convert raycast entry points to fixed/int-friendly APIs, or explicitly
       quarantine render raycast wrappers as compatibility adapters.
