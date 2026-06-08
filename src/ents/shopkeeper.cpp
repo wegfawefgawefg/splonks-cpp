@@ -150,9 +150,10 @@ bool IsShopkeeperBlockedMovingTowardPistol(
         return false;
     }
 
-    AABB next_aabb = common::GetRenderContactAabbForEnt(shopkeeper, graphics);
-    next_aabb.tl.x += static_cast<float>(move_direction);
-    next_aabb.br.x += static_cast<float>(move_direction);
+    sim::AABB next_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
+    const sim::Scalar offset = sim::Scalar::from_int(move_direction);
+    next_aabb.tl.x += offset;
+    next_aabb.br.x += offset;
     return AabbHitsBlockingWorldGeometryOrImpassableEnts(
         state,
         graphics,
@@ -205,13 +206,13 @@ bool TryRecoverDroppedPistol(
         shopkeeper.counter_a = kShopkeeperJumpCooldownFrames;
     }
 
-    const AABB shopkeeper_aabb = common::GetRenderContactAabbForEnt(shopkeeper, graphics);
-    const AABB pistol_aabb = GetNearestWorldAabb(
+    const sim::AABB shopkeeper_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
+    const sim::AABB pistol_aabb = GetNearestWorldAabb(
         state.stage,
-        shopkeeper.GetCenter(),
-        common::GetRenderContactAabbForEnt(*pistol, graphics)
+        shopkeeper_aabb.center(),
+        common::GetContactAabbForEnt(*pistol, graphics)
     );
-    if (!AabbsIntersect(shopkeeper_aabb, pistol_aabb)) {
+    if (!gfxp::aabbs_intersect(shopkeeper_aabb, pistol_aabb)) {
         return true;
     }
 
