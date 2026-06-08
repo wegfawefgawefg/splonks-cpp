@@ -260,5 +260,8 @@ Cleanup:
 ## Rule Of Thumb
 
 If a function can change entities, tiles, damage, pickups, AI, topology, or
-lockstep-visible state, it should not accept or return old float `AABB` or
-render `Vec2` unless the function name says it is an adapter.
+lockstep-visible state, it should accept and return fixed/int simulation types.
+Old float `AABB` and render `Vec2` are allowed only in explicit boundary
+adapters for render, debug, UI, audio, tooling, data import, or temporary
+migration bridges. Those adapters should be named as adapters and should not
+contain authoritative gameplay decisions.
