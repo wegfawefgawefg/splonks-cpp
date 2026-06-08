@@ -116,6 +116,10 @@ Current state:
   contact/body AABBs.
 - Completed 2026-06-08: carry pickup search and generic world-op interaction
   overlap now use fixed contact AABBs.
+- Completed 2026-06-08: machete strike overlap and grounded sacrifice-altar
+  favor deposit checks now use fixed contact/body AABBs. Sacrifice effect
+  placement converts fixed contact bounds to render coordinates only at the
+  particle/audio presentation boundary.
 - Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
   including contact damage, ent contact, weapons, traps,
   sacrifice altar, teleporter, and web/cobweb logic.
@@ -132,6 +136,8 @@ Cleanup:
 - [x] Migrate push and stomp contact checks to fixed contact/body geometry.
 - [x] Migrate carry pickup search and generic world-op interaction overlap to
       fixed contact geometry.
+- [x] Migrate machete strike and sacrifice-altar deposit checks to fixed
+      contact/body geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.
