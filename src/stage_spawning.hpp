@@ -25,13 +25,18 @@ void InitCommonStageState(State& state);
 
 StageCarryover CaptureStageCarryover(const State& state);
 void RestoreStageCarryover(State& state, const StageCarryover& carryover);
+void PlacePlayerAtPosition(State& state, sim::Vec2 pos);
 void PlacePlayerAtPosition(State& state, const Vec2& pos);
 void SnapAttachedItemsToPlayer(State& state);
 
+void SpawnPlayer(State& state, sim::Vec2 pos);
 void SpawnPlayer(State& state, const Vec2& pos);
+std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, sim::Vec2 pos);
 std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, const Vec2& pos);
 
+std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, sim::Vec2 pos);
 std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, const Vec2& pos);
+std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, sim::Vec2 center);
 std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, const Vec2& center);
 void SpawnAuthoredStageEnts(State& state);
 

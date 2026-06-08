@@ -230,14 +230,18 @@ void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
     }
 }
 
-void PlacePlayerAtPosition(State& state, const Vec2& pos) {
+void PlacePlayerAtPosition(State& state, sim::Vec2 pos) {
     Ent* const player = GetPrimaryLocalPlayerMut(state);
     if (player == nullptr) {
         return;
     }
-    player->pos = sim::ToSimVec2(pos);
+    player->pos = pos;
     player->vel = sim::Vec2::zero();
     player->acc = sim::Vec2::zero();
+}
+
+void PlacePlayerAtPosition(State& state, const Vec2& pos) {
+    PlacePlayerAtPosition(state, sim::ToSimVec2(pos));
 }
 
 void SnapAttachedItemsToPlayer(State& state) {
@@ -278,7 +282,7 @@ void SnapAttachedItemsToPlayer(State& state) {
     }
 }
 
-void SpawnPlayer(State& state, const Vec2& pos) {
+void SpawnPlayer(State& state, sim::Vec2 pos) {
     (void)state.players.EnsurePrimaryLocalPlayer();
     const std::optional<VID> player_vid = SpawnPlayerForPlayerId(state, kPrimaryLocalPlayerId, pos);
     if (!player_vid.has_value()) {
@@ -287,12 +291,16 @@ void SpawnPlayer(State& state, const Vec2& pos) {
     state.controlled_ent_vid = player_vid;
 }
 
-std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, const Vec2& pos) {
+void SpawnPlayer(State& state, const Vec2& pos) {
+    SpawnPlayer(state, sim::ToSimVec2(pos));
+}
+
+std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, sim::Vec2 pos) {
     if (const std::optional<VID> player_vid = state.ents.NewEnt()) {
         if (Ent* const player = state.ents.GetEntMut(*player_vid)) {
             const EntType spawn_type = GetConfiguredPlayerSpawnType(state, player_id);
             SetEntAs(*player, spawn_type);
-            player->pos = sim::ToSimVec2(pos);
+            player->pos = pos;
             player->vel = sim::Vec2::zero();
             player->acc = sim::Vec2::zero();
             player->money = kPlayerInitialTestingMoney;
@@ -307,7 +315,11 @@ std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, cons
     return std::nullopt;
 }
 
-std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, const Vec2& pos) {
+std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, const Vec2& pos) {
+    return SpawnPlayerForPlayerId(state, player_id, sim::ToSimVec2(pos));
+}
+
+std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, sim::Vec2 pos) {
     const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
         return std::nullopt;
@@ -319,7 +331,7 @@ std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, const Vec
     }
 
     SetEntAs(*ent, type_);
-    ent->pos = sim::ToSimVec2(pos);
+    ent->pos = pos;
     ent->vel = sim::Vec2::zero();
     if (type_ == EntType::StoreLight) {
         ents::store_light::AttachStoreLight(*ent, state);
@@ -327,7 +339,11 @@ std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, const Vec
     return vid;
 }
 
-std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, const Vec2& center) {
+std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, const Vec2& pos) {
+    return SpawnStageEntAtTopLeft(state, type_, sim::ToSimVec2(pos));
+}
+
+std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, sim::Vec2 center) {
     const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
         return std::nullopt;
@@ -339,9 +355,13 @@ std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, const Vec2
     }
 
     SetEntAs(*ent, type_);
-    ent->SetCenter(center);
+    ent->SetSimCenter(center);
     ent->vel = sim::Vec2::zero();
     return vid;
+}
+
+std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, const Vec2& center) {
+    return SpawnStageEntAtCenter(state, type_, sim::ToSimVec2(center));
 }
 
 void SpawnAuthoredStageEnts(State& state) {

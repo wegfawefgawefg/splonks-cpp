@@ -316,12 +316,21 @@ Current state:
 - Stage spawning, lobby retained players, join handoff, player lifecycle, and
   stage init frequently build spawn positions as render `Vec2` and then call
   `sim::ToSimVec2`.
+- Completed 2026-06-08. Stage spawning now has fixed `sim::Vec2` overloads for
+  player placement, player spawning, and top-left/center entity spawning; the
+  render `Vec2` overloads are adapters for existing debug/tooling callers.
+- Completed 2026-06-08. Normal stage initialization now places connected
+  players through fixed spawn positions and fixed integer-pixel spacing.
 - Some of this is harmless authoring/construction code, but much of it is
   gameplay topology and join-state code.
 
 Cleanup:
 
-- Use fixed spawn position helpers for authoritative spawn/topology paths.
+- [x] Add fixed spawn position helpers for stage spawning APIs.
+- [x] Move normal stage initialization player placement to fixed spawn
+  positions.
+- Use fixed spawn position helpers for remaining authoritative spawn/topology
+  paths.
 - Keep render `Vec2` spawning only for debug/test authoring adapters.
 - Prefer `sim::PixelVec2(...)` and fixed offsets for common integer-pixel spawn
   spacing.

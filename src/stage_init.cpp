@@ -27,17 +27,17 @@ void PlacePlayerAtEntrance(State& state) {
                 continue;
             }
 
-            Vec2 spawn_pos = Vec2::New(static_cast<float>(x), static_cast<float>(y)) *
-                             static_cast<float>(kTileSize);
+            const sim::Vec2 spawn_pos = sim::PixelVec2(
+                static_cast<int>(x * kTileSize),
+                static_cast<int>(y * kTileSize));
             unsigned int local_player_index = 0;
             for (const PlayerSlot& slot : state.players.slots) {
                 if (!ShouldSimulatePlayerSlotGameplay(state, slot)) {
                     continue;
                 }
                 if (Ent* const player = state.ents.GetEntMut(*slot.ent_vid)) {
-                    player->pos = sim::ToSimVec2(
-                        spawn_pos + Vec2::New(static_cast<float>(local_player_index) * 8.0F, 0.0F)
-                    );
+                    player->pos =
+                        spawn_pos + sim::PixelVec2(static_cast<int>(local_player_index) * 8, 0);
                     player->vel = sim::Vec2::zero();
                     player->acc = sim::Vec2::zero();
                 }
@@ -51,7 +51,7 @@ void PlacePlayerAtEntrance(State& state) {
         "No entrance tile found. You have a game breaking bug in the map generation code.");
 }
 
-void SpawnConnectedPlayers(State& state, const Vec2& spawn_pos) {
+void SpawnConnectedPlayers(State& state, sim::Vec2 spawn_pos) {
     unsigned int player_index = 0;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || slot.player_id == kInvalidPlayerId) {
@@ -60,7 +60,7 @@ void SpawnConnectedPlayers(State& state, const Vec2& spawn_pos) {
         const std::optional<VID> player_vid = SpawnPlayerForPlayerId(
             state,
             slot.player_id,
-            spawn_pos + Vec2::New(static_cast<float>(player_index) * 8.0F, 0.0F)
+            spawn_pos + sim::PixelVec2(static_cast<int>(player_index) * 8, 0)
         );
         if (player_vid.has_value() &&
             (slot.primary_local || !state.controlled_ent_vid.has_value())) {
@@ -94,7 +94,7 @@ void InitStage(State& state, bool preserve_player_state) {
     if (!carryover.players.empty()) {
         RestoreStageCarryover(state, carryover);
     } else {
-        SpawnConnectedPlayers(state, Vec2::New(0.0F, 0.0F));
+        SpawnConnectedPlayers(state, sim::Vec2::zero());
     }
     SpawnAuthoredStageEnts(state);
 
