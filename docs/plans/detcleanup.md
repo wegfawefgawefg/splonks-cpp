@@ -341,6 +341,9 @@ Current state:
   positions/deltas for facing, movement direction, and jump decisions. The
   remaining shopkeeper sight checks are still tied to the render-space raycast
   API and belong to the raycast cleanup item.
+- Completed 2026-06-08: body-contact knockback direction now uses fixed
+  source/target centers and fixed wrapped deltas before producing the existing
+  fixed knockback velocity.
 
 Cleanup:
 

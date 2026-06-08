@@ -144,9 +144,8 @@ bool EntIsMovingIntoSpike(const Ent& ent, TileRotation spike_rotation) {
 }
 
 KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
-    const Vec2 delta = GetNearestWorldDelta(stage, source.GetRenderCenter(), target.GetRenderCenter());
-    const float direction = delta.x < 0.0F ? -1.0F : 1.0F;
-    (void)target;
+    const sim::Vec2 delta = GetNearestWorldDelta(stage, source.GetSimCenter(), target.GetSimCenter());
+    const float direction = delta.x < sim::Scalar::zero() ? -1.0F : 1.0F;
     return KnockbackSpec{
         .velocity = sim::ToSimVec2(direction, -1.0F),
         .clear_velocity = true,
