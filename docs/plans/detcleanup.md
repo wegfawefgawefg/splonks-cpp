@@ -357,6 +357,8 @@ Current state:
   `SetVisualCenterForEnt(...)` overloads were added for authored sprite-frame
   visual-center offsets. Held item attachment now uses those fixed overloads
   instead of round-tripping through render centers.
+- Completed 2026-06-08: shopkeeper held-pistol spawn/sync placement now uses
+  fixed centers instead of `GetRenderCenter()`/`SetRenderCenter()`.
 
 Cleanup:
 

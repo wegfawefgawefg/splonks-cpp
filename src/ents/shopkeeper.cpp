@@ -98,7 +98,7 @@ bool SpawnShopkeeperPistolIntoHands(std::size_t ent_idx, State& state, const Gra
         spawned_pistol.can_collide = false;
         spawned_pistol.counter_b = sim::Scalar::from_int(9999);
         spawned_pistol.facing = shopkeeper.facing;
-        spawned_pistol.SetRenderCenter(shopkeeper.GetRenderCenter() + Vec2::New(4.0F, 1.0F));
+        spawned_pistol.SetSimCenter(shopkeeper.GetSimCenter() + sim::Vec2::from_pixels(4, 1));
         shopkeeper.holding_vid = spawned_pistol.vid;
         shopkeeper.holding = true;
         shopkeeper.ent_b = spawned_pistol.vid;
@@ -131,12 +131,13 @@ void SyncHeldPistolToShopkeeper(Ent& shopkeeper, Ent& pistol, State& state, cons
     pistol.draw_layer = DrawLayer::Foreground;
     StopUsingEnt(pistol);
 
-    const Vec2 hold_offset = Vec2::New(4.0F, 1.0F);
-    const Vec2 held_pos_target =
+    const sim::Vec2 hold_offset = sim::Vec2::from_pixels(4, 1);
+    const sim::Vec2 shopkeeper_center = shopkeeper.GetSimCenter();
+    const sim::Vec2 held_pos_target =
         shopkeeper.facing == Side::Left
-            ? shopkeeper.GetRenderCenter() + Vec2::New(-hold_offset.x, hold_offset.y)
-            : shopkeeper.GetRenderCenter() + hold_offset;
-    pistol.SetRenderCenter(held_pos_target);
+            ? shopkeeper_center + sim::Vec2{-hold_offset.x, hold_offset.y}
+            : shopkeeper_center + hold_offset;
+    pistol.SetSimCenter(held_pos_target);
     pistol.grounded = false;
     state.UpdateSidForEnt(pistol.vid.id, graphics);
 }
