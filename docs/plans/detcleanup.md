@@ -350,6 +350,12 @@ Current state:
   direction, and thrown loot velocities now use fixed centers, fixed world
   deltas, fixed tile queries, and fixed velocity writes. Remaining monkey render
   center use is presentation/audio or tool API boundary code.
+- Completed 2026-06-08: carry back-item placement, thrown-entity placement,
+  and spawned tool-throw placement now write fixed centers directly instead of
+  using `SetRenderCenter(...)`/`GetRenderCenter(...)`. Held visual attachment
+  still uses `SetVisualCenterForEnt(...)` because that path intentionally
+  applies authored sprite-frame offsets and needs its own fixed visual-center
+  adapter pass.
 
 Cleanup:
 

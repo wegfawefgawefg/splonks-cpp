@@ -199,13 +199,13 @@ void SyncBackAttachForHolder(
     const bool holder_climbing = HasMovementFlag(holder, EntMovementFlag::Climbing);
     const bool holder_hanging = HasMovementFlag(holder, EntMovementFlag::Hanging);
 
-    Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
+    sim::Vec2 back_offset{sim::Scalar::from_int(-3), sim::Scalar::zero()};
     if (holder_climbing) {
-        back_offset = Vec2::New(-2.0F, 0.0F);
+        back_offset = sim::Vec2{sim::Scalar::from_int(-2), sim::Scalar::zero()};
         TrySetAnim(*back_item, EntDisplayState::Climbing);
         back_item->draw_layer = DrawLayer::Foreground;
     } else if (holder_hanging) {
-        back_offset = Vec2::New(-7.0F, 4.0F);
+        back_offset = sim::Vec2{sim::Scalar::from_int(-7), sim::Scalar::from_int(4)};
         TrySetAnim(*back_item, EntDisplayState::Hanging);
         back_item->draw_layer = DrawLayer::Foreground;
     } else {
@@ -213,12 +213,12 @@ void SyncBackAttachForHolder(
         TrySetAnim(*back_item, EntDisplayState::Neutral);
     }
 
-    const Vec2 holder_center = holder.GetRenderCenter();
-    const Vec2 held_pos_target =
+    const sim::Vec2 holder_center = holder.GetSimCenter();
+    const sim::Vec2 held_pos_target =
         holder.facing == Side::Left
-            ? holder_center + Vec2::New(-back_offset.x, back_offset.y)
+            ? holder_center + sim::Vec2{-back_offset.x, back_offset.y}
             : holder_center + back_offset;
-    back_item->SetRenderCenter(held_pos_target);
+    back_item->SetSimCenter(held_pos_target);
     SnapPlacedAttachToPixels(*back_item);
     back_item->grounded = false;
     state.UpdateSidForEnt(back_item->vid.id, graphics);
@@ -258,14 +258,12 @@ void ApplyThrowState(
         RemoveEffect(thrown, EffectId::NoGravityUntilContact);
     }
 
-    const Vec2 thrower_center = thrower.GetRenderCenter();
-    const Vec2 thrower_size = thrower.GetSize();
-    const Vec2 thrown_size = thrown.GetSize();
-    if (thrower_size.y <= thrown_size.y) {
-        const float delta = std::abs(thrower_size.y - thrown_size.y) / 2.0F;
-        thrown.SetRenderCenter(thrower_center - Vec2::New(0.0F, delta));
+    const sim::Vec2 thrower_center = thrower.GetSimCenter();
+    if (thrower.size.y <= thrown.size.y) {
+        const sim::Scalar delta = (thrown.size.y - thrower.size.y) / sim::Scalar::from_int(2);
+        thrown.SetSimCenter(thrower_center - sim::Vec2{sim::Scalar::zero(), delta});
     } else {
-        thrown.SetRenderCenter(thrower_center);
+        thrown.SetSimCenter(thrower_center);
     }
 
     if (IsPlayerEnt(thrown, state)) {
