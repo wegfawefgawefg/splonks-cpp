@@ -81,9 +81,15 @@ sim::AABB SimTileAabbForTilePos(const IVec2& tile_pos) {
     );
 }
 
-Vec2 GetFallbackStrikePoint(const Ent& mattock) {
-    const float direction = mattock.facing == Side::Left ? -1.0F : 1.0F;
-    return mattock.GetRenderCenter() + Vec2::New(10.0F * direction, 0.0F);
+IVec2 ToWorldPixelTrunc(sim::Vec2 point) {
+    return IVec2::New(point.x.to_pixels_trunc(), point.y.to_pixels_trunc());
+}
+
+sim::Vec2 GetFallbackStrikePoint(const Ent& mattock) {
+    const sim::Scalar direction =
+        sim::Scalar::from_int(mattock.facing == Side::Left ? -1 : 1);
+    return mattock.GetSimCenter() + sim::Vec2{sim::Scalar::from_int(10) * direction,
+                                              sim::Scalar::zero()};
 }
 
 void SpawnMattockImpactParticles(State& state, const Vec2& pos, int direction) {
@@ -217,14 +223,14 @@ void AddMattockDebugAnnotations(
     });
 
     if (holder == nullptr) {
-        const Vec2 fallback = GetFallbackStrikePoint(mattock);
-        const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToIVec2(fallback));
+        const sim::Vec2 fallback = GetFallbackStrikePoint(mattock);
+        const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToWorldPixelTrunc(fallback));
         state.AddDebugRectAnnotation(DebugRectAnnotation{
             .area = RenderTileAabbForTilePos(fallback_tile),
             .color = DebugAnnotationColor{255, 0, 0, 255},
         });
         state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-            .world_pos = fallback,
+            .world_pos = sim::ToRenderVec2(fallback),
             .text = "fallback (" + std::to_string(fallback_tile.x) + ", " + std::to_string(fallback_tile.y) + ")",
             .color = DebugAnnotationColor{255, 0, 0, 255},
         });
@@ -373,8 +379,8 @@ StrikeOutcome ComputeMattockStrikeOutcome(
     Audio& audio
 ) {
     if (holder == nullptr) {
-        const Vec2 fallback = GetFallbackStrikePoint(mattock);
-        const IVec2 tile_pos = state.stage.GetTileCoordAtWc(ToIVec2(fallback));
+        const sim::Vec2 fallback = GetFallbackStrikePoint(mattock);
+        const IVec2 tile_pos = state.stage.GetTileCoordAtWc(ToWorldPixelTrunc(fallback));
         return TryStrikeTileCoord(tile_pos, state, audio);
     }
 

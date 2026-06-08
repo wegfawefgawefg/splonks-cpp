@@ -175,9 +175,9 @@ void SpawnSkeletonDeathEffects(const Vec2& center, State& state) {
     }
 }
 
-void DropLooseSkull(const Vec2& center, State& state) {
+void DropLooseSkull(sim::Vec2 center, State& state) {
     (void)world_ops::SpawnEnt(state, EntType::Skull, [&](Ent& skull) {
-        skull.SetRenderCenter(center);
+        skull.SetSimCenter(center);
         skull.vel = sim::Vec2{
             RandomSimScalar(state.drng, sim::Scalar::from_int(-1), sim::Scalar::from_int(1)),
             RandomSimScalar(state.drng, sim::ToSimScalar(-1.8F), sim::ToSimScalar(-0.8F)),
@@ -275,7 +275,7 @@ void OnDeathAsSkull(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& skull = state.ents.ents[ent_idx];
-    SpawnSkullBreakEffects(skull.GetRenderCenter(), state);
+    SpawnSkullBreakEffects(sim::ToRenderVec2(skull.GetSimCenter()), state);
 }
 
 void OnDeathAsSkeleton(std::size_t ent_idx, State& state, Audio& audio) {
@@ -285,8 +285,8 @@ void OnDeathAsSkeleton(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& skeleton = state.ents.ents[ent_idx];
-    const Vec2 center = skeleton.GetRenderCenter();
-    SpawnSkeletonDeathEffects(center, state);
+    const sim::Vec2 center = skeleton.GetSimCenter();
+    SpawnSkeletonDeathEffects(sim::ToRenderVec2(center), state);
     DropLooseSkull(center, state);
     (void)world_ops::DeactivateEnt(state, skeleton.vid);
 }

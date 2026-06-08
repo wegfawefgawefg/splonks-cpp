@@ -384,6 +384,13 @@ Current state:
   converted to render only for UI.
 - Completed 2026-06-08: flesh-guy death fallback surface query now uses the
   fixed entity center.
+- Completed 2026-06-08: giant-tiki-head boulder spawn placement and skeleton
+  loose-skull death drop placement now use fixed centers. Tiki-head shake/audio
+  and skeleton death particles convert fixed centers to render positions only at
+  presentation boundaries.
+- Completed 2026-06-08: unheld mattock fallback tile-strike selection now uses
+  a fixed strike point and fixed-to-pixel truncation. Debug labels convert that
+  fixed point to render coordinates only for annotation display.
 
 Cleanup:
 

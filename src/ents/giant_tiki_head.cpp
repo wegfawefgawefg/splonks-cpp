@@ -74,7 +74,7 @@ std::optional<VID> SpawnBoulderForHead(Ent& head, State& state, Audio& audio) {
     (void)audio;
 
     Ent* const boulder = world_ops::SpawnEnt(state, EntType::Boulder, [&](Ent& spawned_boulder) {
-        spawned_boulder.SetRenderCenter(head.GetRenderCenter());
+        spawned_boulder.SetSimCenter(head.GetSimCenter());
 
         const Ent* const player = FindClosestPlayerToHead(head, state);
         if (player != nullptr) {
