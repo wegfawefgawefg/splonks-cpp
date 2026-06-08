@@ -163,6 +163,9 @@ Current state:
   added, and mattock tile breaking now uses the fixed rectangle path.
 - Completed 2026-06-08: boulder leading break-strip queries and tile breaking
   now use fixed body bounds and the fixed stage-break rectangle path.
+- Completed 2026-06-08: shop area accessors now use fixed `sim::AABB`. Shop
+  child escape checks and gold-idol shop overlap use fixed AABBs, while debug
+  overlay converts to render AABB at the rendering boundary.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -195,6 +198,7 @@ Cleanup:
       contact geometry.
 - [x] Migrate trap-block sensor and blocker overlap checks to fixed contact
       geometry.
+- [x] Migrate shop area overlap checks to fixed body geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.

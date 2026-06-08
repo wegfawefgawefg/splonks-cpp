@@ -148,18 +148,14 @@ void AddShopTestVandalismTriggers(State& state, const ShopTestStallSpec& stall, 
     }
 }
 
-AABB MakeShopTestArea(const ShopTestStallSpec& stall) {
+sim::AABB MakeShopTestArea(const ShopTestStallSpec& stall) {
     constexpr int kShopTopY = 4;
     constexpr int kShopBottomY = 10;
-    return AABB::New(
-        Vec2::New(
-            static_cast<float>(stall.left_x * static_cast<int>(kTileSize)),
-            static_cast<float>(kShopTopY * static_cast<int>(kTileSize))
-        ),
-        Vec2::New(
-            static_cast<float>((stall.right_x + 1) * static_cast<int>(kTileSize) - 1),
-            static_cast<float>((kShopBottomY + 1) * static_cast<int>(kTileSize) - 1)
-        )
+    return sim::AABB::from_corners(
+        sim::PixelVec2(stall.left_x * static_cast<int>(kTileSize),
+                       kShopTopY * static_cast<int>(kTileSize)),
+        sim::PixelVec2((stall.right_x + 1) * static_cast<int>(kTileSize) - 1,
+                       (kShopBottomY + 1) * static_cast<int>(kTileSize) - 1)
     );
 }
 
@@ -168,7 +164,7 @@ std::optional<VID> SpawnShopTestShop(
     const ShopTestStallSpec& stall,
     int shopkeeper_tile_x
 ) {
-    const AABB shop_area = MakeShopTestArea(stall);
+    const sim::AABB shop_area = MakeShopTestArea(stall);
     const std::optional<VID> shop_vid =
         SpawnStageEntAtTopLeft(state, EntType::Shop, shop_area.tl);
     if (!shop_vid.has_value()) {
@@ -252,7 +248,7 @@ void SpawnShopTestCrapsTable(
                   10.0F * static_cast<float>(kTileSize) -
                       sim::ToRenderScalar(GetEntSpec(EntType::JetPack).size.y))
     );
-    const AABB shop_area = MakeShopTestArea(stall);
+    const sim::AABB shop_area = MakeShopTestArea(stall);
     const std::optional<VID> table_vid =
         SpawnStageEntAtTopLeft(state, EntType::CrapsTable, shop_area.tl);
     if (!table_vid.has_value()) {
@@ -263,7 +259,7 @@ void SpawnShopTestCrapsTable(
     if (table == nullptr) {
         return;
     }
-    table->size = sim::ToSimVec2(shop_area.br - shop_area.tl + Vec2::New(1.0F, 1.0F));
+    table->size = shop_area.br - shop_area.tl + sim::PixelVec2(1, 1);
     table->ent_a = shop_vid;
     table->ent_b = dice_vid;
     table->ent_c = prize_vid;

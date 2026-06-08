@@ -1404,7 +1404,7 @@ void RenderAreaOverlay(
                 continue;
             }
 
-            const AABB area = ents::shop::GetShopArea(ent);
+            const AABB area = ToRenderAABB(ents::shop::GetShopArea(ent));
             const Vec2 area_size = area.br - area.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect area_rect = WorldRectToScreen(
                 graphics,

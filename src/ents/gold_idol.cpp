@@ -76,7 +76,7 @@ Vec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& s
 }
 
 std::optional<std::size_t> FindIntersectingShopIdx(const Ent& idol, const State& state) {
-    const AABB idol_aabb = idol.GetAABB();
+    const sim::AABB idol_aabb = idol.GetSimAABB();
     for (std::size_t ent_idx = 0; ent_idx < state.ents.ents.size(); ++ent_idx) {
         const Ent& ent = state.ents.ents[ent_idx];
         if (!ent.active || ent.type_ != EntType::Shop) {
