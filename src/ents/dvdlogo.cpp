@@ -11,13 +11,13 @@ namespace splonks::ents::dvdlogo {
 
 namespace {
 
-AABB TranslateAabb(const AABB& aabb, const Vec2& delta) {
-    return AABB::New(aabb.tl + delta, aabb.br + delta);
+sim::AABB TranslateAabb(sim::AABB aabb, sim::Vec2 delta) {
+    return sim::AABB::from_corners(aabb.tl + delta, aabb.br + delta);
 }
 
 bool WouldBlockAt(
     std::size_t ent_idx,
-    const AABB& target_aabb,
+    sim::AABB target_aabb,
     const State& state,
     const Graphics& graphics
 ) {
@@ -35,7 +35,7 @@ void StepBounceAxis(std::size_t ent_idx, State& state, const Graphics& graphics,
     }
 
     Ent& ent = state.ents.ents[ent_idx];
-    const AABB moved_aabb = TranslateAabb(ent.GetAABB(), sim::ToRenderVec2(delta));
+    const sim::AABB moved_aabb = TranslateAabb(ent.GetSimAABB(), delta);
     if (WouldBlockAt(ent_idx, moved_aabb, state, graphics)) {
         if (delta.x != sim::Scalar::zero()) {
             ent.vel.x = -ent.vel.x;

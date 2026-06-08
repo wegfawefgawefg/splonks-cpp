@@ -171,13 +171,15 @@ std::optional<Side> GetWallSlideSide(
         return std::nullopt;
     }
 
-    const AABB aabb = ent.GetAABB();
+    const sim::AABB aabb = ent.GetSimAABB();
     const auto side_blocked = [&](Side side) {
         const bool left = side == Side::Left;
-        const float probe_x = left ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
-        const AABB probe = AABB::New(
-            Vec2::New(probe_x, aabb.tl.y + 1.0F),
-            Vec2::New(probe_x, aabb.br.y - 1.0F)
+        const sim::Scalar probe_x = left
+            ? aabb.tl.x - sim::Scalar::from_int(1)
+            : aabb.br.x + sim::Scalar::from_int(1);
+        const sim::AABB probe = sim::AABB::from_corners(
+            sim::Vec2{probe_x, aabb.tl.y + sim::Scalar::from_int(1)},
+            sim::Vec2{probe_x, aabb.br.y - sim::Scalar::from_int(1)}
         );
         return AabbHitsBlockingWorldGeometryOrImpassableEnts(state, graphics, probe, ent.vid);
     };

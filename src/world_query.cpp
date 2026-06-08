@@ -423,15 +423,6 @@ bool AabbTouchesBlockingStageBounds(const Stage& stage, sim::AABB area) {
     return false;
 }
 
-bool AabbHitsBlockingTiles(const Stage& stage, const AABB& area) {
-    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(stage, area)) {
-        if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool AabbHitsBlockingTiles(const Stage& stage, sim::AABB area) {
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(stage, area)) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
@@ -441,21 +432,8 @@ bool AabbHitsBlockingTiles(const Stage& stage, sim::AABB area) {
     return false;
 }
 
-bool AabbHitsBlockingWorldGeometry(const Stage& stage, const AABB& area) {
-    return AabbTouchesBlockingStageBounds(stage, area) || AabbHitsBlockingTiles(stage, area);
-}
-
 bool AabbHitsBlockingWorldGeometry(const Stage& stage, sim::AABB area) {
     return AabbTouchesBlockingStageBounds(stage, area) || AabbHitsBlockingTiles(stage, area);
-}
-
-bool AabbHitsImpassableEnts(
-    const State& state,
-    const Graphics& graphics,
-    const AABB& area,
-    std::optional<VID> exclude_vid
-) {
-    return AabbHitsImpassableEnts(state, graphics, ToSimQueryAABB(area), exclude_vid);
 }
 
 bool AabbHitsImpassableEnts(
@@ -481,16 +459,6 @@ bool AabbHitsImpassableEnts(
         }
     }
     return false;
-}
-
-bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
-    const State& state,
-    const Graphics& graphics,
-    const AABB& area,
-    std::optional<VID> exclude_vid
-) {
-    return AabbHitsBlockingWorldGeometry(state.stage, area) ||
-           AabbHitsImpassableEnts(state, graphics, area, exclude_vid);
 }
 
 bool AabbHitsBlockingWorldGeometryOrImpassableEnts(

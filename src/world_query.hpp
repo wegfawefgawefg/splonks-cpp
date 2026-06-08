@@ -50,27 +50,13 @@ bool IsOneWayTopTileSupportingAabb(
     sim::AABB area
 );
 bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area);
-bool AabbHitsBlockingTiles(const Stage& stage, const AABB& area);
-bool AabbHitsBlockingWorldGeometry(const Stage& stage, const AABB& area);
 bool AabbTouchesBlockingStageBounds(const Stage& stage, sim::AABB area);
 bool AabbHitsBlockingTiles(const Stage& stage, sim::AABB area);
 bool AabbHitsBlockingWorldGeometry(const Stage& stage, sim::AABB area);
 bool AabbHitsImpassableEnts(
     const State& state,
     const Graphics& graphics,
-    const AABB& area,
-    std::optional<VID> exclude_vid = std::nullopt
-);
-bool AabbHitsImpassableEnts(
-    const State& state,
-    const Graphics& graphics,
     sim::AABB area,
-    std::optional<VID> exclude_vid = std::nullopt
-);
-bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
-    const State& state,
-    const Graphics& graphics,
-    const AABB& area,
     std::optional<VID> exclude_vid = std::nullopt
 );
 bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
