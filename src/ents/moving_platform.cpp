@@ -143,17 +143,17 @@ void StepVerticalPingPong(Ent& platform) {
 }
 
 void StepCircle(Ent& platform) {
-    const Vec2 center = ToVec2(platform.point_a);
-    const int radius = RoundToInt(sim::ToRenderScalar(platform.threshold_a));
+    const sim::Vec2 center = sim::PixelVec2(platform.point_a.x, platform.point_a.y);
+    const int radius = platform.threshold_a.to_pixels_round();
     const int path_idx = PositiveModulo(
         platform.counter_a.trunc_int(),
         static_cast<int>(kCirclePath.size())
     );
     const CircleUnit unit = kCirclePath[static_cast<std::size_t>(path_idx)];
-    const sim::Vec2 desired_pos = sim::ToSimVec2(center + Vec2::New(
-        static_cast<float>(RoundRatio(static_cast<std::int64_t>(unit.x) * radius, kCircleUnitScale)),
-        static_cast<float>(RoundRatio(static_cast<std::int64_t>(unit.y) * radius, kCircleUnitScale))
-    ));
+    const sim::Vec2 desired_pos = center + sim::PixelVec2(
+        RoundRatio(static_cast<std::int64_t>(unit.x) * radius, kCircleUnitScale),
+        RoundRatio(static_cast<std::int64_t>(unit.y) * radius, kCircleUnitScale)
+    );
     platform.vel = desired_pos - platform.pos;
     platform.counter_a += sim::Scalar::from_int(1);
     const sim::Scalar circle_path_size =
