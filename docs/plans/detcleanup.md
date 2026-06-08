@@ -362,6 +362,9 @@ Current state:
 - Completed 2026-06-08: flesh-guy climb tile probes/snapping and common
   climb-centerline snapping now use fixed centers and fixed pixel conversion
   instead of render center access.
+- Completed 2026-06-08: parachute visual attachment now uses the fixed
+  visual-center helper plus a fixed pixel offset instead of render center
+  placement.
 
 Cleanup:
 

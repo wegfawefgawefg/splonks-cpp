@@ -3,6 +3,7 @@
 #include "audio_emitters.hpp"
 #include "ent/spec.hpp"
 #include "aframe_id.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 
@@ -14,7 +15,7 @@ namespace splonks::ents::gear_items {
 namespace {
 
 constexpr float kParachuteMaxFallSpeed = 1.35F;
-constexpr float kParachuteVisualOffsetY = -12.0F;
+constexpr int kParachuteVisualOffsetYPixels = -12;
 constexpr float kCapeMaxFallSpeed = 1.35F;
 
 common::ContactResult OnEntContactAsInventoryPickup(
@@ -95,9 +96,11 @@ void UpdateOpenParachuteVisual(Ent& owner, State& state, const Graphics& graphic
         spawned_visual = true;
     }
 
-    const Vec2 owner_visual_center =
-        common::GetVisualCenterForEnt(owner, graphics, owner.GetRenderCenter());
-    parachute->SetRenderCenter(owner_visual_center + Vec2::New(0.0F, kParachuteVisualOffsetY));
+    const sim::Vec2 owner_visual_center =
+        common::GetVisualCenterForEnt(owner, graphics, owner.GetSimCenter());
+    parachute->SetSimCenter(
+        owner_visual_center + sim::Vec2::from_pixels(0, kParachuteVisualOffsetYPixels)
+    );
     parachute->vel = sim::Vec2::zero();
     parachute->acc = sim::Vec2::zero();
     state.UpdateSidForEnt(parachute->vid.id, graphics);
