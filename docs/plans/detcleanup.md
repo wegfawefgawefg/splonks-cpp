@@ -344,6 +344,10 @@ Current state:
 - Completed 2026-06-08: body-contact knockback direction now uses fixed
   source/target centers and fixed wrapped deltas before producing the existing
   fixed knockback velocity.
+- Completed 2026-06-08: explosion entity footprint checks and knockback
+  direction now use fixed centers/deltas, and the unused float world-delta
+  explosion footprint helper was removed. Tile footprint selection and visual
+  effect placement remain on their existing render/int boundary paths.
 
 Cleanup:
 

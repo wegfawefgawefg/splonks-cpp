@@ -30,15 +30,18 @@ bool IsInSpelunkyExplosionFootprint(const IVec2& tile_delta) {
            (abs_y == 0 && abs_x <= kExplosionCrossRadiusTiles);
 }
 
-bool IsInSpelunkyExplosionFootprint(const Vec2& world_delta) {
-    const float tile_dx = world_delta.x / static_cast<float>(kTileSize);
-    const float tile_dy = world_delta.y / static_cast<float>(kTileSize);
-    const float abs_x = std::abs(tile_dx);
-    const float abs_y = std::abs(tile_dy);
-    if (abs_x <= 1.5F && abs_y <= 1.5F) {
+bool IsInSpelunkyExplosionFootprint(sim::Vec2 world_delta) {
+    const sim::Scalar abs_x = world_delta.x.abs();
+    const sim::Scalar abs_y = world_delta.y.abs();
+    const sim::Scalar diagonal_limit = sim::ToSimScalar(1.5F * static_cast<float>(kTileSize));
+    if (abs_x <= diagonal_limit && abs_y <= diagonal_limit) {
         return true;
     }
-    return (abs_x <= 0.5F && abs_y <= 2.5F) || (abs_y <= 0.5F && abs_x <= 2.5F);
+
+    const sim::Scalar centerline_limit = sim::ToSimScalar(0.5F * static_cast<float>(kTileSize));
+    const sim::Scalar cross_limit = sim::ToSimScalar(2.5F * static_cast<float>(kTileSize));
+    return (abs_x <= centerline_limit && abs_y <= cross_limit) ||
+           (abs_y <= centerline_limit && abs_x <= cross_limit);
 }
 
 std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, const Vec2& center) {
@@ -142,9 +145,11 @@ void DoExplosion(
 
     const VID this_vid = state.ents.GetVid(ent_idx);
     const std::vector<VID> results = QueryEntsInAabb(state, area, this_vid);
+    const sim::Vec2 sim_center = sim::ToSimVec2(center);
+    const sim::Scalar sim_push_magnitude = sim::ToSimScalar(push_magnitude);
     for (const VID& vid : results) {
         if (Ent* const ent = state.ents.GetEntMut(vid)) {
-            const Vec2 delta = GetNearestWorldDelta(state.stage, center, ent->GetRenderCenter());
+            const sim::Vec2 delta = GetNearestWorldDelta(state.stage, sim_center, ent->GetSimCenter());
             const bool can_receive_push =
                 ent->active &&
                 ent->has_physics &&
@@ -163,9 +168,9 @@ void DoExplosion(
                 );
                 continue;
             }
-            Vec2 knockback_dir = NormalizeOrZeroDeterministic(delta);
-            if (knockback_dir == Vec2::New(0.0F, 0.0F)) {
-                knockback_dir = Vec2::New(0.0F, -1.0F);
+            sim::Vec2 knockback_dir = sim::NormalizeOrZero(delta);
+            if (knockback_dir == sim::Vec2::zero()) {
+                knockback_dir = sim::ToSimVec2(0.0F, -1.0F);
             }
             (void)TryHitEnt(
                 vid.id,
@@ -176,7 +181,7 @@ void DoExplosion(
                 HitOptions{
                     .source_vid = this_vid,
                     .knockback = KnockbackSpec{
-                        .velocity = sim::ToSimVec2(knockback_dir * push_magnitude),
+                        .velocity = knockback_dir * sim_push_magnitude,
                         .clear_velocity = true,
                         .clear_acceleration = true,
                         .thrown_by = this_vid,
