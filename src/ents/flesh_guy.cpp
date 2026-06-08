@@ -59,12 +59,28 @@ struct MeatSlimeSurface {
     IVec2 tile_pos = IVec2::New(0, 0);
 };
 
+int FloorDiv(int value, int divisor) {
+    const int quotient = value / divisor;
+    const int remainder = value % divisor;
+    if (remainder != 0 && ((remainder < 0) != (divisor < 0))) {
+        return quotient - 1;
+    }
+    return quotient;
+}
+
 int FloorToTileCoord(float value) {
     return FloorToInt(value / static_cast<float>(kTileSize));
 }
 
 IVec2 WorldPosToUnwrappedTileCoord(const Vec2& world_pos) {
     return IVec2::New(FloorToTileCoord(world_pos.x), FloorToTileCoord(world_pos.y));
+}
+
+IVec2 WorldPosToUnwrappedTileCoord(sim::Vec2 world_pos) {
+    return IVec2::New(
+        FloorDiv(world_pos.x.to_pixels_floor(), static_cast<int>(kTileSize)),
+        FloorDiv(world_pos.y.to_pixels_floor(), static_cast<int>(kTileSize))
+    );
 }
 
 std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurface(
@@ -126,6 +142,13 @@ std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurface(
 std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurfaceAtWorldPos(
     const Stage& stage,
     const Vec2& world_pos
+) {
+    return QueryCollidableTileOrBorderSurface(stage, WorldPosToUnwrappedTileCoord(world_pos));
+}
+
+std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurfaceAtWorldPos(
+    const Stage& stage,
+    sim::Vec2 world_pos
 ) {
     return QueryCollidableTileOrBorderSurface(stage, WorldPosToUnwrappedTileCoord(world_pos));
 }
@@ -198,14 +221,17 @@ std::optional<MeatSlimeSurface> GetGroundSurface(const Ent& ent, const State& st
         return std::nullopt;
     }
 
-    const AABB aabb = ent.GetAABB();
-    const Vec2 center_support_world = Vec2::New(ent.GetCenter().x, aabb.br.y + 1.0F);
+    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::Vec2 center_support_world{
+        ent.GetSimCenter().x,
+        aabb.br.y + sim::Scalar::from_int(1),
+    };
     if (const std::optional<MeatSlimeSurface> center_surface =
             QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_support_world)) {
         return center_surface;
     }
 
-    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent.GetFeet())) {
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent.GetSimFeet())) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
             return MeatSlimeSurface{
                 .kind = MeatSlimeSurfaceKind::Tile,
@@ -283,11 +309,11 @@ void MaybeSpawnTopMeatSlime(Ent& ent, State& state) {
 }
 
 std::optional<MeatSlimeSurface> GetCeilingSurface(const Ent& ent, const State& state) {
-    const AABB aabb = ent.GetAABB();
-    const float probe_y = aabb.tl.y - 1.0F;
-    const AABB probe = AABB::New(
-        Vec2::New(aabb.tl.x + 1.0F, probe_y),
-        Vec2::New(aabb.br.x - 1.0F, probe_y)
+    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::Scalar probe_y = aabb.tl.y - sim::Scalar::from_int(1);
+    const sim::AABB probe = sim::AABB::from_corners(
+        sim::Vec2{aabb.tl.x + sim::Scalar::from_int(1), probe_y},
+        sim::Vec2{aabb.br.x - sim::Scalar::from_int(1), probe_y}
     );
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, probe)) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
@@ -299,7 +325,7 @@ std::optional<MeatSlimeSurface> GetCeilingSurface(const Ent& ent, const State& s
         }
     }
 
-    const Vec2 center_probe = Vec2::New(ent.GetCenter().x, probe_y);
+    const sim::Vec2 center_probe{ent.GetSimCenter().x, probe_y};
     return QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_probe);
 }
 
@@ -320,11 +346,13 @@ void MaybeSpawnBottomMeatSlime(Ent& ent, State& state) {
 }
 
 std::optional<MeatSlimeSurface> GetSideSurface(const Ent& ent, const State& state, Side side) {
-    const AABB aabb = ent.GetAABB();
-    const float probe_x = side == Side::Left ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
-    const AABB probe = AABB::New(
-        Vec2::New(probe_x, aabb.tl.y + 1.0F),
-        Vec2::New(probe_x, aabb.br.y - 1.0F)
+    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::Scalar probe_x = side == Side::Left
+        ? aabb.tl.x - sim::Scalar::from_int(1)
+        : aabb.br.x + sim::Scalar::from_int(1);
+    const sim::AABB probe = sim::AABB::from_corners(
+        sim::Vec2{probe_x, aabb.tl.y + sim::Scalar::from_int(1)},
+        sim::Vec2{probe_x, aabb.br.y - sim::Scalar::from_int(1)}
     );
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, probe)) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
@@ -336,7 +364,7 @@ std::optional<MeatSlimeSurface> GetSideSurface(const Ent& ent, const State& stat
         }
     }
 
-    const Vec2 center_probe = Vec2::New(probe_x, ent.GetCenter().y);
+    const sim::Vec2 center_probe{probe_x, ent.GetSimCenter().y};
     return QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_probe);
 }
 

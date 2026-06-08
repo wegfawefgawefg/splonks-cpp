@@ -16,7 +16,7 @@ namespace {
 
 constexpr std::uint32_t kMeatheadPreviewIntervalFrames = 300;
 constexpr std::int32_t kMeatheadPointsPerHeal = 10;
-constexpr float kMeatheadPickupRange = 16.0F;
+const sim::Scalar kMeatheadPickupRange = sim::Scalar::from_int(16);
 constexpr float kMeatheadPopupSize = 9.0F;
 constexpr int kMeatheadPopupSearchTiles = 2;
 
@@ -101,10 +101,10 @@ void PlayMeatheadHealFeedback(State& state, const Ent& player) {
     (void)PlayWorldSoundEmitter(state, sound_pos, audio_asset_ids::Smooch);
 }
 
-AABB ExpandAabb(const AABB& aabb, float amount) {
-    return AABB::New(
-        aabb.tl - Vec2::New(amount, amount),
-        aabb.br + Vec2::New(amount, amount)
+sim::AABB ExpandAabb(sim::AABB aabb, sim::Scalar amount) {
+    return sim::AABB::from_corners(
+        aabb.tl - sim::Vec2{amount, amount},
+        aabb.br + sim::Vec2{amount, amount}
     );
 }
 
@@ -113,7 +113,7 @@ void AddMeatheadDebugAnnotations(const Ent& player, State& state) {
         return;
     }
 
-    const AABB sensor = ExpandAabb(player.GetAABB(), kMeatheadPickupRange);
+    const AABB sensor = ToRenderAABB(ExpandAabb(player.GetSimAABB(), kMeatheadPickupRange));
     state.AddDebugRectAnnotation(DebugRectAnnotation{
         .area = sensor,
         .color = DebugAnnotationColor{255, 64, 192, 255},
@@ -198,8 +198,8 @@ void OnMeatheadEffectHook(
         return;
     }
 
-    const AABB collect_area = ExpandAabb(owner.GetAABB(), kMeatheadPickupRange);
-    if (!WorldAabbsIntersect(state.stage, collect_area, victim->GetAABB())) {
+    const sim::AABB collect_area = ExpandAabb(owner.GetSimAABB(), kMeatheadPickupRange);
+    if (!WorldAabbsIntersect(state.stage, collect_area, victim->GetSimAABB())) {
         return;
     }
 
