@@ -521,8 +521,32 @@ Cleanup:
 Current state:
 
 - Boundary helpers are necessary.
-- Search results show many conversions inside gameplay folders, not only at
-  render/debug/UI boundaries.
+- Completed 2026-06-08: generic entity counters now store fixed scalars without
+  fixed/render conversion churn.
+- Completed 2026-06-08: chest loot/trap-bomb, giant-spider loot, loose skull,
+  sacrifice-altar reward, craps prize/dice, carry throw, cobra spit, pistol,
+  mattock, machete, bat return, door drop, thwomp return, explosion fallback,
+  body-contact, and stomp gameplay velocities now build fixed vectors directly
+  instead of detouring through render vectors or deterministic float RNG.
+- Remaining conversion hits are mostly explicit authoring/spawn boundaries,
+  raycast adapters, debug/render rectangles, or aim-vector APIs that still
+  produce render `Vec2` directions before simulation consumes them.
+- `stage_spawning.cpp` still exposes render-position spawn overloads that
+  convert into fixed positions. These are authoring/tooling boundaries, but
+  fixed overloads should stay preferred for gameplay callers.
+- `world_query.cpp` raycast APIs still bridge render/int ray inputs into fixed
+  target AABBs. This is the largest remaining conversion cluster and should be
+  handled as a deliberate raycast API cleanup, not incidental call-site churn.
+- Bow/web-cannon/common throw/carry still consume render aim vectors and convert
+  them to fixed velocities. These need a small fixed aim/direction abstraction
+  rather than one-off casts at every weapon.
+- Cobra sight currently converts an animation-derived emit point into a fixed
+  ray origin. That is a real boundary between visual emit-point authoring and
+  gameplay ray logic; clean replacement likely needs fixed emit points or a
+  clear gameplay muzzle/eye-point API.
+- Remaining `ToRenderAABB(...)`/`RenderAABB` uses in mattock, arrow trap,
+  teleporter, trap block, machete, sac altar, meathead, and hang are debug,
+  prompt, or render annotation boundaries unless a later audit proves otherwise.
 
 Cleanup:
 
@@ -532,6 +556,16 @@ Cleanup:
   `sim::Vec2::from_pixels`, and `sim::PixelVec2` for gameplay constants.
 - Keep `ToRender*` near render/debug/audio/UI, not in collision, damage,
   topology, stage mutation, or gameplay query code.
+- [x] Remove deterministic `RandomFloat` from authoritative entity launch
+      velocities.
+- [x] Replace simple gameplay velocity/knockback vector conversions with direct
+      fixed vector construction.
+- [ ] Add fixed aim/direction APIs for bow, web cannon, throw/carry aiming, and
+      similar projectile launch paths.
+- [ ] Convert raycast entry points to fixed/int-friendly APIs, or explicitly
+      quarantine render raycast wrappers as compatibility adapters.
+- [ ] Prefer fixed spawn APIs in gameplay code and keep render spawn overloads
+      limited to authoring/tooling fixtures.
 
 ## Suggested Order
 
