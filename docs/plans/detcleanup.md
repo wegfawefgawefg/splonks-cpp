@@ -365,6 +365,9 @@ Current state:
 - Completed 2026-06-08: parachute visual attachment now uses the fixed
   visual-center helper plus a fixed pixel offset instead of render center
   placement.
+- Completed 2026-06-08: teleporter candidate destination centers and holder
+  probe placement now stay in fixed space; render conversion remains only for
+  debug labels and shake/effect presentation.
 
 Cleanup:
 

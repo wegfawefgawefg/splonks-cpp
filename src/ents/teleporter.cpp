@@ -42,7 +42,7 @@ struct TeleportAim {
 struct TeleportProbeCandidate {
     int distance_tiles = 0;
     IVec2 tile_pos = IVec2::New(0, 0);
-    Vec2 destination_center = Vec2::New(0.0F, 0.0F);
+    sim::Vec2 destination_center = sim::Vec2::zero();
     sim::AABB destination_aabb = sim::AABB::from_corners(sim::Vec2::zero(), sim::Vec2::zero());
     TeleportProbeBlockReason block_reason = TeleportProbeBlockReason::None;
     std::vector<VID> telefrag_vids;
@@ -53,12 +53,10 @@ bool IsDiagonalDirection(const IVec2& direction) {
     return direction.x != 0 && direction.y != 0;
 }
 
-Vec2 TileCenterForTilePos(const IVec2& tile_pos) {
-    return Vec2::New(
-        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) +
-                           static_cast<int>(kTileSize / 2)),
-        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) +
-                           static_cast<int>(kTileSize / 2))
+sim::Vec2 TileCenterForTilePos(const IVec2& tile_pos) {
+    return sim::Vec2::from_pixels(
+        tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2),
+        tile_pos.y * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2)
     );
 }
 
@@ -137,7 +135,7 @@ TeleportAim GetTeleportAim(const Ent& teleporter, const Ent& holder, const State
 Ent BuildTeleporterProbeEnt(
     const Ent& holder,
     const Graphics& graphics,
-    const Vec2& destination_center
+    sim::Vec2 destination_center
 ) {
     Ent probe = holder;
     common::SetVisualCenterForEnt(probe, graphics, destination_center);
@@ -225,11 +223,12 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
     State& state,
     const Graphics& graphics
 ) {
-    const Vec2 holder_visual_center = common::GetVisualCenterForEnt(holder, graphics, holder.GetRenderCenter());
-    const IVec2 holder_tile = state.stage.GetTileCoordAtWc(ToIVec2(holder_visual_center));
+    const sim::Vec2 holder_visual_center =
+        common::GetVisualCenterForEnt(holder, graphics, holder.GetSimCenter());
+    const IVec2 holder_tile = state.stage.GetTileCoordAtWc(sim::ToPixelIVec2Round(holder_visual_center));
     const IVec2 raw_target_tile = holder_tile + IVec2::New(aim.direction.x * distance_tiles, aim.direction.y * distance_tiles);
     const IVec2 target_tile = state.stage.WrapTileCoord(raw_target_tile);
-    const Vec2 destination_center = TileCenterForTilePos(target_tile);
+    const sim::Vec2 destination_center = TileCenterForTilePos(target_tile);
 
     TeleportProbeCandidate candidate{
         .distance_tiles = distance_tiles,
@@ -447,7 +446,7 @@ void ApplyTelefragToCandidate(const TeleportProbeCandidate& candidate, State& st
 void MoveTeleportHolderToDestination(
     Ent& holder,
     std::size_t holder_idx,
-    const Vec2& destination_center,
+    sim::Vec2 destination_center,
     State& state,
     const Graphics& graphics
 ) {
@@ -536,7 +535,7 @@ void AddTeleporterDebugAnnotations(
         }
 
         state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-            .world_pos = candidate.destination_center,
+            .world_pos = sim::ToRenderVec2(candidate.destination_center),
             .text = text,
             .color = color,
         });
@@ -580,11 +579,11 @@ void OnUseAsTeleporter(std::size_t ent_idx, State& state, Graphics& graphics, Au
     const TeleportProbeCandidate* const blocked = FindFirstBlockedTeleportProbeCandidate(candidates);
 
     (void)PlayEntCenterSoundEmitter(state, *holder, audio_asset_ids::Teleport);
-    const Vec2 source_center =
-        ents::common::GetVisualCenterForEnt(*holder, graphics, holder->GetRenderCenter());
+    const sim::Vec2 source_center =
+        ents::common::GetVisualCenterForEnt(*holder, graphics, holder->GetSimCenter());
     AddEntShake(*holder, 0.5F);
     AddEntShake(teleporter, 0.5F);
-    ApplyTeleportAreaShake(state, source_center, 8.0F, 8.0F, 1.0F, 1.5F);
+    ApplyTeleportAreaShake(state, sim::ToRenderVec2(source_center), 8.0F, 8.0F, 1.0F, 1.5F);
     SpawnTelefragSplitEffect(*holder, graphics, aim.direction, state);
     SpawnTelefragSplitEffect(teleporter, graphics, aim.direction, state);
 
@@ -593,7 +592,14 @@ void OnUseAsTeleporter(std::size_t ent_idx, State& state, Graphics& graphics, Au
             MoveTeleportHolderToDestination(*holder, holder_idx, blocked->destination_center, state, graphics);
             AddEntShake(*holder, 0.5F);
             AddEntShake(teleporter, 0.5F);
-            ApplyTeleportAreaShake(state, blocked->destination_center, 8.0F, 8.0F, 1.0F, 1.5F);
+            ApplyTeleportAreaShake(
+                state,
+                sim::ToRenderVec2(blocked->destination_center),
+                8.0F,
+                8.0F,
+                1.0F,
+                1.5F
+            );
             SpawnTelefragMergeEffect(*holder, graphics, aim.direction, state);
             SpawnTelefragMergeEffect(teleporter, graphics, aim.direction, state);
             CrushTeleportHolder(holder_idx, state, audio);
@@ -609,7 +615,14 @@ void OnUseAsTeleporter(std::size_t ent_idx, State& state, Graphics& graphics, Au
     MoveTeleportHolderToDestination(*holder, holder_idx, chosen->destination_center, state, graphics);
     AddEntShake(*holder, 0.5F);
     AddEntShake(teleporter, 0.5F);
-    ApplyTeleportAreaShake(state, chosen->destination_center, 8.0F, 8.0F, 1.0F, 1.5F);
+    ApplyTeleportAreaShake(
+        state,
+        sim::ToRenderVec2(chosen->destination_center),
+        8.0F,
+        8.0F,
+        1.0F,
+        1.5F
+    );
     SpawnTelefragMergeEffect(*holder, graphics, aim.direction, state);
     SpawnTelefragMergeEffect(teleporter, graphics, aim.direction, state);
 }
