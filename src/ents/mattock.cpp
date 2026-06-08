@@ -196,7 +196,7 @@ void AddMattockDebugAnnotations(
     }
 
     state.AddDebugRectAnnotation(DebugRectAnnotation{
-        .area = common::GetContactAabbForEnt(mattock, graphics),
+        .area = common::GetRenderContactAabbForEnt(mattock, graphics),
         .color = DebugAnnotationColor{0, 255, 255, 255},
     });
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
@@ -293,7 +293,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
     const Graphics& graphics,
     Audio& audio
 ) {
-    const AABB strike_aabb = common::GetContactAabbForEnt(mattock, graphics);
+    const AABB strike_aabb = common::GetRenderContactAabbForEnt(mattock, graphics);
     EntStrikeOutcome result{};
 
     for (const VID& other_vid : QueryEntsInAabb(state, strike_aabb, mattock.vid)) {
@@ -305,7 +305,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
         const AABB other_aabb = GetNearestWorldAabb(
             state.stage,
             mattock.GetCenter(),
-            common::GetContactAabbForEnt(*other_ent_const, graphics)
+            common::GetRenderContactAabbForEnt(*other_ent_const, graphics)
         );
         if (!AabbsIntersect(strike_aabb, other_aabb)) {
             continue;

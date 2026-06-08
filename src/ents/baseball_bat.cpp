@@ -136,8 +136,8 @@ bool TryApplyBatContactToEnt(
         return false;
     }
 
-    const AABB bat_aabb = common::GetContactAabbForEnt(bat_ent, graphics);
-    const AABB other_aabb = common::GetContactAabbForEnt(other_ent_const, graphics);
+    const AABB bat_aabb = common::GetRenderContactAabbForEnt(bat_ent, graphics);
+    const AABB other_aabb = common::GetRenderContactAabbForEnt(other_ent_const, graphics);
     if (!AabbsIntersect(bat_aabb, other_aabb)) {
         return false;
     }

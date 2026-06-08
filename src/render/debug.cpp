@@ -734,7 +734,7 @@ void RenderEntCollisionBoxes(
                 pbox_aabb.tl + render_offset,
                 pbox_size
             );
-            const AABB cbox_aabb = ents::common::GetContactAabbForEnt(ent, graphics);
+            const AABB cbox_aabb = ents::common::GetRenderContactAabbForEnt(ent, graphics);
             const Vec2 cbox_size = cbox_aabb.br - cbox_aabb.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect cbox_rect = WorldRectToScreen(
                 graphics,

@@ -43,7 +43,7 @@ void ClearPendingFavor(Ent& machete) {
 }
 
 Vec2 GetVictimEffectPos(const Ent& victim, const Graphics& graphics) {
-    const AABB victim_aabb = common::GetContactAabbForEnt(victim, graphics);
+    const AABB victim_aabb = common::GetRenderContactAabbForEnt(victim, graphics);
     return Vec2::New(
         (victim_aabb.tl.x + victim_aabb.br.x) * 0.5F,
         victim_aabb.br.y - 2.0F
@@ -119,7 +119,7 @@ bool TryDepositFavorWhileGroundedOnSacAltar(
         const AABB altar_aabb = GetNearestWorldAabb(
             state.stage,
             machete.GetCenter(),
-            common::GetContactAabbForEnt(*other_ent, graphics)
+            common::GetRenderContactAabbForEnt(*other_ent, graphics)
         );
         if (!AabbsIntersect(feet, altar_aabb)) {
             continue;
@@ -147,7 +147,7 @@ void TryApplyMacheteStrike(std::size_t ent_idx, State& state, const Graphics& gr
         holder = state.ents.GetEntMut(*machete.held_by_vid);
     }
 
-    const AABB strike_aabb = common::GetContactAabbForEnt(machete, graphics);
+    const AABB strike_aabb = common::GetRenderContactAabbForEnt(machete, graphics);
     for (const VID& other_vid : QueryEntsInAabb(state, strike_aabb, machete.vid)) {
         Ent* const other_ent = state.ents.GetEntMut(other_vid);
         if (other_ent == nullptr) {
@@ -157,7 +157,7 @@ void TryApplyMacheteStrike(std::size_t ent_idx, State& state, const Graphics& gr
         const AABB other_aabb = GetNearestWorldAabb(
             state.stage,
             machete.GetCenter(),
-            common::GetContactAabbForEnt(*other_ent, graphics)
+            common::GetRenderContactAabbForEnt(*other_ent, graphics)
         );
         if (!AabbsIntersect(strike_aabb, other_aabb)) {
             continue;

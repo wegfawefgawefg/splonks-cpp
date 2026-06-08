@@ -105,11 +105,11 @@ bool TryApplyStompContactToEnt(
         return false;
     }
 
-    const AABB stomper_aabb = GetContactAabbForEnt(stomper, graphics);
+    const AABB stomper_aabb = GetRenderContactAabbForEnt(stomper, graphics);
     const AABB stomped_aabb = GetNearestWorldAabb(
         state.stage,
         stomper.GetCenter(),
-        GetContactAabbForEnt(*stomped, graphics)
+        GetRenderContactAabbForEnt(*stomped, graphics)
     );
     const float stomped_head_band_bottom = stomped_aabb.tl.y + kStompHeadHeight;
     if (stomper_aabb.br.y > stomped_head_band_bottom) {

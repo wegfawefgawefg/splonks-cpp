@@ -80,7 +80,7 @@ std::optional<std::size_t> FindOverlappingBasicExitEntIdx(
         return std::nullopt;
     }
 
-    const AABB ent_aabb = common::GetContactAabbForEnt(ent, graphics);
+    const AABB ent_aabb = common::GetRenderContactAabbForEnt(ent, graphics);
     const Vec2 ent_center = GetAabbCenter(ent_aabb);
     const std::vector<VID> results = QueryEntsInAabb(state, ent_aabb, ent.vid);
 
@@ -95,7 +95,7 @@ std::optional<std::size_t> FindOverlappingBasicExitEntIdx(
         const AABB other_aabb = GetNearestWorldAabb(
             state.stage,
             ent_center,
-            common::GetContactAabbForEnt(*other, graphics)
+            common::GetRenderContactAabbForEnt(*other, graphics)
         );
         if (!AabbsIntersect(ent_aabb, other_aabb)) {
             continue;
@@ -150,12 +150,12 @@ void StepEntLogicAsBasicExit(
         }
 
         state.ClaimInteractForEnt(*slot.ent_vid);
-        const AABB player_aabb = common::GetContactAabbForEnt(*player, graphics);
+        const AABB player_aabb = common::GetRenderContactAabbForEnt(*player, graphics);
         const Vec2 player_center = GetAabbCenter(player_aabb);
         const AABB nearest_exit_aabb = GetNearestWorldAabb(
             state.stage,
             player_center,
-            common::GetContactAabbForEnt(exit_ent, graphics)
+            common::GetRenderContactAabbForEnt(exit_ent, graphics)
         );
         const Vec2 prompt_base = GetNearestWorldPoint(
             state.stage,

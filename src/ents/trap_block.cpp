@@ -198,7 +198,7 @@ int GetEntBlockedOpenSensorDistance(
         const AABB blocker_aabb = GetNearestWorldAabb(
             state.stage,
             center,
-            common::GetContactAabbForEnt(*ent, graphics)
+            common::GetRenderContactAabbForEnt(*ent, graphics)
         );
         if (!AabbsIntersect(tile_open_sensor, blocker_aabb)) {
             continue;
@@ -266,7 +266,7 @@ bool SensorTouchesPlayer(Ent& block, const State& state, const Graphics& graphic
         if (!WorldAabbsIntersect(
                 state.stage,
                 sensor,
-                common::GetContactAabbForEnt(*ent, graphics)
+                common::GetRenderContactAabbForEnt(*ent, graphics)
             )) {
             continue;
         }

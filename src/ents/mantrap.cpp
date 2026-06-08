@@ -69,7 +69,7 @@ bool TryEatOverlappingEnt(
     Audio& audio
 ) {
     Ent& mantrap = state.ents.ents[mantrap_idx];
-    const AABB mantrap_aabb = common::GetContactAabbForEnt(mantrap, graphics);
+    const AABB mantrap_aabb = common::GetRenderContactAabbForEnt(mantrap, graphics);
     for (const VID& target_vid : QueryEntsInAabb(state, mantrap_aabb, mantrap.vid)) {
         Ent* const target = state.ents.GetEntMut(target_vid);
         if (target == nullptr || !CanMantrapEatEnt(*target)) {
@@ -78,7 +78,7 @@ bool TryEatOverlappingEnt(
         const AABB target_aabb = GetNearestWorldAabb(
             state.stage,
             mantrap.GetCenter(),
-            common::GetContactAabbForEnt(*target, graphics)
+            common::GetRenderContactAabbForEnt(*target, graphics)
         );
         if (!AabbsIntersect(mantrap_aabb, target_aabb)) {
             continue;

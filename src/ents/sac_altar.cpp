@@ -520,7 +520,7 @@ void SacrificeVictim(
         return;
     }
 
-    const AABB victim_aabb = common::GetContactAabbForEnt(victim, graphics);
+    const AABB victim_aabb = common::GetRenderContactAabbForEnt(victim, graphics);
     const Vec2 victim_effect_pos = Vec2::New(
         (victim_aabb.tl.x + victim_aabb.br.x) * 0.5F,
         victim_aabb.br.y - 2.0F
@@ -672,7 +672,7 @@ void StepEntLogicAsSacAltar(
             continue;
         }
 
-        const AABB victim_aabb = common::GetContactAabbForEnt(*victim, graphics);
+        const AABB victim_aabb = common::GetRenderContactAabbForEnt(*victim, graphics);
         if (victim_aabb.br.y < sacrifice_area.tl.y || victim_aabb.br.y > sacrifice_area.br.y) {
             continue;
         }

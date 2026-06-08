@@ -160,11 +160,13 @@ The expected end state is:
   snapping, push displacement checks, and ground-walker wall/ledge probes now
   use fixed `sim::AABB` paths. World tile geometry and stage-bound checks stay
   in fixed/int space through these paths, and impassable entity checks now have
-  a fixed overload for the same movement/query callers. Remaining caveat:
-  animation `cbox` contact geometry is still authored through `AFrame` /
-  `Graphics` and render-space `AABB`; the clean follow-up is to migrate frame
-  contact geometry to fixed simulation helpers instead of treating this
-  checkpoint as the final contact-box migration.
+  a fixed overload for the same movement/query callers. Entity animation
+  contact geometry now has fixed helpers too: unqualified contact/broadphase
+  helpers return fixed `sim::AABB`, while render-space adapters are explicitly
+  named `GetRenderContactAabbForEnt` / `GetRenderEntBroadphaseAabb`.
+  Remaining caveat: many gameplay contact/interact/damage call sites still
+  explicitly use the render wrappers and should migrate subsystem-by-subsystem
+  to fixed contact geometry.
 - Validation 2026-06-08: after the fixed blocking-contact and pixel-step AABB
   migration, `./scripts/build.sh`,
   `./build/splonks-cpp --check-state-fingerprint-smoke --project-root "$PWD"`,

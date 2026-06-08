@@ -84,6 +84,24 @@ Vec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe) {
            facing_adjusted_draw_offset;
 }
 
+sim::Vec2 GetSimSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe) {
+    const sim::Vec2 draw_offset =
+        sim::Vec2::from_pixels(aframe.draw_offset.x, aframe.draw_offset.y);
+    const sim::Vec2 pbox_offset = sim::Vec2::from_pixels(aframe.pbox.x, aframe.pbox.y);
+
+    if (ent.facing == Side::Left) {
+        return ent.pos - pbox_offset + draw_offset;
+    }
+
+    const int mirrored_pbox_x = aframe.sample_rect.w - aframe.pbox.x - aframe.pbox.w;
+    sim::Vec2 facing_adjusted_draw_offset = draw_offset;
+    if (ent.type_ == EntType::BaseballBat) {
+        facing_adjusted_draw_offset = sim::Vec2{-draw_offset.x, draw_offset.y};
+    }
+    return ent.pos - sim::Vec2::from_pixels(mirrored_pbox_x, aframe.pbox.y) +
+           facing_adjusted_draw_offset;
+}
+
 Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
@@ -147,40 +165,41 @@ Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fa
     return emit_point;
 }
 
-AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
+AABB GetRenderContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
+    return ToRenderAABB(GetContactAabbForEnt(ent, graphics));
+}
+
+sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
-        return ent.GetAABB();
+        return ent.GetSimAABB();
     }
     if (aframe->cbox.w <= 0 || aframe->cbox.h <= 0) {
-        return ent.GetAABB();
+        return ent.GetSimAABB();
     }
 
-    const Vec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
-    float contact_x = static_cast<float>(aframe->cbox.x);
+    const sim::Vec2 sprite_tl = GetSimSpriteTopLeftForEnt(ent, *aframe);
+    int contact_x = aframe->cbox.x;
     if (ent.facing == Side::Right) {
-        contact_x =
-            static_cast<float>(aframe->sample_rect.w - aframe->cbox.x - aframe->cbox.w);
+        contact_x = aframe->sample_rect.w - aframe->cbox.x - aframe->cbox.w;
     }
 
-    const Vec2 contact_tl = sprite_tl + Vec2::New(contact_x, static_cast<float>(aframe->cbox.y));
-    return AABB::New(
+    const sim::Vec2 contact_tl =
+        sprite_tl + sim::Vec2::from_pixels(contact_x, aframe->cbox.y);
+    return sim::AABB::from_corners(
         contact_tl,
-        contact_tl + Vec2::New(
-                         static_cast<float>(aframe->cbox.w),
-                         static_cast<float>(aframe->cbox.h)
-                     ) -
-            Vec2::New(1.0F, 1.0F)
+        contact_tl + sim::Vec2::from_pixels(aframe->cbox.w - 1, aframe->cbox.h - 1)
     );
 }
 
-AABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics) {
-    const AABB pbox = ent.GetAABB();
-    const AABB cbox = GetContactAabbForEnt(ent, graphics);
-    return AABB::New(
-        Vec2::New(std::min(pbox.tl.x, cbox.tl.x), std::min(pbox.tl.y, cbox.tl.y)),
-        Vec2::New(std::max(pbox.br.x, cbox.br.x), std::max(pbox.br.y, cbox.br.y))
-    );
+AABB GetRenderEntBroadphaseAabb(const Ent& ent, const Graphics& graphics) {
+    return ToRenderAABB(GetEntBroadphaseAabb(ent, graphics));
+}
+
+sim::AABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics) {
+    const sim::AABB pbox = ent.GetSimAABB();
+    const sim::AABB cbox = GetContactAabbForEnt(ent, graphics);
+    return sim::AABB::from_corners(gfxp::min(pbox.tl, cbox.tl), gfxp::max(pbox.br, cbox.br));
 }
 
 void StepAnimTimer(std::size_t ent_idx, State& state, const Graphics& graphics, float dt) {

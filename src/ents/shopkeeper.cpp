@@ -150,7 +150,7 @@ bool IsShopkeeperBlockedMovingTowardPistol(
         return false;
     }
 
-    AABB next_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
+    AABB next_aabb = common::GetRenderContactAabbForEnt(shopkeeper, graphics);
     next_aabb.tl.x += static_cast<float>(move_direction);
     next_aabb.br.x += static_cast<float>(move_direction);
     return AabbHitsBlockingWorldGeometryOrImpassableEnts(
@@ -205,11 +205,11 @@ bool TryRecoverDroppedPistol(
         shopkeeper.counter_a = kShopkeeperJumpCooldownFrames;
     }
 
-    const AABB shopkeeper_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
+    const AABB shopkeeper_aabb = common::GetRenderContactAabbForEnt(shopkeeper, graphics);
     const AABB pistol_aabb = GetNearestWorldAabb(
         state.stage,
         shopkeeper.GetCenter(),
-        common::GetContactAabbForEnt(*pistol, graphics)
+        common::GetRenderContactAabbForEnt(*pistol, graphics)
     );
     if (!AabbsIntersect(shopkeeper_aabb, pistol_aabb)) {
         return true;

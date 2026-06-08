@@ -174,12 +174,12 @@ bool IsEntOverlappingChest(
         return false;
     }
     const Ent& chest = state.ents.ents[chest_idx];
-    const AABB interactor_aabb = common::GetContactAabbForEnt(interactor, graphics);
+    const AABB interactor_aabb = common::GetRenderContactAabbForEnt(interactor, graphics);
     const Vec2 interactor_center = (interactor_aabb.tl + interactor_aabb.br) / 2.0F;
     const AABB chest_aabb = GetNearestWorldAabb(
         state.stage,
         interactor_center,
-        common::GetContactAabbForEnt(chest, graphics)
+        common::GetRenderContactAabbForEnt(chest, graphics)
     );
     return AabbsIntersect(
         interactor_aabb,
@@ -219,7 +219,7 @@ bool CanUnlockKeyChestFromHeldKey(
     }
 
     const Ent& chest = state.ents.ents[chest_idx];
-    const AABB chest_aabb = common::GetContactAabbForEnt(chest, graphics);
+    const AABB chest_aabb = common::GetRenderContactAabbForEnt(chest, graphics);
     const std::vector<VID> touched = common::GatherTouchedEntContactsForAabb(
         chest_idx,
         chest_aabb,

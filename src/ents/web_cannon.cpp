@@ -233,7 +233,7 @@ bool AabbOverlapsAnyCobweb(const AABB& target_aabb, VID self_vid, const State& s
         const AABB cobweb_aabb = GetNearestWorldAabb(
             state.stage,
             (target_aabb.tl + target_aabb.br) * 0.5F,
-            common::GetContactAabbForEnt(*other, graphics)
+            common::GetRenderContactAabbForEnt(*other, graphics)
         );
         if (AabbsIntersect(target_aabb, cobweb_aabb)) {
             return true;
@@ -572,11 +572,11 @@ common::ContactResult OnEntContactAsCobweb(
         return common::ContactResult{};
     }
 
-    const AABB cobweb_aabb = common::GetContactAabbForEnt(cobweb, *graphics);
+    const AABB cobweb_aabb = common::GetRenderContactAabbForEnt(cobweb, *graphics);
     const AABB other_aabb = GetNearestWorldAabb(
         state.stage,
         cobweb.GetCenter(),
-        common::GetContactAabbForEnt(other, *graphics)
+        common::GetRenderContactAabbForEnt(other, *graphics)
     );
     if (!AabbsIntersect(cobweb_aabb, other_aabb)) {
         return common::ContactResult{};
@@ -779,7 +779,7 @@ void StepEntLogicAsCobweb(
         : 1.0F;
     cobweb.alpha = sim::ToSimScalar(std::clamp(std::min(health_ratio, lifetime_ratio), 0.0F, 1.0F));
 
-    const AABB cobweb_aabb = common::GetContactAabbForEnt(cobweb, graphics);
+    const AABB cobweb_aabb = common::GetRenderContactAabbForEnt(cobweb, graphics);
     const std::vector<VID> overlapped_vids = QueryEntsInAabb(state, cobweb_aabb, cobweb.vid);
     bool occupied = false;
     for (const VID& other_vid : overlapped_vids) {
@@ -791,7 +791,7 @@ void StepEntLogicAsCobweb(
         const AABB other_aabb = GetNearestWorldAabb(
             state.stage,
             cobweb.GetCenter(),
-            common::GetContactAabbForEnt(*other, graphics)
+            common::GetRenderContactAabbForEnt(*other, graphics)
         );
         if (!AabbsIntersect(cobweb_aabb, other_aabb)) {
             continue;

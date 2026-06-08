@@ -418,7 +418,7 @@ bool AabbHitsImpassableEnts(
         const AABB ent_aabb = GetNearestWorldAabb(
             state.stage,
             anchor,
-            ents::common::GetContactAabbForEnt(*ent, graphics)
+            ents::common::GetRenderContactAabbForEnt(*ent, graphics)
         );
         if (AabbsIntersect(area, ent_aabb)) {
             return true;
@@ -433,7 +433,6 @@ bool AabbHitsImpassableEnts(
     sim::AABB area,
     std::optional<VID> exclude_vid
 ) {
-    (void)graphics;
     const sim::Vec2 anchor = area.center();
     for (const VID& vid : QueryEntsInAabb(state, area, exclude_vid)) {
         const Ent* const ent = state.ents.GetEnt(vid);
@@ -441,7 +440,8 @@ bool AabbHitsImpassableEnts(
             continue;
         }
 
-        const sim::AABB ent_aabb = GetNearestWorldAabb(state.stage, anchor, ent->GetSimAABB());
+        const sim::AABB ent_aabb =
+            GetNearestWorldAabb(state.stage, anchor, ents::common::GetContactAabbForEnt(*ent, graphics));
         if (gfxp::aabbs_intersect(area, ent_aabb)) {
             return true;
         }
@@ -565,7 +565,7 @@ std::vector<RaycastTarget> CollectRaycastTargets(
             .aabb = GetNearestWorldAabb(
                 state.stage,
                 start_pos,
-                ents::common::GetContactAabbForEnt(*ent, graphics)
+                ents::common::GetRenderContactAabbForEnt(*ent, graphics)
             ),
         });
     }

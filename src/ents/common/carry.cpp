@@ -711,7 +711,7 @@ void UpdateCarryAndBackItems(
                     } else {
                     if (!ent.IsHanging() && !ent.IsClimbing() && ent.holding_timer == 0) {
                         ent.holding_timer = kDefaultHoldingTimer;
-                        const AABB aabb = GetContactAabbForEnt(ent, graphics);
+                        const AABB aabb = GetRenderContactAabbForEnt(ent, graphics);
                         trying_to_pick_up_these =
                             QueryEntsInAabb(state, aabb, ent.vid);
                     }

@@ -179,7 +179,7 @@ void MaybeHurtAndStunOnContact(
 ) {
     const Ent& ent = state.ents.ents[ent_idx];
     const VID ent_vid = ent.vid;
-    const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const AABB ent_aabb = GetRenderContactAabbForEnt(ent, graphics);
     const Vec2 ent_pos = ent.GetRenderPos();
     const EntCondition condition = ent.condition;
     const bool hurt_on_contact = ent.hurt_on_contact;
@@ -202,7 +202,7 @@ void MaybeHurtAndStunOnContact(
                 const AABB other_aabb = GetNearestWorldAabb(
                     state.stage,
                     ent.GetCenter(),
-                    GetContactAabbForEnt(*other_ent, graphics)
+                    GetRenderContactAabbForEnt(*other_ent, graphics)
                 );
                 if (!AabbsIntersect(ent_aabb, other_aabb)) {
                     continue;
@@ -282,7 +282,7 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
 
     bool hit_spikes = false;
     {
-        const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+        const AABB ent_aabb = GetRenderContactAabbForEnt(ent, graphics);
         const IAABB iaabb = ent_aabb.AsIAABB();
         const bool override_tile_portion_check =
             gfxp::length_sq(ent.vel) > sim::ToSimScalar(kSpikeOverrideVelocitySq);
@@ -373,11 +373,11 @@ bool TryApplyProjContactToEnt(
         return false;
     }
 
-    const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const AABB ent_aabb = GetRenderContactAabbForEnt(ent, graphics);
     const AABB other_aabb = GetNearestWorldAabb(
         state.stage,
         ent.GetCenter(),
-        GetContactAabbForEnt(other_ent, graphics)
+        GetRenderContactAabbForEnt(other_ent, graphics)
     );
     if (!AabbsIntersect(ent_aabb, other_aabb)) {
         return false;

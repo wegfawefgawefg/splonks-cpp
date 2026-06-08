@@ -173,7 +173,7 @@ void AddCrapsPrompt(Ent& table, State& state, const char* message, std::uint32_t
 bool PlayerOverlapsTable(const Ent& table, const Ent& player, const Graphics& graphics,
                          const Stage& stage) {
     const AABB table_aabb = table.GetAABB();
-    const AABB player_aabb = common::GetContactAabbForEnt(player, graphics);
+    const AABB player_aabb = common::GetRenderContactAabbForEnt(player, graphics);
     return WorldAabbsIntersect(stage, table_aabb, player_aabb);
 }
 

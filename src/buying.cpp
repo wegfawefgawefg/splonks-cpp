@@ -52,7 +52,7 @@ std::vector<OverlappingBuyableEnt> FindOverlappingBuyableEnts(
         return {};
     }
 
-    const AABB buyer_aabb = ents::common::GetContactAabbForEnt(buyer, graphics);
+    const AABB buyer_aabb = ents::common::GetRenderContactAabbForEnt(buyer, graphics);
     const Vec2 buyer_center = GetAabbCenter(buyer_aabb);
     const std::vector<VID> results = QueryEntsInAabb(state, buyer_aabb, buyer.vid);
 
@@ -67,7 +67,7 @@ std::vector<OverlappingBuyableEnt> FindOverlappingBuyableEnts(
         const AABB item_aabb = GetNearestWorldAabb(
             state.stage,
             buyer_center,
-            ents::common::GetContactAabbForEnt(*item, graphics)
+            ents::common::GetRenderContactAabbForEnt(*item, graphics)
         );
         if (!AabbsIntersect(buyer_aabb, item_aabb)) {
             continue;

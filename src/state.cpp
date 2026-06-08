@@ -226,7 +226,7 @@ void State::UpdateSidForEnt(std::size_t ent_id, const Graphics& graphics) {
         return;
     }
 
-    const AABB broadphase_aabb = ents::common::GetEntBroadphaseAabb(ent, graphics);
+    const AABB broadphase_aabb = ents::common::GetRenderEntBroadphaseAabb(ent, graphics);
     sid.Upsert(ent.vid, broadphase_aabb);
 }
 

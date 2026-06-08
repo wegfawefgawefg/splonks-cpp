@@ -216,7 +216,7 @@ bool DoesProbeOverlapEnt(
     const AABB other_aabb = GetNearestWorldAabb(
         state.stage,
         probe_center,
-        common::GetContactAabbForEnt(other, graphics)
+        common::GetRenderContactAabbForEnt(other, graphics)
     );
     return AabbsIntersect(probe_aabb, other_aabb);
 }
@@ -247,7 +247,7 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
     };
 
     const Ent probe = BuildTeleporterProbeEnt(holder, graphics, destination_center);
-    candidate.destination_aabb = common::GetContactAabbForEnt(probe, graphics);
+    candidate.destination_aabb = common::GetRenderContactAabbForEnt(probe, graphics);
 
     if (AabbHitsBlockingWorldGeometryOrImpassableEnts(
             state,

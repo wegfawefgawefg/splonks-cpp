@@ -107,7 +107,7 @@ std::vector<VID> GatherTouchedEntContactsForAabb(
         const AABB other_contact_aabb = GetNearestWorldAabb(
             state.stage,
             anchor,
-            GetContactAabbForEnt(*other_ent, graphics)
+            GetRenderContactAabbForEnt(*other_ent, graphics)
         );
         if (!AabbsIntersect(aabb, other_contact_aabb)) {
             continue;
@@ -236,7 +236,7 @@ bool TryDispatchEntEntOverlapContacts(
 
     const std::vector<VID> touched_vids = GatherTouchedEntContactsForAabb(
         ent_idx,
-        GetContactAabbForEnt(ent, graphics),
+        GetRenderContactAabbForEnt(ent, graphics),
         graphics,
         state
     );

@@ -89,7 +89,7 @@ bool TryApplyPushEntAction(
         return false;
     }
 
-    const AABB pusher_aabb = GetContactAabbForEnt(*pusher, graphics);
+    const AABB pusher_aabb = GetRenderContactAabbForEnt(*pusher, graphics);
     const AABB push_zone{
         .tl = pusher_aabb.tl - Vec2::New(6.0F, 0.0F),
         .br = pusher_aabb.br + Vec2::New(6.0F, 0.0F),
@@ -98,7 +98,7 @@ bool TryApplyPushEntAction(
     const AABB pushed_aabb = GetNearestWorldAabb(
         state.stage,
         pusher_center,
-        GetContactAabbForEnt(*pushed, graphics)
+        GetRenderContactAabbForEnt(*pushed, graphics)
     );
     if (!AabbsIntersect(push_zone, pushed_aabb)) {
         return false;
@@ -123,7 +123,7 @@ void TryPushBlocks(
 ) {
     Ent& ent = state.ents.ents[ent_idx];
     const bool ent_grounded = ent.grounded;
-    const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const AABB ent_aabb = GetRenderContactAabbForEnt(ent, graphics);
     const VID ent_vid = ent.vid;
     const sim::Vec2 ent_vel = ent.vel;
 

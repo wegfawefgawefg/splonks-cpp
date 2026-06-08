@@ -201,7 +201,7 @@ bool SensorTouchesMovingEnt(
         if (!WorldAabbsIntersect(
                 state.stage,
                 sensor_aabb,
-                ents::common::GetContactAabbForEnt(*ent, graphics)
+                ents::common::GetRenderContactAabbForEnt(*ent, graphics)
             )) {
             continue;
         }
