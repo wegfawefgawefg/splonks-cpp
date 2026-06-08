@@ -207,7 +207,7 @@ void AddMattockDebugAnnotations(
     }
 
     state.AddDebugRectAnnotation(DebugRectAnnotation{
-        .area = common::GetRenderContactAabbForEnt(mattock, graphics),
+        .area = ToRenderAABB(common::GetContactAabbForEnt(mattock, graphics)),
         .color = DebugAnnotationColor{0, 255, 255, 255},
     });
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{

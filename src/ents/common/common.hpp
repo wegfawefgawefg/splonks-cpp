@@ -141,9 +141,7 @@ sim::Vec2 GetSimSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
 Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback);
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, const Vec2& center);
 Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback);
-AABB GetRenderContactAabbForEnt(const Ent& ent, const Graphics& graphics);
 sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics);
-AABB GetRenderEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);
 sim::AABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);
 bool CanCollectPickupFromContact(
     std::size_t pickup_idx,

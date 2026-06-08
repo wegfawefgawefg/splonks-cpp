@@ -165,10 +165,6 @@ Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fa
     return emit_point;
 }
 
-AABB GetRenderContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
-    return ToRenderAABB(GetContactAabbForEnt(ent, graphics));
-}
-
 sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
@@ -190,10 +186,6 @@ sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
         contact_tl,
         contact_tl + sim::Vec2::from_pixels(aframe->cbox.w - 1, aframe->cbox.h - 1)
     );
-}
-
-AABB GetRenderEntBroadphaseAabb(const Ent& ent, const Graphics& graphics) {
-    return ToRenderAABB(GetEntBroadphaseAabb(ent, graphics));
 }
 
 sim::AABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics) {

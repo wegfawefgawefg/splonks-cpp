@@ -48,12 +48,10 @@ Cleanup target:
 
 - Keep `GetContactAabbForEnt(...) -> sim::AABB`.
 - Keep `ent.GetSimAABB() -> sim::AABB`.
-- Migrate gameplay callers off `GetRenderContactAabbForEnt(...)`.
-- Move or limit `GetRenderContactAabbForEnt(...)` to render/debug adapter code
-  only.
+- Remove gameplay/common access to old render contact wrappers.
 - Keep `GetEntBroadphaseAabb(...) -> sim::AABB`.
-- Limit `GetRenderEntBroadphaseAabb(...)` to render/debug or temporary adapter
-  callers. The spatial index should consume fixed `GetEntBroadphaseAabb(...)`.
+- Remove old render broadphase wrappers. The spatial index should consume fixed
+  `GetEntBroadphaseAabb(...)`.
 - Eventually old float `AABB` should not appear in authoritative gameplay
   files.
 
@@ -99,7 +97,8 @@ Cleanup:
 Current state:
 
 - `GetContactAabbForEnt(...)` now returns `sim::AABB`, which is correct.
-- `GetRenderContactAabbForEnt(...)` exists as a transitional adapter.
+- The old `GetRenderContactAabbForEnt(...)` and
+  `GetRenderEntBroadphaseAabb(...)` wrappers have been removed.
 - Completed 2026-06-08: buying overlap/prompt selection now uses fixed contact
   AABBs, fixed entity queries, fixed world wrapping, and render conversion only
   for final prompt placement.
@@ -203,8 +202,8 @@ Current state:
 - Completed 2026-06-08: entity shake queries now use fixed query AABBs, fixed
   entity centers, and fixed zero-radius containment instead of generic render
   `GetAABB()` geometry.
-- Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
-  rendering, the helper declaration/definition, and a mattock debug annotation.
+- Remaining contact AABB render conversions are explicit `ToRenderAABB(...)`
+  calls at render/debug presentation boundaries.
 
 Cleanup:
 
@@ -257,7 +256,9 @@ Cleanup:
       body geometry.
 - [x] Migrate entity shake broadphase and containment checks to fixed geometry.
 - Migrate these systems one at a time to fixed contact geometry.
-- Keep render wrappers only in render/debug and temporary float adapter
+- [x] Remove common-layer render contact/broadphase wrappers after gameplay
+      callers moved to fixed geometry.
+- Keep render conversions only in render/debug and temporary float adapter
   boundaries.
 - Prefer fixed overloads in `world_query` rather than calling `ToRenderAABB`
   for query broadphase unless the underlying spatial index still requires it.
@@ -309,6 +310,10 @@ Current state:
 - Completed 2026-06-08: gameplay callers of old render `Ent::GetBounds()`
   moved to fixed body AABBs. The remaining render-style helper was renamed to
   `Ent::GetRenderBounds()`.
+- Completed 2026-06-08: common-layer render contact/broadphase wrappers
+  `GetRenderContactAabbForEnt(...)` and `GetRenderEntBroadphaseAabb(...)` were
+  removed. Render/debug callers now convert fixed contact AABBs explicitly at
+  their boundary.
 
 Cleanup:
 
