@@ -376,6 +376,9 @@ Current state:
 - Completed 2026-06-08: current-entity climb-anchor probe scoring now uses
   fixed entity and tile centers. Candidate-position climb-anchor scoring still
   accepts render positions and needs a separate API cleanup.
+- Completed 2026-06-08: barrier emitter support probes, beam segment spawn,
+  and beam segment sync now use fixed centers; emitter death shake converts to
+  render at the presentation boundary.
 
 Cleanup:
 

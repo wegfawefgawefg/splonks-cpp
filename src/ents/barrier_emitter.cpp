@@ -5,6 +5,7 @@
 #include "ents/common/common.hpp"
 #include "aframe_animator.hpp"
 #include "aframe_id.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
@@ -17,13 +18,14 @@ namespace splonks::ents::barrier_emitter {
 namespace {
 
 constexpr int kBeamSegmentCount = 3;
-constexpr float kBeamSegmentSize = 16.0F;
+constexpr int kBeamSegmentSizePixels = 16;
 constexpr std::uint32_t kBeamContactDamage = 1;
 
 bool HasSolidSupportAbove(const Ent& emitter, const State& state) {
-    const Vec2 probe = emitter.GetRenderCenter() + Vec2::New(0.0F, -kBeamSegmentSize);
+    const sim::Vec2 probe =
+        emitter.GetSimCenter() + sim::Vec2::from_pixels(0, -kBeamSegmentSizePixels);
     const std::optional<WorldTileQueryResult> tile_query =
-        QueryTileAtWorldPos(state.stage, ToIVec2(probe));
+        QueryTileAtWorldPos(state.stage, probe);
     return tile_query.has_value() && tile_query->tile != nullptr &&
            IsTileCollidable(*tile_query->tile);
 }
@@ -35,9 +37,9 @@ std::vector<VID>& EnsureChildBeamVids(Ent& emitter) {
     return *emitter.child_vids;
 }
 
-Ent* SpawnBeamSegment(State& state, const Vec2& center, const Ent& emitter) {
+Ent* SpawnBeamSegment(State& state, sim::Vec2 center, const Ent& emitter) {
     return world_ops::SpawnEnt(state, EntType::Beam, [&](Ent& beam) {
-        beam.SetRenderCenter(center);
+        beam.SetSimCenter(center);
         beam.ent_a = emitter.vid;
         beam.facing = emitter.facing;
         beam.alpha = emitter.alpha;
@@ -61,8 +63,12 @@ void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
     beam_vids.resize(kBeamSegmentCount);
 
     for (std::size_t segment_idx = 0; segment_idx < static_cast<std::size_t>(kBeamSegmentCount); ++segment_idx) {
-        const Vec2 segment_center =
-            emitter.GetRenderCenter() + Vec2::New(0.0F, kBeamSegmentSize * static_cast<float>(segment_idx + 1));
+        const sim::Vec2 segment_center =
+            emitter.GetSimCenter() +
+            sim::Vec2::from_pixels(
+                0,
+                kBeamSegmentSizePixels * static_cast<int>(segment_idx + 1)
+            );
         Ent* beam = state.ents.GetEntMut(beam_vids[segment_idx]);
         if (beam == nullptr || !beam->active || beam->type_ != EntType::Beam ||
             beam->ent_a != emitter.vid) {
@@ -74,7 +80,7 @@ void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
             beam_vids[segment_idx] = beam->vid;
         }
 
-        beam->SetRenderCenter(segment_center);
+        beam->SetSimCenter(segment_center);
         beam->facing = emitter.facing;
         beam->alpha = emitter.alpha;
     }
@@ -143,7 +149,7 @@ void OnDeathAsBarrierEmitter(std::size_t ent_idx, State& state, Audio& audio) {
     DestroyBeamChildren(emitter, state);
     AddShake(
         state,
-        emitter.GetRenderCenter(),
+        sim::ToRenderVec2(emitter.GetSimCenter()),
         1.4F,
         2.0F,
         ShakeMask::ForegroundTiles | ShakeMask::BackgroundTiles | ShakeMask::Ents
