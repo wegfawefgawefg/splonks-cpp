@@ -56,8 +56,7 @@ The expected end state is:
   explicit threshold quantization.
 - Current authoritative float-backed inventory:
   `Ent::pos`, `vel`, `acc`, `size`, and `counter_a` through `counter_d`;
-  stage fluid amount, velocity, gravity vectors, and temporary gravity;
-  synchronized gameplay settings for fluids.
+  stage fluid amount, velocity, gravity vectors, and temporary gravity.
 - Current lockstep hash behavior: entity position, velocity, acceleration,
   size, and counters are quantized through `sim::Scalar` / Fixed12 before
   hashing; entity rotation is stored and hashed as raw Fixed12, and
