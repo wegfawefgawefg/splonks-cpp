@@ -403,6 +403,11 @@ Current state:
 - Completed 2026-06-08: pistol muzzle fallback and hitscan origin now use
   fixed emit positions. Pistol sound, muzzle light, and smoke convert the fixed
   muzzle position to render coordinates at presentation boundaries.
+- Completed 2026-06-08: baseball-bat mounted placement no longer depends on
+  `Graphics::debug_baseball_bat_hold_offset` or render centers. Bat placement,
+  emit-point tracking, and persisted trail anchor pixels are derived from fixed
+  centers; ribbon trail rendering converts fixed emit points to render
+  coordinates only for presentation.
 
 Cleanup:
 

@@ -22,6 +22,7 @@ namespace {
 constexpr std::uint32_t kBatTrailLifetimeFrames = 6;
 constexpr float kBatTrailMinDistance = 2.0F;
 constexpr float kBatTrailMinDistanceSq = kBatTrailMinDistance * kBatTrailMinDistance;
+const sim::Vec2 kBatHoldOffset = sim::PixelVec2(5, -10);
 
 void SpawnBatTrailSegment(State& state, const Vec2& from, const Vec2& to) {
     const Vec2 wrapped_to = GetNearestWorldPoint(state.stage, from, to);
@@ -37,6 +38,10 @@ void SpawnBatTrailSegment(State& state, const Vec2& from, const Vec2& to) {
     ribbon.points[0] = from;
     ribbon.points[1] = wrapped_to;
     state.particles.Add(std::move(ribbon));
+}
+
+IVec2 ToWorldPixelTrunc(sim::Vec2 point) {
+    return IVec2::New(point.x.to_pixels_trunc(), point.y.to_pixels_trunc());
 }
 
 SwingStage GetSwingStage(const Ent& baseball_bat) {
@@ -259,32 +264,36 @@ void StepBaseballBat(
         return;
     }
 
-    Vec2 swinger_center = Vec2::New(0.0F, 0.0F);
+    sim::Vec2 swinger_center = sim::Vec2::zero();
     Side swinger_facing = Side::Left;
     if (held_by_vid.has_value()) {
         if (const Ent* const held_by = state.ents.GetEnt(*held_by_vid)) {
-            swinger_center = held_by->GetRenderCenter();
+            swinger_center = held_by->GetSimCenter();
             swinger_facing = held_by->facing;
         }
     }
 
     baseball_bat.facing = swinger_facing;
-    const Vec2 mounted_center = swinger_facing == Side::Left
-                                    ? swinger_center +
-                                          Vec2::New(
-                                              -graphics.debug_baseball_bat_hold_offset.x,
-                                              graphics.debug_baseball_bat_hold_offset.y
-                                          )
-                                    : swinger_center + graphics.debug_baseball_bat_hold_offset;
-    baseball_bat.SetRenderCenter(mounted_center);
+    const sim::Vec2 mounted_center = swinger_facing == Side::Left
+                                         ? swinger_center +
+                                               sim::Vec2{-kBatHoldOffset.x, kBatHoldOffset.y}
+                                         : swinger_center + kBatHoldOffset;
+    baseball_bat.SetSimCenter(mounted_center);
 
-    const Vec2 bat_emit_point = common::GetEmitPointForEnt(baseball_bat, graphics, baseball_bat.GetRenderCenter());
+    const sim::Vec2 bat_emit_point =
+        common::GetEmitPointForEnt(baseball_bat, graphics, baseball_bat.GetSimCenter());
+    const Vec2 render_bat_emit_point = sim::ToRenderVec2(bat_emit_point);
     if (baseball_bat.point_label_a != PointLabel::Target) {
         baseball_bat.point_label_a = PointLabel::Target;
-        baseball_bat.point_a = ToIVec2(bat_emit_point);
+        baseball_bat.point_a = ToWorldPixelTrunc(bat_emit_point);
     } else {
-        SpawnBatTrailSegment(state, ToVec2(baseball_bat.point_a), bat_emit_point);
-        baseball_bat.point_a = ToIVec2(GetNearestWorldPoint(state.stage, ToVec2(baseball_bat.point_a), bat_emit_point));
+        SpawnBatTrailSegment(state, ToVec2(baseball_bat.point_a), render_bat_emit_point);
+        const sim::Vec2 nearest_emit_point = GetNearestWorldPoint(
+            state.stage,
+            sim::PixelVec2(baseball_bat.point_a.x, baseball_bat.point_a.y),
+            bat_emit_point
+        );
+        baseball_bat.point_a = ToWorldPixelTrunc(nearest_emit_point);
     }
 
     state.UpdateSidForEnt(ent_idx, graphics);
