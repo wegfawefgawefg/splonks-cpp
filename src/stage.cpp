@@ -53,6 +53,17 @@ std::vector<std::vector<float>> MakeEmptyFluidFloatGrid(
     return grid;
 }
 
+std::vector<std::vector<std::uint8_t>> MakeEmptyFluidByteGrid(
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    std::vector<std::vector<std::uint8_t>> grid;
+    grid.reserve(tiles.size());
+    for (const std::vector<Tile>& row : tiles) {
+        grid.push_back(std::vector<std::uint8_t>(row.size(), 0));
+    }
+    return grid;
+}
+
 std::vector<std::vector<Tile>> MakeEmptyFluidTileGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
@@ -163,6 +174,23 @@ void SyncFluidFloatGridToTiles(
     for (std::size_t y = 0; y < tiles.size(); ++y) {
         if (grid[y].size() != tiles[y].size()) {
             grid = MakeEmptyFluidFloatGrid(tiles);
+            return;
+        }
+    }
+}
+
+void SyncFluidByteGridToTiles(
+    std::vector<std::vector<std::uint8_t>>& grid,
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    if (grid.size() != tiles.size()) {
+        grid = MakeEmptyFluidByteGrid(tiles);
+        return;
+    }
+
+    for (std::size_t y = 0; y < tiles.size(); ++y) {
+        if (grid[y].size() != tiles[y].size()) {
+            grid = MakeEmptyFluidByteGrid(tiles);
             return;
         }
     }
@@ -290,7 +318,7 @@ void Stage::SyncTileInstanceMetadataGrid() {
     SyncFluidDisplayAmountGridToTiles(fluid_display_amount, tiles);
     SyncFluidVelocityGridToTiles(fluid_velocity, tiles);
     SyncFluidVec2GridToTiles(fluid_gravity, tiles);
-    SyncFluidFloatGridToTiles(fluid_gravity_strength, tiles);
+    SyncFluidByteGridToTiles(fluid_gravity_strength, tiles);
     SyncFluidVec2GridToTiles(fluid_temp_gravity, tiles);
 }
 
@@ -311,7 +339,7 @@ void Stage::SetFluidGravityOverride(const IVec2& pos, Vec2 gravity_value) {
     fluid_gravity[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
         gravity_value;
     fluid_gravity_strength[static_cast<std::size_t>(tile_pos.y)]
-                          [static_cast<std::size_t>(tile_pos.x)] = 1.0F;
+                          [static_cast<std::size_t>(tile_pos.x)] = 1;
 }
 
 void Stage::ClearFluidGravityOverride(const IVec2& pos) {
@@ -323,7 +351,7 @@ void Stage::ClearFluidGravityOverride(const IVec2& pos) {
     fluid_gravity[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
         Vec2::New(0.0F, 0.0F);
     fluid_gravity_strength[static_cast<std::size_t>(tile_pos.y)]
-                          [static_cast<std::size_t>(tile_pos.x)] = 0.0F;
+                          [static_cast<std::size_t>(tile_pos.x)] = 0;
 }
 
 void Stage::AddFluidTempGravity(const IVec2& pos, Vec2 gravity_value) {

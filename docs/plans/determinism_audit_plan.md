@@ -56,7 +56,7 @@ The expected end state is:
   explicit threshold quantization.
 - Current authoritative float-backed inventory:
   `Ent::pos`, `vel`, `acc`, `size`, and `counter_a` through `counter_d`;
-  stage fluid amount, velocity, gravity, gravity strength, and temporary gravity;
+  stage fluid amount, velocity, gravity vectors, and temporary gravity;
   synchronized gameplay settings for fluids, water movement, player tuning,
   and effect modifier values.
 - Current lockstep hash behavior: entity position, velocity, acceleration,
@@ -320,6 +320,12 @@ The expected end state is:
   authoritative fluid simulation still uses `fluid_amount`, `fluid_velocity`,
   gravity overrides, and gameplay fluid settings, which remain deferred for the
   broader fluid determinism pass. Recording format version is now 111.
+- Fixed in fluid gravity override activation state:
+  `Stage::fluid_gravity_strength` was actually a binary override-active flag,
+  only written as `1.0F` / `0.0F` and read as `> 0`. It is now stored as an
+  explicit `uint8_t` grid and recorded as bytes. The override gravity vectors
+  and temporary gravity vectors remain float-backed fluid simulation state for
+  the broader fluid pass. Recording format version is now 112.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes. `AddPod` now rejects

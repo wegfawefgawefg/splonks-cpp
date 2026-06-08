@@ -192,9 +192,9 @@ void ExpandStageForWrap(
             Vec2::New(0.0F, 0.0F)
         )
     );
-    std::vector<std::vector<float>> fluid_gravity_strength(
+    std::vector<std::vector<std::uint8_t>> fluid_gravity_strength(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<float>(static_cast<std::size_t>(new_tile_dims.x), 0.0F)
+        std::vector<std::uint8_t>(static_cast<std::size_t>(new_tile_dims.x), 0)
     );
     std::vector<std::vector<Vec2>> fluid_temp_gravity(
         static_cast<std::size_t>(new_tile_dims.y),
@@ -328,9 +328,9 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
         static_cast<std::size_t>(core_size.y),
         std::vector<Vec2>(static_cast<std::size_t>(core_size.x), Vec2::New(0.0F, 0.0F))
     );
-    std::vector<std::vector<float>> fluid_gravity_strength(
+    std::vector<std::vector<std::uint8_t>> fluid_gravity_strength(
         static_cast<std::size_t>(core_size.y),
-        std::vector<float>(static_cast<std::size_t>(core_size.x), 0.0F)
+        std::vector<std::uint8_t>(static_cast<std::size_t>(core_size.x), 0)
     );
     std::vector<std::vector<Vec2>> fluid_temp_gravity(
         static_cast<std::size_t>(core_size.y),

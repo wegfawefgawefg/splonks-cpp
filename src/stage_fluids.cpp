@@ -127,7 +127,7 @@ void AddFluidTransferProposalsForCell(
     const std::vector<std::vector<float>>& amounts,
     const std::vector<std::vector<Vec2>>& velocities,
     const std::vector<std::vector<Vec2>>& gravity_overrides,
-    const std::vector<std::vector<float>>& gravity_strengths,
+    const std::vector<std::vector<std::uint8_t>>& gravity_strengths,
     const std::vector<std::vector<Vec2>>& temp_gravity,
     const IVec2& source,
     float transfer_cap,
@@ -159,9 +159,9 @@ void AddFluidTransferProposalsForCell(
         IVec2::New(1, 1),
     };
 
-    const float gravity_strength =
+    const bool gravity_override_active =
         gravity_strengths[static_cast<std::size_t>(source.y)][static_cast<std::size_t>(source.x)];
-    const Vec2 effective_gravity = ((gravity_strength > 0.0F)
+    const Vec2 effective_gravity = (gravity_override_active
         ? GetVec2FromGrid(gravity_overrides, source)
         : gravity) + GetVec2FromGrid(temp_gravity, source);
     const Vec2 source_velocity = ClampLength(
@@ -309,7 +309,7 @@ void StepStageFluids(State& state) {
     const std::vector<std::vector<float>>& source_amounts = stage.fluid_amount;
     const std::vector<std::vector<Vec2>>& source_velocities = stage.fluid_velocity;
     const std::vector<std::vector<Vec2>>& source_gravity_overrides = stage.fluid_gravity;
-    const std::vector<std::vector<float>>& source_gravity_strengths =
+    const std::vector<std::vector<std::uint8_t>>& source_gravity_strengths =
         stage.fluid_gravity_strength;
     const std::vector<std::vector<Vec2>>& source_temp_gravity = stage.fluid_temp_gravity;
 

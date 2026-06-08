@@ -1335,7 +1335,7 @@ void RenderFluidGravityOverlay(
             }
 
             const bool has_local_gravity =
-                state.stage.fluid_gravity_strength[grid_y][grid_x] > 0.0F;
+                state.stage.fluid_gravity_strength[grid_y][grid_x] != 0;
             const Vec2 temp_gravity = state.stage.fluid_temp_gravity[grid_y][grid_x];
             const bool has_temp_gravity = Length(temp_gravity) > 0.01F;
             const Vec2 base_gravity = has_local_gravity

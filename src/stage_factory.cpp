@@ -100,6 +100,17 @@ std::vector<std::vector<float>> MakeEmptyFluidAmountGrid(
     return fluid_amount;
 }
 
+std::vector<std::vector<std::uint8_t>> MakeEmptyFluidByteGrid(
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    std::vector<std::vector<std::uint8_t>> grid;
+    grid.reserve(tiles.size());
+    for (const std::vector<Tile>& row : tiles) {
+        grid.push_back(std::vector<std::uint8_t>(row.size(), 0));
+    }
+    return grid;
+}
+
 std::vector<std::vector<sim::Scalar>> MakeEmptyFluidDisplayAmountGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
@@ -135,7 +146,7 @@ Stage Stage::NewBlank() {
     stage.fluid_display_amount = MakeEmptyFluidDisplayAmountGrid(stage.tiles);
     stage.fluid_velocity = MakeEmptyFluidVelocityGrid(stage.tiles);
     stage.fluid_gravity = MakeEmptyFluidVec2Grid(stage.tiles);
-    stage.fluid_gravity_strength = MakeEmptyFluidFloatGrid(stage.tiles);
+    stage.fluid_gravity_strength = MakeEmptyFluidByteGrid(stage.tiles);
     stage.fluid_temp_gravity = MakeEmptyFluidVec2Grid(stage.tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
@@ -277,7 +288,7 @@ Stage Stage::New(StageType stage_type, DetRng& det_rng) {
     stage.fluid_display_amount = MakeEmptyFluidDisplayAmountGrid(stage.tiles);
     stage.fluid_velocity = MakeEmptyFluidVelocityGrid(stage.tiles);
     stage.fluid_gravity = MakeEmptyFluidVec2Grid(stage.tiles);
-    stage.fluid_gravity_strength = MakeEmptyFluidFloatGrid(stage.tiles);
+    stage.fluid_gravity_strength = MakeEmptyFluidByteGrid(stage.tiles);
     stage.fluid_temp_gravity = MakeEmptyFluidVec2Grid(stage.tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
