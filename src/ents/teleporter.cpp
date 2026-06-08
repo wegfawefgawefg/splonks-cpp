@@ -43,7 +43,7 @@ struct TeleportProbeCandidate {
     int distance_tiles = 0;
     IVec2 tile_pos = IVec2::New(0, 0);
     Vec2 destination_center = Vec2::New(0.0F, 0.0F);
-    AABB destination_aabb = AABB::New(Vec2::New(0.0F, 0.0F), Vec2::New(0.0F, 0.0F));
+    sim::AABB destination_aabb = sim::AABB::from_corners(sim::Vec2::zero(), sim::Vec2::zero());
     TeleportProbeBlockReason block_reason = TeleportProbeBlockReason::None;
     std::vector<VID> telefrag_vids;
     std::vector<VID> splat_vids;
@@ -207,18 +207,17 @@ bool CanSplatDeadEnt(const Ent& ent) {
 }
 
 bool DoesProbeOverlapEnt(
-    const AABB& probe_aabb,
-    const Vec2& probe_center,
+    sim::AABB probe_aabb,
     const Ent& other,
     const State& state,
     const Graphics& graphics
 ) {
-    const AABB other_aabb = GetNearestWorldAabb(
+    const sim::AABB other_aabb = GetNearestWorldAabb(
         state.stage,
-        probe_center,
-        common::GetRenderContactAabbForEnt(other, graphics)
+        probe_aabb.center(),
+        common::GetContactAabbForEnt(other, graphics)
     );
-    return AabbsIntersect(probe_aabb, other_aabb);
+    return gfxp::aabbs_intersect(probe_aabb, other_aabb);
 }
 
 TeleportProbeCandidate EvaluateTeleportProbeCandidate(
@@ -240,14 +239,14 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
         .distance_tiles = distance_tiles,
         .tile_pos = target_tile,
         .destination_center = destination_center,
-        .destination_aabb = AABB::New(Vec2::New(0.0F, 0.0F), Vec2::New(0.0F, 0.0F)),
+        .destination_aabb = sim::AABB::from_corners(sim::Vec2::zero(), sim::Vec2::zero()),
         .block_reason = TeleportProbeBlockReason::None,
         .telefrag_vids = {},
         .splat_vids = {},
     };
 
     const Ent probe = BuildTeleporterProbeEnt(holder, graphics, destination_center);
-    candidate.destination_aabb = common::GetRenderContactAabbForEnt(probe, graphics);
+    candidate.destination_aabb = common::GetContactAabbForEnt(probe, graphics);
 
     if (AabbHitsBlockingWorldGeometryOrImpassableEnts(
             state,
@@ -265,7 +264,7 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
         }
 
         const Ent* const other = state.ents.GetEnt(other_vid);
-        if (other == nullptr || !DoesProbeOverlapEnt(candidate.destination_aabb, destination_center, *other, state, graphics)) {
+        if (other == nullptr || !DoesProbeOverlapEnt(candidate.destination_aabb, *other, state, graphics)) {
             continue;
         }
         if (CanSplatDeadEnt(*other)) {
@@ -520,7 +519,7 @@ void AddTeleporterDebugAnnotations(
         }
 
         state.AddDebugRectAnnotation(DebugRectAnnotation{
-            .area = candidate.destination_aabb,
+            .area = ToRenderAABB(candidate.destination_aabb),
             .color = color,
         });
 
