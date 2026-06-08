@@ -294,7 +294,7 @@ sim::AABB Ent::GetSimGroundProbe() const {
     return feet;
 }
 
-std::tuple<Vec2, Vec2> Ent::GetBounds() const {
+std::tuple<Vec2, Vec2> Ent::GetRenderBounds() const {
     const sim::AABB bounds = GetSimAABB();
     return {sim::ToRenderVec2(bounds.tl), sim::ToRenderVec2(bounds.br)};
 }
@@ -378,7 +378,7 @@ HangHands Ent::GetHangHands() const {
 }
 
 HangHandBounds Ent::GetHangHandsBounds() const {
-    const auto [tl, _br] = GetBounds();
+    const auto [tl, _br] = GetRenderBounds();
     const Vec2 right_edge = tl + Vec2::New(GetSize().x, 0.0F);
     HangHandBounds hang_hands;
     hang_hands.left_tl = tl - kHangHandSize;

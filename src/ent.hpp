@@ -195,7 +195,7 @@ struct Ent {
     void SetSimCenter(sim::Vec2 center);
     sim::AABB GetSimFeet() const;
     sim::AABB GetSimGroundProbe() const;
-    std::tuple<Vec2, Vec2> GetBounds() const;
+    std::tuple<Vec2, Vec2> GetRenderBounds() const;
     AABB GetRenderAABB() const;
     Vec2 GetCenter() const;
     void SetCenter(const Vec2& center);

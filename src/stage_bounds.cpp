@@ -72,6 +72,10 @@ float Stage::GetVoidDeathY() const {
     return static_cast<float>(border.void_death_y.value_or(0));
 }
 
+sim::Scalar Stage::GetSimVoidDeathY() const {
+    return sim::Scalar::from_pixels(border.void_death_y.value_or(0));
+}
+
 const StageBorderSide& Stage::GetBorderSide(StageBorderSideKind side) const {
     switch (side) {
     case StageBorderSideKind::Left:
@@ -199,16 +203,15 @@ IVec2 Stage::WrapWorldPos(const IVec2& wc) const {
 
 void Stage::NormalizeEntPositionForWrap(Ent& ent) const {
     if (WrapsX()) {
-        const float stage_width = static_cast<float>(GetWidth());
-        const sim::Scalar stage_width_fixed = sim::ToSimScalar(stage_width);
+        const sim::Scalar stage_width = sim::Scalar::from_pixels(static_cast<int>(GetWidth()));
         while (true) {
-            const auto [tl, br] = ent.GetBounds();
-            if (br.x < 0.0F) {
-                ent.pos.x += stage_width_fixed;
+            const sim::AABB aabb = ent.GetSimAABB();
+            if (aabb.br.x < sim::Scalar::zero()) {
+                ent.pos.x += stage_width;
                 continue;
             }
-            if (tl.x >= stage_width) {
-                ent.pos.x -= stage_width_fixed;
+            if (aabb.tl.x >= stage_width) {
+                ent.pos.x -= stage_width;
                 continue;
             }
             break;
@@ -216,16 +219,15 @@ void Stage::NormalizeEntPositionForWrap(Ent& ent) const {
     }
 
     if (WrapsY()) {
-        const float stage_height = static_cast<float>(GetHeight());
-        const sim::Scalar stage_height_fixed = sim::ToSimScalar(stage_height);
+        const sim::Scalar stage_height = sim::Scalar::from_pixels(static_cast<int>(GetHeight()));
         while (true) {
-            const auto [tl, br] = ent.GetBounds();
-            if (br.y < 0.0F) {
-                ent.pos.y += stage_height_fixed;
+            const sim::AABB aabb = ent.GetSimAABB();
+            if (aabb.br.y < sim::Scalar::zero()) {
+                ent.pos.y += stage_height;
                 continue;
             }
-            if (tl.y >= stage_height) {
-                ent.pos.y -= stage_height_fixed;
+            if (aabb.tl.y >= stage_height) {
+                ent.pos.y -= stage_height;
                 continue;
             }
             break;

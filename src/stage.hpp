@@ -280,6 +280,7 @@ struct Stage {
     bool WrapsY() const;
     bool HasVoidDeathY() const;
     float GetVoidDeathY() const;
+    sim::Scalar GetSimVoidDeathY() const;
     const StageBorderSide& GetBorderSide(StageBorderSideKind side) const;
     Tile GetBorderTile(StageBorderSideKind side) const;
     bool IsBorderSideBlocking(StageBorderSideKind side) const;

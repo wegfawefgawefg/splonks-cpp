@@ -172,13 +172,13 @@ StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& aud
 }
 
 MattockTileTargets GetMattockTileTargets(const Ent& holder, const Stage& stage) {
-    const auto [holder_tl, holder_br] = holder.GetBounds();
+    const sim::AABB holder_aabb = holder.GetSimAABB();
     const int front_world_x = holder.facing == Side::Left
-                                  ? FloorToInt(holder_tl.x) - 1 -
+                                  ? holder_aabb.tl.x.to_pixels_floor() - 1 -
                                         kMattockForwardProbeBiasPixels
-                                  : FloorToInt(holder_br.x) + 1 +
+                                  : holder_aabb.br.x.to_pixels_floor() + 1 +
                                         kMattockForwardProbeBiasPixels;
-    const int strike_world_y = FloorToInt(holder_br.y) -
+    const int strike_world_y = holder_aabb.br.y.to_pixels_floor() -
                                kMattockVerticalProbeOffsetPixels;
     const Vec2 primary_probe_world = Vec2::New(
         static_cast<float>(front_world_x),
