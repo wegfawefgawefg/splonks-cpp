@@ -75,13 +75,13 @@ std::vector<std::vector<Tile>> MakeEmptyFluidTileGrid(
     return fluid_tiles;
 }
 
-std::vector<std::vector<float>> MakeEmptyFluidAmountGrid(
+std::vector<std::vector<sim::Scalar>> MakeEmptyFluidAmountGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<float>> fluid_amount;
+    std::vector<std::vector<sim::Scalar>> fluid_amount;
     fluid_amount.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        fluid_amount.push_back(std::vector<float>(row.size(), 0.0F));
+        fluid_amount.push_back(std::vector<sim::Scalar>(row.size(), sim::Scalar::zero()));
     }
     return fluid_amount;
 }
@@ -231,7 +231,7 @@ void SyncFluidTileGridToTiles(
 }
 
 void SyncFluidAmountGridToTiles(
-    std::vector<std::vector<float>>& grid,
+    std::vector<std::vector<sim::Scalar>>& grid,
     const std::vector<std::vector<Tile>>& tiles
 ) {
     if (grid.size() != tiles.size()) {
@@ -403,7 +403,7 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
         fluid_tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
             Tile::Air;
         fluid_amount[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
-            0.0F;
+            sim::Scalar::zero();
         fluid_display_amount[static_cast<std::size_t>(tile_pos.y)]
                             [static_cast<std::size_t>(tile_pos.x)] = sim::Scalar::zero();
     }
@@ -420,10 +420,10 @@ void Stage::SetFluidTile(const IVec2& pos, Tile tile) {
     }
     Tile& stored = fluid_tiles[static_cast<std::size_t>(tile_pos.y)]
                               [static_cast<std::size_t>(tile_pos.x)];
-    float& amount = fluid_amount[static_cast<std::size_t>(tile_pos.y)]
-                                [static_cast<std::size_t>(tile_pos.x)];
-    constexpr float max_fluid_amount = 1.0F;
-    const float new_amount = GetTileSpec(tile).simulated_fluid ? max_fluid_amount : 0.0F;
+    sim::Scalar& amount = fluid_amount[static_cast<std::size_t>(tile_pos.y)]
+                                      [static_cast<std::size_t>(tile_pos.x)];
+    const sim::Scalar new_amount =
+        GetTileSpec(tile).simulated_fluid ? sim::Scalar::from_int(1) : sim::Scalar::zero();
     if (stored == tile && amount == new_amount) {
         return;
     }
@@ -431,7 +431,7 @@ void Stage::SetFluidTile(const IVec2& pos, Tile tile) {
     amount = new_amount;
     fluid_display_amount[static_cast<std::size_t>(tile_pos.y)]
                         [static_cast<std::size_t>(tile_pos.x)] =
-                            sim::ToSimScalar(new_amount);
+                            new_amount;
     fluid_velocity[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
         Vec2::New(0.0F, 0.0F);
     tile_change_generation += 1;

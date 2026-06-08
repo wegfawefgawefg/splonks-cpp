@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 115;
+constexpr std::uint32_t kRecordingVersion = 116;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -2656,7 +2656,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteGridExplicit(out, stage.tiles, WriteTile);
     WriteGridExplicit(out, stage.tile_rotations, WriteTileRotation);
     WriteGridExplicit(out, stage.fluid_tiles, WriteTile);
-    WriteGridExplicit(out, stage.fluid_amount, WriteFloat);
+    WriteGridExplicit(out, stage.fluid_amount, WriteSimScalar);
     WriteGridExplicit(out, stage.fluid_display_amount, WriteSimScalar);
     WriteGridExplicit(out, stage.fluid_velocity, WriteVec2);
     WriteGridExplicit(out, stage.fluid_gravity, WriteVec2);
@@ -2729,7 +2729,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
     if (!ReadGridExplicit(in, stage.tiles, ReadTile) ||
         !ReadGridExplicit(in, stage.tile_rotations, ReadTileRotation) ||
         !ReadGridExplicit(in, stage.fluid_tiles, ReadTile) ||
-        !ReadGridExplicit(in, stage.fluid_amount, ReadFloat) ||
+        !ReadGridExplicit(in, stage.fluid_amount, ReadSimScalar) ||
         !ReadGridExplicit(in, stage.fluid_display_amount, ReadSimScalar) ||
         !ReadGridExplicit(in, stage.fluid_velocity, ReadVec2) ||
         !ReadGridExplicit(in, stage.fluid_gravity, ReadVec2) ||

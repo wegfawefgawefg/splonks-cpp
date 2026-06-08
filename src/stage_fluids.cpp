@@ -86,8 +86,22 @@ Tile GetTileFromGrid(const std::vector<std::vector<Tile>>& tiles, const IVec2& t
     return tiles[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)];
 }
 
-float GetAmountFromGrid(const std::vector<std::vector<float>>& amounts, const IVec2& tile_coord) {
-    return amounts[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)];
+float GetAmountFromGrid(
+    const std::vector<std::vector<sim::Scalar>>& amounts,
+    const IVec2& tile_coord
+) {
+    return sim::ToRenderScalar(
+        amounts[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)]
+    );
+}
+
+void SetAmountInGrid(
+    std::vector<std::vector<sim::Scalar>>& amounts,
+    const IVec2& tile_coord,
+    float amount
+) {
+    amounts[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)] =
+        sim::ToSimScalar(amount);
 }
 
 Vec2 GetVelocityFromGrid(const std::vector<std::vector<Vec2>>& velocities, const IVec2& tile_coord) {
@@ -108,7 +122,7 @@ void PushChangedTile(std::vector<IVec2>& changed_tiles, const IVec2& tile_coord)
 
 float GetTargetCapacity(
     const std::vector<std::vector<Tile>>& fluid_tiles,
-    const std::vector<std::vector<float>>& amounts,
+    const std::vector<std::vector<sim::Scalar>>& amounts,
     const IVec2& target,
     Tile fluid_tile
 ) {
@@ -124,7 +138,7 @@ void AddFluidTransferProposalsForCell(
     const Stage& stage,
     const std::vector<std::vector<Tile>>& terrain_tiles,
     const std::vector<std::vector<Tile>>& fluid_tiles,
-    const std::vector<std::vector<float>>& amounts,
+    const std::vector<std::vector<sim::Scalar>>& amounts,
     const std::vector<std::vector<Vec2>>& velocities,
     const std::vector<std::vector<Vec2>>& gravity_overrides,
     const std::vector<std::vector<std::uint8_t>>& gravity_strengths,
@@ -261,7 +275,7 @@ std::vector<IVec2> NormalizeAuthoredFluidTiles(Stage& stage) {
                 fluid_tile = terrain_tile;
             }
             stage.fluid_amount[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
-                kMaxFluidAmount;
+                sim::Scalar::from_int(1);
             stage.fluid_display_amount[static_cast<std::size_t>(y)]
                                       [static_cast<std::size_t>(x)] = sim::Scalar::from_int(1);
             stage.fluid_velocity[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
@@ -306,7 +320,7 @@ void StepStageFluids(State& state) {
     stage.SyncTileInstanceMetadataGrid();
     const std::vector<std::vector<Tile>>& terrain_tiles = stage.tiles;
     const std::vector<std::vector<Tile>>& source_fluid_tiles = stage.fluid_tiles;
-    const std::vector<std::vector<float>>& source_amounts = stage.fluid_amount;
+    const std::vector<std::vector<sim::Scalar>>& source_amounts = stage.fluid_amount;
     const std::vector<std::vector<Vec2>>& source_velocities = stage.fluid_velocity;
     const std::vector<std::vector<Vec2>>& source_gravity_overrides = stage.fluid_gravity;
     const std::vector<std::vector<std::uint8_t>>& source_gravity_strengths =
@@ -363,7 +377,7 @@ void StepStageFluids(State& state) {
     }
 
     std::vector<std::vector<Tile>> next_fluid_tiles = source_fluid_tiles;
-    std::vector<std::vector<float>> next_amounts = source_amounts;
+    std::vector<std::vector<sim::Scalar>> next_amounts = source_amounts;
     std::vector<std::vector<Vec2>> next_velocities = source_velocities;
     std::vector<std::vector<Vec2>> next_temp_gravity = source_temp_gravity;
     std::vector<std::vector<Vec2>> incoming_velocity(
@@ -379,7 +393,7 @@ void StepStageFluids(State& state) {
             next_temp_gravity[y][x] =
                 next_temp_gravity[y][x] *
                 std::clamp(sim::ToRenderScalar(fluid.temp_gravity_decay), 0.0F, 1.0F);
-            if (source_amounts[y][x] <= kMinFluidAmount) {
+            if (sim::ToRenderScalar(source_amounts[y][x]) <= kMinFluidAmount) {
                 next_velocities[y][x] = Vec2::New(0.0F, 0.0F);
                 continue;
             }
@@ -405,15 +419,24 @@ void StepStageFluids(State& state) {
         const float target_scale = incoming > capacity && incoming > 0.0F
             ? capacity / incoming
             : 1.0F;
-        const float amount = std::min(proposal.amount * target_scale, GetAmountFromGrid(next_amounts, proposal.source));
+        const float amount = std::min(
+            proposal.amount * target_scale,
+            GetAmountFromGrid(next_amounts, proposal.source)
+        );
         if (amount <= 0.0F) {
             continue;
         }
 
-        next_amounts[static_cast<std::size_t>(proposal.source.y)]
-                    [static_cast<std::size_t>(proposal.source.x)] -= amount;
-        next_amounts[static_cast<std::size_t>(proposal.target.y)]
-                    [static_cast<std::size_t>(proposal.target.x)] += amount;
+        SetAmountInGrid(
+            next_amounts,
+            proposal.source,
+            GetAmountFromGrid(next_amounts, proposal.source) - amount
+        );
+        SetAmountInGrid(
+            next_amounts,
+            proposal.target,
+            GetAmountFromGrid(next_amounts, proposal.target) + amount
+        );
         next_fluid_tiles[static_cast<std::size_t>(proposal.target.y)]
                         [static_cast<std::size_t>(proposal.target.x)] = proposal.fluid_tile;
         incoming_velocity[static_cast<std::size_t>(proposal.target.y)]
@@ -425,7 +448,7 @@ void StepStageFluids(State& state) {
     for (int y = 0; y < static_cast<int>(stage.GetTileHeight()); ++y) {
         for (int x = 0; x < static_cast<int>(stage.GetTileWidth()); ++x) {
             const IVec2 tile_coord = IVec2::New(x, y);
-            float& next_amount = next_amounts[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+            float next_amount = GetAmountFromGrid(next_amounts, tile_coord);
             Tile& next_tile = next_fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
             Vec2& next_velocity = next_velocities[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
             next_amount = std::clamp(next_amount, 0.0F, kMaxFluidAmount);
@@ -440,13 +463,16 @@ void StepStageFluids(State& state) {
                 next_tile = Tile::Air;
                 next_velocity = Vec2::New(0.0F, 0.0F);
             }
+            SetAmountInGrid(next_amounts, tile_coord, next_amount);
 
             const bool changed =
                 next_tile !=
                     source_fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] ||
                 std::abs(
                     next_amount -
-                    source_amounts[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)]
+                    sim::ToRenderScalar(
+                        source_amounts[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)]
+                    )
                 ) > kMinFluidAmount;
             if (changed) {
                 PushChangedTile(changed_tiles, tile_coord);

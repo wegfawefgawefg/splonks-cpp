@@ -56,7 +56,7 @@ The expected end state is:
   explicit threshold quantization.
 - Current authoritative float-backed inventory:
   `Ent::pos`, `vel`, `acc`, `size`, and `counter_a` through `counter_d`;
-  stage fluid amount, velocity, gravity vectors, and temporary gravity.
+  stage fluid velocity, gravity vectors, and temporary gravity.
 - Current lockstep hash behavior: entity position, velocity, acceleration,
   size, and counters are quantized through `sim::Scalar` / Fixed12 before
   hashing; entity rotation is stored and hashed as raw Fixed12, and
@@ -290,6 +290,11 @@ The expected end state is:
   values. The current fluid simulation and render paths still operate on floats,
   so settings convert back at those existing boundaries until the broader stage
   fluid-grid migration. Recording format version is now 115.
+- Fixed in authoritative fluid amount state: `Stage::fluid_amount` is now a
+  Fixed12 grid, hashed as raw fixed values, and recorded as raw fixed values.
+  The current fluid solver still converts to float for transfer calculations
+  and quantizes back at each amount write until the broader fluid velocity /
+  gravity vector migration. Recording format version is now 116.
 - Fixed in stale entity scalar state: unused `Ent::attack_weight` and
   `Ent::weight` were removed instead of converted. A current code/data scan
   found no gameplay readers and no authored data writers; the fields were only

@@ -170,9 +170,9 @@ void ExpandStageForWrap(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<Tile>(static_cast<std::size_t>(new_tile_dims.x), Tile::Air)
     );
-    std::vector<std::vector<float>> fluid_amount(
+    std::vector<std::vector<sim::Scalar>> fluid_amount(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<float>(static_cast<std::size_t>(new_tile_dims.x), 0.0F)
+        std::vector<sim::Scalar>(static_cast<std::size_t>(new_tile_dims.x), sim::Scalar::zero())
     );
     std::vector<std::vector<sim::Scalar>> fluid_display_amount(
         static_cast<std::size_t>(new_tile_dims.y),
@@ -312,9 +312,9 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
         static_cast<std::size_t>(core_size.y),
         std::vector<Tile>(static_cast<std::size_t>(core_size.x), Tile::Air)
     );
-    std::vector<std::vector<float>> fluid_amount(
+    std::vector<std::vector<sim::Scalar>> fluid_amount(
         static_cast<std::size_t>(core_size.y),
-        std::vector<float>(static_cast<std::size_t>(core_size.x), 0.0F)
+        std::vector<sim::Scalar>(static_cast<std::size_t>(core_size.x), sim::Scalar::zero())
     );
     std::vector<std::vector<sim::Scalar>> fluid_display_amount(
         static_cast<std::size_t>(core_size.y),

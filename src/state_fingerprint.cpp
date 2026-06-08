@@ -183,10 +183,10 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
                 }
                 return stage.tile_rotations[row_y][col_x];
             };
-            const auto read_float_grid = [](const std::vector<std::vector<float>>& grid,
-                                            std::size_t y_, std::size_t x_) {
+            const auto read_sim_scalar_grid = [](const std::vector<std::vector<sim::Scalar>>& grid,
+                                                 std::size_t y_, std::size_t x_) {
                 if (y_ >= grid.size() || x_ >= grid[y_].size()) {
-                    return 0.0F;
+                    return sim::Scalar::zero();
                 }
                 return grid[y_][x_];
             };
@@ -196,7 +196,7 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
             writer.AddPod(
                 static_cast<std::uint16_t>(read_tile_grid(stage.backwall_tiles, Tile::Air)));
             writer.AddPod(static_cast<std::uint16_t>(read_tile_grid(stage.fluid_tiles, Tile::Air)));
-            writer.AddQuantizedFloat(read_float_grid(stage.fluid_amount, row_y, col_x));
+            writer.AddFixedScalar(read_sim_scalar_grid(stage.fluid_amount, row_y, col_x));
 
             EmbeddedTreasure embedded{};
             if (row_y < stage.embedded_treasures.size() &&

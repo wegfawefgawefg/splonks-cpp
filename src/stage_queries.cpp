@@ -108,11 +108,11 @@ float Stage::GetFluidAmount(std::uint32_t x, std::uint32_t y) const {
     if (y >= fluid_amount.size()) {
         return 0.0F;
     }
-    const std::vector<float>& row = fluid_amount[static_cast<std::size_t>(y)];
+    const std::vector<sim::Scalar>& row = fluid_amount[static_cast<std::size_t>(y)];
     if (x >= row.size()) {
         return 0.0F;
     }
-    return row[static_cast<std::size_t>(x)];
+    return sim::ToRenderScalar(row[static_cast<std::size_t>(x)]);
 }
 
 float Stage::GetTileShake(std::uint32_t x, std::uint32_t y) const {

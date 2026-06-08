@@ -1179,9 +1179,9 @@ std::string HandleFingerprintCommand(const State& state) {
     const std::vector<NetworkEntFingerprint> ent_hashes =
         ComputeNetworkEntFingerprints(state);
     double fluid_sum = 0.0;
-    for (const std::vector<float>& row : state.stage.fluid_amount) {
-        for (const float amount : row) {
-            fluid_sum += amount;
+    for (const std::vector<sim::Scalar>& row : state.stage.fluid_amount) {
+        for (const sim::Scalar amount : row) {
+            fluid_sum += static_cast<double>(sim::ToRenderScalar(amount));
         }
     }
     std::ostringstream out;
