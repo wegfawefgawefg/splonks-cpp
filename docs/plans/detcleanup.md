@@ -382,12 +382,19 @@ Current state:
 - Completed 2026-06-08: unused non-raycast float `AABB` overloads were removed
   from nearest-world AABB, world AABB contains/intersect, tile AABB query,
   entity AABB query, and one-way-support query APIs.
+- Completed 2026-06-08: horizontal world raycasts gained a fixed `sim::Vec2`
+  start-position overload with fixed ray broadphase collection. Caveman, cobra,
+  and shopkeeper sight checks now use fixed centers/deltas and the fixed
+  horizontal raycast path. The old render overload remains as an adapter for
+  hitscan and remaining presentation/migration callers.
 
 Cleanup:
 
 - Make fixed/int query APIs the canonical gameplay path.
 - [x] Remove unused non-raycast float AABB overloads after callers migrated to
       fixed AABB APIs.
+- [x] Add fixed horizontal raycast path and migrate AI sight checks that affect
+      gameplay state.
 - Move remaining old float overloads behind render/debug names or remove them
   as callers migrate.
 - Audit raycast APIs separately. If raycasts affect gameplay, convert their

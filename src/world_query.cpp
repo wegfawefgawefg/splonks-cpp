@@ -125,6 +125,13 @@ bool PointInAabb(const IVec2& point, sim::AABB aabb) {
            sim_point.y <= aabb.br.y;
 }
 
+sim::AABB ToSimRayAABB(const RenderAABB& aabb) {
+    return sim::AABB::from_corners(
+        sim::ToSimVec2(aabb.tl, gfxp::Rounding::Floor),
+        sim::ToSimVec2(aabb.br, gfxp::Rounding::Ceil)
+    );
+}
+
 } // namespace
 
 Vec2 GetNearestWorldDelta(const Stage& stage, const Vec2& from, const Vec2& to) {
@@ -418,18 +425,13 @@ struct RaycastTarget {
 
 std::vector<RaycastTarget> CollectRaycastTargets(
     const Ent& source_ent,
-    const Vec2& start_pos,
-    const RenderAABB& ray_aabb,
+    sim::Vec2 start_pos,
+    sim::AABB ray_aabb,
     const State& state,
     const Graphics& graphics,
     std::optional<VID> owner_vid
 ) {
-    const sim::AABB sim_ray_aabb = sim::AABB::from_corners(
-        sim::ToSimVec2(ray_aabb.tl, gfxp::Rounding::Floor),
-        sim::ToSimVec2(ray_aabb.br, gfxp::Rounding::Ceil)
-    );
-    const std::vector<VID> hits = QueryEntsInAabb(state, sim_ray_aabb, source_ent.vid);
-    const sim::Vec2 sim_start_pos = sim::ToSimVec2(start_pos);
+    const std::vector<VID> hits = QueryEntsInAabb(state, ray_aabb, source_ent.vid);
 
     std::vector<RaycastTarget> targets;
     targets.reserve(hits.size());
@@ -454,7 +456,7 @@ std::vector<RaycastTarget> CollectRaycastTargets(
             .vid = vid,
             .aabb = GetNearestWorldAabb(
                 state.stage,
-                sim_start_pos,
+                start_pos,
                 ents::common::GetContactAabbForEnt(*ent, graphics)
             ),
         });
@@ -594,7 +596,7 @@ WorldRayHit RaycastTiles(
 
 WorldRayHit RaycastHorizontal(
     const Ent& source_ent,
-    const Vec2& start_pos,
+    sim::Vec2 start_pos,
     int direction,
     int max_distance,
     const State& state,
@@ -606,12 +608,12 @@ WorldRayHit RaycastHorizontal(
     }
 
     const int step_dir = direction < 0 ? -1 : 1;
-    const int start_x = ToIVec2(start_pos).x;
-    const int ray_y = ToIVec2(start_pos).y;
+    const int start_x = start_pos.x.trunc_int();
+    const int ray_y = start_pos.y.trunc_int();
     const int end_x = start_x + (step_dir * max_distance);
-    const RenderAABB ray_aabb = RenderAABB::New(
-        Vec2::New(static_cast<float>(std::min(start_x, end_x)), static_cast<float>(ray_y)),
-        Vec2::New(static_cast<float>(std::max(start_x, end_x)), static_cast<float>(ray_y))
+    const sim::AABB ray_aabb = sim::AABB::from_corners(
+        sim::PixelVec2(std::min(start_x, end_x), ray_y),
+        sim::PixelVec2(std::max(start_x, end_x), ray_y)
     );
     const std::vector<RaycastTarget> targets =
         CollectRaycastTargets(source_ent, start_pos, ray_aabb, state, graphics, owner_vid);
@@ -625,6 +627,26 @@ WorldRayHit RaycastHorizontal(
     }
 
     return WorldRayHit{};
+}
+
+WorldRayHit RaycastHorizontal(
+    const Ent& source_ent,
+    const Vec2& start_pos,
+    int direction,
+    int max_distance,
+    const State& state,
+    const Graphics& graphics,
+    std::optional<VID> owner_vid
+) {
+    return RaycastHorizontal(
+        source_ent,
+        sim::ToSimVec2(start_pos),
+        direction,
+        max_distance,
+        state,
+        graphics,
+        owner_vid
+    );
 }
 
 WorldRayHit RaycastVertical(
@@ -648,8 +670,14 @@ WorldRayHit RaycastVertical(
         Vec2::New(static_cast<float>(ray_x), static_cast<float>(std::min(start_y, end_y))),
         Vec2::New(static_cast<float>(ray_x), static_cast<float>(std::max(start_y, end_y)))
     );
-    const std::vector<RaycastTarget> targets =
-        CollectRaycastTargets(source_ent, start_pos, ray_aabb, state, graphics, owner_vid);
+    const std::vector<RaycastTarget> targets = CollectRaycastTargets(
+        source_ent,
+        sim::ToSimVec2(start_pos),
+        ToSimRayAABB(ray_aabb),
+        state,
+        graphics,
+        owner_vid
+    );
 
     for (int step = 0; step < max_distance; ++step) {
         const IVec2 point = IVec2::New(ray_x, start_y + (step_dir * step));
@@ -681,8 +709,14 @@ WorldRayHit RaycastEnts(
         Vec2::New(std::min(start_pos.x, end_pos.x), std::min(start_pos.y, end_pos.y)),
         Vec2::New(std::max(start_pos.x, end_pos.x), std::max(start_pos.y, end_pos.y))
     );
-    const std::vector<RaycastTarget> targets =
-        CollectRaycastTargets(source_ent, start_pos, ray_aabb, state, graphics, owner_vid);
+    const std::vector<RaycastTarget> targets = CollectRaycastTargets(
+        source_ent,
+        sim::ToSimVec2(start_pos),
+        ToSimRayAABB(ray_aabb),
+        state,
+        graphics,
+        owner_vid
+    );
 
     for (int step = 0; step < max_distance; ++step) {
         const IVec2 point = ToIVec2(start_pos + (step_dir * static_cast<float>(step)));
@@ -736,8 +770,14 @@ WorldRayHit RaycastWorld(
         Vec2::New(std::min(start_pos.x, end_pos.x), std::min(start_pos.y, end_pos.y)),
         Vec2::New(std::max(start_pos.x, end_pos.x), std::max(start_pos.y, end_pos.y))
     );
-    const std::vector<RaycastTarget> targets =
-        CollectRaycastTargets(source_ent, start_pos, ray_aabb, state, graphics, owner_vid);
+    const std::vector<RaycastTarget> targets = CollectRaycastTargets(
+        source_ent,
+        sim::ToSimVec2(start_pos),
+        ToSimRayAABB(ray_aabb),
+        state,
+        graphics,
+        owner_vid
+    );
 
     for (int step = 0; step < max_distance; ++step) {
         const IVec2 point = ToIVec2(start_pos + (step_dir * static_cast<float>(step)));

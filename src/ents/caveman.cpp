@@ -12,7 +12,6 @@
 #include "world_query.hpp"
 
 #include <algorithm>
-#include <cmath>
 
 namespace splonks::ents::caveman {
 
@@ -25,7 +24,7 @@ constexpr float kCavemanAttackAcceleration = 0.24F;
 constexpr float kCavemanWallHopSpeedX = 1.0F;
 constexpr float kCavemanWallHopSpeedY = -1.0F;
 constexpr float kCavemanAlertHopSpeedY = -1.0F;
-constexpr float kCavemanSightVerticalTolerance = 12.0F;
+constexpr int kCavemanSightVerticalTolerance = 12;
 constexpr int kCavemanSightDistance = 100;
 constexpr std::uint64_t kCavemanSightScanIntervalFrames = 30;
 constexpr int kCavemanIdleMinFrames = 24;
@@ -81,7 +80,7 @@ bool CanSeePlayerAhead(
     const State& state,
     const Graphics& graphics
 ) {
-    const Vec2 caveman_center = caveman.GetRenderCenter();
+    const sim::Vec2 caveman_center = caveman.GetSimCenter();
     const int direction = caveman.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -91,22 +90,22 @@ bool CanSeePlayerAhead(
         if (player == nullptr || !player->active || player->condition != EntCondition::Normal) {
             continue;
         }
-        const Vec2 player_center =
-            GetNearestWorldPoint(state.stage, caveman_center, player->GetRenderCenter());
-        const Vec2 player_delta = player_center - caveman_center;
-        if (std::abs(player_delta.y) > kCavemanSightVerticalTolerance ||
-            std::abs(player_delta.x) > static_cast<float>(kCavemanSightDistance)) {
+        const sim::Vec2 player_center =
+            GetNearestWorldPoint(state.stage, caveman_center, player->GetSimCenter());
+        const sim::Vec2 player_delta = player_center - caveman_center;
+        if (player_delta.y.abs() > sim::Scalar::from_int(kCavemanSightVerticalTolerance) ||
+            player_delta.x.abs() > sim::Scalar::from_int(kCavemanSightDistance)) {
             continue;
         }
-        if ((direction < 0 && player_delta.x >= 0.0F) ||
-            (direction > 0 && player_delta.x <= 0.0F)) {
+        if ((direction < 0 && player_delta.x >= sim::Scalar::zero()) ||
+            (direction > 0 && player_delta.x <= sim::Scalar::zero())) {
             continue;
         }
         const WorldRayHit hit = RaycastHorizontal(
             caveman,
             caveman_center,
             direction,
-            static_cast<int>(std::abs(player_delta.x)),
+            player_delta.x.abs().trunc_int(),
             state,
             graphics,
             caveman.vid

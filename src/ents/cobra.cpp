@@ -11,7 +11,6 @@
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
-#include <cmath>
 #include <memory>
 #include <optional>
 
@@ -24,7 +23,7 @@ constexpr float kCobraWalkAcceleration = 0.18F;
 constexpr int kCobraIdleMinFrames = 18;
 constexpr int kCobraIdleMaxFrames = 42;
 constexpr int kCobraIdleChance = 120;
-constexpr float kCobraSightVerticalTolerance = 18.0F;
+constexpr int kCobraSightVerticalTolerance = 18;
 constexpr int kCobraSightDistance = 120;
 constexpr std::uint64_t kCobraSightScanIntervalFrames = 12;
 constexpr float kCobraSpitVelocityX = 2.2F;
@@ -74,6 +73,7 @@ bool ShouldRunSightScan(const Ent& cobra, std::uint64_t stage_frame) {
 
 bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& graphics) {
     const Vec2 spit_origin = common::GetEmitPointForEnt(cobra, graphics, cobra.GetRenderCenter());
+    const sim::Vec2 sim_spit_origin = sim::ToSimVec2(spit_origin);
     const int direction = cobra.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -83,21 +83,22 @@ bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& gra
         if (player == nullptr || !player->active || player->condition != EntCondition::Normal) {
             continue;
         }
-        const Vec2 player_center = GetNearestWorldPoint(state.stage, spit_origin, player->GetRenderCenter());
-        const Vec2 player_delta = player_center - spit_origin;
-        if (std::abs(player_delta.y) > kCobraSightVerticalTolerance ||
-            std::abs(player_delta.x) > static_cast<float>(kCobraSightDistance)) {
+        const sim::Vec2 player_center =
+            GetNearestWorldPoint(state.stage, sim_spit_origin, player->GetSimCenter());
+        const sim::Vec2 player_delta = player_center - sim_spit_origin;
+        if (player_delta.y.abs() > sim::Scalar::from_int(kCobraSightVerticalTolerance) ||
+            player_delta.x.abs() > sim::Scalar::from_int(kCobraSightDistance)) {
             continue;
         }
-        if ((direction < 0 && player_delta.x >= 0.0F) ||
-            (direction > 0 && player_delta.x <= 0.0F)) {
+        if ((direction < 0 && player_delta.x >= sim::Scalar::zero()) ||
+            (direction > 0 && player_delta.x <= sim::Scalar::zero())) {
             continue;
         }
         const WorldRayHit hit = RaycastHorizontal(
             cobra,
-            spit_origin,
+            sim_spit_origin,
             direction,
-            static_cast<int>(std::abs(player_delta.x)),
+            player_delta.x.abs().trunc_int(),
             state,
             graphics,
             cobra.vid

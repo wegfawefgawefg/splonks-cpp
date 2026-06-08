@@ -103,6 +103,16 @@ WorldRayHit RaycastTiles(
 
 WorldRayHit RaycastHorizontal(
     const Ent& source_ent,
+    sim::Vec2 start_pos,
+    int direction,
+    int max_distance,
+    const State& state,
+    const Graphics& graphics,
+    std::optional<VID> owner_vid = std::nullopt
+);
+
+WorldRayHit RaycastHorizontal(
+    const Ent& source_ent,
     const Vec2& start_pos,
     int direction,
     int max_distance,

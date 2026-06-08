@@ -14,8 +14,6 @@
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
-#include <cmath>
-
 namespace splonks::ents::shopkeeper {
 
 namespace {
@@ -25,8 +23,8 @@ constexpr float kShopkeeperMoveSpeedX = 1.5F;
 constexpr float kShopkeeperRecoverPistolSpeedX = 1.8F;
 constexpr float kShopkeeperMoveAcceleration = 0.24F;
 constexpr float kShopkeeperRecoverAcceleration = 0.28F;
-constexpr float kShopkeeperShootDistance = 160.0F;
-constexpr float kShopkeeperSightVerticalTolerance = 20.0F;
+constexpr int kShopkeeperShootDistance = 160;
+constexpr int kShopkeeperSightVerticalTolerance = 20;
 constexpr float kShopkeeperJumpCooldownFrames = 20.0F;
 constexpr float kShopkeeperShootCooldownFrames = 45.0F;
 constexpr float kShopkeeperRecoverPistolJumpHeightThreshold = 8.0F;
@@ -49,7 +47,7 @@ std::optional<std::size_t> GetShopIdxForShopkeeper(const Ent& shopkeeper, const 
 }
 
 bool CanSeePlayerAhead(const Ent& shopkeeper, const State& state, const Graphics& graphics) {
-    const Vec2 shopkeeper_center = shopkeeper.GetRenderCenter();
+    const sim::Vec2 shopkeeper_center = shopkeeper.GetSimCenter();
     const int direction = shopkeeper.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -59,21 +57,22 @@ bool CanSeePlayerAhead(const Ent& shopkeeper, const State& state, const Graphics
         if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
             continue;
         }
-        const Vec2 player_center =
-            GetNearestWorldPoint(state.stage, shopkeeper_center, player->GetRenderCenter());
-        const Vec2 delta = player_center - shopkeeper_center;
-        if (std::abs(delta.y) > kShopkeeperSightVerticalTolerance ||
-            std::abs(delta.x) > kShopkeeperShootDistance) {
+        const sim::Vec2 player_center =
+            GetNearestWorldPoint(state.stage, shopkeeper_center, player->GetSimCenter());
+        const sim::Vec2 delta = player_center - shopkeeper_center;
+        if (delta.y.abs() > sim::Scalar::from_int(kShopkeeperSightVerticalTolerance) ||
+            delta.x.abs() > sim::Scalar::from_int(kShopkeeperShootDistance)) {
             continue;
         }
-        if ((direction < 0 && delta.x >= 0.0F) || (direction > 0 && delta.x <= 0.0F)) {
+        if ((direction < 0 && delta.x >= sim::Scalar::zero()) ||
+            (direction > 0 && delta.x <= sim::Scalar::zero())) {
             continue;
         }
         const WorldRayHit hit = RaycastHorizontal(
             shopkeeper,
             shopkeeper_center,
             direction,
-            static_cast<int>(std::abs(delta.x)),
+            delta.x.abs().trunc_int(),
             state,
             graphics,
             shopkeeper.vid
