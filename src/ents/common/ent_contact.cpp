@@ -80,7 +80,7 @@ ContactResult TryDispatchEntEntContactForParticipant(
 
 std::vector<VID> GatherTouchedEntContactsForAabb(
     std::size_t ent_idx,
-    const AABB& aabb,
+    sim::AABB aabb,
     const Graphics& graphics,
     State& state
 ) {
@@ -94,7 +94,7 @@ std::vector<VID> GatherTouchedEntContactsForAabb(
     }
 
     std::vector<VID> touched_vids;
-    const Vec2 anchor = ent.GetCenter();
+    const sim::Vec2 anchor = aabb.center();
     for (const VID& other_vid : QueryEntsInAabb(state, aabb, ent.vid)) {
         const Ent* const other_ent = state.ents.GetEnt(other_vid);
         if (other_ent == nullptr || !other_ent->active) {
@@ -104,12 +104,12 @@ std::vector<VID> GatherTouchedEntContactsForAabb(
             continue;
         }
 
-        const AABB other_contact_aabb = GetNearestWorldAabb(
+        const sim::AABB other_contact_aabb = GetNearestWorldAabb(
             state.stage,
             anchor,
-            GetRenderContactAabbForEnt(*other_ent, graphics)
+            GetContactAabbForEnt(*other_ent, graphics)
         );
-        if (!AabbsIntersect(aabb, other_contact_aabb)) {
+        if (!gfxp::aabbs_intersect(aabb, other_contact_aabb)) {
             continue;
         }
         touched_vids.push_back(other_vid);
@@ -236,7 +236,7 @@ bool TryDispatchEntEntOverlapContacts(
 
     const std::vector<VID> touched_vids = GatherTouchedEntContactsForAabb(
         ent_idx,
-        GetRenderContactAabbForEnt(ent, graphics),
+        GetContactAabbForEnt(ent, graphics),
         graphics,
         state
     );

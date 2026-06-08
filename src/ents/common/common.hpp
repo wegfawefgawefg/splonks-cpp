@@ -336,7 +336,7 @@ bool TryDispatchEntEntOverlapContacts(
 );
 std::vector<VID> GatherTouchedEntContactsForAabb(
     std::size_t ent_idx,
-    const AABB& aabb,
+    sim::AABB aabb,
     const Graphics& graphics,
     State& state
 );
