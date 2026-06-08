@@ -54,6 +54,17 @@ bool ShouldTriggerOnEnt(const Ent& ent) {
            sim::ToSimScalar(kArrowTrapMovingEntSpeedSq);
 }
 
+sim::Vec2 ArrowLaunchVelocity(int direction) {
+    return sim::Vec2{
+        sim::Scalar::from_int(direction) * sim::ToSimScalar(kArrowTrapArrowSpeed),
+        sim::Scalar::zero()
+    };
+}
+
+sim::Vec2 ArrowGravityAcceleration() {
+    return sim::Vec2{sim::Scalar::zero(), sim::ToSimScalar(kArrowGravity)};
+}
+
 void SnapArrowPositionToPixels(Ent& arrow) {
     arrow.pos = sim::PixelVec2(arrow.pos.x.to_pixels_floor(),
                                arrow.pos.y.to_pixels_floor());
@@ -224,7 +235,7 @@ bool SensorTouchesMovingEnt(
 Ent* SpawnArrow(State& state, const Vec2& center, int direction, const VID& trap_vid) {
     return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         arrow.SetRenderCenter(center);
-        arrow.vel = sim::ToSimVec2(Vec2::New(static_cast<float>(direction) * kArrowTrapArrowSpeed, 0.0F));
+        arrow.vel = ArrowLaunchVelocity(direction);
         arrow.acc = sim::Vec2::zero();
         arrow.facing = direction < 0 ? Side::Left : Side::Right;
         arrow.rotation = sim::Scalar::zero();
@@ -326,7 +337,7 @@ void StepEntLogicAsArrow(
             arrow.has_physics = true;
             arrow.can_collide = true;
             arrow.vel = sim::Vec2::zero();
-            arrow.acc = sim::ToSimVec2(Vec2::New(0.0F, kArrowGravity));
+            arrow.acc = ArrowGravityAcceleration();
             arrow.proj_contact_timer = 0;
             arrow.can_apply_proj_contact = false;
             return;
