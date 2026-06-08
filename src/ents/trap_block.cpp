@@ -373,7 +373,7 @@ void StartWindup(Ent& block, std::uint32_t direction_idx, State& state) {
     const IVec2 tile_dir = kDirections[static_cast<std::size_t>(direction_idx)].tile_dir;
     StoreMoveDirection(block, tile_dir);
     block.ai_state = EntAiState::Pursuing;
-    block.counter_b = kWindupFrames;
+    block.counter_b = sim::ToSimScalar(kWindupFrames);
     block.vel = sim::Vec2::zero();
     block.acc = sim::Vec2::zero();
     block.shake = std::max(block.shake, sim::ToSimScalar(kWindupShake));
@@ -393,10 +393,10 @@ void StopMove(Ent& block, State& state) {
     if (IsOneShot(block)) {
         block.threshold_b = kHasFired;
         block.ai_state = EntAiState::Idle;
-        block.counter_a = 0.0F;
+        block.counter_a = sim::Scalar::zero();
     } else {
         block.ai_state = EntAiState::Returning;
-        block.counter_a = kAfterImpactCooldownFrames;
+        block.counter_a = sim::ToSimScalar(kAfterImpactCooldownFrames);
     }
     block.vel = sim::Vec2::zero();
     block.acc = sim::Vec2::zero();
@@ -451,8 +451,8 @@ void StepEntLogicAsTrapBlock(
 
     if (IsCoolingDown(block)) {
         ShowSleepingFrame(block);
-        block.counter_a -= 1.0F;
-        if (block.counter_a <= 0.0F) {
+        block.counter_a -= sim::Scalar::from_int(1);
+        if (block.counter_a <= sim::Scalar::zero()) {
             block.ai_state = EntAiState::Idle;
             InvalidateOpenSensorCache(block);
         }
@@ -464,8 +464,8 @@ void StepEntLogicAsTrapBlock(
         block.vel = sim::Vec2::zero();
         block.acc = sim::Vec2::zero();
         block.shake = std::max(block.shake, sim::ToSimScalar(kWindupShake));
-        block.counter_b -= 1.0F;
-        if (block.counter_b <= 0.0F) {
+        block.counter_b -= sim::Scalar::from_int(1);
+        if (block.counter_b <= sim::Scalar::zero()) {
             StartMove(block);
         }
         return;

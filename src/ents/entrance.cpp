@@ -54,9 +54,9 @@ void StepEntLogicAsEntrance(
     (void)dt;
     Ent& entrance = state.ents.ents[ent_idx];
 
-    if (entrance.counter_a <= 0.0F) {
+    if (entrance.counter_a <= sim::Scalar::zero()) {
         entrance.aframe_animator.PlayOnce(aframe_ids::Entrance);
-        entrance.counter_a = 1.0F;
+        entrance.counter_a = sim::Scalar::from_int(1);
     }
 
     if (!entrance.aframe_animator.IsFinished()) {
@@ -64,7 +64,7 @@ void StepEntLogicAsEntrance(
         return;
     }
 
-    if (entrance.counter_b <= 0.0F) {
+    if (entrance.counter_b <= sim::Scalar::zero()) {
         StopDoorSound(entrance, state, audio);
         AudioEmitterPlayParams params;
         params.volume_scale = kLockVolumeScale;
@@ -76,7 +76,7 @@ void StepEntLogicAsEntrance(
             audio_asset_ids::BoulderLatch,
             params
         );
-        entrance.counter_b = 1.0F;
+        entrance.counter_b = sim::Scalar::from_int(1);
     }
 }
 

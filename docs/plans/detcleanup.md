@@ -485,23 +485,36 @@ Cleanup:
 - Prefer `sim::PixelVec2(...)` and fixed offsets for common integer-pixel spawn
   spacing.
 
-### 10. Generic entity counters remain float
+### 10. Generic entity counters remain generic
 
 Current state:
 
-- `Ent::counter_a` through `counter_d` remain raw floats.
-- Many uses are integer frame counters, enum-like states, cooldowns, or small
-  gameplay values.
-- Some counters are converted to/from fixed in retention/snapshot paths, which
-  is a transitional mixed model.
+- Completed 2026-06-08. `Ent::counter_a` through `counter_d` now store
+  `sim::Scalar` instead of raw floats.
+- Completed 2026-06-08. Counter fingerprinting and state-fingerprint debug
+  comparison now hash/read fixed scalar values instead of quantized floats.
+- Completed 2026-06-08. Debug playback recording, playback loading, spec
+  initialization, spec restore, and lobby-retained player restore now preserve
+  counter values as fixed scalars without fixed/render conversion churn.
+- Completed 2026-06-08. Runtime counter users that assign frame counts,
+  cooldowns, enum-like markers, ammo/roll values, and distance intervals now
+  assign fixed scalars explicitly. Render/debug display code converts counters
+  to floats only at presentation boundaries.
+- The fields are still generic `counter_a` through `counter_d`. Many uses would
+  be clearer and harder to misuse if split into typed entity-specific fields.
 
 Cleanup:
 
+- [x] Convert runtime generic counter storage from raw `float` to `sim::Scalar`.
+- [x] Convert fingerprinting, replay I/O, spec restore, and lobby-retention
+      code to preserve fixed counter values directly.
+- [x] Update runtime counter assignments and comparisons so frame counts,
+      enum-like values, ammo counts, cooldowns, and distance intervals use fixed
+      scalars explicitly.
 - Split generic counters into typed fields where possible.
-- Convert frame counters and enum-like values to integer types.
-- Convert distance/time scalar counters that truly need fractions to
-  `sim::Scalar`.
-- Remove snapshot/retention conversion churn once runtime storage is typed.
+- Convert frame counters and enum-like values to integer types where/when they
+  become real named fields.
+- Keep distance/time scalar counters that truly need fractions as `sim::Scalar`.
 
 ### 11. `ToSim*` / `ToRender*` helpers are useful but easy to overuse
 
@@ -534,13 +547,18 @@ Cleanup:
 
 ## Rule Of Thumb
 
-Authoritative gameplay code should live inside the fixed-point boundary. If a
-function can change entities, tiles, damage, pickups, AI, topology, or any other
-lockstep-visible state, its public API should use fixed/int simulation types,
+Authoritative gameplay code should stay inside the fixed-point boundary. Any
+function that can affect entities, tiles, damage, pickups, AI, topology, or
+other lockstep-visible state should take and return fixed/int simulation types,
 not old float `AABB` or render `Vec2`.
 
-Conversions are for boundary code only: rendering, debug UI, audio, tooling,
-asset/data import, tests, or temporary migration code while a caller is being
-cleaned up. Boundary functions should say what they cross into, such as
-`ToRenderAABB(...)`, `GetRenderCenter(...)`, or `SpawnDebug...(...)`. They should
-not be hidden inside gameplay decisions.
+Float/render adapters are only for crossing out of that boundary. They belong at
+places where simulation data is being presented to, or authored by,
+non-authoritative systems: rendering, debug UI, audio, tooling, asset/data
+import, test fixtures, and serialization/display text. Their names should make
+the boundary crossing obvious, such as `ToRenderAABB(...)`,
+`GetRenderCenter(...)`, or `SpawnDebug...(...)`.
+
+If gameplay needs a query, collision check, AI decision, damage check, pickup
+check, or topology change, it should not detour through a render/float adapter.
+That is a sign the fixed/int gameplay API is missing and should be added.

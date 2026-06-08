@@ -146,7 +146,7 @@ void StepEntLogicAsGiantTikiHead(
         }
 
         head.ai_state = EntAiState::Disturbed;
-        head.counter_a = kBoulderReleaseDelayFrames;
+        head.counter_a = sim::ToSimScalar(kBoulderReleaseDelayFrames);
         SetAnim(head, HashAFrameIdConstexpr("giant_tiki_head_hole"));
         (void)PlayAttachedSoundEmitter(
             state,
@@ -161,14 +161,14 @@ void StepEntLogicAsGiantTikiHead(
         return;
     }
 
-    if (head.counter_a > 0.0F) {
-        head.counter_a -= 1.0F;
-        if (head.counter_a < 0.0F) {
-            head.counter_a = 0.0F;
+    if (head.counter_a > sim::Scalar::zero()) {
+        head.counter_a -= sim::Scalar::from_int(1);
+        if (head.counter_a < sim::Scalar::zero()) {
+            head.counter_a = sim::Scalar::zero();
         }
         const int shake_interval = static_cast<int>(kTikiHeadWindupShakeIntervalFrames);
         if (shake_interval > 0 &&
-            static_cast<int>(head.counter_a) % shake_interval == 0) {
+            head.counter_a.trunc_int() % shake_interval == 0) {
             AddTikiHeadWindupShake(state, head);
         }
         return;

@@ -301,8 +301,9 @@ void SpawnCobwebBurst(State& state, const Vec2& origin) {
 Ent* SpawnCobwebEnt(State& state, const Vec2& center, bool temporary) {
     return world_ops::SpawnEnt(state, EntType::Cobweb, [&](Ent& cobweb) {
         cobweb.SetRenderCenter(center);
-        cobweb.counter_a = temporary ? kTemporaryCobwebLifetimeFrames : 0.0F;
-        cobweb.counter_d = kCobwebWearIntervalFrames;
+        cobweb.counter_a = temporary ? sim::ToSimScalar(kTemporaryCobwebLifetimeFrames)
+                                     : sim::Scalar::zero();
+        cobweb.counter_d = sim::ToSimScalar(kCobwebWearIntervalFrames);
         cobweb.health = kCobwebDurability;
     });
 }
@@ -400,9 +401,9 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
         spawned_web_ball.thrown_by =
             holder != nullptr ? std::optional<VID>(holder->vid) : weapon.use_state.user_vid;
         spawned_web_ball.thrown_immunity_timer = common::kThrownByImmunityDuration;
-        spawned_web_ball.counter_a = kWebBallLifetimeFrames;
-        spawned_web_ball.counter_b = 0.0F;
-        spawned_web_ball.counter_c = kWebBallEntArmDelayFrames;
+        spawned_web_ball.counter_a = sim::ToSimScalar(kWebBallLifetimeFrames);
+        spawned_web_ball.counter_b = sim::Scalar::zero();
+        spawned_web_ball.counter_c = sim::ToSimScalar(kWebBallEntArmDelayFrames);
     });
 
     (void)PlayWorldSoundEmitter(state, muzzle_pos, audio_asset_ids::PistolShoot);
@@ -473,7 +474,7 @@ common::ContactResult OnEntContactAsWebBall(
     if (!web_ball.active || !other.active) {
         return common::ContactResult{};
     }
-    if (web_ball.counter_c > 0.0F) {
+    if (web_ball.counter_c > sim::Scalar::zero()) {
         return common::ContactResult{};
     }
     if (web_ball.thrown_by.has_value() && other.vid == *web_ball.thrown_by) {
@@ -626,17 +627,19 @@ EntDamageEffectResult OnDamageAsCobweb(
 
 void OnUseAsWebCannon(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     Ent& weapon = state.ents.ents[ent_idx];
-    if (!weapon.use_state.pressed || weapon.counter_a > 0.0F) {
+    if (!weapon.use_state.pressed || weapon.counter_a > sim::Scalar::zero()) {
         return;
     }
 
-    if (weapon.counter_b <= 0.0F) {
-        weapon.counter_b = kWebGunBurstShots;
+    if (weapon.counter_b <= sim::Scalar::zero()) {
+        weapon.counter_b = sim::ToSimScalar(kWebGunBurstShots);
     }
 
     FireWebGun(ent_idx, state, graphics, audio);
-    weapon.counter_b -= 1.0F;
-    weapon.counter_a = weapon.counter_b <= 0.0F ? kWebGunReloadCooldownFrames : kWebGunFireCooldownFrames;
+    weapon.counter_b -= sim::Scalar::from_int(1);
+    weapon.counter_a = weapon.counter_b <= sim::Scalar::zero()
+        ? sim::ToSimScalar(kWebGunReloadCooldownFrames)
+        : sim::ToSimScalar(kWebGunFireCooldownFrames);
 
     if (weapon.use_state.source == AttachMode::None) {
         StopUsingEnt(weapon);
@@ -654,10 +657,10 @@ void StepEntLogicAsWebCannon(
     (void)audio;
     (void)dt;
     Ent& weapon = state.ents.ents[ent_idx];
-    if (weapon.counter_a > 0.0F) {
-        weapon.counter_a -= 1.0F;
-        if (weapon.counter_a < 0.0F) {
-            weapon.counter_a = 0.0F;
+    if (weapon.counter_a > sim::Scalar::zero()) {
+        weapon.counter_a -= sim::Scalar::from_int(1);
+        if (weapon.counter_a < sim::Scalar::zero()) {
+            weapon.counter_a = sim::Scalar::zero();
         }
     }
 
@@ -686,24 +689,24 @@ void StepEntLogicAsWebBall(
     (void)audio;
     (void)dt;
     Ent& web_ball = state.ents.ents[ent_idx];
-    if (web_ball.counter_a > 0.0F) {
-        web_ball.counter_a -= 1.0F;
+    if (web_ball.counter_a > sim::Scalar::zero()) {
+        web_ball.counter_a -= sim::Scalar::from_int(1);
     }
-    if (web_ball.counter_a <= 0.0F) {
+    if (web_ball.counter_a <= sim::Scalar::zero()) {
         TriggerWebBallBurst(ent_idx, state, true);
         return;
     }
-    if (web_ball.counter_c > 0.0F) {
-        web_ball.counter_c -= 1.0F;
-        if (web_ball.counter_c < 0.0F) {
-            web_ball.counter_c = 0.0F;
+    if (web_ball.counter_c > sim::Scalar::zero()) {
+        web_ball.counter_c -= sim::Scalar::from_int(1);
+        if (web_ball.counter_c < sim::Scalar::zero()) {
+            web_ball.counter_c = sim::Scalar::zero();
         }
     }
 
-    web_ball.counter_b -= 1.0F;
-    if (web_ball.counter_b <= 0.0F) {
+    web_ball.counter_b -= sim::Scalar::from_int(1);
+    if (web_ball.counter_b <= sim::Scalar::zero()) {
         SpawnWebTrail(state, web_ball.GetRenderCenter(), web_ball.GetRenderVel());
-        web_ball.counter_b = kWebBallTrailIntervalFrames;
+        web_ball.counter_b = sim::ToSimScalar(kWebBallTrailIntervalFrames);
     }
 }
 
@@ -746,17 +749,21 @@ void StepEntLogicAsCobweb(
         return;
     }
 
-    if (cobweb.counter_a > 0.0F) {
-        cobweb.counter_a -= 1.0F;
-        if (cobweb.counter_a <= 0.0F) {
+    if (cobweb.counter_a > sim::Scalar::zero()) {
+        cobweb.counter_a -= sim::Scalar::from_int(1);
+        if (cobweb.counter_a <= sim::Scalar::zero()) {
             DestroyCobweb(ent_idx, state);
             return;
         }
     }
 
     const float health_ratio = static_cast<float>(cobweb.health) / static_cast<float>(std::max<std::uint32_t>(1, kCobwebDurability));
-    const float lifetime_ratio = cobweb.counter_a > 0.0F
-        ? std::clamp(cobweb.counter_a / kTemporaryCobwebLifetimeFrames, 0.0F, 1.0F)
+    const float lifetime_ratio = cobweb.counter_a > sim::Scalar::zero()
+        ? std::clamp(
+              sim::ToRenderScalar(cobweb.counter_a) / kTemporaryCobwebLifetimeFrames,
+              0.0F,
+              1.0F
+          )
         : 1.0F;
     cobweb.alpha = sim::ToSimScalar(std::clamp(std::min(health_ratio, lifetime_ratio), 0.0F, 1.0F));
 
@@ -789,9 +796,9 @@ void StepEntLogicAsCobweb(
                                    intent.jump_pressed;
         occupied = true;
         if (moving_in_web && cobweb.health > 0) {
-            cobweb.counter_d -= 1.0F;
-            if (cobweb.counter_d <= 0.0F) {
-                cobweb.counter_d = kCobwebWearIntervalFrames;
+            cobweb.counter_d -= sim::Scalar::from_int(1);
+            if (cobweb.counter_d <= sim::Scalar::zero()) {
+                cobweb.counter_d = sim::ToSimScalar(kCobwebWearIntervalFrames);
                 cobweb.health = std::max<std::uint32_t>(0, cobweb.health - 1);
                 if (cobweb.health == 0) {
                     DestroyCobweb(ent_idx, state);
@@ -802,7 +809,7 @@ void StepEntLogicAsCobweb(
     }
 
     if (!occupied) {
-        cobweb.counter_d = kCobwebWearIntervalFrames;
+        cobweb.counter_d = sim::ToSimScalar(kCobwebWearIntervalFrames);
     }
 }
 

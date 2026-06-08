@@ -129,7 +129,7 @@ void SpawnChestTrapBomb(const Vec2& spawn_center, State& state) {
             kChestLootLaunchY
         ));
         bomb.acc = sim::Vec2::zero();
-        bomb.counter_a = kChestTrapFuseFrames;
+        bomb.counter_a = sim::ToSimScalar(kChestTrapFuseFrames);
         SetAnim(bomb, aframe_ids::LiveGrenade);
     });
 }

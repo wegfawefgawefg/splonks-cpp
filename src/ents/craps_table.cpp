@@ -22,7 +22,7 @@ namespace splonks::ents::craps_table {
 namespace {
 
 constexpr std::uint32_t kCrapsBetAmount = 1000;
-constexpr float kDiceRollState = 1.0F;
+constexpr int kDiceRollState = 1;
 constexpr float kDiceSettleSpeed = 0.2F;
 constexpr float kResultPromptFrames = 120.0F;
 constexpr float kPrizeAlphaLocked = 0.55F;
@@ -34,11 +34,11 @@ enum class TableState {
 };
 
 TableState GetTableState(const Ent& table) {
-    return static_cast<TableState>(static_cast<int>(table.counter_a));
+    return static_cast<TableState>(table.counter_a.trunc_int());
 }
 
 void SetTableState(Ent& table, TableState state) {
-    table.counter_a = static_cast<float>(static_cast<int>(state));
+    table.counter_a = sim::Scalar::from_int(static_cast<int>(state));
 }
 
 Ent* GetLinkedEnt(State& state, std::optional<VID> vid) {
@@ -109,8 +109,8 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
     dice.has_physics = true;
     dice.can_collide = true;
     dice.grounded = false;
-    dice.counter_a = static_cast<float>(RollDicePairTotal(state));
-    dice.counter_b = kDiceRollState;
+    dice.counter_a = sim::Scalar::from_int(RollDicePairTotal(state));
+    dice.counter_b = sim::Scalar::from_int(kDiceRollState);
     dice.rotation = sim::ToSimScalar(static_cast<float>(state.drng.RandomIntInclusive(0, 359)));
 
     const Vec2 table_center = table.GetRenderCenter();
@@ -121,7 +121,7 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
 
 bool DiceHasSettled(const Ent& dice) {
     return dice.grounded && dice.vel.x.abs() <= sim::ToSimScalar(kDiceSettleSpeed) &&
-           dice.vel.y.abs() <= sim::ToSimScalar(kDiceSettleSpeed) && dice.counter_b <= 0.0F;
+           dice.vel.y.abs() <= sim::ToSimScalar(kDiceSettleSpeed) && dice.counter_b <= sim::Scalar::zero();
 }
 
 void PayCrapsResult(
@@ -133,7 +133,7 @@ void PayCrapsResult(
     Audio& audio
 ) {
     (void)audio;
-    const int roll = std::clamp(RoundToInt(dice.counter_a), 2, 12);
+    const int roll = std::clamp(dice.counter_a.trunc_int(), 2, 12);
     if (roll == 7) {
         if (prize != nullptr && prize->active) {
             Ent* const won_prize = SpawnWonPrize(table, *prize, state);
@@ -141,20 +141,20 @@ void PayCrapsResult(
                 (void)PlayEntCenterSoundEmitter(state, *won_prize, audio_asset_ids::Present);
             } else {
                 UnlockPrize(*prize);
-                table.counter_d = 2.0F;
+                table.counter_d = sim::Scalar::from_int(2);
                 (void)PlayEntCenterSoundEmitter(state, *prize, audio_asset_ids::Present);
             }
         }
-        table.counter_c = 2.0F;
+        table.counter_c = sim::Scalar::from_int(2);
     } else if (roll > 7) {
         player.money += kCrapsBetAmount * 2U;
         (void)PlayEntCenterSoundEmitter(state, player, audio_asset_ids::CashRegister);
-        table.counter_c = 1.0F;
+        table.counter_c = sim::Scalar::from_int(1);
     } else {
         (void)PlayEntCenterSoundEmitter(state, table, audio_asset_ids::UiCant);
-        table.counter_c = -1.0F;
+        table.counter_c = sim::Scalar::from_int(-1);
     }
-    table.counter_b = kResultPromptFrames;
+    table.counter_b = sim::ToSimScalar(kResultPromptFrames);
     SetTableState(table, TableState::Result);
 }
 
@@ -220,9 +220,9 @@ void StepEntLogicAsCrapsTable(
     if (dice != nullptr && dice->active) {
         PrepareCrapsDice(*dice);
     }
-    if (prize != nullptr && prize->active && table.counter_d == 0.0F) {
+    if (prize != nullptr && prize->active && table.counter_d == sim::Scalar::zero()) {
         LockPrize(*prize);
-        table.counter_d = 1.0F;
+        table.counter_d = sim::Scalar::from_int(1);
     }
 
     Ent* result_player = nullptr;
@@ -244,10 +244,10 @@ void StepEntLogicAsCrapsTable(
             PayCrapsResult(table, *dice, prize, *result_player, state, audio);
         }
     } else if (GetTableState(table) == TableState::Result) {
-        table.counter_b -= 1.0F;
-        if (table.counter_b <= 0.0F) {
-            table.counter_b = 0.0F;
-            table.counter_c = 0.0F;
+        table.counter_b -= sim::Scalar::from_int(1);
+        if (table.counter_b <= sim::Scalar::zero()) {
+            table.counter_b = sim::Scalar::zero();
+            table.counter_c = sim::Scalar::zero();
             SetTableState(table, TableState::Idle);
         }
     }
@@ -282,11 +282,11 @@ void StepEntLogicAsCrapsTable(
             }
         } else if (GetTableState(table) == TableState::Rolling) {
             AddCrapsPrompt(table, state, "rolling", 0);
-        } else if (table.counter_c == 2.0F) {
+        } else if (table.counter_c == sim::Scalar::from_int(2)) {
             AddCrapsPrompt(table, state, "prize", 0);
-        } else if (table.counter_c > 0.0F) {
+        } else if (table.counter_c > sim::Scalar::zero()) {
             AddCrapsPrompt(table, state, "win", 0);
-        } else if (table.counter_c < 0.0F) {
+        } else if (table.counter_c < sim::Scalar::zero()) {
             AddCrapsPrompt(table, state, "lose", 0);
         }
     }

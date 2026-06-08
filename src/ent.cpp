@@ -143,10 +143,10 @@ Ent Ent::New() {
     ent.child_vids.reset();
     ent.inside_vids.reset();
     ent.alignment = Alignment::Neutral;
-    ent.counter_a = 0.0F;
-    ent.counter_b = 0.0F;
-    ent.counter_c = 0.0F;
-    ent.counter_d = 0.0F;
+    ent.counter_a = sim::Scalar::zero();
+    ent.counter_b = sim::Scalar::zero();
+    ent.counter_c = sim::Scalar::zero();
+    ent.counter_d = sim::Scalar::zero();
     ent.threshold_a = sim::Scalar::zero();
     ent.threshold_b = sim::Scalar::zero();
     return ent;

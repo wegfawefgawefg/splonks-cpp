@@ -23,7 +23,7 @@ constexpr std::uint32_t kMantrapEatDamage = 9999;
 
 void StartIdle(Ent& mantrap, State& state) {
     mantrap.ai_state = EntAiState::Idle;
-    mantrap.counter_a = static_cast<float>(
+    mantrap.counter_a = sim::Scalar::from_int(
         state.drng.RandomIntInclusive(kMantrapIdleMinFrames, kMantrapIdleMaxFrames));
     common::DecelerateHorizontallyToStop(mantrap, kMantrapWalkAcceleration);
     TrySetAnim(mantrap, EntDisplayState::Neutral);
@@ -85,7 +85,7 @@ bool TryEatOverlappingEnt(
 
         FaceTarget(mantrap, *target, state.stage);
         mantrap.vel.x = sim::Scalar::zero();
-        mantrap.counter_b = kMantrapEatFrames;
+        mantrap.counter_b = sim::ToSimScalar(kMantrapEatFrames);
         SetAnim(mantrap, aframe_ids::MantrapEat);
         const common::DamageResult damage_result =
             common::TryDamageEnt(target_vid.id, state, audio, DamageType::Attack, kMantrapEatDamage);
@@ -122,8 +122,8 @@ void StepEntLogicAsMantrap(
         return;
     }
 
-    if (mantrap.counter_b > 0.0F) {
-        mantrap.counter_b -= 1.0F;
+    if (mantrap.counter_b > sim::Scalar::zero()) {
+        mantrap.counter_b -= sim::Scalar::from_int(1);
         mantrap.vel.x = sim::Scalar::zero();
         SetAnim(mantrap, aframe_ids::MantrapEat);
         return;
@@ -136,8 +136,8 @@ void StepEntLogicAsMantrap(
     if (mantrap.ai_state == EntAiState::Idle) {
         common::DecelerateHorizontallyToStop(mantrap, kMantrapWalkAcceleration);
         TrySetAnim(mantrap, EntDisplayState::Neutral);
-        if (mantrap.counter_a > 0.0F) {
-            mantrap.counter_a -= 1.0F;
+        if (mantrap.counter_a > sim::Scalar::zero()) {
+            mantrap.counter_a -= sim::Scalar::from_int(1);
             return;
         }
 

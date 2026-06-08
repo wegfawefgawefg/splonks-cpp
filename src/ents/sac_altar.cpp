@@ -268,7 +268,7 @@ void TriggerTopperSacAnim(Ent& altar, State& state) {
     topper->aframe_animator.loop = false;
     topper->aframe_animator.animate = true;
     topper->aframe_animator.finished = false;
-    topper->counter_b = kTopperSacAnimHoldFrames;
+    topper->counter_b = sim::ToSimScalar(kTopperSacAnimHoldFrames);
 }
 
 void SpawnSacrificeSmoke(State& state, const Vec2& pos) {

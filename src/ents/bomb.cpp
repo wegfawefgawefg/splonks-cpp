@@ -13,14 +13,14 @@ namespace splonks::ents::bomb {
 namespace {
 
 constexpr float kBombRotationDegreesPerPixel = 24.0F;
-constexpr float kStickyBombFlag = 1.0F;
+constexpr int kStickyBombFlag = 1;
 constexpr float kLitBombSelfLight = 0.2F;
 constexpr float kLitBombLightStrength = 0.55F;
 constexpr int kLitBombLightRadius = 5;
 constexpr Color3 kLitBombLightColor = Color3::New(1.0F, 0.48F, 0.16F);
 
 bool IsStickyBomb(const Ent& bomb) {
-    return bomb.counter_b >= 0.5F;
+    return bomb.counter_b >= sim::ToSimScalar(0.5F);
 }
 
 AFrameId GetBombIdleAnim(const Ent& bomb) {
@@ -78,7 +78,7 @@ void UpdateBombRotation(Ent& bomb) {
 }
 
 void UpdateBombFuseLight(Ent& bomb) {
-    if (bomb.counter_a <= 0.0F) {
+    if (bomb.counter_a <= sim::Scalar::zero()) {
         bomb.self_light = sim::Scalar::zero();
         bomb.light_strength = sim::Scalar::zero();
         bomb.light_color = sim::ToSimColor3(Color3::White());
@@ -122,7 +122,7 @@ extern const EntSpec kBombSpec{
 };
 
 void MarkBombSticky(Ent& bomb) {
-    bomb.counter_b = kStickyBombFlag;
+    bomb.counter_b = sim::Scalar::from_int(kStickyBombFlag);
     SetAnim(bomb, aframe_ids::StickyGrenade);
 }
 
@@ -134,11 +134,11 @@ void OnUseAsBomb(std::size_t ent_idx, State& state, Graphics& graphics, Audio& a
     (void)graphics;
     (void)audio;
     Ent& bomb = state.ents.ents[ent_idx];
-    if (!bomb.use_state.pressed || bomb.counter_a > 0.0F) {
+    if (!bomb.use_state.pressed || bomb.counter_a > sim::Scalar::zero()) {
         return;
     }
 
-    bomb.counter_a = 144.0F;
+    bomb.counter_a = sim::Scalar::from_int(144);
     SetAnim(bomb, GetBombLiveAnim(bomb));
 
     if (bomb.use_state.source == AttachMode::None) {
@@ -161,9 +161,9 @@ void StepEntLogicAsBomb(
     // if bomb is in winding up
     // set anim and display state
     // start decrementing the counter
-    if (bomb.counter_a > 0.0F) {
-        bomb.counter_a -= 1.0F;
-        if (bomb.counter_a <= 0.0F) {
+    if (bomb.counter_a > sim::Scalar::zero()) {
+        bomb.counter_a -= sim::Scalar::from_int(1);
+        if (bomb.counter_a <= sim::Scalar::zero()) {
             UpdateBombFuseLight(bomb);
             bomb.health = 0;
             common::DieIfDead(ent_idx, state, audio);

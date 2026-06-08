@@ -958,10 +958,26 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintFieldDiff("ent_d", OptionalVidDebugString(left->ent_d), OptionalVidDebugString(right->ent_d));
     PrintNumericFieldDiff("stage_exit_id", left->stage_exit_id, right->stage_exit_id);
     PrintNumericFieldDiff("money", left->money, right->money);
-    PrintNumericFieldDiff("counter_a", left->counter_a, right->counter_a);
-    PrintNumericFieldDiff("counter_b", left->counter_b, right->counter_b);
-    PrintNumericFieldDiff("counter_c", left->counter_c, right->counter_c);
-    PrintNumericFieldDiff("counter_d", left->counter_d, right->counter_d);
+    PrintNumericFieldDiff(
+        "counter_a",
+        sim::ToRenderScalar(left->counter_a),
+        sim::ToRenderScalar(right->counter_a)
+    );
+    PrintNumericFieldDiff(
+        "counter_b",
+        sim::ToRenderScalar(left->counter_b),
+        sim::ToRenderScalar(right->counter_b)
+    );
+    PrintNumericFieldDiff(
+        "counter_c",
+        sim::ToRenderScalar(left->counter_c),
+        sim::ToRenderScalar(right->counter_c)
+    );
+    PrintNumericFieldDiff(
+        "counter_d",
+        sim::ToRenderScalar(left->counter_d),
+        sim::ToRenderScalar(right->counter_d)
+    );
     PrintNumericFieldDiff(
         "threshold_a",
         sim::ToRenderScalar(left->threshold_a),

@@ -162,7 +162,9 @@ void StepEntLogicAsGoldIdol(
         if (const std::optional<std::size_t> shop_idx = FindIntersectingShopIdx(idol, state)) {
             (void)shop_idx;
             const std::uint32_t amount =
-                idol.counter_b > 0.0F ? static_cast<std::uint32_t>(idol.counter_b) : kGoldIdolShopValue;
+                idol.counter_b > sim::Scalar::zero()
+                    ? static_cast<std::uint32_t>(idol.counter_b.trunc_int())
+                    : kGoldIdolShopValue;
             RedeemGoldIdol(ent_idx, amount, audio_asset_ids::CashRegister, state, graphics, audio);
             return;
         }
@@ -170,7 +172,9 @@ void StepEntLogicAsGoldIdol(
 
     if (ents::basic_exit::IsEntTouchingBasicExit(idol, state, graphics)) {
         const std::uint32_t amount =
-            idol.counter_a > 0.0F ? static_cast<std::uint32_t>(idol.counter_a) : kGoldIdolExitValue;
+            idol.counter_a > sim::Scalar::zero()
+                ? static_cast<std::uint32_t>(idol.counter_a.trunc_int())
+                : kGoldIdolExitValue;
         RedeemGoldIdol(ent_idx, amount, audio_asset_ids::GoldStack, state, graphics, audio);
         return;
     }

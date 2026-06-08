@@ -206,8 +206,8 @@ std::vector<VID> ResetStageEntrancePres(State& state) {
         if (!ent.active || ent.type_ != EntType::Entrance) {
             continue;
         }
-        ent.counter_a = 0.0F;
-        ent.counter_b = 0.0F;
+        ent.counter_a = sim::Scalar::zero();
+        ent.counter_b = sim::Scalar::zero();
         changed_ents.push_back(ent.vid);
     }
     return changed_ents;

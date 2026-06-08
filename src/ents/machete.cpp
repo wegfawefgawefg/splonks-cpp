@@ -21,7 +21,7 @@ namespace splonks::ents::machete {
 
 namespace {
 
-constexpr float kMacheteStrikePending = 1.0F;
+constexpr int kMacheteStrikePending = 1;
 constexpr std::uint32_t kMacheteDamage = 8;
 constexpr std::int32_t kThrownKillFavor = 1;
 constexpr std::int32_t kCorpseCutFavor = 1;
@@ -31,15 +31,15 @@ bool IsSwinging(const Ent& machete) {
 }
 
 std::int32_t GetPendingFavor(const Ent& machete) {
-    return std::max(0, static_cast<std::int32_t>(machete.counter_b));
+    return std::max(0, machete.counter_b.trunc_int());
 }
 
 void AddPendingFavor(Ent& machete, std::int32_t amount) {
-    machete.counter_b = static_cast<float>(GetPendingFavor(machete) + std::max(0, amount));
+    machete.counter_b = sim::Scalar::from_int(GetPendingFavor(machete) + std::max(0, amount));
 }
 
 void ClearPendingFavor(Ent& machete) {
-    machete.counter_b = 0.0F;
+    machete.counter_b = sim::Scalar::zero();
 }
 
 Vec2 GetVictimEffectPos(const Ent& victim, const Graphics& graphics) {
@@ -262,7 +262,7 @@ void OnUseAsMachete(std::size_t ent_idx, State& state, Graphics& graphics, Audio
 
     SetAnim(machete, aframe_ids::KnifeSwing);
     machete.aframe_animator.loop = false;
-    machete.counter_a = kMacheteStrikePending;
+    machete.counter_a = sim::Scalar::from_int(kMacheteStrikePending);
     (void)PlayEntCenterSoundEmitter(state, machete, audio_asset_ids::Throw);
 
     if (machete.use_state.source == AttachMode::None) {
@@ -284,9 +284,9 @@ void StepEntLogicAsMachete(
         return;
     }
 
-    if (machete.counter_a > 0.0F && machete.aframe_animator.current_frame > 0) {
+    if (machete.counter_a > sim::Scalar::zero() && machete.aframe_animator.current_frame > 0) {
         TryApplyMacheteStrike(ent_idx, state, graphics, audio);
-        machete.counter_a = 0.0F;
+        machete.counter_a = sim::Scalar::zero();
     }
 
     if (!machete.aframe_animator.IsFinished()) {

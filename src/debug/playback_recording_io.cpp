@@ -1615,10 +1615,10 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalVidVector(out, ent.inside_vids);
     WriteEnumByte(out, ent.ent_label_a);
     WriteEnumByte(out, ent.alignment);
-    WriteFloat(out, ent.counter_a);
-    WriteFloat(out, ent.counter_b);
-    WriteFloat(out, ent.counter_c);
-    WriteFloat(out, ent.counter_d);
+    WriteSimScalar(out, ent.counter_a);
+    WriteSimScalar(out, ent.counter_b);
+    WriteSimScalar(out, ent.counter_c);
+    WriteSimScalar(out, ent.counter_d);
     WriteSimScalar(out, ent.threshold_a);
     WriteSimScalar(out, ent.threshold_b);
 }
@@ -1744,10 +1744,10 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalVidVector(in, ent.inside_vids) &&
            ReadEnumByte(in, ent.ent_label_a, EntLabel::AttachedToThis) &&
            ReadEnumByte(in, ent.alignment, Alignment::Enemy) &&
-           ReadFloat(in, ent.counter_a) &&
-           ReadFloat(in, ent.counter_b) &&
-           ReadFloat(in, ent.counter_c) &&
-           ReadFloat(in, ent.counter_d) &&
+           ReadSimScalar(in, ent.counter_a) &&
+           ReadSimScalar(in, ent.counter_b) &&
+           ReadSimScalar(in, ent.counter_c) &&
+           ReadSimScalar(in, ent.counter_d) &&
            ReadSimScalar(in, ent.threshold_a) &&
            ReadSimScalar(in, ent.threshold_b);
     if (!ok) {

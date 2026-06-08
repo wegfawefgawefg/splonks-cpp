@@ -212,9 +212,9 @@ void StepEntLogicAsBlock(
     }
 
     if (ent.grounded && ent.dist_traveled_this_frame > sim::Scalar::zero()) {
-        ent.counter_c -= sim::ToRenderScalar(ent.dist_traveled_this_frame);
-        while (ent.counter_c <= 0.0F) {
-            ent.counter_c += kBlockTrailSmokeDistInterval;
+        ent.counter_c -= ent.dist_traveled_this_frame;
+        while (ent.counter_c <= sim::Scalar::zero()) {
+            ent.counter_c += sim::ToSimScalar(kBlockTrailSmokeDistInterval);
             SpawnBlockTrailSmoke(state, GetBlockTrailingBottomCorner(ent), ent.facing);
         }
     }

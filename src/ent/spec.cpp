@@ -65,9 +65,9 @@ void SetEntAs(Ent& ent, EntType type_) {
     ent.condition = spec.condition;
     ent.ai_state = spec.ai_state;
     ent.health = spec.health;
-    ent.counter_a = sim::ToRenderScalar(spec.counter_a);
-    ent.counter_b = sim::ToRenderScalar(spec.counter_b);
-    ent.counter_d = sim::ToRenderScalar(spec.counter_d);
+    ent.counter_a = spec.counter_a;
+    ent.counter_b = spec.counter_b;
+    ent.counter_d = spec.counter_d;
     ent.damage_vuln = spec.damage_vuln;
     ent.proj_contact_damage_type = spec.proj_contact_damage_type;
     ent.proj_contact_damage_amount = spec.proj_contact_damage_amount;

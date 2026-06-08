@@ -147,11 +147,11 @@ void StartPanicRun(Ent& damsel, const State& state) {
 }
 
 void MaybeStartPanicRunFromCarryRelease(Ent& damsel, const State& state) {
-    if (damsel.counter_a <= 0.0F || damsel.condition != EntCondition::Normal) {
+    if (damsel.counter_a <= sim::Scalar::zero() || damsel.condition != EntCondition::Normal) {
         return;
     }
 
-    damsel.counter_a = 0.0F;
+    damsel.counter_a = sim::Scalar::zero();
     StartPanicRun(damsel, state);
 }
 
@@ -307,7 +307,7 @@ void StepEntLogicAsDamsel(
 
     RefreshCarryStunWhileHeld(damsel);
     if (damsel.held_by_vid.has_value()) {
-        damsel.counter_a = kDamselHeldReleaseLatch;
+        damsel.counter_a = sim::ToSimScalar(kDamselHeldReleaseLatch);
         damsel.ai_state = EntAiState::Idle;
         return;
     }

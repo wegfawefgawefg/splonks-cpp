@@ -163,10 +163,10 @@ void UpdateBoulderAnim(Ent& boulder) {
 }
 
 void PlayBoulderImpactSoundIfReady(Ent& boulder, State& state) {
-    if (boulder.counter_a > 0.0F) {
+    if (boulder.counter_a > sim::Scalar::zero()) {
         return;
     }
-    boulder.counter_a = kBoulderImpactSoundCooldownFrames;
+    boulder.counter_a = sim::ToSimScalar(kBoulderImpactSoundCooldownFrames);
     state.frame_pause += 2;
     (void)PlayWorldSoundEmitter(state, GetBoulderBottomCenter(boulder), audio_asset_ids::BoulderHitGround);
 }
@@ -381,9 +381,9 @@ void StepEntLogicAsBoulder(
         boulder.ai_state = EntAiState::Disturbed;
         boulder.travel_sound_countdown = sim::Scalar::zero();
         boulder.point_a = ToIVec2(boulder.GetRenderPos());
-        boulder.counter_b = 0.0F;
-        boulder.counter_c = 0.0F;
-        boulder.counter_d = 0.0F;
+        boulder.counter_b = sim::Scalar::zero();
+        boulder.counter_c = sim::Scalar::zero();
+        boulder.counter_d = sim::Scalar::zero();
     }
 
     if (boulder.ai_state != EntAiState::Disturbed) {
@@ -406,22 +406,22 @@ void StepEntPhysicsAsBoulder(
     Ent& boulder = state.ents.ents[ent_idx];
     const bool was_grounded = boulder.grounded;
     const sim::Scalar pre_physics_vel_x = boulder.vel.x;
-    if (boulder.counter_a > 0.0F) {
-        boulder.counter_a -= 1.0F;
-        if (boulder.counter_a < 0.0F) {
-            boulder.counter_a = 0.0F;
+    if (boulder.counter_a > sim::Scalar::zero()) {
+        boulder.counter_a -= sim::Scalar::from_int(1);
+        if (boulder.counter_a < sim::Scalar::zero()) {
+            boulder.counter_a = sim::Scalar::zero();
         }
     }
     if (boulder.ai_state == EntAiState::Disturbed) {
         const sim::AABB break_strip = GetLeadingBreakStrip(boulder);
         const bool will_break_tiles = WouldBreakAnyTiles(break_strip, state);
-        if (will_break_tiles && boulder.counter_a <= 0.0F) {
+        if (will_break_tiles && boulder.counter_a <= sim::Scalar::zero()) {
             (void)PlayWorldSoundEmitter(
                 state,
                 GetBoulderFrontFaceCenter(boulder),
                 audio_asset_ids::BoulderTileCrash
             );
-            boulder.counter_a = kBoulderImpactSoundCooldownFrames;
+            boulder.counter_a = sim::ToSimScalar(kBoulderImpactSoundCooldownFrames);
         }
         if (will_break_tiles) {
             AddBoulderBreakShake(state, boulder);
@@ -450,10 +450,10 @@ void StepEntPhysicsAsBoulder(
         if (boulder.grounded && boulder.dist_traveled_this_frame > sim::Scalar::zero()) {
             StepRollingSound(state, boulder);
             AddBoulderRollingShake(state, boulder);
-            const float dist_traveled = sim::ToRenderScalar(boulder.dist_traveled_this_frame);
+            const sim::Scalar dist_traveled = boulder.dist_traveled_this_frame;
             boulder.counter_c -= dist_traveled;
-            while (boulder.counter_c <= 0.0F) {
-                boulder.counter_c += kBoulderTrailSmokeDistInterval;
+            while (boulder.counter_c <= sim::Scalar::zero()) {
+                boulder.counter_c += sim::ToSimScalar(kBoulderTrailSmokeDistInterval);
                 SpawnBoulderTrailSmoke(
                     state,
                     GetBoulderTrailingBottomCorner(boulder),
@@ -462,8 +462,8 @@ void StepEntPhysicsAsBoulder(
             }
 
             boulder.counter_d -= dist_traveled;
-            while (boulder.counter_d <= 0.0F) {
-                boulder.counter_d += kBoulderTrailPebbleDistInterval;
+            while (boulder.counter_d <= sim::Scalar::zero()) {
+                boulder.counter_d += sim::ToSimScalar(kBoulderTrailPebbleDistInterval);
                 SpawnBoulderTrailPebbles(
                     state,
                     GetBoulderLeadingBottomCorner(boulder),
@@ -474,13 +474,13 @@ void StepEntPhysicsAsBoulder(
 
         const IVec2 current_pos = sim::ToPixelIVec2Round(boulder.pos);
         if (current_pos == boulder.point_a) {
-            boulder.counter_b += 1.0F;
+            boulder.counter_b += sim::Scalar::from_int(1);
         } else {
             boulder.point_a = current_pos;
-            boulder.counter_b = 0.0F;
+            boulder.counter_b = sim::Scalar::zero();
         }
 
-        if (boulder.counter_b >= kBoulderRestFrames) {
+        if (boulder.counter_b >= sim::ToSimScalar(kBoulderRestFrames)) {
                 boulder.ai_state = EntAiState::Returning;
             boulder.vel.x = sim::Scalar::zero();
         }

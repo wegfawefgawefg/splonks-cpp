@@ -37,7 +37,7 @@ constexpr std::int64_t kNinetyDegreesRaw = 90 * kAngleScale;
 constexpr std::int64_t kAtanCurveDegreesRaw = 16 * kAngleScale;
 
 bool HasFired(const Ent& trap) {
-    return trap.counter_a > 0.0F;
+    return trap.counter_a > sim::Scalar::zero();
 }
 
 int DirectionForTrap(const Ent& trap) {
@@ -267,7 +267,7 @@ void FireTrap(std::size_t ent_idx, State& state, Audio& audio) {
     if (arrow == nullptr) {
         return;
     }
-    trap.counter_a = 1.0F;
+    trap.counter_a = sim::Scalar::from_int(1);
     (void)PlayWorldSoundEmitter(state, arrow_center, audio_asset_ids::Throw);
 }
 
@@ -416,12 +416,12 @@ bool TryCollectLooseArrowIntoHeldBow(
         return false;
     }
 
-    bow->counter_b += 1.0F;
+    bow->counter_b += sim::Scalar::from_int(1);
     if (!bow->ent_a.has_value()) {
         SetAnim(
             *bow,
-            bow->counter_b > 0.0F ? aframe_ids::BowLooseLoaded
-                                  : aframe_ids::BowLooseEmpty
+            bow->counter_b > sim::Scalar::zero() ? aframe_ids::BowLooseLoaded
+                                                 : aframe_ids::BowLooseEmpty
         );
     }
     (void)PlayEntCenterSoundEmitter(state, *bow, audio_asset_ids::Equip);

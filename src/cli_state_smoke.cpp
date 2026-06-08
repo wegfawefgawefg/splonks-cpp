@@ -297,10 +297,14 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << " held_by "
                    << (a.held_by_vid.has_value() ? static_cast<int>(a.held_by_vid->id) : -1)
                    << "/" << (b.held_by_vid.has_value() ? static_cast<int>(b.held_by_vid->id) : -1)
-                   << " counters " << a.counter_a << "," << a.counter_b
-                   << "," << a.counter_c << "," << a.counter_d
-                   << "/" << b.counter_a << "," << b.counter_b
-                   << "," << b.counter_c << "," << b.counter_d
+                   << " counters " << sim::ToRenderScalar(a.counter_a) << ","
+                   << sim::ToRenderScalar(a.counter_b) << ","
+                   << sim::ToRenderScalar(a.counter_c) << ","
+                   << sim::ToRenderScalar(a.counter_d) << "/"
+                   << sim::ToRenderScalar(b.counter_a) << ","
+                   << sim::ToRenderScalar(b.counter_b) << ","
+                   << sim::ToRenderScalar(b.counter_c) << ","
+                   << sim::ToRenderScalar(b.counter_d)
                    << " thresholds " << sim::ToRenderScalar(a.threshold_a) << ","
                    << sim::ToRenderScalar(a.threshold_b) << "/"
                    << sim::ToRenderScalar(b.threshold_a) << ","
@@ -2750,11 +2754,11 @@ bool RunRetainedReconnectSmoke() {
     Ent* const held = world_ops::SpawnEnt(state, EntType::Rock, [](Ent& ent) {
         ent.SetRenderPos(Vec2::New(136.0F, 192.0F));
         ent.SetRenderVel(Vec2::New(1.0F, -2.0F));
-        ent.counter_a = 3.0F;
+        ent.counter_a = sim::Scalar::from_int(3);
     });
     Ent* const back = world_ops::SpawnEnt(state, EntType::Cape, [](Ent& ent) {
         ent.SetRenderPos(Vec2::New(120.0F, 192.0F));
-        ent.counter_b = 4.0F;
+        ent.counter_b = sim::Scalar::from_int(4);
     });
     if (held == nullptr || back == nullptr) {
         std::cerr << "retained reconnect smoke failed: attached ent spawn failed\n";

@@ -14,7 +14,7 @@ namespace splonks::ents::dice {
 
 namespace {
 
-constexpr float kRollingState = 1.0F;
+constexpr int kRollingState = 1;
 constexpr float kSettleSpeed = 0.2F;
 
 float WrapRotationDegrees(float degrees) {
@@ -47,13 +47,14 @@ void StepEntLogicAsDice(
     }
 
     Ent& dice = state.ents.ents[ent_idx];
-    if (!dice.active || dice.type_ != EntType::Dice || dice.counter_b != kRollingState) {
+    if (!dice.active || dice.type_ != EntType::Dice ||
+        dice.counter_b != sim::Scalar::from_int(kRollingState)) {
         return;
     }
 
     if (!dice.grounded || dice.vel.x.abs() > sim::ToSimScalar(kSettleSpeed) ||
         dice.vel.y.abs() > sim::ToSimScalar(kSettleSpeed)) {
-        dice.counter_a = static_cast<float>(RollDicePairTotal(state));
+        dice.counter_a = sim::Scalar::from_int(RollDicePairTotal(state));
         dice.rotation = sim::ToSimScalar(
             WrapRotationDegrees(sim::ToRenderScalar(dice.rotation) + 24.0F +
                                 sim::ToRenderScalar(dice.vel.x.abs()) * 8.0F)
@@ -61,7 +62,7 @@ void StepEntLogicAsDice(
         return;
     }
 
-    dice.counter_b = 0.0F;
+    dice.counter_b = sim::Scalar::zero();
     dice.rotation = sim::Scalar::zero();
     dice.vel = sim::Vec2::zero();
 }

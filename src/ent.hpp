@@ -166,10 +166,10 @@ struct Ent {
     std::optional<std::vector<VID>> inside_vids;
     EntLabel ent_label_a = EntLabel::None;
     Alignment alignment = Alignment::Neutral;
-    float counter_a = 0.0F;
-    float counter_b = 0.0F;
-    float counter_c = 0.0F;
-    float counter_d = 0.0F;
+    sim::Scalar counter_a = sim::Scalar::zero();
+    sim::Scalar counter_b = sim::Scalar::zero();
+    sim::Scalar counter_c = sim::Scalar::zero();
+    sim::Scalar counter_d = sim::Scalar::zero();
     sim::Scalar threshold_a = sim::Scalar::zero();
     sim::Scalar threshold_b = sim::Scalar::zero();
 

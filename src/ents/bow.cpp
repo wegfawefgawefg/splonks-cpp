@@ -31,7 +31,7 @@ struct BowAim {
 };
 
 bool HasAmmo(const Ent& bow) {
-    return bow.counter_b > 0.0F;
+    return bow.counter_b > sim::Scalar::zero();
 }
 
 bool IsArmed(const Ent& bow) {
@@ -60,7 +60,7 @@ void BuildHudEntryAsBow(
 ) {
     (void)state;
     (void)source;
-    const int ammo = static_cast<int>(std::max(0.0F, bow.counter_b));
+    const int ammo = std::max(0, bow.counter_b.trunc_int());
     entry.icon_anim_id = ammo > 0 ? aframe_ids::BowLooseLoaded : aframe_ids::BowLooseEmpty;
     entry.count_text = FormatHudInt(ammo);
     entry.count_anchor = HudAnchor::BottomRight;
@@ -153,11 +153,11 @@ BowAim GetBowAim(const Ent& bow, const State& state) {
 }
 
 void ArmBow(Ent& bow, State& state) {
-    if (bow.counter_a > 0.0F || !HasAmmo(bow)) {
+    if (bow.counter_a > sim::Scalar::zero() || !HasAmmo(bow)) {
         return;
     }
 
-    bow.counter_a = kBowFireCooldownFrames;
+    bow.counter_a = sim::ToSimScalar(kBowFireCooldownFrames);
     bow.ent_a = bow.held_by_vid;
     const BowAim aim = GetBowAim(bow, state);
     bow.facing = aim.facing;
@@ -196,7 +196,7 @@ void FireBow(Ent& bow, State& state) {
     bow.facing = aim.facing;
     bow.rotation = aim.rotation;
     SpawnArrowFromBow(bow, state, aim);
-    bow.counter_b -= 1.0F;
+    bow.counter_b -= sim::Scalar::from_int(1);
     bow.ent_a.reset();
     SetAnim(bow, GetLooseAnimId(bow));
     (void)PlayWorldSoundEmitter(state, bow.GetRenderCenter(), audio_asset_ids::Throw);
@@ -241,8 +241,9 @@ void StepEntLogicAsBow(
     }
 
     Ent& bow = state.ents.ents[ent_idx];
-    if (bow.counter_a > 0.0F) {
-        bow.counter_a = std::max(0.0F, bow.counter_a - 1.0F);
+    if (bow.counter_a > sim::Scalar::zero()) {
+        bow.counter_a =
+            gfxp::max(sim::Scalar::zero(), bow.counter_a - sim::Scalar::from_int(1));
     }
     if (bow.held_by_vid.has_value()) {
         const BowAim aim = GetBowAim(bow, state);

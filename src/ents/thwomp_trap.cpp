@@ -16,7 +16,7 @@ constexpr float kTriggerHalfWidth = 8.0F;
 constexpr float kDropGravity = 0.45F;
 constexpr float kDropMaxVelocity = 6.0F;
 constexpr float kReturnVelocity = -1.0F;
-constexpr float kWaitFrames = 100.0F;
+constexpr int kWaitFrames = 100;
 constexpr float kImpactShake = 0.45F;
 constexpr float kImpactTileShake = 0.36F;
 constexpr float kImpactShakeRadiusTiles = 1.2F;
@@ -80,7 +80,7 @@ void StartWait(Ent& thwomp, State& state) {
     thwomp.ai_state = EntAiState::Pursuing;
     thwomp.vel = sim::Vec2::zero();
     thwomp.acc = sim::Vec2::zero();
-    thwomp.counter_a = kWaitFrames;
+    thwomp.counter_a = sim::Scalar::from_int(kWaitFrames);
     AddEntShake(thwomp, kImpactShake);
     AddShake(
         state,
@@ -145,8 +145,8 @@ void StepEntLogicAsThwompTrap(
     if (IsWaiting(thwomp)) {
         thwomp.vel = sim::Vec2::zero();
         thwomp.acc = sim::Vec2::zero();
-        thwomp.counter_a -= 1.0F;
-        if (thwomp.counter_a <= 0.0F) {
+        thwomp.counter_a -= sim::Scalar::from_int(1);
+        if (thwomp.counter_a <= sim::Scalar::zero()) {
             StartReturn(thwomp);
         }
     }

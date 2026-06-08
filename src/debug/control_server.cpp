@@ -296,10 +296,10 @@ void WriteEntJson(std::ostringstream& out, const State& state, const Ent& ent) {
     WriteOptionalVid(out, ent.back_vid);
     out << ",\"ent_a\":";
     WriteOptionalVid(out, ent.ent_a);
-    out << ",\"counters\":{\"a\":" << ent.counter_a
-        << ",\"b\":" << ent.counter_b
-        << ",\"c\":" << ent.counter_c
-        << ",\"d\":" << ent.counter_d
+    out << ",\"counters\":{\"a\":" << sim::ToRenderScalar(ent.counter_a)
+        << ",\"b\":" << sim::ToRenderScalar(ent.counter_b)
+        << ",\"c\":" << sim::ToRenderScalar(ent.counter_c)
+        << ",\"d\":" << sim::ToRenderScalar(ent.counter_d)
         << "}";
     out << ",\"use\":{\"down\":" << (ent.use_state.down ? "true" : "false")
         << ",\"pressed\":" << (ent.use_state.pressed ? "true" : "false")

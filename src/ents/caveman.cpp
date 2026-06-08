@@ -42,7 +42,7 @@ void FaceTowards(Ent& caveman, sim::Vec2 target_pos, const Stage& stage) {
 
 void StartIdle(Ent& caveman, State& state) {
     caveman.ai_state = EntAiState::Idle;
-    caveman.counter_a = static_cast<float>(
+    caveman.counter_a = sim::Scalar::from_int(
         state.drng.RandomIntInclusive(kCavemanIdleMinFrames, kCavemanIdleMaxFrames));
     common::DecelerateHorizontallyToStop(caveman, kCavemanWalkAcceleration);
     TrySetAnim(caveman, EntDisplayState::Neutral);
@@ -132,7 +132,8 @@ void MaybeWallHopWhileIdle(Ent& caveman, const State& state, const Graphics& gra
     caveman.vel.y = sim::ToSimScalar(kCavemanWallHopSpeedY);
     caveman.vel.x = caveman.facing == Side::Left ? -sim::ToSimScalar(kCavemanWallHopSpeedX)
                                                  : sim::ToSimScalar(kCavemanWallHopSpeedX);
-    caveman.counter_a = std::max(0.0F, caveman.counter_a - 10.0F);
+    caveman.counter_a =
+        gfxp::max(sim::Scalar::zero(), caveman.counter_a - sim::Scalar::from_int(10));
 }
 
 } // namespace
@@ -192,8 +193,8 @@ void StepEntLogicAsCaveman(
         common::DecelerateHorizontallyToStop(caveman, kCavemanWalkAcceleration);
         TrySetAnim(caveman, EntDisplayState::Neutral);
         MaybeWallHopWhileIdle(caveman, state, graphics);
-        if (caveman.counter_a > 0.0F) {
-            caveman.counter_a -= 1.0F;
+        if (caveman.counter_a > sim::Scalar::zero()) {
+            caveman.counter_a -= sim::Scalar::from_int(1);
             return;
         }
 

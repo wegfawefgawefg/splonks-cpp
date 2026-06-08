@@ -202,7 +202,7 @@ void StartRumble(Ent& door, State& state) {
     door.ai_state = EntAiState::Pursuing;
     door.vel = sim::Vec2::zero();
     door.acc = sim::Vec2::zero();
-    door.counter_b = kRumbleFrames;
+    door.counter_b = sim::ToSimScalar(kRumbleFrames);
     SetDoorShake(door, kRumbleDoorShake);
     MaintainDoorRumbleSound(door, state);
 }
@@ -240,7 +240,7 @@ void SealDoor(Ent& door, State& state, Audio& audio) {
     door.ai_state = EntAiState::Returning;
     door.vel = sim::Vec2::zero();
     door.acc = sim::Vec2::zero();
-    door.counter_a = kDoorSealWaitFrames;
+    door.counter_a = sim::ToSimScalar(kDoorSealWaitFrames);
     (void)StopOwnedSoundEmitter(
         state,
         audio,
@@ -328,8 +328,8 @@ void StepEntLogicAsDoor(
         if (((state.stage_frame + door.vid.id) % (kTopSmokeIntervalFrames * 2)) == 0U) {
             SpawnTopSmoke(state, door);
         }
-        door.counter_b -= 1.0F;
-        if (door.counter_b <= 0.0F) {
+        door.counter_b -= sim::Scalar::from_int(1);
+        if (door.counter_b <= sim::Scalar::zero()) {
             StartDrop(door, state);
         }
         return;
@@ -344,8 +344,8 @@ void StepEntLogicAsDoor(
         return;
     }
 
-    if (IsSealed(door) && door.counter_a > 0.0F) {
-        door.counter_a -= 1.0F;
+    if (IsSealed(door) && door.counter_a > sim::Scalar::zero()) {
+        door.counter_a -= sim::Scalar::from_int(1);
     }
 
     (void)audio;

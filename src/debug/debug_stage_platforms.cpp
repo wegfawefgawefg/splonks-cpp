@@ -43,8 +43,8 @@ std::optional<VID> SpawnMovingPlatform(
     platform->ai_state = mode;
     platform->point_a = point_a;
     platform->point_b = point_b;
-    platform->counter_a = counter_a;
-    platform->counter_b = counter_b;
+    platform->counter_a = sim::ToSimScalar(counter_a);
+    platform->counter_b = sim::ToSimScalar(counter_b);
     platform->threshold_a = sim::ToSimScalar(threshold_a);
     return vid;
 }

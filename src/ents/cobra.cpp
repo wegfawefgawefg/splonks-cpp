@@ -41,7 +41,7 @@ void StartIdle(
     int max_frames = kCobraIdleMaxFrames
 ) {
     cobra.ai_state = EntAiState::Idle;
-    cobra.counter_a = static_cast<float>(state.drng.RandomIntInclusive(min_frames, max_frames));
+    cobra.counter_a = sim::Scalar::from_int(state.drng.RandomIntInclusive(min_frames, max_frames));
     common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
     TrySetAnim(cobra, EntDisplayState::Neutral);
 }
@@ -194,8 +194,8 @@ void FireCobraSpit(std::size_t ent_idx, State& state, Graphics& graphics) {
         spawned_spit.proj_contact_damage_type = DamageType::Attack;
         spawned_spit.proj_contact_damage_amount = kCobraVenomDamage;
         spawned_spit.proj_contact_timer = common::kProjContactDuration;
-        spawned_spit.counter_a = kCobraSpitLifetimeFrames;
-        spawned_spit.counter_b = 0.0F;
+        spawned_spit.counter_a = sim::ToSimScalar(kCobraSpitLifetimeFrames);
+        spawned_spit.counter_b = sim::Scalar::zero();
     });
     if (spit == nullptr) {
         return;
@@ -239,11 +239,11 @@ void StepEntLogicAsCobra(
         return;
     }
 
-    if (cobra.counter_b > 0.0F) {
-        cobra.counter_b -= 1.0F;
+    if (cobra.counter_b > sim::Scalar::zero()) {
+        cobra.counter_b -= sim::Scalar::from_int(1);
     }
 
-    if (ShouldRunSightScan(cobra, state.stage_frame) && cobra.counter_b <= 0.0F &&
+    if (ShouldRunSightScan(cobra, state.stage_frame) && cobra.counter_b <= sim::Scalar::zero() &&
         CanSeePlayerAhead(cobra, state, graphics)) {
         if (const Ent* const player = FindNearestPlayer(state, cobra.GetSimCenter())) {
             FaceTowards(cobra, player->GetSimCenter(), state.stage);
@@ -251,7 +251,7 @@ void StepEntLogicAsCobra(
         common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
         TrySetAnim(cobra, EntDisplayState::Walk);
         FireCobraSpit(ent_idx, state, graphics);
-        cobra.counter_b = static_cast<float>(state.drng.RandomIntInclusive(
+        cobra.counter_b = sim::Scalar::from_int(state.drng.RandomIntInclusive(
             kCobraSpitCooldownMinFrames,
             kCobraSpitCooldownMaxFrames
         ));
@@ -262,8 +262,8 @@ void StepEntLogicAsCobra(
     if (cobra.ai_state == EntAiState::Idle) {
         common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
         TrySetAnim(cobra, EntDisplayState::Neutral);
-        if (cobra.counter_a > 0.0F) {
-            cobra.counter_a -= 1.0F;
+        if (cobra.counter_a > sim::Scalar::zero()) {
+            cobra.counter_a -= sim::Scalar::from_int(1);
             return;
         }
 
@@ -307,18 +307,18 @@ void StepEntLogicAsCobraSpit(
     (void)dt;
 
     Ent& spit = state.ents.ents[ent_idx];
-    if (spit.counter_a > 0.0F) {
-        spit.counter_a -= 1.0F;
+    if (spit.counter_a > sim::Scalar::zero()) {
+        spit.counter_a -= sim::Scalar::from_int(1);
     }
-    if (spit.counter_a <= 0.0F) {
+    if (spit.counter_a <= sim::Scalar::zero()) {
         DestroyCobraSpit(ent_idx, state);
         return;
     }
 
-    spit.counter_b -= 1.0F;
-    if (spit.counter_b <= 0.0F) {
+    spit.counter_b -= sim::Scalar::from_int(1);
+    if (spit.counter_b <= sim::Scalar::zero()) {
         SpawnSpitTrail(state, spit.GetRenderCenter(), spit.GetRenderVel());
-        spit.counter_b = kCobraSpitTrailIntervalFrames;
+        spit.counter_b = sim::ToSimScalar(kCobraSpitTrailIntervalFrames);
     }
 }
 

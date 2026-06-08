@@ -96,7 +96,7 @@ bool SpawnShopkeeperPistolIntoHands(std::size_t ent_idx, State& state, const Gra
         spawned_pistol.attach_mode = AttachMode::Held;
         spawned_pistol.has_physics = false;
         spawned_pistol.can_collide = false;
-        spawned_pistol.counter_b = 9999.0F;
+        spawned_pistol.counter_b = sim::Scalar::from_int(9999);
         spawned_pistol.facing = shopkeeper.facing;
         spawned_pistol.SetRenderCenter(shopkeeper.GetRenderCenter() + Vec2::New(4.0F, 1.0F));
         shopkeeper.holding_vid = spawned_pistol.vid;
@@ -204,9 +204,9 @@ bool TryRecoverDroppedPistol(
     const bool blocked_ahead =
         shopkeeper.grounded &&
         IsShopkeeperBlockedMovingTowardPistol(shopkeeper, move_direction, state, graphics);
-    if (shopkeeper.grounded && shopkeeper.counter_a <= 0.0F && (pistol_above || blocked_ahead)) {
+    if (shopkeeper.grounded && shopkeeper.counter_a <= sim::Scalar::zero() && (pistol_above || blocked_ahead)) {
         shopkeeper.vel.y = sim::ToSimScalar(kShopkeeperJumpSpeedY);
-        shopkeeper.counter_a = kShopkeeperJumpCooldownFrames;
+        shopkeeper.counter_a = sim::ToSimScalar(kShopkeeperJumpCooldownFrames);
     }
 
     const sim::AABB shopkeeper_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
@@ -272,11 +272,11 @@ void StepEntLogicAsShopkeeper(
         return;
     }
 
-    if (shopkeeper.counter_a > 0.0F) {
-        shopkeeper.counter_a -= 1.0F;
+    if (shopkeeper.counter_a > sim::Scalar::zero()) {
+        shopkeeper.counter_a -= sim::Scalar::from_int(1);
     }
-    if (shopkeeper.counter_b > 0.0F) {
-        shopkeeper.counter_b -= 1.0F;
+    if (shopkeeper.counter_b > sim::Scalar::zero()) {
+        shopkeeper.counter_b -= sim::Scalar::from_int(1);
     }
 
     if (const std::optional<std::size_t> shop_idx = GetShopIdxForShopkeeper(shopkeeper, state)) {
@@ -317,12 +317,12 @@ void StepEntLogicAsShopkeeper(
     const float target_speed_x =
         delta.x < sim::Scalar::zero() ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX;
 
-    if (shopkeeper.grounded && shopkeeper.counter_a <= 0.0F) {
+    if (shopkeeper.grounded && shopkeeper.counter_a <= sim::Scalar::zero()) {
         shopkeeper.vel.y = sim::ToSimScalar(kShopkeeperJumpSpeedY);
         common::AccelerateHorizontallyTowardSpeed(
             shopkeeper, state, target_speed_x, kShopkeeperMoveAcceleration
         );
-        shopkeeper.counter_a = kShopkeeperJumpCooldownFrames;
+        shopkeeper.counter_a = sim::ToSimScalar(kShopkeeperJumpCooldownFrames);
     }
 
     if (shopkeeper.grounded) {
@@ -338,9 +338,9 @@ void StepEntLogicAsShopkeeper(
     if (shopkeeper.holding_vid.has_value()) {
         if (Ent* const pistol = state.ents.GetEntMut(*shopkeeper.holding_vid)) {
             SyncHeldPistolToShopkeeper(shopkeeper, *pistol, state, graphics);
-            if (shopkeeper.counter_b <= 0.0F && CanSeePlayerAhead(shopkeeper, state, graphics)) {
+            if (shopkeeper.counter_b <= sim::Scalar::zero() && CanSeePlayerAhead(shopkeeper, state, graphics)) {
                 UseEnt(*pistol, shopkeeper.vid, AttachMode::Held);
-                shopkeeper.counter_b = kShopkeeperShootCooldownFrames;
+                shopkeeper.counter_b = sim::ToSimScalar(kShopkeeperShootCooldownFrames);
             }
         }
     }

@@ -66,11 +66,11 @@ void OnUseAsRope(std::size_t ent_idx, State& state, Graphics& graphics, Audio& a
     (void)audio;
     (void)audio;
     Ent& rope = state.ents.ents[ent_idx];
-    if (rope.use_state.pressed == false || rope.counter_a > 0.0F) {
+    if (rope.use_state.pressed == false || rope.counter_a > sim::Scalar::zero()) {
         return;
     }
 
-    rope.counter_a = 16.0F;
+    rope.counter_a = sim::Scalar::from_int(16);
     SetAnim(rope, aframe_ids::UnfoldingRope);
 
     if (rope.use_state.source == AttachMode::None) {
@@ -94,9 +94,9 @@ void StepEntLogicAsRope(
     // set anim and display state
     // start decrementing the counter
     bool rope_popped = false;
-    if (rope.counter_a > 0.0F) {
-        rope.counter_a -= 1.0F;
-        if (rope.counter_a <= 0.0F) {
+    if (rope.counter_a > sim::Scalar::zero()) {
+        rope.counter_a -= sim::Scalar::from_int(1);
+        if (rope.counter_a <= sim::Scalar::zero()) {
             rope_popped = true;
             // pop
         }

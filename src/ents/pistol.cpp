@@ -149,11 +149,11 @@ void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio
 
 void OnUseAsPistol(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     Ent& pistol = state.ents.ents[ent_idx];
-    if (!pistol.use_state.pressed || pistol.counter_a > 0.0F) {
+    if (!pistol.use_state.pressed || pistol.counter_a > sim::Scalar::zero()) {
         return;
     }
 
-    if (pistol.counter_b <= 0.0F) {
+    if (pistol.counter_b <= sim::Scalar::zero()) {
         (void)PlayEntSoundEmitter(state, pistol, audio_asset_ids::GunEmpty);
         if (pistol.use_state.source == AttachMode::None) {
             StopUsingEnt(pistol);
@@ -161,8 +161,8 @@ void OnUseAsPistol(std::size_t ent_idx, State& state, Graphics& graphics, Audio&
         return;
     }
 
-    pistol.counter_a = kPistolFireCooldownFrames;
-    pistol.counter_b -= 1.0F;
+    pistol.counter_a = sim::ToSimScalar(kPistolFireCooldownFrames);
+    pistol.counter_b -= sim::Scalar::from_int(1);
     FirePistolShot(ent_idx, state, graphics, audio);
 
     if (pistol.use_state.source == AttachMode::None) {
@@ -181,10 +181,10 @@ void StepEntLogicAsPistol(
     (void)audio;
     (void)dt;
     Ent& pistol = state.ents.ents[ent_idx];
-    if (pistol.counter_a > 0.0F) {
-        pistol.counter_a -= 1.0F;
-        if (pistol.counter_a < 0.0F) {
-            pistol.counter_a = 0.0F;
+    if (pistol.counter_a > sim::Scalar::zero()) {
+        pistol.counter_a -= sim::Scalar::from_int(1);
+        if (pistol.counter_a < sim::Scalar::zero()) {
+            pistol.counter_a = sim::Scalar::zero();
         }
     }
 }

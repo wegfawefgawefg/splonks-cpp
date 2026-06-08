@@ -121,9 +121,9 @@ void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio
         }
     }
     if (refill_fuel) {
-        jetpack.counter_a = kFuel;
+        jetpack.counter_a = sim::ToSimScalar(kFuel);
     }
-    if (jetpack.counter_a <= 0.0F) {
+    if (jetpack.counter_a <= sim::Scalar::zero()) {
         return;
     }
 
@@ -150,7 +150,7 @@ void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio
         (void)PlayEntSoundEmitter(state, jetpack, sound_effect);
         jetpack.IncTravelSound();
     }
-    jetpack.counter_a -= 1.0F;
+    jetpack.counter_a -= sim::Scalar::from_int(1);
 
     const Vec2 center = jetpack.GetRenderCenter();
     SpawnJetpackSmoke(state, center + Vec2::New(3.0F, 3.0F));

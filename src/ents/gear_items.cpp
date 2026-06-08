@@ -125,7 +125,7 @@ void StepEquippedParachute(Ent& owner, State& state, const Graphics& graphics) {
 }
 
 AFrameId GetCapeAnim(const Ent& cape, const State& state) {
-    const bool open = cape.counter_a > 0.0F;
+    const bool open = cape.counter_a > sim::Scalar::zero();
     if (cape.attach_mode == AttachMode::Back && cape.held_by_vid.has_value()) {
         const Ent* const holder = state.ents.GetEnt(*cape.held_by_vid);
         if (holder != nullptr) {
@@ -153,7 +153,7 @@ void OnUseAsCape(std::size_t ent_idx, State& state, Graphics& graphics, Audio& a
     }
 
     Ent& cape = state.ents.ents[ent_idx];
-    cape.counter_a = 0.0F;
+    cape.counter_a = sim::Scalar::zero();
     if (!cape.use_state.down ||
         !cape.use_state.user_vid.has_value()) {
         return;
@@ -168,7 +168,7 @@ void OnUseAsCape(std::size_t ent_idx, State& state, Graphics& graphics, Audio& a
         return;
     }
 
-    cape.counter_a = 1.0F;
+    cape.counter_a = sim::Scalar::from_int(1);
     if (!holder->grounded && holder->vel.y > sim::Scalar::zero()) {
         holder->vel.y = std::min(holder->vel.y, sim::ToSimScalar(kCapeMaxFallSpeed));
         holder->fall_timer = 0;
@@ -191,7 +191,7 @@ void StepEntLogicAsCape(
 
     Ent& cape = state.ents.ents[ent_idx];
     if (!cape.use_state.down) {
-        cape.counter_a = 0.0F;
+        cape.counter_a = sim::Scalar::zero();
     }
     SetAnim(cape, GetCapeAnim(cape, state));
 }

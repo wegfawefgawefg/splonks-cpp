@@ -60,11 +60,19 @@ constexpr int kMonkeyPlayerAttachOffsetX = 5;
 constexpr int kMonkeyPlayerAttachOffsetY = -2;
 
 MonkeyState GetMonkeyState(const Ent& monkey) {
-    return static_cast<MonkeyState>(static_cast<int>(monkey.counter_d));
+    return static_cast<MonkeyState>(monkey.counter_d.trunc_int());
 }
 
 void SetMonkeyState(Ent& monkey, MonkeyState state) {
-    monkey.counter_d = static_cast<float>(static_cast<int>(state));
+    monkey.counter_d = sim::Scalar::from_int(static_cast<int>(state));
+}
+
+sim::Scalar Frames(std::uint32_t frames) {
+    return sim::Scalar::from_int(static_cast<int>(frames));
+}
+
+sim::Scalar RandomFrames(State& state, int min_frames, int max_frames) {
+    return sim::Scalar::from_int(state.drng.RandomIntInclusive(min_frames, max_frames));
 }
 
 sim::Scalar MonkeySightDistanceSq() {
@@ -263,16 +271,15 @@ void BounceAwayFromPlayer(Ent& monkey, const Ent& player, State& state) {
         monkey.vel.x = sim::Scalar::from_int(kMonkeyLeapSpeed);
     }
     SetMonkeyState(monkey, MonkeyState::Bounce);
-    monkey.counter_c = static_cast<float>(kMonkeyVineCooldownFrames);
-    monkey.counter_b = static_cast<float>(kMonkeyGrabCooldownFrames);
+    monkey.counter_c = Frames(kMonkeyVineCooldownFrames);
+    monkey.counter_b = Frames(kMonkeyGrabCooldownFrames);
     TrySetAnim(monkey, EntDisplayState::Falling);
 }
 
 void EnterIdle(Ent& monkey, State& state) {
     SetMonkeyState(monkey, MonkeyState::Idle);
     monkey.draw_layer = DrawLayer::Foreground;
-    monkey.counter_a = static_cast<float>(
-        state.drng.RandomIntInclusive(kMonkeyIdleMinFrames, kMonkeyIdleMaxFrames));
+    monkey.counter_a = RandomFrames(state, kMonkeyIdleMinFrames, kMonkeyIdleMaxFrames);
     monkey.point_a.x = 0;
     monkey.vel.x = sim::Scalar::zero();
     TrySetAnim(monkey, EntDisplayState::Neutral);
@@ -280,8 +287,7 @@ void EnterIdle(Ent& monkey, State& state) {
 
 void EnterCharge(Ent& monkey, State& state) {
     SetMonkeyState(monkey, MonkeyState::Charge);
-    monkey.counter_a = static_cast<float>(
-        state.drng.RandomIntInclusive(kMonkeyChargeMinFrames, kMonkeyChargeMaxFrames));
+    monkey.counter_a = RandomFrames(state, kMonkeyChargeMinFrames, kMonkeyChargeMaxFrames);
     monkey.vel.x = sim::Scalar::zero();
     TrySetAnim(monkey, EntDisplayState::Walk);
 }
@@ -291,7 +297,7 @@ void EnterHang(Ent& monkey, State& state, int forced_launch_direction = 0) {
     monkey.vel = sim::Vec2::zero();
     monkey.acc = sim::Vec2::zero();
     monkey.point_a.x = std::clamp(forced_launch_direction, -1, 1);
-    monkey.counter_a = static_cast<float>(state.drng.RandomIntInclusive(10, 40));
+    monkey.counter_a = RandomFrames(state, 10, 40);
     TrySetAnim(monkey, EntDisplayState::Hanging);
 }
 
@@ -300,8 +306,7 @@ void EnterClimb(Ent& monkey, State& state, bool moving_up) {
     monkey.vel = sim::Vec2::zero();
     monkey.acc = sim::Vec2::zero();
     monkey.point_a.x = moving_up ? 0 : 1;
-    monkey.counter_a = static_cast<float>(
-        state.drng.RandomIntInclusive(kMonkeyClimbMinFrames, kMonkeyClimbMaxFrames));
+    monkey.counter_a = RandomFrames(state, kMonkeyClimbMinFrames, kMonkeyClimbMaxFrames);
     TrySetAnim(monkey, EntDisplayState::Climbing);
 }
 
@@ -376,7 +381,7 @@ void LaunchOffClimbable(Ent& monkey, const std::optional<sim::Vec2>& player_delt
             state.drng.RandomIntInclusive(0, 1) == 0 ? Side::Left : Side::Right;
         LaunchAtPlayerOrForward(monkey, std::nullopt, state);
     }
-    monkey.counter_c = static_cast<float>(kMonkeyClimbDismountCooldownFrames);
+    monkey.counter_c = Frames(kMonkeyClimbDismountCooldownFrames);
 }
 
 void HopAlongClimbable(Ent& monkey, const std::optional<sim::Vec2>& player_delta, State& state) {
@@ -387,8 +392,7 @@ void HopAlongClimbable(Ent& monkey, const std::optional<sim::Vec2>& player_delta
         sim::Scalar::from_int(moving_up ? -kMonkeyClimbSpeed : kMonkeyClimbSpeed),
     };
     monkey.acc = sim::Vec2::zero();
-    monkey.counter_a = static_cast<float>(
-        state.drng.RandomIntInclusive(kMonkeyClimbMinFrames, kMonkeyClimbMaxFrames));
+    monkey.counter_a = RandomFrames(state, kMonkeyClimbMinFrames, kMonkeyClimbMaxFrames);
 }
 
 void TripPlayer(Ent& player, State& state) {
@@ -432,8 +436,8 @@ void AttachToPlayer(Ent& monkey, Ent& player, State& state) {
     monkey.point_a = IVec2::New(1, 0);
     monkey.vel = sim::Vec2::zero();
     monkey.acc = sim::Vec2::zero();
-    monkey.counter_a = static_cast<float>(state.drng.RandomIntInclusive(40, 80));
-    monkey.counter_b = static_cast<float>(kMonkeyGrabCooldownFrames);
+    monkey.counter_a = RandomFrames(state, 40, 80);
+    monkey.counter_b = Frames(kMonkeyGrabCooldownFrames);
     SetMonkeyState(monkey, MonkeyState::Grab);
     monkey.draw_layer = DrawLayer::Background;
     TrySetAnim(monkey, EntDisplayState::Hanging);
@@ -482,11 +486,11 @@ void StepEntLogicAsMonkey(
         return;
     }
 
-    if (monkey.counter_b > 0.0F) {
-        monkey.counter_b -= 1.0F;
+    if (monkey.counter_b > sim::Scalar::zero()) {
+        monkey.counter_b -= sim::Scalar::from_int(1);
     }
-    if (monkey.counter_c > 0.0F) {
-        monkey.counter_c -= 1.0F;
+    if (monkey.counter_c > sim::Scalar::zero()) {
+        monkey.counter_c -= sim::Scalar::from_int(1);
     }
     if (monkey.threshold_a > sim::Scalar::zero()) {
         monkey.threshold_a -= sim::Scalar::from_int(1);
@@ -498,8 +502,8 @@ void StepEntLogicAsMonkey(
     switch (monkey_state) {
     case MonkeyState::Idle:
         common::DecelerateHorizontallyToStop(monkey, 0.5F);
-        if (monkey.counter_a > 0.0F) {
-            monkey.counter_a -= 1.0F;
+        if (monkey.counter_a > sim::Scalar::zero()) {
+            monkey.counter_a -= sim::Scalar::from_int(1);
         } else if (monkey.grounded &&
                    state.drng.RandomIntInclusive(1, 100) <= kMonkeyGroundClimbChancePercent &&
                    TryGroundClimbOrApproach(monkey, state, player_delta)) {
@@ -513,8 +517,8 @@ void StepEntLogicAsMonkey(
         break;
     case MonkeyState::Charge:
         common::DecelerateHorizontallyToStop(monkey, 0.5F);
-        if (monkey.counter_a > 0.0F) {
-            monkey.counter_a -= 1.0F;
+        if (monkey.counter_a > sim::Scalar::zero()) {
+            monkey.counter_a -= sim::Scalar::from_int(1);
         } else if (monkey.grounded &&
                    state.drng.RandomIntInclusive(1, 100) <= kMonkeyGroundClimbChancePercent &&
                    TryGroundClimbOrApproach(monkey, state, player_delta)) {
@@ -525,7 +529,8 @@ void StepEntLogicAsMonkey(
     case MonkeyState::Recover:
         if (monkey.grounded) {
             EnterIdle(monkey, state);
-        } else if (monkey.counter_c <= 0.0F && IsClimbableAt(state, monkey.GetSimCenter())) {
+        } else if (monkey.counter_c <= sim::Scalar::zero() &&
+                   IsClimbableAt(state, monkey.GetSimCenter())) {
             EnterHang(monkey, state);
         } else if (monkey.collided_last_frame) {
             const bool wall_left = common::HasWallAheadForGroundWalker(monkey, state, graphics, -1);
@@ -547,8 +552,8 @@ void StepEntLogicAsMonkey(
     case MonkeyState::Hang:
         monkey.vel = sim::Vec2::zero();
         monkey.acc = sim::Vec2::zero();
-        if (monkey.counter_a > 0.0F) {
-            monkey.counter_a -= 1.0F;
+        if (monkey.counter_a > sim::Scalar::zero()) {
+            monkey.counter_a -= sim::Scalar::from_int(1);
         } else if (monkey.point_a.x == 0 &&
                    state.drng.RandomIntInclusive(1, 100) <= kMonkeyClimbChanceFromHangPercent) {
             const std::optional<sim::Vec2> climb_center = FindNearbyClimbableCenter(state, monkey);
@@ -566,8 +571,8 @@ void StepEntLogicAsMonkey(
         const bool moving_up = monkey.point_a.x == 0;
         monkey.vel.y = sim::Scalar::from_int(moving_up ? -kMonkeyClimbSpeed : kMonkeyClimbSpeed);
         const sim::Vec2 probe = monkey.GetSimCenter() + sim::PixelVec2(0, moving_up ? -8 : 14);
-        if (monkey.counter_a > 0.0F) {
-            monkey.counter_a -= 1.0F;
+        if (monkey.counter_a > sim::Scalar::zero()) {
+            monkey.counter_a -= sim::Scalar::from_int(1);
         } else if (state.drng.RandomIntInclusive(1, 100) <= kMonkeyClimbSideDismountPercent) {
             LaunchOffClimbable(monkey, player_delta, state);
             break;
@@ -583,7 +588,7 @@ void StepEntLogicAsMonkey(
         if (player_delta.has_value() && gfxp::length_sq(*player_delta) < MonkeySightDistanceSq() &&
             player_delta->y > sim::Scalar::zero()) {
             SetMonkeyState(monkey, MonkeyState::Bounce);
-            monkey.counter_c = static_cast<float>(kMonkeyVineCooldownFrames);
+            monkey.counter_c = Frames(kMonkeyVineCooldownFrames);
             monkey.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(2, 4));
             if (player_delta->x < sim::Scalar::zero()) {
                 monkey.facing = Side::Left;
@@ -615,8 +620,8 @@ void StepEntLogicAsMonkey(
         monkey.SetSimCenter(player->GetSimCenter() +
                             sim::PixelVec2(side * kMonkeyPlayerAttachOffsetX,
                                            kMonkeyPlayerAttachOffsetY));
-        if (monkey.counter_a > 0.0F) {
-            monkey.counter_a -= 1.0F;
+        if (monkey.counter_a > sim::Scalar::zero()) {
+            monkey.counter_a -= sim::Scalar::from_int(1);
         } else {
             RobPlayer(ent_idx, monkey, *player, state, graphics, audio);
             monkey.ent_a.reset();
@@ -680,7 +685,7 @@ common::ContactResult OnEntContactAsMonkey(
     }
 
     if (state.players.FindByEntVid(other.vid) != nullptr &&
-        monkey.counter_b <= 0.0F && other.condition == EntCondition::Normal) {
+        monkey.counter_b <= sim::Scalar::zero() && other.condition == EntCondition::Normal) {
         AttachToPlayer(monkey, other, state);
         return {};
     }
@@ -691,7 +696,7 @@ common::ContactResult OnEntContactAsMonkey(
         ThrowSpawnedEnt(other, monkey);
         monkey.threshold_a = sim::Scalar::from_int(kMonkeyThrowCooldownFrames);
         SetMonkeyState(monkey, MonkeyState::Idle);
-        monkey.counter_a = static_cast<float>(state.drng.RandomIntInclusive(20, 60));
+        monkey.counter_a = RandomFrames(state, 20, 60);
     }
 
     return {};

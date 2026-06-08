@@ -107,8 +107,8 @@ void StepPassiveSpider(Ent& ent, State& state) {
         return;
     }
 
-    if (ent.counter_a > 0.0F) {
-        ent.counter_a -= 1.0F;
+    if (ent.counter_a > sim::Scalar::zero()) {
+        ent.counter_a -= sim::Scalar::from_int(1);
         if (ent.vel.x.abs() < sim::ToSimScalar(kSpiderIdleSpeedThreshold)) {
             ent.vel.x = sim::Scalar::zero();
         }
@@ -123,7 +123,7 @@ void StepPassiveSpider(Ent& ent, State& state) {
     ent.vel.x = sim::ToSimScalar(
         ent.facing == Side::Left ? -kPassiveSpiderHopSpeedX : kPassiveSpiderHopSpeedX
     );
-    ent.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
+    ent.counter_a = sim::Scalar::from_int(state.drng.RandomIntInclusive(
         kPassiveSpiderCooldownMinFrames,
         kPassiveSpiderCooldownMaxFrames
     ));
@@ -140,7 +140,7 @@ void TryHopTowardPlayer(
     const std::optional<sim::Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value() ||
         gfxp::length_sq(*player_delta) > sim::Scalar::from_int(aggro_distance * aggro_distance)) {
-        ent.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
+        ent.counter_a = sim::Scalar::from_int(state.drng.RandomIntInclusive(
             kAggroSpiderCooldownMinFrames,
             kAggroSpiderCooldownMaxFrames
         ));
@@ -150,7 +150,7 @@ void TryHopTowardPlayer(
     FaceTowardNearestPlayer(ent, state);
     ent.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(hop_speed_y_min, hop_speed_y_max));
     ent.vel.x = sim::ToSimScalar(ent.facing == Side::Left ? -hop_speed_x : hop_speed_x);
-    ent.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
+    ent.counter_a = sim::Scalar::from_int(state.drng.RandomIntInclusive(
         kAggroSpiderCooldownMinFrames,
         kAggroSpiderCooldownMaxFrames
     ));
@@ -173,8 +173,8 @@ void StepAggroSpider(
         return;
     }
 
-    if (ent.counter_a > 0.0F) {
-        ent.counter_a -= 1.0F;
+    if (ent.counter_a > sim::Scalar::zero()) {
+        ent.counter_a -= sim::Scalar::from_int(1);
         if (ent.vel.x.abs() < sim::ToSimScalar(kSpiderIdleSpeedThreshold)) {
             ent.vel.x = sim::Scalar::zero();
         }

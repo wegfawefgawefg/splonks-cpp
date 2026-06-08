@@ -265,8 +265,8 @@ void AddMattockDebugAnnotations(
 }
 
 bool ShouldBreakMattockAfterSuccessfulDig(Ent& mattock, State& state) {
-    if (mattock.counter_b > 0.0F) {
-        mattock.counter_b -= 1.0F;
+    if (mattock.counter_b > sim::Scalar::zero()) {
+        mattock.counter_b -= sim::Scalar::from_int(1);
         return false;
     }
 
@@ -429,7 +429,7 @@ void OnUseAsMattock(std::size_t ent_idx, State& state, Graphics& graphics, Audio
 
     SetAnim(mattock, aframe_ids::MattockSwing);
     mattock.aframe_animator.loop = false;
-    mattock.counter_a = kMattockStrikePending;
+    mattock.counter_a = sim::ToSimScalar(kMattockStrikePending);
 
     if (mattock.use_state.source == AttachMode::None) {
         StopUsingEnt(mattock);
@@ -456,9 +456,9 @@ void StepEntLogicAsMattock(
         return;
     }
 
-    if (mattock.counter_a > 0.0F && mattock.aframe_animator.current_frame > 0) {
+    if (mattock.counter_a > sim::Scalar::zero() && mattock.aframe_animator.current_frame > 0) {
         TryApplyMattockStrike(ent_idx, state, graphics, audio);
-        mattock.counter_a = 0.0F;
+        mattock.counter_a = sim::Scalar::zero();
     }
 
     if (!mattock.aframe_animator.IsFinished()) {
