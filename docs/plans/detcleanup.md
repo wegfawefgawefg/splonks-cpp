@@ -349,6 +349,11 @@ Current state:
   direction now use fixed centers/deltas, and the unused float world-delta
   explosion footprint helper was removed. Tile footprint selection and visual
   effect placement remain on their existing render/int boundary paths.
+- Completed 2026-06-08: monkey AI target selection, climbable tile probing,
+  climb target scoring, climb snapping, player grab attachment, bounce/trip
+  direction, and thrown loot velocities now use fixed centers, fixed world
+  deltas, fixed tile queries, and fixed velocity writes. Remaining monkey render
+  center use is presentation/audio or tool API boundary code.
 
 Cleanup:
 
