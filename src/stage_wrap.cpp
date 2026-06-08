@@ -23,8 +23,17 @@ Vec2 GetCoreSizeWc(const Stage& stage) {
     return ToVec2(stage.wrap_core_size_tiles * kTileSize);
 }
 
-void ShiftActiveEnts(State& state, const Vec2& delta) {
-    const sim::Vec2 sim_delta = sim::ToSimVec2(delta);
+sim::Vec2 GetSimCoreOriginWc(const Stage& stage) {
+    const UVec2 origin = stage.wrap_core_origin_tiles * kTileSize;
+    return sim::PixelVec2(static_cast<std::int32_t>(origin.x), static_cast<std::int32_t>(origin.y));
+}
+
+sim::Vec2 GetSimCoreSizeWc(const Stage& stage) {
+    const UVec2 size = stage.wrap_core_size_tiles * kTileSize;
+    return sim::PixelVec2(static_cast<std::int32_t>(size.x), static_cast<std::int32_t>(size.y));
+}
+
+void ShiftActiveEnts(State& state, const sim::Vec2& sim_delta) {
     for (Ent& ent : state.ents.ents) {
         if (!ent.active) {
             continue;
@@ -73,8 +82,8 @@ void WrapPosIntoCore(const Stage& stage, Vec2& pos) {
 }
 
 void WrapPosIntoCore(const Stage& stage, sim::Vec2& pos) {
-    const sim::Vec2 core_origin = sim::ToSimVec2(GetCoreOriginWc(stage));
-    const sim::Vec2 core_size = sim::ToSimVec2(GetCoreSizeWc(stage));
+    const sim::Vec2 core_origin = GetSimCoreOriginWc(stage);
+    const sim::Vec2 core_size = GetSimCoreSizeWc(stage);
 
     if (stage.border.wrap_x && core_size.x > sim::Scalar::zero()) {
         while (pos.x < core_origin.x) {
@@ -95,8 +104,7 @@ void WrapPosIntoCore(const Stage& stage, sim::Vec2& pos) {
     }
 }
 
-void CropEntsAndShiftBack(State& state, const Vec2& delta_wc) {
-    const sim::Vec2 sim_delta_wc = sim::ToSimVec2(delta_wc);
+void CropEntsAndShiftBack(State& state, const sim::Vec2& sim_delta_wc) {
     for (Ent& ent : state.ents.ents) {
         if (!ent.active) {
             continue;
@@ -310,8 +318,10 @@ void ExpandStageForWrap(
     stage.wrap_core_origin_tiles = padding_tile_dims;
     stage.wrap_core_size_tiles = old_tile_dims;
 
-    const Vec2 delta_wc = ToVec2(ToIVec2(padding_tile_dims * kTileSize));
-    ShiftActiveEnts(state, delta_wc);
+    const IVec2 delta_pixels = ToIVec2(padding_tile_dims * kTileSize);
+    const sim::Vec2 sim_delta_wc = sim::PixelVec2(delta_pixels.x, delta_pixels.y);
+    const Vec2 delta_wc = ToVec2(delta_pixels);
+    ShiftActiveEnts(state, sim_delta_wc);
     ShiftStageSpawnsAndStamps(stage, delta_wc);
     graphics.play_cam.pos += delta_wc;
 }
@@ -415,8 +425,10 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
         }
     }
 
-    const Vec2 delta_wc = ToVec2(ToIVec2(core_origin * kTileSize));
-    CropEntsAndShiftBack(state, delta_wc);
+    const IVec2 delta_pixels = ToIVec2(core_origin * kTileSize);
+    const sim::Vec2 sim_delta_wc = sim::PixelVec2(delta_pixels.x, delta_pixels.y);
+    const Vec2 delta_wc = ToVec2(delta_pixels);
+    CropEntsAndShiftBack(state, sim_delta_wc);
     CropStageSpawnsAndStampsAndShiftBack(stage, delta_wc);
     graphics.play_cam.pos = graphics.play_cam.pos - delta_wc;
 
