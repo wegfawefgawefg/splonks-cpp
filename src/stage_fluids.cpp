@@ -6,7 +6,6 @@
 #include "tile_spec.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <optional>
 #include <vector>
 
@@ -14,8 +13,12 @@ namespace splonks {
 
 namespace {
 
-constexpr float kMaxFluidAmount = 1.0F;
-constexpr float kMinFluidAmount = 0.0001F;
+constexpr sim::Scalar kMaxFluidAmount = sim::Scalar::from_int(1);
+constexpr sim::Scalar kZero = sim::Scalar::zero();
+constexpr sim::Scalar kOne = sim::Scalar::from_int(1);
+constexpr sim::Scalar kFour = sim::Scalar::from_int(4);
+const sim::Scalar kMinFluidAmount =
+    sim::ToSimScalar(0.0001F, gfxp::Rounding::Ceil);
 const sim::Scalar kVelocityClamp = sim::Scalar::from_int(8);
 const sim::Scalar kGravityEpsilon =
     sim::ToSimScalar(0.0001F, gfxp::Rounding::Ceil);
@@ -24,7 +27,7 @@ struct FluidTransferProposal {
     IVec2 source = IVec2::New(0, 0);
     IVec2 target = IVec2::New(0, 0);
     Tile fluid_tile = Tile::Air;
-    float amount = 0.0F;
+    sim::Scalar amount = sim::Scalar::zero();
     sim::Vec2 direction = sim::Vec2::zero();
 };
 
@@ -43,9 +46,13 @@ sim::Scalar Dot(sim::Vec2 left, sim::Vec2 right) {
     return (left.x * right.x) + (left.y * right.y);
 }
 
+sim::Scalar ClampScalar(sim::Scalar value, sim::Scalar min_value, sim::Scalar max_value) {
+    return std::clamp(value, min_value, max_value);
+}
+
 sim::Vec2 ClampLength(sim::Vec2 value, sim::Scalar max_length) {
     const sim::Scalar length = sim::Length(value);
-    if (length <= max_length || length <= sim::Scalar::zero()) {
+    if (length <= max_length || length <= kZero) {
         return value;
     }
     return value * (max_length / length);
@@ -88,22 +95,21 @@ Tile GetTileFromGrid(const std::vector<std::vector<Tile>>& tiles, const IVec2& t
     return tiles[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)];
 }
 
-float GetAmountFromGrid(
+sim::Scalar GetAmountFromGrid(
     const std::vector<std::vector<sim::Scalar>>& amounts,
     const IVec2& tile_coord
 ) {
-    return sim::ToRenderScalar(
-        amounts[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)]
-    );
+    return amounts[static_cast<std::size_t>(tile_coord.y)]
+                  [static_cast<std::size_t>(tile_coord.x)];
 }
 
 void SetAmountInGrid(
     std::vector<std::vector<sim::Scalar>>& amounts,
     const IVec2& tile_coord,
-    float amount
+    sim::Scalar amount
 ) {
-    amounts[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)] =
-        sim::ToSimScalar(amount);
+    amounts[static_cast<std::size_t>(tile_coord.y)]
+           [static_cast<std::size_t>(tile_coord.x)] = amount;
 }
 
 sim::Vec2 GetVelocityFromGrid(
@@ -138,18 +144,19 @@ void PushChangedTile(std::vector<IVec2>& changed_tiles, const IVec2& tile_coord)
     changed_tiles.push_back(tile_coord);
 }
 
-float GetTargetCapacity(
+sim::Scalar GetTargetCapacity(
     const std::vector<std::vector<Tile>>& fluid_tiles,
     const std::vector<std::vector<sim::Scalar>>& amounts,
     const IVec2& target,
     Tile fluid_tile
 ) {
-    const float target_amount = GetAmountFromGrid(amounts, target);
+    const sim::Scalar target_amount = GetAmountFromGrid(amounts, target);
     const Tile target_tile = GetTileFromGrid(fluid_tiles, target);
     if (target_amount > kMinFluidAmount && target_tile != fluid_tile) {
-        return 0.0F;
+        return kZero;
     }
-    return std::max(0.0F, kMaxFluidAmount - target_amount);
+    const sim::Scalar capacity = kMaxFluidAmount - target_amount;
+    return capacity > kZero ? capacity : kZero;
 }
 
 void AddFluidTransferProposalsForCell(
@@ -162,13 +169,13 @@ void AddFluidTransferProposalsForCell(
     const std::vector<std::vector<std::uint8_t>>& gravity_strengths,
     const std::vector<std::vector<sim::Vec2>>& temp_gravity,
     const IVec2& source,
-    float transfer_cap,
-    float pressure_strength,
+    sim::Scalar transfer_cap,
+    sim::Scalar pressure_strength,
     sim::Vec2 gravity,
     std::vector<FluidTransferProposal>& proposals
 ) {
     const Tile fluid_tile = GetTileFromGrid(fluid_tiles, source);
-    const float source_amount = GetAmountFromGrid(amounts, source);
+    const sim::Scalar source_amount = GetAmountFromGrid(amounts, source);
     if (source_amount <= kMinFluidAmount || !IsSimulatedFluidTile(fluid_tile)) {
         return;
     }
@@ -176,8 +183,8 @@ void AddFluidTransferProposalsForCell(
     struct Candidate {
         IVec2 target = IVec2::New(0, 0);
         sim::Vec2 direction = sim::Vec2::zero();
-        float score = 0.0F;
-        float capacity = 0.0F;
+        sim::Scalar score = sim::Scalar::zero();
+        sim::Scalar capacity = sim::Scalar::zero();
     };
 
     const IVec2 neighbor_offsets[] = {
@@ -203,10 +210,9 @@ void AddFluidTransferProposalsForCell(
     const sim::Scalar gravity_magnitude = sim::Length(effective_gravity);
     const sim::Vec2 gravity_direction = sim::NormalizeOrZero(effective_gravity);
     const bool has_gravity = gravity_magnitude > kGravityEpsilon;
-    const float gravity_pressure_bias =
-        std::clamp(sim::ToRenderScalar(gravity_magnitude), 0.0F, 1.0F);
+    const sim::Scalar gravity_pressure_bias = ClampScalar(gravity_magnitude, kZero, kOne);
     std::vector<Candidate> candidates;
-    float total_score = 0.0F;
+    sim::Scalar total_score = sim::Scalar::zero();
 
     for (const IVec2& offset : neighbor_offsets) {
         const std::optional<IVec2> resolved_target =
@@ -218,29 +224,29 @@ void AddFluidTransferProposalsForCell(
             continue;
         }
 
-        const float target_capacity =
+        const sim::Scalar target_capacity =
             GetTargetCapacity(fluid_tiles, amounts, *resolved_target, fluid_tile);
         if (target_capacity <= kMinFluidAmount) {
             continue;
         }
 
-        const float target_amount = GetAmountFromGrid(amounts, *resolved_target);
+        const sim::Scalar target_amount = GetAmountFromGrid(amounts, *resolved_target);
         const sim::Vec2 direction = sim::NormalizeOrZero(sim::PixelVec2(offset.x, offset.y));
-        const float velocity_score =
-            std::max(0.0F, sim::ToRenderScalar(Dot(source_velocity, direction)));
-        const float directional_pressure_gate =
+        const sim::Scalar velocity_score =
+            ClampScalar(Dot(source_velocity, direction), kZero, kVelocityClamp);
+        const sim::Scalar directional_pressure_gate =
             (!has_gravity || Dot(direction, gravity_direction) >= sim::ToSimScalar(-0.05F))
-            ? 1.0F
-            : 0.0F;
-        const float pressure_gate =
-            ((1.0F - gravity_pressure_bias) + (gravity_pressure_bias * directional_pressure_gate));
-        const float pressure_score =
-            std::max(0.0F, source_amount - target_amount) *
+            ? kOne
+            : kZero;
+        const sim::Scalar pressure_gate =
+            ((kOne - gravity_pressure_bias) + (gravity_pressure_bias * directional_pressure_gate));
+        const sim::Scalar amount_delta = source_amount - target_amount;
+        const sim::Scalar pressure_score =
+            (amount_delta > kZero ? amount_delta : kZero) *
             pressure_strength *
-            pressure_gate /
-            kMaxFluidAmount;
-        const float score = velocity_score + pressure_score;
-        if (score <= 0.0F) {
+            pressure_gate;
+        const sim::Scalar score = velocity_score + pressure_score;
+        if (score <= kZero) {
             continue;
         }
 
@@ -253,20 +259,20 @@ void AddFluidTransferProposalsForCell(
         total_score += score;
     }
 
-    if (total_score <= 0.0F || candidates.empty()) {
+    if (total_score <= kZero || candidates.empty()) {
         return;
     }
 
-    const float source_budget = std::min(
+    const sim::Scalar source_budget = std::min(
         source_amount,
-        transfer_cap * std::clamp(total_score, 0.0F, 1.0F)
+        transfer_cap * ClampScalar(total_score, kZero, kOne)
     );
     for (const Candidate& candidate : candidates) {
-        const float requested = std::min(
+        const sim::Scalar requested = std::min(
             candidate.capacity,
             source_budget * (candidate.score / total_score)
         );
-        if (requested <= 0.0F) {
+        if (requested <= kZero) {
             continue;
         }
         proposals.push_back(FluidTransferProposal{
@@ -348,24 +354,12 @@ void StepStageFluids(State& state) {
         stage.fluid_gravity_strength;
     const std::vector<std::vector<sim::Vec2>>& source_temp_gravity = stage.fluid_temp_gravity;
 
-    const float transfer_cap =
-        std::clamp(sim::ToRenderScalar(fluid.transfer_per_step), 0.0F, kMaxFluidAmount);
-    const float pressure_strength = std::clamp(
-        sim::ToRenderScalar(fluid.pressure_strength),
-        0.0F,
-        4.0F
-    );
-    const float velocity_damping = std::clamp(
-        sim::ToRenderScalar(fluid.velocity_damping),
-        0.0F,
-        1.0F
-    );
-    const sim::Scalar velocity_damping_sim =
-        sim::ToSimScalar(velocity_damping, gfxp::Rounding::Nearest);
-    const sim::Scalar temp_gravity_decay_sim = sim::ToSimScalar(
-        std::clamp(sim::ToRenderScalar(fluid.temp_gravity_decay), 0.0F, 1.0F),
-        gfxp::Rounding::Nearest
-    );
+    const sim::Scalar transfer_cap =
+        ClampScalar(fluid.transfer_per_step, kZero, kMaxFluidAmount);
+    const sim::Scalar pressure_strength = ClampScalar(fluid.pressure_strength, kZero, kFour);
+    const sim::Scalar velocity_damping_sim = ClampScalar(fluid.velocity_damping, kZero, kOne);
+    const sim::Scalar temp_gravity_decay_sim =
+        ClampScalar(fluid.temp_gravity_decay, kZero, kOne);
     const sim::Vec2 gravity{fluid.gravity_x, fluid.gravity_y};
 
     std::vector<FluidTransferProposal> proposals;
@@ -391,9 +385,12 @@ void StepStageFluids(State& state) {
         }
     }
 
-    std::vector<std::vector<float>> incoming_capacity_used(
+    std::vector<std::vector<sim::Scalar>> incoming_capacity_used(
         source_amounts.size(),
-        std::vector<float>(source_amounts.empty() ? 0 : source_amounts.front().size(), 0.0F)
+        std::vector<sim::Scalar>(
+            source_amounts.empty() ? 0 : source_amounts.front().size(),
+            sim::Scalar::zero()
+        )
     );
     for (const FluidTransferProposal& proposal : proposals) {
         incoming_capacity_used[static_cast<std::size_t>(proposal.target.y)]
@@ -415,7 +412,7 @@ void StepStageFluids(State& state) {
     for (std::size_t y = 0; y < next_velocities.size(); ++y) {
         for (std::size_t x = 0; x < next_velocities[y].size(); ++x) {
             next_temp_gravity[y][x] *= temp_gravity_decay_sim;
-            if (sim::ToRenderScalar(source_amounts[y][x]) <= kMinFluidAmount) {
+            if (source_amounts[y][x] <= kMinFluidAmount) {
                 next_velocities[y][x] = sim::Vec2::zero();
                 continue;
             }
@@ -430,22 +427,23 @@ void StepStageFluids(State& state) {
     }
 
     for (const FluidTransferProposal& proposal : proposals) {
-        const float capacity = GetTargetCapacity(
+        const sim::Scalar capacity = GetTargetCapacity(
             source_fluid_tiles,
             source_amounts,
             proposal.target,
             proposal.fluid_tile
         );
-        const float incoming = incoming_capacity_used[static_cast<std::size_t>(proposal.target.y)]
-                                             [static_cast<std::size_t>(proposal.target.x)];
-        const float target_scale = incoming > capacity && incoming > 0.0F
+        const sim::Scalar incoming =
+            incoming_capacity_used[static_cast<std::size_t>(proposal.target.y)]
+                                  [static_cast<std::size_t>(proposal.target.x)];
+        const sim::Scalar target_scale = incoming > capacity && incoming > kZero
             ? capacity / incoming
-            : 1.0F;
-        const float amount = std::min(
+            : kOne;
+        const sim::Scalar amount = std::min(
             proposal.amount * target_scale,
             GetAmountFromGrid(next_amounts, proposal.source)
         );
-        if (amount <= 0.0F) {
+        if (amount <= kZero) {
             continue;
         }
 
@@ -463,18 +461,18 @@ void StepStageFluids(State& state) {
                         [static_cast<std::size_t>(proposal.target.x)] = proposal.fluid_tile;
         incoming_velocity[static_cast<std::size_t>(proposal.target.y)]
                          [static_cast<std::size_t>(proposal.target.x)] +=
-            proposal.direction * sim::ToSimScalar(amount);
+            proposal.direction * amount;
     }
 
     std::vector<IVec2> changed_tiles;
     for (int y = 0; y < static_cast<int>(stage.GetTileHeight()); ++y) {
         for (int x = 0; x < static_cast<int>(stage.GetTileWidth()); ++x) {
             const IVec2 tile_coord = IVec2::New(x, y);
-            float next_amount = GetAmountFromGrid(next_amounts, tile_coord);
+            sim::Scalar next_amount = GetAmountFromGrid(next_amounts, tile_coord);
             Tile& next_tile = next_fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
             sim::Vec2 next_velocity =
                 next_velocities[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
-            next_amount = std::clamp(next_amount, 0.0F, kMaxFluidAmount);
+            next_amount = ClampScalar(next_amount, kZero, kMaxFluidAmount);
             next_velocity = ClampLength(
                 (next_velocity + incoming_velocity[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)]) *
                     velocity_damping_sim,
@@ -482,7 +480,7 @@ void StepStageFluids(State& state) {
             );
 
             if (next_amount <= kMinFluidAmount || !CanTerrainHoldFluid(GetTileFromGrid(terrain_tiles, tile_coord))) {
-                next_amount = 0.0F;
+                next_amount = kZero;
                 next_tile = Tile::Air;
                 next_velocity = sim::Vec2::zero();
             }
@@ -492,12 +490,9 @@ void StepStageFluids(State& state) {
             const bool changed =
                 next_tile !=
                     source_fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] ||
-                std::abs(
-                    next_amount -
-                    sim::ToRenderScalar(
-                        source_amounts[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)]
-                    )
-                ) > kMinFluidAmount;
+                (next_amount -
+                 source_amounts[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)]).abs() >
+                    kMinFluidAmount;
             if (changed) {
                 PushChangedTile(changed_tiles, tile_coord);
             }
