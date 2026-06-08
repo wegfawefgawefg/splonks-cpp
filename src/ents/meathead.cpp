@@ -53,8 +53,16 @@ std::optional<Vec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
         return std::nullopt;
     }
 
-    const int air_tile_y = state.stage.GetTileCoordAtWc(ToIVec2(player.GetAABB().br - Vec2::New(0.0F, 1.0F))).y;
-    const int center_tile_x = state.stage.GetTileCoordAtWc(ToIVec2(player.GetCenter())).x;
+    const sim::AABB player_aabb = player.GetSimAABB();
+    const int air_tile_y = state.stage.GetTileCoordAtWc(IVec2::New(
+        player_aabb.br.x.to_pixels_trunc(),
+        (player_aabb.br.y - sim::Scalar::from_pixels(1)).to_pixels_trunc()
+    )).y;
+    const sim::Vec2 player_center = player.GetSimCenter();
+    const int center_tile_x = state.stage.GetTileCoordAtWc(IVec2::New(
+        player_center.x.to_pixels_trunc(),
+        player_center.y.to_pixels_trunc()
+    )).x;
     std::vector<IVec2> candidates;
     for (int dx = -kMeatheadPopupSearchTiles; dx <= kMeatheadPopupSearchTiles; ++dx) {
         const IVec2 air_tile = IVec2::New(center_tile_x + dx, air_tile_y);

@@ -18,20 +18,20 @@ namespace splonks::ents::bat {
 
 namespace {
 
-IAABB GetAreaAbove(const Ent& bat) {
-    const auto [tl, br] = bat.GetBounds();
-    return IAABB{
-        .tl = IVec2::New(static_cast<int>(tl.x), static_cast<int>(tl.y) - 1),
-        .br = IVec2::New(static_cast<int>(br.x), static_cast<int>(tl.y)),
-    };
+sim::AABB GetAreaAbove(const Ent& bat) {
+    const sim::AABB aabb = bat.GetSimAABB();
+    return sim::AABB::from_corners(
+        sim::Vec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
+        sim::Vec2{aabb.br.x, aabb.tl.y}
+    );
 }
 
 bool IsAtPerchOrRoof(const Ent& bat, const State& state) {
-    const IAABB area_above = GetAreaAbove(bat);
-    if (area_above.tl.y < 0) {
+    const sim::AABB area_above = GetAreaAbove(bat);
+    if (area_above.tl.y < sim::Scalar::zero()) {
         return true;
     }
-    for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, area_above.tl, area_above.br)) {
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, area_above)) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
             return true;
         }

@@ -184,6 +184,8 @@ Current state:
 - Completed 2026-06-08: hang wall/corner probe blocking, hangable impassable
   overlap checks, and plausible locomotion candidate solid-tile checks now use
   fixed body/probe AABBs and fixed world query paths.
+- Completed 2026-06-08: bat roof/perch checks and meathead popup tile
+  placement now use fixed body/probe geometry before querying tiles.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -227,6 +229,7 @@ Cleanup:
       fixed AABBs.
 - [x] Migrate hang probe blocking and locomotion candidate collision checks to
       fixed AABBs.
+- [x] Migrate bat roof/perch and meathead popup tile queries to fixed geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.
