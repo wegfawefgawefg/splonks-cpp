@@ -297,6 +297,8 @@ Current state:
 - Completed 2026-06-08. Fluid amount, capacity, scoring, budget, and changed
   tile comparisons now use fixed `sim::Scalar` math during internal
   simulation.
+- Completed 2026-06-08. Fluid gravity setter APIs now accept `sim::Vec2`; the
+  remaining float conversions are in debug brush/test authoring callers.
 - This was already called out in the determinism audit, but it is also API
   clutter because fixed state is being manipulated through float helpers.
 
@@ -304,6 +306,7 @@ Cleanup:
 
 - [x] Move fluid velocity/gravity math to fixed `sim::Vec2` helpers.
 - [x] Convert fluid amount/transfer scoring to fixed scalar math.
+- [x] Convert fluid gravity mutation APIs to fixed `sim::Vec2`.
 - Keep float only for rendering/debug visualization of fluid values.
 
 ### 9. Network and spawn code still converts through render `Vec2`

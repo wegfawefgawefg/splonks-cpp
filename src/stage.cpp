@@ -330,14 +330,14 @@ void Stage::SyncFluidVelocityGrid() {
     SyncFluidVelocityGridToTiles(fluid_velocity, tiles);
 }
 
-void Stage::SetFluidGravityOverride(const IVec2& pos, Vec2 gravity_value) {
+void Stage::SetFluidGravityOverride(const IVec2& pos, sim::Vec2 gravity_value) {
     SyncTileInstanceMetadataGrid();
     const IVec2 tile_pos = WrapTileCoord(pos);
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
         return;
     }
     fluid_gravity[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
-        sim::ToSimVec2(gravity_value);
+        gravity_value;
     fluid_gravity_strength[static_cast<std::size_t>(tile_pos.y)]
                           [static_cast<std::size_t>(tile_pos.x)] = 1;
 }
@@ -354,14 +354,14 @@ void Stage::ClearFluidGravityOverride(const IVec2& pos) {
                           [static_cast<std::size_t>(tile_pos.x)] = 0;
 }
 
-void Stage::AddFluidTempGravity(const IVec2& pos, Vec2 gravity_value) {
+void Stage::AddFluidTempGravity(const IVec2& pos, sim::Vec2 gravity_value) {
     SyncTileInstanceMetadataGrid();
     const IVec2 tile_pos = WrapTileCoord(pos);
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
         return;
     }
     fluid_temp_gravity[static_cast<std::size_t>(tile_pos.y)]
-                      [static_cast<std::size_t>(tile_pos.x)] += sim::ToSimVec2(gravity_value);
+                      [static_cast<std::size_t>(tile_pos.x)] += gravity_value;
 }
 
 void Stage::ClearFluidTempGravity(const IVec2& pos) {

@@ -237,9 +237,9 @@ struct Stage {
     void SyncTileInstanceMetadataGrid();
     void SyncFluidTileGrid();
     void SyncFluidVelocityGrid();
-    void SetFluidGravityOverride(const IVec2& pos, Vec2 gravity_value);
+    void SetFluidGravityOverride(const IVec2& pos, sim::Vec2 gravity_value);
     void ClearFluidGravityOverride(const IVec2& pos);
-    void AddFluidTempGravity(const IVec2& pos, Vec2 gravity_value);
+    void AddFluidTempGravity(const IVec2& pos, sim::Vec2 gravity_value);
     void ClearFluidTempGravity(const IVec2& pos);
     void SetTile(const IVec2& pos, Tile tile);
     void SetFluidTile(const IVec2& pos, Tile tile);

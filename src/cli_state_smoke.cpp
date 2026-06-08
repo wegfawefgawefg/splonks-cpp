@@ -639,8 +639,8 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
             state.stage.SetFluidTile(IVec2::New(x, y), Tile::WaterSwim);
         }
     }
-    state.stage.SetFluidGravityOverride(IVec2::New(9, 11), Vec2::New(0.35F, 1.0F));
-    state.stage.AddFluidTempGravity(IVec2::New(12, 11), Vec2::New(1.25F, 0.0F));
+    state.stage.SetFluidGravityOverride(IVec2::New(9, 11), sim::ToSimVec2(0.35F, 1.0F));
+    state.stage.AddFluidTempGravity(IVec2::New(12, 11), sim::ToSimVec2(1.25F, 0.0F));
 
     Ent* const box = world_ops::SpawnEnt(state, EntType::Box, [](Ent& ent) {
         ent.SetRenderPos(Vec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize)));

@@ -215,7 +215,7 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
             if (brush.mode == DebugFluidBrushState::Mode::PermanentGravity) {
                 if (paint_water) {
                     state.stage.SetFluidGravityOverride(
-                        wrapped, Vec2::New(brush.paint_gravity_x, brush.paint_gravity_y));
+                        wrapped, sim::ToSimVec2(brush.paint_gravity_x, brush.paint_gravity_y));
                 } else if (erase_fluid) {
                     state.stage.ClearFluidGravityOverride(wrapped);
                 }
@@ -224,7 +224,10 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
             if (brush.mode == DebugFluidBrushState::Mode::TemporaryGravity) {
                 if (paint_water) {
                     state.stage.AddFluidTempGravity(
-                        wrapped, Vec2::New(brush.paint_gravity_x, brush.paint_gravity_y) * falloff);
+                        wrapped,
+                        sim::ToSimVec2(
+                            brush.paint_gravity_x * falloff,
+                            brush.paint_gravity_y * falloff));
                 } else if (erase_fluid) {
                     state.stage.ClearFluidTempGravity(wrapped);
                 }
