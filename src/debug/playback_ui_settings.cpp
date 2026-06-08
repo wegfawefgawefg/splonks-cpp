@@ -23,6 +23,21 @@ bool IsPeerAdminControlDisabled(const State& state) {
     return state.net_session.role == network::NetRole::Peer;
 }
 
+bool SliderSimScalar(
+    const char* label,
+    sim::Scalar& value,
+    float min_value,
+    float max_value,
+    const char* format
+) {
+    float edit_value = sim::ToRenderScalar(value);
+    if (!ImGui::SliderFloat(label, &edit_value, min_value, max_value, format)) {
+        return false;
+    }
+    value = sim::ToSimScalar(edit_value);
+    return true;
+}
+
 const char* CameraModeToString(CameraMode mode) {
     switch (mode) {
     case CameraMode::Follow:
@@ -415,65 +430,65 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         water_effect = WaterEffectSettings::New();
         save_settings = true;
     }
-    save_settings |= ImGui::SliderFloat(
+    save_settings |= SliderSimScalar(
         "Effect Gravity Scale",
-        &water_effect.gravity_scale,
+        water_effect.gravity_scale,
         0.0F,
         2.0F,
         "%.2f"
     );
-    save_settings |= ImGui::SliderFloat(
+    save_settings |= SliderSimScalar(
         "Effect Damping X",
-        &water_effect.velocity_damping_x,
+        water_effect.velocity_damping_x,
         0.0F,
         1.0F,
         "%.2f"
     );
-    save_settings |= ImGui::SliderFloat(
+    save_settings |= SliderSimScalar(
         "Effect Damping Y",
-        &water_effect.velocity_damping_y,
+        water_effect.velocity_damping_y,
         0.0F,
         1.0F,
         "%.2f"
     );
-    save_settings |= ImGui::SliderFloat(
+    save_settings |= SliderSimScalar(
         "Effect Move Speed Scale",
-        &water_effect.move_speed_scale,
+        water_effect.move_speed_scale,
         0.0F,
         1.0F,
         "%.2f"
     );
-    save_settings |= ImGui::SliderFloat(
+    save_settings |= SliderSimScalar(
         "Effect Max Fall Speed",
-        &water_effect.max_fall_speed,
+        water_effect.max_fall_speed,
         0.0F,
         12.0F,
         "%.2f"
     );
-    save_settings |= ImGui::SliderFloat(
+    save_settings |= SliderSimScalar(
         "Effect Buoyancy",
-        &water_effect.buoyancy_strength,
+        water_effect.buoyancy_strength,
         0.0F,
         4.0F,
         "%.2f"
     );
-    save_settings |= ImGui::SliderFloat(
+    save_settings |= SliderSimScalar(
         "Effect Fall Timer Rate",
-        &water_effect.fall_timer_rate,
+        water_effect.fall_timer_rate,
         0.0F,
         2.0F,
         "%.2f"
     );
-    save_settings |= ImGui::SliderFloat(
+    save_settings |= SliderSimScalar(
         "Effect Stomp Damage Scale",
-        &water_effect.stomp_damage_scale,
+        water_effect.stomp_damage_scale,
         0.0F,
         1.0F,
         "%.2f"
     );
-    save_settings |= ImGui::SliderFloat(
+    save_settings |= SliderSimScalar(
         "Effect Swim Impulse",
-        &water_effect.swim_impulse,
+        water_effect.swim_impulse,
         0.0F,
         20.0F,
         "%.2f"

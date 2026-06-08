@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math_types.hpp"
+#include "sim/fxp.hpp"
 
 #include <cstdint>
 #include <vector>
@@ -132,15 +133,15 @@ struct FluidSettings {
 };
 
 struct WaterEffectSettings {
-    float gravity_scale = 0.35F;
-    float velocity_damping_x = 0.82F;
-    float velocity_damping_y = 0.55F;
-    float move_speed_scale = 0.5F;
-    float max_fall_speed = 1.35F;
-    float buoyancy_strength = 0.55F;
-    float fall_timer_rate = 0.0F;
-    float stomp_damage_scale = 0.0F;
-    float swim_impulse = 8.70F;
+    sim::Scalar gravity_scale = sim::ToSimScalar(0.35F);
+    sim::Scalar velocity_damping_x = sim::ToSimScalar(0.82F);
+    sim::Scalar velocity_damping_y = sim::ToSimScalar(0.55F);
+    sim::Scalar move_speed_scale = sim::ToSimScalar(0.5F);
+    sim::Scalar max_fall_speed = sim::ToSimScalar(1.35F);
+    sim::Scalar buoyancy_strength = sim::ToSimScalar(0.55F);
+    sim::Scalar fall_timer_rate = sim::Scalar::zero();
+    sim::Scalar stomp_damage_scale = sim::Scalar::zero();
+    sim::Scalar swim_impulse = sim::ToSimScalar(8.70F);
 
     static WaterEffectSettings New();
 };

@@ -51,23 +51,23 @@ sim::Scalar GetWaterTunedModifierValue(
     const WaterEffectSettings& water = state.settings.water_effect;
     switch (target) {
     case EffectModifierTarget::GravityScale:
-        return sim::ToSimScalar(water.gravity_scale);
+        return water.gravity_scale;
     case EffectModifierTarget::VelocityDampingX:
-        return sim::ToSimScalar(water.velocity_damping_x);
+        return water.velocity_damping_x;
     case EffectModifierTarget::VelocityDampingY:
-        return sim::ToSimScalar(water.velocity_damping_y);
+        return water.velocity_damping_y;
     case EffectModifierTarget::MoveSpeedScale:
-        return sim::ToSimScalar(water.move_speed_scale);
+        return water.move_speed_scale;
     case EffectModifierTarget::MaxFallSpeed:
-        return sim::ToSimScalar(water.max_fall_speed);
+        return water.max_fall_speed;
     case EffectModifierTarget::BuoyancyStrength:
-        return sim::ToSimScalar(water.buoyancy_strength);
+        return water.buoyancy_strength;
     case EffectModifierTarget::FallTimerRate:
-        return sim::ToSimScalar(water.fall_timer_rate);
+        return water.fall_timer_rate;
     case EffectModifierTarget::StompDamageScale:
-        return sim::ToSimScalar(water.stomp_damage_scale);
+        return water.stomp_damage_scale;
     case EffectModifierTarget::SwimImpulse:
-        return sim::ToSimScalar(water.swim_impulse);
+        return water.swim_impulse;
     case EffectModifierTarget::HiddenTreasureVisibility:
     case EffectModifierTarget::JumpImpulse:
     case EffectModifierTarget::SpikeDamageTaken:

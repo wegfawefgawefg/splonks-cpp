@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 112;
+constexpr std::uint32_t kRecordingVersion = 113;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1950,27 +1950,27 @@ bool ReadFluidSettings(std::istream& in, FluidSettings& settings) {
 }
 
 void WriteWaterEffectSettings(std::ostream& out, const WaterEffectSettings& settings) {
-    WriteFloat(out, settings.gravity_scale);
-    WriteFloat(out, settings.velocity_damping_x);
-    WriteFloat(out, settings.velocity_damping_y);
-    WriteFloat(out, settings.move_speed_scale);
-    WriteFloat(out, settings.max_fall_speed);
-    WriteFloat(out, settings.buoyancy_strength);
-    WriteFloat(out, settings.fall_timer_rate);
-    WriteFloat(out, settings.stomp_damage_scale);
-    WriteFloat(out, settings.swim_impulse);
+    WriteSimScalar(out, settings.gravity_scale);
+    WriteSimScalar(out, settings.velocity_damping_x);
+    WriteSimScalar(out, settings.velocity_damping_y);
+    WriteSimScalar(out, settings.move_speed_scale);
+    WriteSimScalar(out, settings.max_fall_speed);
+    WriteSimScalar(out, settings.buoyancy_strength);
+    WriteSimScalar(out, settings.fall_timer_rate);
+    WriteSimScalar(out, settings.stomp_damage_scale);
+    WriteSimScalar(out, settings.swim_impulse);
 }
 
 bool ReadWaterEffectSettings(std::istream& in, WaterEffectSettings& settings) {
-    return ReadFloat(in, settings.gravity_scale) &&
-           ReadFloat(in, settings.velocity_damping_x) &&
-           ReadFloat(in, settings.velocity_damping_y) &&
-           ReadFloat(in, settings.move_speed_scale) &&
-           ReadFloat(in, settings.max_fall_speed) &&
-           ReadFloat(in, settings.buoyancy_strength) &&
-           ReadFloat(in, settings.fall_timer_rate) &&
-           ReadFloat(in, settings.stomp_damage_scale) &&
-           ReadFloat(in, settings.swim_impulse);
+    return ReadSimScalar(in, settings.gravity_scale) &&
+           ReadSimScalar(in, settings.velocity_damping_x) &&
+           ReadSimScalar(in, settings.velocity_damping_y) &&
+           ReadSimScalar(in, settings.move_speed_scale) &&
+           ReadSimScalar(in, settings.max_fall_speed) &&
+           ReadSimScalar(in, settings.buoyancy_strength) &&
+           ReadSimScalar(in, settings.fall_timer_rate) &&
+           ReadSimScalar(in, settings.stomp_damage_scale) &&
+           ReadSimScalar(in, settings.swim_impulse);
 }
 
 void WriteDebugUiSettings(std::ostream& out, const DebugUiSettings& settings) {
