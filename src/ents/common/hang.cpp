@@ -40,6 +40,15 @@ int GetRequiredClimbProbeHits(const JumpAndClimbTuning& tuning) {
     return static_cast<int>(std::clamp<std::uint32_t>(tuning.climb_required_probe_hits, 1, 3));
 }
 
+sim::AABB SimPointAabb(sim::Scalar x, sim::Scalar y) {
+    const sim::Vec2 point{x, y};
+    return sim::AABB::from_corners(point, point);
+}
+
+sim::Scalar HalfWidthFloor(const Ent& ent) {
+    return sim::Scalar::from_pixels((ent.size.x / 2).to_pixels_floor());
+}
+
 void AddClimbDebugLabel(State& state, const Vec2& world_pos, const char* text) {
     if (!state.debug_overlay.show_debug_annotations) {
         return;
@@ -214,13 +223,13 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
     const JumpAndClimbTuning& tuning
 ) {
     const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, ent.GetRenderPos(), tuning);
-    const AABB aabb = ent.GetAABB();
+    const sim::AABB aabb = ent.GetSimAABB();
     const std::array<IVec2, 3> normal_probe_points = {
         ToIVec2(probes.left),
         ToIVec2(probes.center),
         ToIVec2(probes.right),
     };
-    const int probe_y = FloorToInt(aabb.br.y + 1.0F);
+    const int probe_y = (aabb.br.y + sim::Scalar::from_pixels(1)).to_pixels_floor();
     const std::array<IVec2, 3> probe_points = {
         IVec2::New(FloorToInt(probes.left.x), probe_y),
         IVec2::New(FloorToInt(probes.center.x), probe_y),
@@ -237,8 +246,8 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
     }
 
     const std::array<IVec2, 2> edge_probe_points = {
-        IVec2::New(FloorToInt(aabb.tl.x - 1.0F), probe_y),
-        IVec2::New(FloorToInt(aabb.br.x + 1.0F), probe_y),
+        IVec2::New((aabb.tl.x - sim::Scalar::from_pixels(1)).to_pixels_floor(), probe_y),
+        IVec2::New((aabb.br.x + sim::Scalar::from_pixels(1)).to_pixels_floor(), probe_y),
     };
     for (const IVec2& edge_probe_point : edge_probe_points) {
         AddClimbDebugRect(state, ToVec2(edge_probe_point), DebugAnnotationColor{255, 240, 64, 255});
@@ -349,15 +358,16 @@ void AddClimbDebugAnnotations(const Ent& ent, State& state, const JumpAndClimbTu
     }
 }
 
-bool IsHangableImpassableInRect(const Vec2& tl, const Vec2& br, const State& state, VID self_vid) {
-    const AABB area = AABB::New(tl, br);
-    const Vec2 anchor = (tl + br) / 2.0F;
+bool IsHangableImpassableInRect(sim::AABB area, const State& state, VID self_vid) {
+    const sim::Vec2 anchor = area.center();
     for (const VID& other_vid : QueryEntsInAabb(state, area, self_vid)) {
         const Ent* const other = state.ents.GetEnt(other_vid);
         if (other == nullptr || !other->active || !other->impassable || !other->can_be_hung_on) {
             continue;
         }
-        if (AabbsIntersect(area, GetNearestWorldAabb(state.stage, anchor, other->GetAABB()))) {
+        if (gfxp::aabbs_intersect(
+                area,
+                GetNearestWorldAabb(state.stage, anchor, other->GetSimAABB()))) {
             return true;
         }
     }
@@ -365,8 +375,7 @@ bool IsHangableImpassableInRect(const Vec2& tl, const Vec2& br, const State& sta
 }
 
 bool IsBlockedForHangProbe(
-    const Vec2& tl,
-    const Vec2& br,
+    sim::AABB area,
     const State& state,
     bool check_tiles,
     bool check_ents,
@@ -374,8 +383,8 @@ bool IsBlockedForHangProbe(
     VID self_vid
 ) {
     if (check_tiles) {
-        const IVec2 tl_wc = ToIVec2(tl);
-        const IVec2 br_wc = ToIVec2(br);
+        const IVec2 tl_wc = IVec2::New(area.tl.x.to_pixels_floor(), area.tl.y.to_pixels_floor());
+        const IVec2 br_wc = IVec2::New(area.br.x.to_pixels_floor(), area.br.y.to_pixels_floor());
         if (const std::optional<StageBorderSideKind> tl_side =
                 state.stage.GetOutOfBoundsSideForWorldPos(tl_wc)) {
             const Tile border_tile = state.stage.GetBorderTile(*tl_side);
@@ -389,7 +398,7 @@ bool IsBlockedForHangProbe(
                                       : IsTileCollidable(border_tile);
         }
 
-        for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, tl_wc, br_wc)) {
+        for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, area)) {
             if (tile_query.tile == nullptr) {
                 continue;
             }
@@ -401,7 +410,7 @@ bool IsBlockedForHangProbe(
         }
     }
 
-    if (check_ents && IsHangableImpassableInRect(tl, br, state, self_vid)) {
+    if (check_ents && IsHangableImpassableInRect(area, state, self_vid)) {
         return true;
     }
 
@@ -484,14 +493,17 @@ bool IsSideBlockedForHang(
     bool check_tiles,
     bool check_ents
 ) {
-    const AABB aabb = ent.GetAABB();
-    const Vec2 wall_tl = left_side ? Vec2::New(aabb.tl.x - 1.0F, aabb.tl.y)
-                                   : Vec2::New(aabb.br.x, aabb.tl.y);
-    const Vec2 wall_br = left_side ? Vec2::New(aabb.tl.x, aabb.br.y)
-                                   : Vec2::New(aabb.br.x + 1.0F, aabb.br.y);
+    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::AABB wall_area =
+        left_side
+            ? sim::AABB::from_corners(
+                  sim::Vec2{aabb.tl.x - sim::Scalar::from_pixels(1), aabb.tl.y},
+                  sim::Vec2{aabb.tl.x, aabb.br.y})
+            : sim::AABB::from_corners(
+                  sim::Vec2{aabb.br.x, aabb.tl.y},
+                  sim::Vec2{aabb.br.x + sim::Scalar::from_pixels(1), aabb.br.y});
     return IsBlockedForHangProbe(
-        wall_tl,
-        wall_br,
+        wall_area,
         state,
         check_tiles,
         check_ents,
@@ -503,15 +515,14 @@ bool IsSideBlockedForHang(
 bool IsHdHangProbeBlocked(
     const Ent& ent,
     State& state,
-    float x,
-    float y,
+    sim::Scalar x,
+    sim::Scalar y,
     bool check_tiles,
     bool check_ents,
     bool use_hangable_tiles
 ) {
     return IsBlockedForHangProbe(
-        Vec2::New(x, y),
-        Vec2::New(x, y),
+        SimPointAabb(x, y),
         state,
         check_tiles,
         check_ents,
@@ -527,18 +538,28 @@ bool CanCornerHangOnSide(
     bool check_tiles,
     bool check_ents
 ) {
-    const AABB aabb = ent.GetAABB();
-    const float side_x = left_side ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
-    const float upper_probe_y_a = aabb.tl.y + 2.0F;
-    const float upper_probe_y_b = aabb.tl.y + 3.0F;
-    const float center_x = aabb.tl.x + static_cast<float>(FloorToInt(ent.GetSize().x / 2.0F));
-    const float below_probe_y = aabb.br.y + 1.0F;
+    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::Scalar side_x =
+        left_side ? aabb.tl.x - sim::Scalar::from_pixels(1)
+                  : aabb.br.x + sim::Scalar::from_pixels(1);
+    const sim::Scalar upper_probe_y_a = aabb.tl.y + sim::Scalar::from_pixels(2);
+    const sim::Scalar upper_probe_y_b = aabb.tl.y + sim::Scalar::from_pixels(3);
+    const sim::Scalar center_x = aabb.tl.x + HalfWidthFloor(ent);
+    const sim::Scalar below_probe_y = aabb.br.y + sim::Scalar::from_pixels(1);
 
     const bool upper_probe_blocked =
         IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_a, check_tiles, check_ents, true) ||
         IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_b, check_tiles, check_ents, true);
     const bool above_probe_blocked =
-        IsHdHangProbeBlocked(ent, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_ents, false);
+        IsHdHangProbeBlocked(
+            ent,
+            state,
+            side_x,
+            aabb.tl.y - sim::Scalar::from_pixels(1),
+            check_tiles,
+            check_ents,
+            false
+        );
     const bool below_probe_blocked =
         IsHdHangProbeBlocked(ent, state, center_x, below_probe_y, check_tiles, check_ents, false);
 
@@ -552,22 +573,24 @@ bool CanGloveHangBelowCorner(
     bool check_tiles,
     bool check_ents
 ) {
-    const AABB aabb = ent.GetAABB();
-    const float side_x = left_side ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
-    const int start_y = FloorToInt(aabb.tl.y) - 1;
-    const int end_y = FloorToInt(aabb.br.y);
+    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::Scalar side_x =
+        left_side ? aabb.tl.x - sim::Scalar::from_pixels(1)
+                  : aabb.br.x + sim::Scalar::from_pixels(1);
+    const int start_y = aabb.tl.y.to_pixels_floor() - 1;
+    const int end_y = aabb.br.y.to_pixels_floor();
 
     for (int y = start_y; y <= end_y; ++y) {
         if (IsHdHangProbeBlocked(
                 ent,
                 state,
                 side_x,
-                static_cast<float>(y),
+                sim::Scalar::from_pixels(y),
                 check_tiles,
                 check_ents,
                 true
             )) {
-            return aabb.tl.y >= static_cast<float>(y);
+            return aabb.tl.y >= sim::Scalar::from_pixels(y);
         }
     }
 
@@ -600,9 +623,8 @@ bool IsClaimVelocityPlausible(const Ent& candidate) {
 }
 
 bool IsCandidateAabbFreeOfSolidTiles(const Ent& candidate, const State& state) {
-    const AABB aabb = candidate.GetAABB();
-    for (const WorldTileQueryResult& tile_query :
-         QueryTilesInWorldRect(state.stage, ToIVec2(aabb.tl), ToIVec2(aabb.br))) {
+    const sim::AABB aabb = candidate.GetSimAABB();
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, aabb)) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
             return false;
         }
@@ -667,10 +689,11 @@ bool IsPlausibleHangCandidate(
     }
 
     const bool left_side = *claimed_hang_side == Side::Left;
-    const AABB aabb = candidate.GetAABB();
+    const sim::AABB aabb = candidate.GetSimAABB();
     const bool top_blocked = IsBlockedForHangProbe(
-        Vec2::New(aabb.tl.x, aabb.tl.y - 1.0F),
-        Vec2::New(aabb.br.x, aabb.tl.y - 1.0F),
+        sim::AABB::from_corners(
+            sim::Vec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
+            sim::Vec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_pixels(1)}),
         state,
         true,
         true,
@@ -779,10 +802,11 @@ bool TryCaptureHdHang(
         return false;
     }
 
-    const AABB aabb = ent.GetAABB();
+    const sim::AABB aabb = ent.GetSimAABB();
     const bool top_blocked = IsBlockedForHangProbe(
-        Vec2::New(aabb.tl.x, aabb.tl.y - 1.0F),
-        Vec2::New(aabb.br.x, aabb.tl.y - 1.0F),
+        sim::AABB::from_corners(
+            sim::Vec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
+            sim::Vec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_pixels(1)}),
         state,
         check_tiles,
         check_ents,
@@ -794,13 +818,13 @@ bool TryCaptureHdHang(
     }
 
     const bool has_gloves = EntHasHangGloves(ent);
-    const float center_x = aabb.tl.x + static_cast<float>(FloorToInt(ent.GetSize().x / 2.0F));
-    const float upper_probe_y_a = aabb.tl.y + 2.0F;
-    const float upper_probe_y_b = aabb.tl.y + 3.0F;
-    const float below_probe_y = aabb.br.y + 1.0F;
+    const sim::Scalar center_x = aabb.tl.x + HalfWidthFloor(ent);
+    const sim::Scalar upper_probe_y_a = aabb.tl.y + sim::Scalar::from_pixels(2);
+    const sim::Scalar upper_probe_y_b = aabb.tl.y + sim::Scalar::from_pixels(3);
+    const sim::Scalar below_probe_y = aabb.br.y + sim::Scalar::from_pixels(1);
 
     if (try_left && IsSideBlockedForHang(ent, state, true, check_tiles, check_ents)) {
-        const float side_x = aabb.tl.x - 1.0F;
+        const sim::Scalar side_x = aabb.tl.x - sim::Scalar::from_pixels(1);
         if (has_gloves) {
             if (CanCornerHangOnSide(ent, state, true, check_tiles, check_ents)) {
                 SnapEntHangYToTile(ent);
@@ -830,7 +854,15 @@ bool TryCaptureHdHang(
             IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_a, check_tiles, check_ents, true) ||
             IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_b, check_tiles, check_ents, true);
         const bool above_probe_blocked =
-            IsHdHangProbeBlocked(ent, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_ents, false);
+            IsHdHangProbeBlocked(
+                ent,
+                state,
+                side_x,
+                aabb.tl.y - sim::Scalar::from_pixels(1),
+                check_tiles,
+                check_ents,
+                false
+            );
         const bool below_probe_blocked =
             IsHdHangProbeBlocked(ent, state, center_x, below_probe_y, check_tiles, check_ents, false);
         if (!upper_probe_blocked) {
@@ -851,7 +883,7 @@ bool TryCaptureHdHang(
     }
 
     if (try_right && IsSideBlockedForHang(ent, state, false, check_tiles, check_ents)) {
-        const float side_x = aabb.br.x + 1.0F;
+        const sim::Scalar side_x = aabb.br.x + sim::Scalar::from_pixels(1);
         if (has_gloves) {
             if (CanCornerHangOnSide(ent, state, false, check_tiles, check_ents)) {
                 SnapEntHangYToTile(ent);
@@ -881,7 +913,15 @@ bool TryCaptureHdHang(
             IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_a, check_tiles, check_ents, true) ||
             IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_b, check_tiles, check_ents, true);
         const bool above_probe_blocked =
-            IsHdHangProbeBlocked(ent, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_ents, false);
+            IsHdHangProbeBlocked(
+                ent,
+                state,
+                side_x,
+                aabb.tl.y - sim::Scalar::from_pixels(1),
+                check_tiles,
+                check_ents,
+                false
+            );
         const bool below_probe_blocked =
             IsHdHangProbeBlocked(ent, state, center_x, below_probe_y, check_tiles, check_ents, false);
         if (!upper_probe_blocked) {

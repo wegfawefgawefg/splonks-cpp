@@ -181,6 +181,9 @@ Current state:
 - Completed 2026-06-08: flesh-guy meat-slime surface probes and meathead pickup
   collection overlap now use fixed AABBs. Meathead debug annotation converts
   its fixed sensor at the debug-render boundary.
+- Completed 2026-06-08: hang wall/corner probe blocking, hangable impassable
+  overlap checks, and plausible locomotion candidate solid-tile checks now use
+  fixed body/probe AABBs and fixed world query paths.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -221,6 +224,8 @@ Cleanup:
 - [x] Migrate moving-platform carry/hang carry physics queries to fixed AABBs.
 - [x] Migrate physics ground support and grounded checks to fixed AABBs.
 - [x] Migrate flesh-guy slime surface probes and meathead pickup overlap to
+      fixed AABBs.
+- [x] Migrate hang probe blocking and locomotion candidate collision checks to
       fixed AABBs.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
