@@ -136,7 +136,10 @@ void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio
             common::HitOptions{
                 .source_vid = pistol.vid,
                 .knockback = common::KnockbackSpec{
-                    .velocity = sim::ToSimVec2(1.0F * static_cast<float>(direction), -1.0F),
+                    .velocity = sim::Vec2{
+                        sim::Scalar::from_int(direction),
+                        sim::Scalar::from_int(-1),
+                    },
                     .clear_velocity = true,
                     .clear_acceleration = true,
                 },

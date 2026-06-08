@@ -324,7 +324,8 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
 
         const DamageType damage_type = GetMattockDamageType(*other_ent_const);
         const bool is_heavy_target = other_ent_const->impassable || other_ent_const->stone;
-        const float knockback_x = mattock.facing == Side::Left ? -4.0F : 4.0F;
+        const sim::Scalar knockback_x =
+            sim::Scalar::from_int(mattock.facing == Side::Left ? -4 : 4);
         const common::DamageResult damage_result =
             common::TryHitEnt(
                 other_ent_const->vid.id,
@@ -335,7 +336,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
                 common::HitOptions{
                     .source_vid = mattock.vid,
                     .knockback = common::KnockbackSpec{
-                        .velocity = sim::ToSimVec2(knockback_x, -2.0F),
+                        .velocity = sim::Vec2{knockback_x, sim::Scalar::from_int(-2)},
                         .clear_velocity = !other_ent_const->impassable,
                         .clear_acceleration = !other_ent_const->impassable,
                         .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,

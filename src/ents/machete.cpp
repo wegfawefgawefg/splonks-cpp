@@ -173,7 +173,8 @@ void TryApplyMacheteStrike(std::size_t ent_idx, State& state, const Graphics& gr
         }
 
         const Ent victim_before_damage = *other_ent;
-        const float knockback_x = machete.facing == Side::Left ? -3.5F : 3.5F;
+        const sim::Scalar knockback_x =
+            sim::ToSimScalar(machete.facing == Side::Left ? -3.5F : 3.5F);
         const common::DamageResult damage_result =
             common::TryHitEnt(
                 other_ent->vid.id,
@@ -184,7 +185,7 @@ void TryApplyMacheteStrike(std::size_t ent_idx, State& state, const Graphics& gr
                 common::HitOptions{
                     .source_vid = machete.vid,
                     .knockback = common::KnockbackSpec{
-                        .velocity = sim::ToSimVec2(knockback_x, -1.5F),
+                        .velocity = sim::Vec2{knockback_x, sim::ToSimScalar(-1.5F)},
                         .clear_velocity = true,
                         .clear_acceleration = true,
                         .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,
