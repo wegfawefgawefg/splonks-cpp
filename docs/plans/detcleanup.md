@@ -114,6 +114,8 @@ Current state:
   craps-table player overlap now use fixed contact/body AABBs.
 - Completed 2026-06-08: push and stomp contact checks now use fixed
   contact/body AABBs.
+- Completed 2026-06-08: carry pickup search and generic world-op interaction
+  overlap now use fixed contact AABBs.
 - Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
   including contact damage, ent contact, weapons, traps,
   sacrifice altar, teleporter, and web/cobweb logic.
@@ -128,6 +130,8 @@ Cleanup:
 - [x] Migrate mantrap, baseball bat, and craps-table overlap checks to fixed
       contact/body geometry.
 - [x] Migrate push and stomp contact checks to fixed contact/body geometry.
+- [x] Migrate carry pickup search and generic world-op interaction overlap to
+      fixed contact geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.

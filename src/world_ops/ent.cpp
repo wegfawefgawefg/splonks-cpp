@@ -21,14 +21,13 @@ bool AreEntsOverlappingForInteract(
     const State& state,
     const Graphics& graphics
 ) {
-    const AABB source_aabb = ents::common::GetRenderContactAabbForEnt(source, graphics);
-    const Vec2 source_center = (source_aabb.tl + source_aabb.br) / 2.0F;
-    const AABB target_aabb = GetNearestWorldAabb(
+    const sim::AABB source_aabb = ents::common::GetContactAabbForEnt(source, graphics);
+    const sim::AABB target_aabb = GetNearestWorldAabb(
         state.stage,
-        source_center,
-        ents::common::GetRenderContactAabbForEnt(target, graphics)
+        source_aabb.center(),
+        ents::common::GetContactAabbForEnt(target, graphics)
     );
-    return AabbsIntersect(source_aabb, target_aabb);
+    return gfxp::aabbs_intersect(source_aabb, target_aabb);
 }
 
 } // namespace
