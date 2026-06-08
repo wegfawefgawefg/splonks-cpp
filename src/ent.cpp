@@ -281,6 +281,19 @@ void Ent::SetSimCenter(sim::Vec2 center) {
     pos = center - (size / sim::Scalar::from_int(2));
 }
 
+sim::AABB Ent::GetSimFeet() const {
+    const sim::AABB bounds = GetSimAABB();
+    return sim::AABB::from_corners(sim::Vec2{bounds.tl.x, bounds.br.y},
+                                   bounds.br + sim::Vec2{sim::Scalar::zero(),
+                                                         sim::Scalar::from_int(1)});
+}
+
+sim::AABB Ent::GetSimGroundProbe() const {
+    sim::AABB feet = GetSimFeet();
+    feet.br.y += sim::ToSimScalar(kGroundProbeFractionalEpsilon);
+    return feet;
+}
+
 std::tuple<Vec2, Vec2> Ent::GetBounds() const {
     const sim::AABB bounds = GetSimAABB();
     return {sim::ToRenderVec2(bounds.tl), sim::ToRenderVec2(bounds.br)};
@@ -322,14 +335,11 @@ bool Ent::IsClimbing() const {
 }
 
 AABB Ent::GetFeet() const {
-    const auto [tl, br] = GetBounds();
-    return AABB::New(Vec2::New(tl.x, br.y), br + Vec2::New(0.0F, 1.0F));
+    return ToRenderAABB(GetSimFeet());
 }
 
 AABB Ent::GetGroundProbe() const {
-    AABB feet = GetFeet();
-    feet.br.y += kGroundProbeFractionalEpsilon;
-    return feet;
+    return ToRenderAABB(GetSimGroundProbe());
 }
 
 bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
@@ -337,8 +347,8 @@ bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
         return false;
     }
 
-    const AABB ground_probe = GetGroundProbe();
-    if (ground_probe.br.y < static_cast<float>(stage.GetHeight())) {
+    const sim::AABB ground_probe = GetSimGroundProbe();
+    if (ground_probe.br.y < sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetHeight()))) {
         return false;
     }
 
@@ -347,7 +357,7 @@ bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
 }
 
 void Ent::SetGrounded(const Stage& stage) {
-    const AABB feet = GetGroundProbe();
+    const sim::AABB feet = GetSimGroundProbe();
     if (TrySnapToBlockingStageBottom(stage)) {
         grounded |= true;
         return;

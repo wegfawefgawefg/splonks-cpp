@@ -149,6 +149,12 @@ The expected end state is:
   `./build/splonks-cpp --check-join-barrier-next-stage-restart-smoke --project-root "$PWD"`
   passed. Broad `--check-input-lockstep-smoke` and live two-client manual
   validation remain outstanding for this larger migration.
+- Audit checkpoint 2026-06-08: entity feet and ground-probe geometry now have
+  fixed-space helpers (`GetSimFeet` / `GetSimGroundProbe`), and the core
+  `SetGrounded` / bottom-border snap path uses fixed `sim::AABB` queries
+  directly. The render `GetFeet` / `GetGroundProbe` wrappers remain available
+  for unmigrated call sites, but the central per-entity grounded decision no
+  longer round-trips through render-space `AABB`.
 
 ## Math Function Audit
 
