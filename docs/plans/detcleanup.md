@@ -127,6 +127,8 @@ Current state:
   bounds to render coordinates only at the presentation boundary.
 - Completed 2026-06-08: mattock strike overlap now uses fixed contact AABBs.
   The remaining mattock render contact wrapper use is debug annotation.
+- Completed 2026-06-08: cobweb contact and occupancy overlap checks now use
+  fixed contact AABBs, and an unused float cobweb-overlap helper was removed.
 - Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
   including contact damage, ent contact, weapons, traps,
   sacrifice altar, teleporter, and web/cobweb logic.
@@ -149,6 +151,8 @@ Cleanup:
 - [x] Migrate sacrifice-altar sacrifice area and victim overlap checks to fixed
       contact geometry.
 - [x] Migrate mattock strike overlap checks to fixed contact geometry.
+- [x] Migrate cobweb contact and occupancy overlap checks to fixed contact
+      geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.
