@@ -120,6 +120,13 @@ The expected end state is:
   end state: `Ent::pos`, `vel`, and `acc` plus gameplay collision/query AABB
   decisions still need to migrate from float `Vec2` / `AABB` to fixed geometry
   so branches cannot diverge before hashing.
+- Audit checkpoint 2026-06-08: local replay and `SimSnapshot` entity motion
+  payloads now write `Ent::pos`, `vel`, and `acc` as Fixed12 raw vectors instead
+  of raw IEEE float pairs, and live/network fingerprints route those fields
+  through the fixed-vector writer explicitly. Reads still convert back to float
+  because runtime entity motion storage has not moved yet. The next required
+  step remains the actual storage/math migration so gameplay branches stop
+  depending on float thresholds before serialization or hashing.
 
 ## Math Function Audit
 

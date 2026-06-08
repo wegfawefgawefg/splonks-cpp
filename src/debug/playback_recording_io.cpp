@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 118;
+constexpr std::uint32_t kRecordingVersion = 119;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -44,6 +44,7 @@ void WriteSimScalar(std::ostream& out, sim::Scalar value);
 bool ReadSimScalar(std::istream& in, sim::Scalar& value);
 void WriteSimVec2(std::ostream& out, const sim::Vec2& value);
 bool ReadSimVec2(std::istream& in, sim::Vec2& value);
+bool ReadSimVec2AsRenderVec2(std::istream& in, Vec2& value);
 void WriteInt32(std::ostream& out, int value);
 bool ReadInt32(std::istream& in, int& value);
 void WriteSigned32(std::ostream& out, std::int32_t value);
@@ -611,6 +612,15 @@ void WriteSimVec2(std::ostream& out, const sim::Vec2& value) {
 bool ReadSimVec2(std::istream& in, sim::Vec2& value) {
     return ReadSimScalar(in, value.x) &&
            ReadSimScalar(in, value.y);
+}
+
+bool ReadSimVec2AsRenderVec2(std::istream& in, Vec2& value) {
+    sim::Vec2 fixed;
+    if (!ReadSimVec2(in, fixed)) {
+        return false;
+    }
+    value = sim::ToRenderVec2(fixed);
+    return true;
 }
 
 void WriteUVec2Vector(std::ostream& out, const std::vector<UVec2>& values) {
@@ -1528,9 +1538,9 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.impassable);
     WriteBoolByte(out, ent.can_be_hung_on);
     WriteUint32(out, ent.fall_timer);
-    WriteVec2(out, ent.pos);
-    WriteVec2(out, ent.vel);
-    WriteVec2(out, ent.acc);
+    WriteSimVec2(out, sim::ToSimVec2(ent.pos));
+    WriteSimVec2(out, sim::ToSimVec2(ent.vel));
+    WriteSimVec2(out, sim::ToSimVec2(ent.acc));
     WriteSimScalar(out, ent.max_speed);
     WriteUint32(out, ent.jump_hold_gravity_frames_remaining);
     WriteSimScalar(out, ent.throw_velocity_scale);
@@ -1654,9 +1664,9 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.impassable) &&
            ReadBoolByte(in, ent.can_be_hung_on) &&
            ReadUint32(in, ent.fall_timer) &&
-           ReadVec2(in, ent.pos) &&
-           ReadVec2(in, ent.vel) &&
-           ReadVec2(in, ent.acc) &&
+           ReadSimVec2AsRenderVec2(in, ent.pos) &&
+           ReadSimVec2AsRenderVec2(in, ent.vel) &&
+           ReadSimVec2AsRenderVec2(in, ent.acc) &&
            ReadSimScalar(in, ent.max_speed) &&
            ReadUint32(in, ent.jump_hold_gravity_frames_remaining) &&
            ReadSimScalar(in, ent.throw_velocity_scale) &&
