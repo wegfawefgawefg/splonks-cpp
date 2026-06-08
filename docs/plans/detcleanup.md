@@ -152,6 +152,8 @@ Current state:
   target AABBs and uses fixed contact cboxes. The public raycast APIs and
   point-walking remain float/int and are tracked under the separate raycast
   cleanup item.
+- Completed 2026-06-08: area-listener enter/exit overlap detection now uses
+  fixed body AABBs for both the area entity and overlap candidates.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
