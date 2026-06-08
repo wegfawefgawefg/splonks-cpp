@@ -325,11 +325,11 @@ Current state:
   neutral names; remaining render-center use in gameplay files is still
   visible migration debt.
 - Completed 2026-06-08: nearest-player queries gained fixed `sim::Vec2`
-  overloads, and spider, hanging-spider, skeleton, piranha, ghost-ball,
-  DVD-logo, damsel, chest, gold-idol, and sacrifice-altar nearest-player or
-  chase checks now use fixed positions/deltas where the decision is
-  authoritative. Render-center calls remain only where presentation, raycast,
-  audio, or still-unmigrated gameplay code requires them.
+  overloads, and spider, hanging-spider, skeleton, piranha, caveman, cobra,
+  shopkeeper, ghost-ball, DVD-logo, damsel, chest, gold-idol, and
+  sacrifice-altar nearest-player or chase checks now use fixed positions/deltas
+  where the decision is authoritative. Render-center calls remain only where
+  presentation, raycast, audio, or still-unmigrated gameplay code requires them.
 
 Cleanup:
 

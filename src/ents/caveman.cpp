@@ -32,11 +32,11 @@ constexpr int kCavemanIdleMinFrames = 24;
 constexpr int kCavemanIdleMaxFrames = 64;
 constexpr int kCavemanIdleChance = 120;
 
-void FaceTowards(Ent& caveman, const Vec2& target_pos, const Stage& stage) {
-    const Vec2 delta = GetNearestWorldDelta(stage, caveman.GetRenderCenter(), target_pos);
-    if (delta.x < 0.0F) {
+void FaceTowards(Ent& caveman, sim::Vec2 target_pos, const Stage& stage) {
+    const sim::Vec2 delta = GetNearestWorldDelta(stage, caveman.GetSimCenter(), target_pos);
+    if (delta.x < sim::Scalar::zero()) {
         caveman.facing = Side::Left;
-    } else if (delta.x > 0.0F) {
+    } else if (delta.x > sim::Scalar::zero()) {
         caveman.facing = Side::Right;
     }
 }
@@ -159,8 +159,8 @@ void StepEntLogicAsCaveman(
     if (caveman.ai_state != EntAiState::Pursuing &&
         ShouldRunSightScan(caveman, state.stage_frame) &&
         CanSeePlayerAhead(caveman, state, graphics)) {
-        if (const Ent* const player = FindNearestPlayer(state, caveman.GetRenderCenter())) {
-            FaceTowards(caveman, player->GetRenderCenter(), state.stage);
+        if (const Ent* const player = FindNearestPlayer(state, caveman.GetSimCenter())) {
+            FaceTowards(caveman, player->GetSimCenter(), state.stage);
         }
         if (caveman.grounded) {
             caveman.vel.y = sim::ToSimScalar(kCavemanAlertHopSpeedY);

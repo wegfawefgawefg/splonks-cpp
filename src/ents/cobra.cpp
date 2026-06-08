@@ -58,11 +58,11 @@ void StartWalking(Ent& cobra, const State& state) {
     TrySetAnim(cobra, EntDisplayState::Walk);
 }
 
-void FaceTowards(Ent& cobra, const Vec2& target_pos, const Stage& stage) {
-    const Vec2 delta = GetNearestWorldDelta(stage, cobra.GetRenderCenter(), target_pos);
-    if (delta.x < 0.0F) {
+void FaceTowards(Ent& cobra, sim::Vec2 target_pos, const Stage& stage) {
+    const sim::Vec2 delta = GetNearestWorldDelta(stage, cobra.GetSimCenter(), target_pos);
+    if (delta.x < sim::Scalar::zero()) {
         cobra.facing = Side::Left;
-    } else if (delta.x > 0.0F) {
+    } else if (delta.x > sim::Scalar::zero()) {
         cobra.facing = Side::Right;
     }
 }
@@ -244,8 +244,8 @@ void StepEntLogicAsCobra(
 
     if (ShouldRunSightScan(cobra, state.stage_frame) && cobra.counter_b <= 0.0F &&
         CanSeePlayerAhead(cobra, state, graphics)) {
-        if (const Ent* const player = FindNearestPlayer(state, cobra.GetRenderCenter())) {
-            FaceTowards(cobra, player->GetRenderCenter(), state.stage);
+        if (const Ent* const player = FindNearestPlayer(state, cobra.GetSimCenter())) {
+            FaceTowards(cobra, player->GetSimCenter(), state.stage);
         }
         common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
         TrySetAnim(cobra, EntDisplayState::Walk);

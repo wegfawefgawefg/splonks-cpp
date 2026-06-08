@@ -299,35 +299,32 @@ void StepEntLogicAsShopkeeper(
         return;
     }
 
-    const Ent* const player = FindNearestPlayer(state, shopkeeper.GetRenderCenter(), false);
+    const Ent* const player = FindNearestPlayer(state, shopkeeper.GetSimCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return;
     }
 
-    const Vec2 delta = GetNearestWorldDelta(state.stage, shopkeeper.GetRenderCenter(), player->GetRenderCenter());
-    if (delta.x < 0.0F) {
+    const sim::Vec2 delta =
+        GetNearestWorldDelta(state.stage, shopkeeper.GetSimCenter(), player->GetSimCenter());
+    if (delta.x < sim::Scalar::zero()) {
         shopkeeper.facing = Side::Left;
-    } else if (delta.x > 0.0F) {
+    } else if (delta.x > sim::Scalar::zero()) {
         shopkeeper.facing = Side::Right;
     }
+    const float target_speed_x =
+        delta.x < sim::Scalar::zero() ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX;
 
     if (shopkeeper.grounded && shopkeeper.counter_a <= 0.0F) {
         shopkeeper.vel.y = sim::ToSimScalar(kShopkeeperJumpSpeedY);
         common::AccelerateHorizontallyTowardSpeed(
-            shopkeeper,
-            state,
-            delta.x < 0.0F ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX,
-            kShopkeeperMoveAcceleration
+            shopkeeper, state, target_speed_x, kShopkeeperMoveAcceleration
         );
         shopkeeper.counter_a = kShopkeeperJumpCooldownFrames;
     }
 
     if (shopkeeper.grounded) {
         common::AccelerateHorizontallyTowardSpeed(
-            shopkeeper,
-            state,
-            delta.x < 0.0F ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX,
-            kShopkeeperMoveAcceleration
+            shopkeeper, state, target_speed_x, kShopkeeperMoveAcceleration
         );
     }
 
