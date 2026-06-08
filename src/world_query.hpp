@@ -49,7 +49,6 @@ bool IsOneWayTopTileSupportingAabb(
     const WorldTileQueryResult& tile_query,
     sim::AABB area
 );
-bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area);
 bool AabbTouchesBlockingStageBounds(const Stage& stage, sim::AABB area);
 bool AabbHitsBlockingTiles(const Stage& stage, sim::AABB area);
 bool AabbHitsBlockingWorldGeometry(const Stage& stage, sim::AABB area);

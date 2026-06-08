@@ -145,11 +145,12 @@ Current state:
   crusher-blocker checks, and trigger-distance selection now use fixed contact
   AABBs and fixed vectors. Trap-block debug rectangles convert to render AABBs
   only when adding debug annotations.
-- Completed 2026-06-08: the old float `AabbHitsImpassableEnts(...)`,
-  `AabbHitsBlockingTiles(...)`, `AabbHitsBlockingWorldGeometry(...)`, and
+- Completed 2026-06-08: the old float `AabbTouchesBlockingStageBounds(...)`,
+  `AabbHitsImpassableEnts(...)`, `AabbHitsBlockingTiles(...)`,
+  `AabbHitsBlockingWorldGeometry(...)`, and
   `AabbHitsBlockingWorldGeometryOrImpassableEnts(...)` overloads were removed
-  after remaining flesh-guy wall-slide and DVD-logo bounce probes moved to
-  fixed `sim::AABB`.
+  after remaining flesh-guy wall-slide and DVD-logo bounce probes moved to fixed
+  `sim::AABB`.
 - Completed 2026-06-08: world-query raycast target collection now stores fixed
   target AABBs and uses fixed contact cboxes. The public raycast APIs and
   point-walking remain float/int and are tracked under the separate raycast

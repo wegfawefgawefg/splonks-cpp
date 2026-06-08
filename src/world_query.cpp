@@ -385,24 +385,6 @@ bool IsOneWayTopTileSupportingAabb(
     return area.tl.y < tile_aabb.tl.y;
 }
 
-bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area) {
-    if (area.tl.x < 0.0F && stage.IsBorderSideBlocking(StageBorderSideKind::Left)) {
-        return true;
-    }
-    if (area.tl.y < 0.0F && stage.IsBorderSideBlocking(StageBorderSideKind::Top)) {
-        return true;
-    }
-    if (area.br.x > static_cast<float>(stage.GetWidth() - 1) &&
-        stage.IsBorderSideBlocking(StageBorderSideKind::Right)) {
-        return true;
-    }
-    if (area.br.y > static_cast<float>(stage.GetHeight() - 1) &&
-        stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
-        return true;
-    }
-    return false;
-}
-
 bool AabbTouchesBlockingStageBounds(const Stage& stage, sim::AABB area) {
     if (area.tl.x < sim::Scalar::zero() &&
         stage.IsBorderSideBlocking(StageBorderSideKind::Left)) {
