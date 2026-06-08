@@ -150,33 +150,6 @@ void BreakStageTilesAtCoordsInternal(
 } // namespace
 
 void BreakStageTilesInRectWc(
-    const AABB& area,
-    State& state,
-    Audio& audio,
-    std::optional<AudioAssetId> override_break_sound,
-    bool suppress_tile_break_sound,
-    bool suppress_drop_spawns
-) {
-    std::vector<IVec2> tile_positions;
-    const std::vector<WorldTileQueryResult> tile_queries = QueryTilesInAabb(state.stage, area);
-    tile_positions.reserve(tile_queries.size());
-    for (const WorldTileQueryResult& tile_query : tile_queries) {
-        if (tile_query.tile != nullptr) {
-            tile_positions.push_back(tile_query.tile_pos);
-        }
-    }
-    BreakStageTilesAtCoordsInternal(
-        tile_positions,
-        state,
-        audio,
-        override_break_sound,
-        suppress_tile_break_sound,
-        (area.tl + area.br) / 2.0F,
-        suppress_drop_spawns
-    );
-}
-
-void BreakStageTilesInRectWc(
     sim::AABB area,
     State& state,
     Audio& audio,

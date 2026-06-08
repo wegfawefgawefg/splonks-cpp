@@ -186,6 +186,9 @@ Current state:
   fixed body/probe AABBs and fixed world query paths.
 - Completed 2026-06-08: bat roof/perch checks and meathead popup tile
   placement now use fixed body/probe geometry before querying tiles.
+- Completed 2026-06-08: the old float `BreakStageTilesInRectWc(AABB, ...)`
+  overload was removed after mattock and boulder tile breaking had moved to the
+  fixed rectangle path.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -230,6 +233,7 @@ Cleanup:
 - [x] Migrate hang probe blocking and locomotion candidate collision checks to
       fixed AABBs.
 - [x] Migrate bat roof/perch and meathead popup tile queries to fixed geometry.
+- [x] Remove the old float stage-break rectangle API after callers are fixed.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.
