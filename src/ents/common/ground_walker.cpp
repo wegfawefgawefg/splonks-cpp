@@ -16,11 +16,13 @@ bool HasWallAheadForGroundWalker(
     const Graphics& graphics,
     int direction
 ) {
-    const auto [tl, br] = ent.GetBounds();
-    const float sample_x = direction < 0 ? tl.x - 1.0F : br.x + 1.0F;
-    const AABB probe = AABB::New(
-        Vec2::New(sample_x, tl.y + 1.0F),
-        Vec2::New(sample_x, br.y - 1.0F)
+    const sim::AABB bounds = ent.GetSimAABB();
+    const sim::Scalar sample_x = direction < 0
+        ? bounds.tl.x - sim::Scalar::from_int(1)
+        : bounds.br.x + sim::Scalar::from_int(1);
+    const sim::AABB probe = sim::AABB::from_corners(
+        sim::Vec2{sample_x, bounds.tl.y + sim::Scalar::from_int(1)},
+        sim::Vec2{sample_x, bounds.br.y - sim::Scalar::from_int(1)}
     );
     return AabbHitsBlockingWorldGeometryOrImpassableEnts(state, graphics, probe, ent.vid);
 }
@@ -31,12 +33,14 @@ bool HasGroundAheadForGroundWalker(
     const Graphics& graphics,
     int direction
 ) {
-    const auto [tl, br] = ent.GetBounds();
-    const float sample_x = direction < 0 ? tl.x - 1.0F : br.x + 1.0F;
-    const float sample_y = br.y + 1.0F;
-    const AABB probe = AABB::New(
-        Vec2::New(sample_x, sample_y),
-        Vec2::New(sample_x, sample_y)
+    const sim::AABB bounds = ent.GetSimAABB();
+    const sim::Scalar sample_x = direction < 0
+        ? bounds.tl.x - sim::Scalar::from_int(1)
+        : bounds.br.x + sim::Scalar::from_int(1);
+    const sim::Scalar sample_y = bounds.br.y + sim::Scalar::from_int(1);
+    const sim::AABB probe = sim::AABB::from_corners(
+        sim::Vec2{sample_x, sample_y},
+        sim::Vec2{sample_x, sample_y}
     );
     return AabbHitsBlockingWorldGeometryOrImpassableEnts(state, graphics, probe, ent.vid);
 }

@@ -43,7 +43,7 @@ void ResolveBlockingOverlap(
     Ent& ent = state.ents.ents[ent_idx];
     const sim::AABB current_aabb = ent.GetSimAABB();
     const BlockingContactSet current_contacts =
-        GatherBlockingContactsForAabb(ent_idx, ToRenderAABB(current_aabb), state, check_tiles, check_ents);
+        GatherBlockingContactsForAabb(ent_idx, current_aabb, state, check_tiles, check_ents);
     if (!ResolveBlockingContactSet(ent_idx, current_contacts, state).blocks_movement) {
         return;
     }
@@ -62,7 +62,7 @@ void ResolveBlockingOverlap(
                 ent.pos + sim::Vec2::from_pixels(direction.x * distance, direction.y * distance);
             const sim::AABB candidate_aabb = GetAabbAtPosition(ent, candidate_pos);
             const BlockingContactSet candidate_contacts = GatherBlockingContactsForAabb(
-                ent_idx, ToRenderAABB(candidate_aabb), state, check_tiles, check_ents);
+                ent_idx, candidate_aabb, state, check_tiles, check_ents);
             if (!ResolveBlockingContactSet(ent_idx, candidate_contacts, state).blocks_movement) {
                 ent.pos = candidate_pos;
                 return;
@@ -97,6 +97,20 @@ AABB GetTileAabbForContact(const TileContact& tile_contact, const Stage& stage, 
         anchor,
         AABB::New(tile_tl, tile_tl + Vec2::New(static_cast<float>(kTileSize - 1),
                                                static_cast<float>(kTileSize - 1)))
+    );
+}
+
+sim::AABB GetTileAabbForContact(const TileContact& tile_contact, const Stage& stage, sim::Vec2 anchor) {
+    const sim::Vec2 tile_tl =
+        sim::Vec2::from_pixels(tile_contact.tile_pos.x * static_cast<int>(kTileSize),
+                               tile_contact.tile_pos.y * static_cast<int>(kTileSize));
+    return GetNearestWorldAabb(
+        stage,
+        anchor,
+        sim::AABB::from_corners(
+            tile_tl,
+            tile_tl + sim::Vec2::from_pixels(static_cast<int>(kTileSize - 1),
+                                             static_cast<int>(kTileSize - 1)))
     );
 }
 
@@ -143,6 +157,49 @@ bool TrySnapToDownwardBlockingSurface(
     return true;
 }
 
+bool TrySnapToDownwardBlockingSurface(
+    Ent& ent,
+    const BlockingContactSet& contacts,
+    const Stage& stage,
+    sim::AABB current_aabb
+) {
+    const sim::Scalar next_bottom = current_aabb.br.y + sim::Scalar::from_int(1);
+
+    if (contacts.touches_stage_bounds &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Bottom) &&
+        next_bottom > sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetHeight() - 1))) {
+        ent.pos.y = sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetHeight())) - ent.size.y;
+        return true;
+    }
+
+    std::optional<sim::Scalar> nearest_floor_top;
+    const sim::Vec2 anchor = current_aabb.center();
+    for (const TileContact& tile_contact : contacts.tile_contacts) {
+        if (!tile_contact.blocks_movement) {
+            continue;
+        }
+
+        const sim::AABB tile_aabb = GetTileAabbForContact(tile_contact, stage, anchor);
+        if (tile_aabb.tl.y < current_aabb.br.y) {
+            continue;
+        }
+        if (tile_aabb.tl.y > next_bottom) {
+            continue;
+        }
+
+        if (!nearest_floor_top.has_value() || tile_aabb.tl.y < *nearest_floor_top) {
+            nearest_floor_top = tile_aabb.tl.y;
+        }
+    }
+
+    if (!nearest_floor_top.has_value()) {
+        return false;
+    }
+
+    ent.pos.y = *nearest_floor_top - ent.size.y;
+    return true;
+}
+
 bool DoesOneWayTopContactBlock(
     const Ent& ent,
     const TileContact& tile_contact,
@@ -172,10 +229,39 @@ bool DoesOneWayTopContactBlock(
     return next_aabb.br.x >= tile_aabb.tl.x && next_aabb.tl.x <= tile_aabb.br.x;
 }
 
+bool DoesOneWayTopContactBlock(
+    const Ent& ent,
+    const TileContact& tile_contact,
+    const Stage& stage,
+    sim::AABB current_aabb,
+    sim::AABB next_aabb,
+    BlockingImpactAxis impact_axis,
+    int direction
+) {
+    if (tile_contact.tile == nullptr || !IsTileOneWayTopSolid(*tile_contact.tile)) {
+        return false;
+    }
+    if (impact_axis != BlockingImpactAxis::Vertical || direction <= 0) {
+        return false;
+    }
+    if (ent.IsClimbing()) {
+        return false;
+    }
+
+    const sim::AABB tile_aabb = GetTileAabbForContact(tile_contact, stage, next_aabb.center());
+    if (current_aabb.br.y >= tile_aabb.tl.y) {
+        return false;
+    }
+    if (next_aabb.br.y < tile_aabb.tl.y) {
+        return false;
+    }
+    return next_aabb.br.x >= tile_aabb.tl.x && next_aabb.tl.x <= tile_aabb.br.x;
+}
+
 BlockingContactSet GatherBlockingContactsForMovement(
     std::size_t ent_idx,
-    const AABB& current_aabb,
-    const AABB& next_aabb,
+    sim::AABB current_aabb,
+    sim::AABB next_aabb,
     State& state,
     bool check_tiles,
     bool check_ents,
@@ -526,8 +612,8 @@ void MoveEntPixelStep(
                 hanging_carry_vids
             );
             const sim::Vec2 next_pos = ent.pos + sim::Vec2::from_pixels(1, 0);
-            const AABB current_aabb = ent.GetAABB();
-            const AABB next_aabb = ToRenderAABB(GetAabbAtPosition(ent, next_pos));
+            const sim::AABB current_aabb = ent.GetSimAABB();
+            const sim::AABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
                 ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Horizontal, 1);
@@ -617,8 +703,8 @@ void MoveEntPixelStep(
                 hanging_carry_vids
             );
             const sim::Vec2 next_pos = ent.pos + sim::Vec2::from_pixels(-1, 0);
-            const AABB current_aabb = ent.GetAABB();
-            const AABB next_aabb = ToRenderAABB(GetAabbAtPosition(ent, next_pos));
+            const sim::AABB current_aabb = ent.GetSimAABB();
+            const sim::AABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
                 ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Horizontal, -1);
@@ -716,8 +802,8 @@ void MoveEntPixelStep(
                 hanging_carry_vids
             );
             const sim::Vec2 next_pos = ent.pos + sim::Vec2::from_pixels(0, 1);
-            const AABB current_aabb = ent.GetAABB();
-            const AABB next_aabb = ToRenderAABB(GetAabbAtPosition(ent, next_pos));
+            const sim::AABB current_aabb = ent.GetSimAABB();
+            const sim::AABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
                 ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Vertical, 1);
@@ -748,7 +834,7 @@ void MoveEntPixelStep(
                 if (ent_resolution.stop_sweep) {
                     ent.collided = true;
                     ent.vel.y = sim::Scalar::zero();
-                    (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage);
+                    (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage, current_aabb);
                     StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
@@ -757,11 +843,11 @@ void MoveEntPixelStep(
                 if (tile_resolution.stop_sweep || ent_resolution.stop_sweep) {
                     ent.collided = true;
                     ent.vel.y = sim::Scalar::zero();
-                    (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage);
+                    (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage, current_aabb);
                     StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage);
+                (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage, current_aabb);
                 ent.vel.y = sim::Scalar::zero();
                 ent.collided = true;
                 break;
@@ -816,8 +902,8 @@ void MoveEntPixelStep(
                 hanging_carry_vids
             );
             const sim::Vec2 next_pos = ent.pos + sim::Vec2::from_pixels(0, -1);
-            const AABB current_aabb = ent.GetAABB();
-            const AABB next_aabb = ToRenderAABB(GetAabbAtPosition(ent, next_pos));
+            const sim::AABB current_aabb = ent.GetSimAABB();
+            const sim::AABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
                 ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Vertical, -1);

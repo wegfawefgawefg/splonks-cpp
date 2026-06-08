@@ -187,9 +187,8 @@ bool TryDisplaceEntByOnePixel(
     }
 
     const sim::Vec2 candidate_pos = ent.pos + sim::PixelVec2(direction.x, direction.y);
-    const AABB candidate_aabb = AABB::New(
-        sim::ToRenderVec2(candidate_pos),
-        sim::ToRenderVec2(candidate_pos + ent.size - sim::PixelVec2(1, 1)));
+    const sim::AABB candidate_aabb =
+        sim::AABB::from_pos_size(candidate_pos, ent.size - sim::PixelVec2(1, 1));
     const BlockingContactSet contacts =
         GatherBlockingContactsForAabb(ent_idx, candidate_aabb, state, true, true);
     if (ResolveBlockingContactSet(ent_idx, contacts, state).blocks_movement) {

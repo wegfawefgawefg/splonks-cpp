@@ -344,6 +344,13 @@ BlockingContactSet GatherBlockingContactsForAabb(
     bool check_tiles,
     bool check_ents
 );
+BlockingContactSet GatherBlockingContactsForAabb(
+    std::size_t ent_idx,
+    sim::AABB aabb,
+    const State& state,
+    bool check_tiles,
+    bool check_ents
+);
 ContactResult ResolveBlockingContactSet(
     std::size_t ent_idx,
     const BlockingContactSet& contacts,

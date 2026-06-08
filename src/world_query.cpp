@@ -427,10 +427,42 @@ bool AabbHitsImpassableEnts(
     return false;
 }
 
+bool AabbHitsImpassableEnts(
+    const State& state,
+    const Graphics& graphics,
+    sim::AABB area,
+    std::optional<VID> exclude_vid
+) {
+    (void)graphics;
+    const sim::Vec2 anchor = area.center();
+    for (const VID& vid : QueryEntsInAabb(state, area, exclude_vid)) {
+        const Ent* const ent = state.ents.GetEnt(vid);
+        if (ent == nullptr || !ent->active || !ent->impassable) {
+            continue;
+        }
+
+        const sim::AABB ent_aabb = GetNearestWorldAabb(state.stage, anchor, ent->GetSimAABB());
+        if (gfxp::aabbs_intersect(area, ent_aabb)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
     const State& state,
     const Graphics& graphics,
     const AABB& area,
+    std::optional<VID> exclude_vid
+) {
+    return AabbHitsBlockingWorldGeometry(state.stage, area) ||
+           AabbHitsImpassableEnts(state, graphics, area, exclude_vid);
+}
+
+bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
+    const State& state,
+    const Graphics& graphics,
+    sim::AABB area,
     std::optional<VID> exclude_vid
 ) {
     return AabbHitsBlockingWorldGeometry(state.stage, area) ||
@@ -484,6 +516,14 @@ std::vector<VID> QueryEntsInAabb(
 
     std::sort(result.begin(), result.end(), VidLess);
     return result;
+}
+
+std::vector<VID> QueryEntsInAabb(
+    const State& state,
+    sim::AABB area,
+    std::optional<VID> exclude_vid
+) {
+    return QueryEntsInAabb(state, ToRenderAABB(area), exclude_vid);
 }
 
 struct RaycastTarget {

@@ -155,6 +155,26 @@ The expected end state is:
   directly. The render `GetFeet` / `GetGroundProbe` wrappers remain available
   for unmigrated call sites, but the central per-entity grounded decision no
   longer round-trips through render-space `AABB`.
+- Audit checkpoint 2026-06-08: core blocking-contact overlap recovery,
+  pixel-step movement collision probes, one-way-top checks, downward floor
+  snapping, push displacement checks, and ground-walker wall/ledge probes now
+  use fixed `sim::AABB` paths. World tile geometry and stage-bound checks stay
+  in fixed/int space through these paths, and impassable entity checks now have
+  a fixed overload for the same movement/query callers. Remaining caveat:
+  animation `cbox` contact geometry is still authored through `AFrame` /
+  `Graphics` and render-space `AABB`; the clean follow-up is to migrate frame
+  contact geometry to fixed simulation helpers instead of treating this
+  checkpoint as the final contact-box migration.
+- Validation 2026-06-08: after the fixed blocking-contact and pixel-step AABB
+  migration, `./scripts/build.sh`,
+  `./build/splonks-cpp --check-state-fingerprint-smoke --project-root "$PWD"`,
+  `./build/splonks-cpp --check-state-equality-smoke --project-root "$PWD"`,
+  and
+  `./build/splonks-cpp --check-det-replay-smoke --project-root "$PWD"`,
+  `./build/splonks-cpp --check-join-barrier-protocol-smoke --project-root "$PWD"`,
+  and
+  `./build/splonks-cpp --check-join-barrier-next-stage-restart-smoke --project-root "$PWD"`
+  passed.
 
 ## Math Function Audit
 

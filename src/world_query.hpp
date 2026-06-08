@@ -61,10 +61,22 @@ bool AabbHitsImpassableEnts(
     const AABB& area,
     std::optional<VID> exclude_vid = std::nullopt
 );
+bool AabbHitsImpassableEnts(
+    const State& state,
+    const Graphics& graphics,
+    sim::AABB area,
+    std::optional<VID> exclude_vid = std::nullopt
+);
 bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
     const State& state,
     const Graphics& graphics,
     const AABB& area,
+    std::optional<VID> exclude_vid = std::nullopt
+);
+bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
+    const State& state,
+    const Graphics& graphics,
+    sim::AABB area,
     std::optional<VID> exclude_vid = std::nullopt
 );
 std::optional<WorldTileQueryResult> QueryTileAtTilePos(const Stage& stage, const IVec2& tile_pos);
@@ -72,6 +84,11 @@ std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, cons
 std::vector<VID> QueryEntsInAabb(
     const State& state,
     const AABB& area,
+    std::optional<VID> exclude_vid = std::nullopt
+);
+std::vector<VID> QueryEntsInAabb(
+    const State& state,
+    sim::AABB area,
     std::optional<VID> exclude_vid = std::nullopt
 );
 

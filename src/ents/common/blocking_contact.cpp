@@ -40,6 +40,10 @@ bool TouchesStageBounds(const AABB& aabb, const Stage& stage) {
     return false;
 }
 
+bool TouchesStageBounds(sim::AABB aabb, const Stage& stage) {
+    return AabbTouchesBlockingStageBounds(stage, aabb);
+}
+
 bool AreDirectlyAttached(const Ent& first, const Ent& second) {
     return (first.held_by_vid.has_value() && *first.held_by_vid == second.vid) ||
            (second.held_by_vid.has_value() && *second.held_by_vid == first.vid);
@@ -139,6 +143,56 @@ BlockingContactSet GatherBlockingContactsForAabb(
             }
             const AABB other_aabb = GetNearestWorldAabb(state.stage, anchor, other_ent->GetAABB());
             if (AabbsIntersect(aabb, other_aabb)) {
+                contacts.ent_vids.push_back(other_vid);
+            }
+        }
+    }
+
+    return contacts;
+}
+
+BlockingContactSet GatherBlockingContactsForAabb(
+    std::size_t ent_idx,
+    sim::AABB aabb,
+    const State& state,
+    bool check_tiles,
+    bool check_ents
+) {
+    BlockingContactSet contacts{};
+
+    if (check_tiles) {
+        contacts.touches_stage_bounds = TouchesStageBounds(aabb, state.stage);
+
+        for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, aabb)) {
+            contacts.tile_contacts.push_back(TileContact{
+                .tile_pos = tile_query.tile_pos,
+                .tile = tile_query.tile,
+                .blocks_movement = tile_query.tile != nullptr &&
+                                   IsTileCollidable(*tile_query.tile),
+            });
+        }
+        std::sort(
+            contacts.tile_contacts.begin(),
+            contacts.tile_contacts.end(),
+            TileContactLess
+        );
+    }
+
+    if (check_ents) {
+        const Ent& ent = state.ents.ents[ent_idx];
+        const VID self_vid = ent.vid;
+        const sim::Vec2 anchor = aabb.center();
+        for (const VID& other_vid : QueryEntsInAabb(state, aabb, self_vid)) {
+            const Ent* const other_ent = state.ents.GetEnt(other_vid);
+            if (other_ent == nullptr || !other_ent->active) {
+                continue;
+            }
+            if (AreDirectlyAttached(ent, *other_ent)) {
+                continue;
+            }
+            const sim::AABB other_aabb =
+                GetNearestWorldAabb(state.stage, anchor, other_ent->GetSimAABB());
+            if (gfxp::aabbs_intersect(aabb, other_aabb)) {
                 contacts.ent_vids.push_back(other_vid);
             }
         }
