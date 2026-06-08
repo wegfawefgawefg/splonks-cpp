@@ -530,7 +530,7 @@ void StepEntLogicAsKeyChest(
 
 extern const EntSpec kChestSpec{
     .type_ = EntType::Chest,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -556,7 +556,7 @@ extern const EntSpec kChestSpec{
 
 extern const EntSpec kKeyChestSpec{
     .type_ = EntType::KeyChest,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -580,7 +580,7 @@ extern const EntSpec kKeyChestSpec{
 
 extern const EntSpec kChestKeySpec{
     .type_ = EntType::ChestKey,
-    .size = Vec2::New(8.0F, 4.0F),
+    .size = EntSpecSize(8.0F, 4.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -602,7 +602,7 @@ extern const EntSpec kChestKeySpec{
 
 extern const EntSpec kUdjatEyeSpec{
     .type_ = EntType::UdjatEye,
-    .size = Vec2::New(8.0F, 8.0F),
+    .size = EntSpecSize(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

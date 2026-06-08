@@ -33,7 +33,7 @@ void OnDeathAsBones(std::size_t ent_idx, State& state, Audio& audio) {
 
 extern const EntSpec kBonesSpec{
     .type_ = EntType::Bones,
-    .size = Vec2::New(12.0F, 6.0F),
+    .size = EntSpecSize(12.0F, 6.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

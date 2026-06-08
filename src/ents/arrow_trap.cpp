@@ -574,7 +574,7 @@ void OnDeathAsArrowTrap(std::size_t ent_idx, State& state, Audio& audio) {
 
 extern const EntSpec kArrowTrapSpec{
     .type_ = EntType::ArrowTrap,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = true,
@@ -597,7 +597,7 @@ extern const EntSpec kArrowTrapSpec{
 
 extern const EntSpec kArrowSpec{
     .type_ = EntType::Arrow,
-    .size = Vec2::New(8.0F, 8.0F),
+    .size = EntSpecSize(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

@@ -194,7 +194,7 @@ void StepEntLogicAsShop(
 
 extern const EntSpec kShopSpec{
     .type_ = EntType::Shop,
-    .size = Vec2::New(1.0F, 1.0F),
+    .size = EntSpecSize(1.0F, 1.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,

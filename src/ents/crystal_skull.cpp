@@ -16,7 +16,7 @@ constexpr std::uint32_t kCrystalSkullShopValue = 30000;
 
 extern const EntSpec kCrystalSkullSpec{
     .type_ = EntType::CrystalSkull,
-    .size = Vec2::New(12.0F, 12.0F),
+    .size = EntSpecSize(12.0F, 12.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

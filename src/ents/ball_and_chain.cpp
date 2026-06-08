@@ -87,7 +87,7 @@ Vec2 FixedDeltaToVec2(std::int32_t x_raw, std::int32_t y_raw) {
 
 extern const EntSpec kBallAndChainBallSpec{
     .type_ = EntType::BallAndChainBall,
-    .size = Vec2::New(8.0F, 8.0F),
+    .size = EntSpecSize(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

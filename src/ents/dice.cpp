@@ -70,7 +70,7 @@ void StepEntLogicAsDice(
 
 extern const EntSpec kDiceSpec{
     .type_ = EntType::Dice,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

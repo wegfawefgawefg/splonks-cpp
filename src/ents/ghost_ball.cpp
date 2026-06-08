@@ -15,7 +15,7 @@ namespace {
 
 extern const EntSpec kGhostBallSpec{
     .type_ = EntType::GhostBall,
-    .size = Vec2::New(1.0F, 1.0F),
+    .size = EntSpecSize(1.0F, 1.0F),
     .has_physics = true,
     .can_collide = false,
     .render_enabled = false,

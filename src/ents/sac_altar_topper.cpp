@@ -83,7 +83,7 @@ void StepEntLogicAsSacAltarTopper(
 
 extern const EntSpec kSacAltarTopperSpec{
     .type_ = EntType::SacAltarTopper,
-    .size = Vec2::New(28.0F, 16.0F),
+    .size = EntSpecSize(28.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,

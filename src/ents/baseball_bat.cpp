@@ -80,7 +80,7 @@ common::ContactResult OnEntContactAsBaseballBat(
 
 extern const EntSpec kBaseballBatSpec{
     .type_ = EntType::BaseballBat,
-    .size = Vec2::New(12.0F, 4.0F),
+    .size = EntSpecSize(12.0F, 4.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,

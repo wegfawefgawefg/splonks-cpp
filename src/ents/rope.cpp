@@ -39,7 +39,7 @@ IVec2 GetRopeDeployStartTile(const Stage& stage, const IVec2& hit_tile_pos) {
 
 extern const EntSpec kRopeSpec{
     .type_ = EntType::Rope,
-    .size = Vec2::New(8.0F, 6.0F),
+    .size = EntSpecSize(8.0F, 6.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

@@ -92,6 +92,12 @@ The expected end state is:
   removed after the join-accept migration. New protocol fields should use
   explicit integer/fixed encodings unless there is a documented reason to send
   presentation-only IEEE float data.
+- Audit checkpoint 2026-06-08: authored `EntSpec::size` values are now stored
+  as Fixed12 vectors and spec definitions use the explicit `EntSpecSize(...)`
+  authoring helper. Runtime entity `size` still converts to `Vec2` at
+  `SetEntAs` / spec-restore boundaries, so live entity collision size remains
+  part of the broader `Ent::pos` / `vel` / `acc` / `size` migration, but new
+  spawned/restored sizes no longer start from duplicate raw IEEE spec payloads.
 
 ## Math Function Audit
 

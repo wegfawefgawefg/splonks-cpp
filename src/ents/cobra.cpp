@@ -344,7 +344,7 @@ void StepEntPhysicsAsCobraSpit(
 
 extern const EntSpec kCobraSpec{
     .type_ = EntType::Cobra,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -370,7 +370,7 @@ extern const EntSpec kCobraSpec{
 
 extern const EntSpec kCobraSpitSpec{
     .type_ = EntType::CobraSpit,
-    .size = Vec2::New(4.0F, 3.0F),
+    .size = EntSpecSize(4.0F, 3.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

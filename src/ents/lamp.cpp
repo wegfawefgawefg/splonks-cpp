@@ -7,7 +7,7 @@ namespace splonks::ents::lamp {
 
 extern const EntSpec kLampSpec{
     .type_ = EntType::Lamp,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,
@@ -26,7 +26,7 @@ extern const EntSpec kLampSpec{
 
 extern const EntSpec kLampRedSpec{
     .type_ = EntType::LampRed,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,

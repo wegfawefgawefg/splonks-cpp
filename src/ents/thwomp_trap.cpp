@@ -208,7 +208,7 @@ void StepEntPhysicsAsThwompTrap(
 
 extern const EntSpec kThwompTrapSpec{
     .type_ = EntType::ThwompTrap,
-    .size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize)),
+    .size = EntSpecSize(static_cast<float>(kTileSize), static_cast<float>(kTileSize)),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

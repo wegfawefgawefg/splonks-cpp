@@ -163,7 +163,7 @@ void StepCircle(Ent& platform) {
 
 extern const EntSpec kMovingPlatformSpec{
     .type_ = EntType::MovingPlatform,
-    .size = Vec2::New(28.0F, 28.0F),
+    .size = EntSpecSize(28.0F, 28.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

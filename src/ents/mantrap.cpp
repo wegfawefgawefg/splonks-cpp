@@ -172,7 +172,7 @@ void StepEntLogicAsMantrap(
 
 extern const EntSpec kMantrapSpec{
     .type_ = EntType::Mantrap,
-    .size = Vec2::New(9.0F, 13.0F),
+    .size = EntSpecSize(9.0F, 13.0F),
     .health = 3,
     .has_physics = true,
     .can_collide = true,

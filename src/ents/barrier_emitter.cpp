@@ -154,7 +154,7 @@ void OnDeathAsBarrierEmitter(std::size_t ent_idx, State& state, Audio& audio) {
 
 extern const EntSpec kBarrierEmitterSpec{
     .type_ = EntType::BarrierEmitter,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = true,
@@ -179,7 +179,7 @@ extern const EntSpec kBarrierEmitterSpec{
 
 extern const EntSpec kBeamSpec{
     .type_ = EntType::Beam,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = true,

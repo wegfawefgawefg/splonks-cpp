@@ -112,7 +112,7 @@ common::ContactResult OnTileContactAsPot(
 
 extern const EntSpec kPotSpec{
     .type_ = EntType::Pot,
-    .size = Vec2::New(8.0F, 7.0F),
+    .size = EntSpecSize(8.0F, 7.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

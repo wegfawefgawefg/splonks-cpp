@@ -403,7 +403,7 @@ void StepEntPhysicsAsDoor(
 
 extern const EntSpec kDoorSpec{
     .type_ = EntType::Door,
-    .size = Vec2::New(16.0F, 32.0F),
+    .size = EntSpecSize(16.0F, 32.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

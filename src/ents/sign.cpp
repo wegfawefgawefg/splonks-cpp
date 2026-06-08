@@ -12,7 +12,7 @@ extern const EntSpec kSignSpec =
 
 extern const EntSpec kSignGeneralSpec{
     .type_ = EntType::SignGeneral,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,
@@ -30,7 +30,7 @@ extern const EntSpec kSignGeneralSpec{
 };
 extern const EntSpec kSignBombSpec{
     .type_ = EntType::SignBomb,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,
@@ -48,7 +48,7 @@ extern const EntSpec kSignBombSpec{
 };
 extern const EntSpec kSignWeaponSpec{
     .type_ = EntType::SignWeapon,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,
@@ -66,7 +66,7 @@ extern const EntSpec kSignWeaponSpec{
 };
 extern const EntSpec kSignRareSpec{
     .type_ = EntType::SignRare,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,
@@ -84,7 +84,7 @@ extern const EntSpec kSignRareSpec{
 };
 extern const EntSpec kSignClothingSpec{
     .type_ = EntType::SignClothing,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,
@@ -102,7 +102,7 @@ extern const EntSpec kSignClothingSpec{
 };
 extern const EntSpec kSignCrapsSpec{
     .type_ = EntType::SignCraps,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,
@@ -120,7 +120,7 @@ extern const EntSpec kSignCrapsSpec{
 };
 extern const EntSpec kSignKissingSpec{
     .type_ = EntType::SignKissing,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,

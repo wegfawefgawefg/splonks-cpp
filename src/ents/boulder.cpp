@@ -273,7 +273,7 @@ void AddBoulderGroundSlamShake(State& state, const Ent& boulder) {
 
 extern const EntSpec kBoulderSpec{
     .type_ = EntType::Boulder,
-    .size = Vec2::New(28.0F, 28.0F),
+    .size = EntSpecSize(28.0F, 28.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

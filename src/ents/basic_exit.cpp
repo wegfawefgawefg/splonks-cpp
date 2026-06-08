@@ -216,7 +216,7 @@ bool OnInteractAsBasicExit(
 
 extern const EntSpec kBasicExitSpec{
     .type_ = EntType::BasicExit,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,

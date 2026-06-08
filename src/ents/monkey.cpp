@@ -695,7 +695,7 @@ common::ContactResult OnEntContactAsMonkey(
 
 extern const EntSpec kMonkeySpec{
     .type_ = EntType::Monkey,
-    .size = Vec2::New(8.0F, 10.0F),
+    .size = EntSpecSize(8.0F, 10.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

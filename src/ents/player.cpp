@@ -354,7 +354,7 @@ void ControlEntAsPlayer(
 
 extern const EntSpec kPlayerSpec{
     .type_ = EntType::Player,
-    .size = Vec2::New(10.0F, 10.0F),
+    .size = EntSpecSize(10.0F, 10.0F),
     .health = 400,
     .has_physics = true,
     .can_collide = true,

@@ -319,7 +319,7 @@ bool OnInteractAsCrapsTable(
 
 extern const EntSpec kCrapsTableSpec{
     .type_ = EntType::CrapsTable,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,

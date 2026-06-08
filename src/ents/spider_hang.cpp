@@ -233,7 +233,7 @@ void StepEntLogicAsGiantSpiderHang(
 
 extern const EntSpec kSpiderHangSpec{
     .type_ = EntType::SpiderHang,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = true,
@@ -256,7 +256,7 @@ extern const EntSpec kSpiderHangSpec{
 
 extern const EntSpec kRageSpiderHangSpec{
     .type_ = EntType::RageSpiderHang,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = true,
@@ -279,7 +279,7 @@ extern const EntSpec kRageSpiderHangSpec{
 
 extern const EntSpec kGiantSpiderHangSpec{
     .type_ = EntType::GiantSpiderHang,
-    .size = Vec2::New(32.0F, 32.0F),
+    .size = EntSpecSize(32.0F, 32.0F),
     .health = 10,
     .has_physics = false,
     .can_collide = true,

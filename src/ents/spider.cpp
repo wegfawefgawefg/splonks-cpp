@@ -236,7 +236,7 @@ void StepEntLogicAsGiantSpider(
 
 extern const EntSpec kSpiderSpec{
     .type_ = EntType::Spider,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -262,7 +262,7 @@ extern const EntSpec kSpiderSpec{
 
 extern const EntSpec kRageSpiderSpec{
     .type_ = EntType::RageSpider,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -288,7 +288,7 @@ extern const EntSpec kRageSpiderSpec{
 
 extern const EntSpec kGiantSpiderSpec{
     .type_ = EntType::GiantSpider,
-    .size = Vec2::New(32.0F, 32.0F),
+    .size = EntSpecSize(32.0F, 32.0F),
     .health = 10,
     .has_physics = true,
     .can_collide = true,

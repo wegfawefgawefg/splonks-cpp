@@ -209,7 +209,8 @@ void SpawnShopTestOwnedItem(
         spec.type_,
         Vec2::New(
             static_cast<float>(spec.tile_x * static_cast<int>(kTileSize)),
-            10.0F * static_cast<float>(kTileSize) - GetEntSpec(spec.type_).size.y
+            10.0F * static_cast<float>(kTileSize) -
+                sim::ToRenderScalar(GetEntSpec(spec.type_).size.y)
         )
     );
     if (!item_vid.has_value()) {
@@ -242,14 +243,14 @@ void SpawnShopTestCrapsTable(
         EntType::Dice,
         Vec2::New(57.0F * static_cast<float>(kTileSize),
                   10.0F * static_cast<float>(kTileSize) -
-                      GetEntSpec(EntType::Dice).size.y)
+                      sim::ToRenderScalar(GetEntSpec(EntType::Dice).size.y))
     );
     const std::optional<VID> prize_vid = SpawnStageEntAtTopLeft(
         state,
         EntType::JetPack,
         Vec2::New(62.0F * static_cast<float>(kTileSize),
                   10.0F * static_cast<float>(kTileSize) -
-                      GetEntSpec(EntType::JetPack).size.y)
+                      sim::ToRenderScalar(GetEntSpec(EntType::JetPack).size.y))
     );
     const AABB shop_area = MakeShopTestArea(stall);
     const std::optional<VID> table_vid =

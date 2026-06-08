@@ -236,7 +236,7 @@ void InitTrapDoorTestStage(State& state) {
     constexpr int floor_y = 6;
     const int closed_top_y =
         floor_y * static_cast<int>(kTileSize) -
-        static_cast<int>(GetEntSpec(EntType::Door).size.y);
+        static_cast<int>(sim::ToRenderScalar(GetEntSpec(EntType::Door).size.y));
     constexpr std::array<int, 4> kDropDoorXs{{18, 42, 66, 90}};
     for (const int door_x : kDropDoorXs) {
         if (const std::optional<VID> door_vid = SpawnStageEntAtTopLeft(

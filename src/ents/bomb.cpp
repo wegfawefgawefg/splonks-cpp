@@ -98,7 +98,7 @@ void UpdateBombFuseLight(Ent& bomb) {
 
 extern const EntSpec kBombSpec{
     .type_ = EntType::Bomb,
-    .size = Vec2::New(8.0F, 6.0F),
+    .size = EntSpecSize(8.0F, 6.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

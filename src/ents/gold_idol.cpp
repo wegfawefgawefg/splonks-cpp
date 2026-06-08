@@ -178,7 +178,7 @@ void StepEntLogicAsGoldIdol(
 
 extern const EntSpec kGoldIdolSpec{
     .type_ = EntType::GoldIdol,
-    .size = Vec2::New(12.0F, 12.0F),
+    .size = EntSpecSize(12.0F, 12.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

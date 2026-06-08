@@ -7,7 +7,7 @@ namespace splonks::ents::kali_head {
 
 extern const EntSpec kKaliHeadSpec{
     .type_ = EntType::KaliHead,
-    .size = Vec2::New(32.0F, 32.0F),
+    .size = EntSpecSize(32.0F, 32.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,

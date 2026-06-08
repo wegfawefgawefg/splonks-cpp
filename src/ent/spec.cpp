@@ -57,7 +57,7 @@ void SetEntAs(Ent& ent, EntType type_) {
     ent.can_be_stunned = spec.can_be_stunned;
     ent.stun_recovers_on_ground = spec.stun_recovers_on_ground;
     ent.stun_recovers_while_held = spec.stun_recovers_while_held;
-    ent.size = spec.size;
+    ent.size = sim::ToRenderVec2(spec.size);
     ent.facing = spec.facing;
     ent.draw_layer = spec.draw_layer;
     ent.render_enabled = spec.render_enabled;

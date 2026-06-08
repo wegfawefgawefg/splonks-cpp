@@ -452,7 +452,7 @@ void StepTravelSoundFleshGuy(std::size_t ent_idx, State& state) {
 
 extern const EntSpec kFleshGuySpec{
     .type_ = EntType::FleshGuy,
-    .size = Vec2::New(8.0F, 9.0F),
+    .size = EntSpecSize(8.0F, 9.0F),
     .health = 400,
     .has_physics = true,
     .can_collide = true,

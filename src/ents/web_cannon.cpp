@@ -826,7 +826,7 @@ void StepEntLogicAsCobweb(
 
 extern const EntSpec kWebCannonSpec{
     .type_ = EntType::WebCannon,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -851,7 +851,7 @@ extern const EntSpec kWebCannonSpec{
 
 extern const EntSpec kWebBallSpec{
     .type_ = EntType::WebBall,
-    .size = Vec2::New(7.0F, 6.0F),
+    .size = EntSpecSize(7.0F, 6.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -880,7 +880,7 @@ extern const EntSpec kWebBallSpec{
 
 extern const EntSpec kCobwebSpec{
     .type_ = EntType::Cobweb,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = kCobwebDurability,
     .has_physics = false,
     .can_collide = true,

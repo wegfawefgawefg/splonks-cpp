@@ -97,7 +97,7 @@ std::optional<VID> SpawnBoulderForHead(Ent& head, State& state, Audio& audio) {
 
 extern const EntSpec kGiantTikiHeadSpec{
     .type_ = EntType::GiantTikiHead,
-    .size = Vec2::New(32.0F, 32.0F),
+    .size = EntSpecSize(32.0F, 32.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,

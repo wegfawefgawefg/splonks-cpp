@@ -110,7 +110,7 @@ common::ContactResult OnEntContactAsGoldBars(
 
 extern const EntSpec kGoldSpec{
     .type_ = EntType::Gold,
-    .size = Vec2::New(5.0F, 5.0F),
+    .size = EntSpecSize(5.0F, 5.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -138,7 +138,7 @@ extern const EntSpec kGoldSpec{
 
 extern const EntSpec kGoldStackSpec{
     .type_ = EntType::GoldStack,
-    .size = Vec2::New(10.0F, 6.0F),
+    .size = EntSpecSize(10.0F, 6.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -166,7 +166,7 @@ extern const EntSpec kGoldStackSpec{
 
 extern const EntSpec kGoldChunkSpec{
     .type_ = EntType::GoldChunk,
-    .size = Vec2::New(5.0F, 5.0F),
+    .size = EntSpecSize(5.0F, 5.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -194,7 +194,7 @@ extern const EntSpec kGoldChunkSpec{
 
 extern const EntSpec kGoldNuggetSpec{
     .type_ = EntType::GoldNugget,
-    .size = Vec2::New(8.0F, 8.0F),
+    .size = EntSpecSize(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -222,7 +222,7 @@ extern const EntSpec kGoldNuggetSpec{
 
 extern const EntSpec kGoldBarSpec{
     .type_ = EntType::GoldBar,
-    .size = Vec2::New(8.0F, 8.0F),
+    .size = EntSpecSize(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -250,7 +250,7 @@ extern const EntSpec kGoldBarSpec{
 
 extern const EntSpec kGoldBarsSpec{
     .type_ = EntType::GoldBars,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

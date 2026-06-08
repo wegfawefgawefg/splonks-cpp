@@ -374,7 +374,7 @@ common::ContactResult OnTileContactAsSkull(
 
 extern const EntSpec kSkullSpec{
     .type_ = EntType::Skull,
-    .size = kSkullSize,
+    .size = EntSpecSize(kSkullSize),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -400,7 +400,7 @@ extern const EntSpec kSkullSpec{
 
 extern const EntSpec kSkeletonSpec{
     .type_ = EntType::Skeleton,
-    .size = kSkullSize,
+    .size = EntSpecSize(kSkullSize),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

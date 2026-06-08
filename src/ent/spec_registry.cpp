@@ -120,8 +120,10 @@ void SyncEntSpecSizesFromAFrame(const Graphics& graphics) {
             continue;
         }
 
-        spec.size = Vec2::New(static_cast<float>(aframe->pbox.w),
-                                   static_cast<float>(aframe->pbox.h));
+        spec.size = EntSpecSize(
+            static_cast<float>(aframe->pbox.w),
+            static_cast<float>(aframe->pbox.h)
+        );
     }
 }
 

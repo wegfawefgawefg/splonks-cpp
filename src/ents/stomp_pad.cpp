@@ -8,7 +8,7 @@ namespace splonks::ents::stomp_pad {
 
 extern const EntSpec kStompPadSpec{
     .type_ = EntType::StompPad,
-    .size = Vec2::New(8.0F, 7.0F),
+    .size = EntSpecSize(8.0F, 7.0F),
     .health = 1000,
     .has_physics = false,
     .can_collide = true,

@@ -11,7 +11,7 @@ namespace splonks::ents::mouse_trailer {
 
 extern const EntSpec kMouseTrailerSpec{
     .type_ = EntType::MouseTrailer,
-    .size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize)),
+    .size = EntSpecSize(static_cast<float>(kTileSize), static_cast<float>(kTileSize)),
     .has_physics = true,
     .can_collide = true,
     .can_be_picked_up = false,

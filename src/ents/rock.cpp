@@ -70,7 +70,7 @@ void ControlEntAsRock(
 
 extern const EntSpec kRockSpec{
     .type_ = EntType::Rock,
-    .size = Vec2::New(6.0F, 5.0F),
+    .size = EntSpecSize(6.0F, 5.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

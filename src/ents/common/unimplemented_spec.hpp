@@ -9,7 +9,7 @@ namespace splonks::ents::common {
 inline EntSpec MakeUnimplementedClassicSpec(EntType type_) {
     return EntSpec{
         .type_ = type_,
-        .size = Vec2::New(16.0F, 16.0F),
+        .size = EntSpecSize(16.0F, 16.0F),
         .health = 3,
         .has_physics = true,
         .can_collide = true,

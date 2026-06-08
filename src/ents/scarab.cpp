@@ -11,7 +11,7 @@ namespace splonks::ents::scarab {
 
 extern const EntSpec kScarabSpec{
     .type_ = EntType::Scarab,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

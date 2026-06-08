@@ -7,7 +7,7 @@ namespace splonks::ents::lantern {
 
 extern const EntSpec kLanternSpec{
     .type_ = EntType::Lantern,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,
@@ -25,7 +25,7 @@ extern const EntSpec kLanternSpec{
 };
 extern const EntSpec kLanternRedSpec{
     .type_ = EntType::LanternRed,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,

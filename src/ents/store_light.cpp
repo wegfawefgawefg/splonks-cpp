@@ -61,7 +61,7 @@ EntDamageEffectResult OnDamageAsStoreLight(
 
 extern const EntSpec kStoreLightSpec{
     .type_ = EntType::StoreLight,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = true,

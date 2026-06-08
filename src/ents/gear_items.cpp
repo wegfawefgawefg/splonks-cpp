@@ -213,7 +213,7 @@ void ClearEquippedPassiveItemVisuals(Ent& ent, State& state, const Graphics& gra
 
 extern const EntSpec kCapeSpec{
     .type_ = EntType::Cape,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -237,7 +237,7 @@ extern const EntSpec kCapeSpec{
 };
 extern const EntSpec kGlovesSpec{
     .type_ = EntType::Gloves,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -258,7 +258,7 @@ extern const EntSpec kGlovesSpec{
 };
 extern const EntSpec kSpectaclesSpec{
     .type_ = EntType::Spectacles,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -279,7 +279,7 @@ extern const EntSpec kSpectaclesSpec{
 };
 extern const EntSpec kMittSpec{
     .type_ = EntType::Mitt,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -300,7 +300,7 @@ extern const EntSpec kMittSpec{
 };
 extern const EntSpec kPasteSpec{
     .type_ = EntType::Paste,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -320,7 +320,7 @@ extern const EntSpec kPasteSpec{
 };
 extern const EntSpec kSpringShoesSpec{
     .type_ = EntType::SpringShoes,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -341,7 +341,7 @@ extern const EntSpec kSpringShoesSpec{
 };
 extern const EntSpec kSpikeShoesSpec{
     .type_ = EntType::SpikeShoes,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -362,7 +362,7 @@ extern const EntSpec kSpikeShoesSpec{
 };
 extern const EntSpec kBombBoxSpec{
     .type_ = EntType::BombBox,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -382,7 +382,7 @@ extern const EntSpec kBombBoxSpec{
 };
 extern const EntSpec kBombBagSpec{
     .type_ = EntType::BombBag,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -402,7 +402,7 @@ extern const EntSpec kBombBagSpec{
 };
 extern const EntSpec kCompassSpec{
     .type_ = EntType::Compass,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -423,7 +423,7 @@ extern const EntSpec kCompassSpec{
 };
 extern const EntSpec kParachuteSpec{
     .type_ = EntType::Parachute,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
@@ -444,7 +444,7 @@ extern const EntSpec kParachuteSpec{
 };
 extern const EntSpec kRopePileSpec{
     .type_ = EntType::RopePile,
-    .size = Vec2::New(16.0F, 16.0F),
+    .size = EntSpecSize(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,

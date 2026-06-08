@@ -165,7 +165,7 @@ void StepEntPhysicsAsPiranha(
 
 extern const EntSpec kPiranhaSpec{
     .type_ = EntType::Piranha,
-    .size = Vec2::New(8.0F, 8.0F),
+    .size = EntSpecSize(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
