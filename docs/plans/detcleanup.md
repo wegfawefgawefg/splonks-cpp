@@ -189,6 +189,8 @@ Current state:
 - Completed 2026-06-08: the old float `BreakStageTilesInRectWc(AABB, ...)`
   overload was removed after mattock and boulder tile breaking had moved to the
   fixed rectangle path.
+- Completed 2026-06-08: climber step-sound tile selection now queries ladder
+  and rope tiles from the entity's fixed body AABB.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -234,6 +236,7 @@ Cleanup:
       fixed AABBs.
 - [x] Migrate bat roof/perch and meathead popup tile queries to fixed geometry.
 - [x] Remove the old float stage-break rectangle API after callers are fixed.
+- [x] Migrate climber step-sound tile selection to fixed body geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.
