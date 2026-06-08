@@ -38,6 +38,22 @@ bool SliderSimScalar(
     return true;
 }
 
+bool DragSimScalar(
+    const char* label,
+    sim::Scalar& value,
+    float speed,
+    float min_value,
+    float max_value,
+    const char* format
+) {
+    float edit_value = sim::ToRenderScalar(value);
+    if (!ImGui::DragFloat(label, &edit_value, speed, min_value, max_value, format)) {
+        return false;
+    }
+    value = sim::ToSimScalar(edit_value);
+    return true;
+}
+
 const char* CameraModeToString(CameraMode mode) {
     switch (mode) {
     case CameraMode::Follow:
@@ -896,12 +912,12 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
     }
 
     ImGui::SeparatorText("Vertical");
-    changed |= ImGui::DragFloat("Gravity Scale", &tuning.gravity_scale, 0.01F, 0.0F, 4.0F, "%.3f");
-    changed |= ImGui::DragFloat("Max Fall Speed", &tuning.max_fall_speed, 0.05F, 0.0F, 20.0F, "%.2f");
-    changed |= ImGui::DragFloat("Jump Impulse", &tuning.jump_impulse, 0.05F, 0.0F, 12.0F, "%.2f");
-    changed |= ImGui::DragFloat(
+    changed |= DragSimScalar("Gravity Scale", tuning.gravity_scale, 0.01F, 0.0F, 4.0F, "%.3f");
+    changed |= DragSimScalar("Max Fall Speed", tuning.max_fall_speed, 0.05F, 0.0F, 20.0F, "%.2f");
+    changed |= DragSimScalar("Jump Impulse", tuning.jump_impulse, 0.05F, 0.0F, 12.0F, "%.2f");
+    changed |= DragSimScalar(
         "Spring Shoes Jump Bonus",
-        &tuning.spring_shoes_jump_impulse_bonus,
+        tuning.spring_shoes_jump_impulse_bonus,
         0.05F,
         0.0F,
         8.0F,
@@ -915,27 +931,41 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
     changed |= ImGui::DragInt("Fall Heavy Frames", &tuning.fall_damage_heavy_frames, 1.0F, 0, 240);
 
     ImGui::SeparatorText("Horizontal");
-    changed |= ImGui::DragFloat("Walk Speed", &tuning.walk_speed, 0.05F, 0.0F, 12.0F, "%.2f");
-    changed |= ImGui::DragFloat("Run Speed", &tuning.run_speed, 0.05F, 0.0F, 12.0F, "%.2f");
-    changed |= ImGui::DragFloat("Move Acc", &tuning.move_acc, 0.01F, 0.0F, 4.0F, "%.3f");
-    changed |= ImGui::DragFloat("Run Acc", &tuning.run_acc, 0.01F, 0.0F, 4.0F, "%.3f");
-    changed |= ImGui::DragFloat("Ground Friction Scale", &tuning.ground_friction_scale, 0.01F, 0.0F, 2.0F, "%.3f");
-    changed |= ImGui::DragFloat("Air Friction", &tuning.air_friction, 0.005F, 0.0F, 1.0F, "%.3f");
+    changed |= DragSimScalar("Walk Speed", tuning.walk_speed, 0.05F, 0.0F, 12.0F, "%.2f");
+    changed |= DragSimScalar("Run Speed", tuning.run_speed, 0.05F, 0.0F, 12.0F, "%.2f");
+    changed |= DragSimScalar("Move Acc", tuning.move_acc, 0.01F, 0.0F, 4.0F, "%.3f");
+    changed |= DragSimScalar("Run Acc", tuning.run_acc, 0.01F, 0.0F, 4.0F, "%.3f");
+    changed |= DragSimScalar(
+        "Ground Friction Scale",
+        tuning.ground_friction_scale,
+        0.01F,
+        0.0F,
+        2.0F,
+        "%.3f"
+    );
+    changed |= DragSimScalar("Air Friction", tuning.air_friction, 0.005F, 0.0F, 1.0F, "%.3f");
 
     ImGui::SeparatorText("Climb / Hang");
-    changed |= ImGui::DragFloat("Climb Speed", &tuning.climb_speed, 0.005F, 0.0F, 8.0F, "%.3f");
-    changed |= ImGui::DragFloat(
+    changed |= DragSimScalar("Climb Speed", tuning.climb_speed, 0.005F, 0.0F, 8.0F, "%.3f");
+    changed |= DragSimScalar(
         "Climb Depart Horizontal",
-        &tuning.climb_depart_horizontal_speed,
+        tuning.climb_depart_horizontal_speed,
         0.05F,
         0.0F,
         12.0F,
         "%.2f"
     );
-    changed |= ImGui::DragFloat("Climb Probe Y Bias", &tuning.climb_probe_bias_pixels, 0.1F, 0.0F, 32.0F, "%.1f");
-    changed |= ImGui::DragFloat(
+    changed |= DragSimScalar(
+        "Climb Probe Y Bias",
+        tuning.climb_probe_bias_pixels,
+        0.1F,
+        0.0F,
+        32.0F,
+        "%.1f"
+    );
+    changed |= DragSimScalar(
         "Climb Probe X Scale",
-        &tuning.climb_probe_x_scale,
+        tuning.climb_probe_x_scale,
         0.01F,
         0.0F,
         3.0F,

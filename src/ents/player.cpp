@@ -7,6 +7,7 @@
 #include "ents/meathead.hpp"
 #include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 #include "world_ops.hpp"
@@ -65,21 +66,23 @@ std::uint32_t ClampTuningFrames(int value) {
 
 PlayerControlTuning MakePlayerControlTuning(const PlayerTuningState& tuning) {
     return PlayerControlTuning{
-        .move_acc = tuning.move_acc,
-        .run_acc = tuning.run_acc,
+        .move_acc = sim::ToRenderScalar(tuning.move_acc),
+        .run_acc = sim::ToRenderScalar(tuning.run_acc),
     };
 }
 
 PlayerPhysicsTuning MakePlayerPhysicsTuning(const PlayerTuningState& tuning) {
     return PlayerPhysicsTuning{
         .jump_and_climb = common::JumpAndClimbTuning{
-            .gravity_scale = tuning.gravity_scale,
-            .jump_impulse = tuning.jump_impulse,
-            .spring_shoes_jump_impulse_bonus = tuning.spring_shoes_jump_impulse_bonus,
-            .climb_speed = tuning.climb_speed,
-            .climb_depart_horizontal_speed = tuning.climb_depart_horizontal_speed,
-            .climb_probe_bias_pixels = tuning.climb_probe_bias_pixels,
-            .climb_probe_x_scale = tuning.climb_probe_x_scale,
+            .gravity_scale = sim::ToRenderScalar(tuning.gravity_scale),
+            .jump_impulse = sim::ToRenderScalar(tuning.jump_impulse),
+            .spring_shoes_jump_impulse_bonus =
+                sim::ToRenderScalar(tuning.spring_shoes_jump_impulse_bonus),
+            .climb_speed = sim::ToRenderScalar(tuning.climb_speed),
+            .climb_depart_horizontal_speed =
+                sim::ToRenderScalar(tuning.climb_depart_horizontal_speed),
+            .climb_probe_bias_pixels = sim::ToRenderScalar(tuning.climb_probe_bias_pixels),
+            .climb_probe_x_scale = sim::ToRenderScalar(tuning.climb_probe_x_scale),
             .climb_required_probe_hits = ClampTuningFrames(tuning.climb_required_probe_hits),
             .coyote_time_frames = ClampTuningFrames(tuning.coyote_frames),
             .jump_delay_frames = ClampTuningFrames(tuning.jump_delay_frames),
@@ -90,11 +93,11 @@ PlayerPhysicsTuning MakePlayerPhysicsTuning(const PlayerTuningState& tuning) {
             .hang_wall_release_cooldown_frames = ClampTuningFrames(tuning.hang_wall_release_cooldown),
             .auto_ledge_grab = tuning.auto_ledge_grab,
         },
-        .max_walk_speed = tuning.walk_speed,
-        .max_run_speed = tuning.run_speed,
-        .max_speed = tuning.max_fall_speed,
-        .air_friction = tuning.air_friction,
-        .ground_friction_scale = tuning.ground_friction_scale,
+        .max_walk_speed = sim::ToRenderScalar(tuning.walk_speed),
+        .max_run_speed = sim::ToRenderScalar(tuning.run_speed),
+        .max_speed = sim::ToRenderScalar(tuning.max_fall_speed),
+        .air_friction = sim::ToRenderScalar(tuning.air_friction),
+        .ground_friction_scale = sim::ToRenderScalar(tuning.ground_friction_scale),
         .fall_damage_min_frames = ClampTuningFrames(tuning.fall_damage_light_frames),
         .fall_damage_medium_frames = ClampTuningFrames(tuning.fall_damage_medium_frames),
         .fall_damage_heavy_frames = ClampTuningFrames(tuning.fall_damage_heavy_frames),

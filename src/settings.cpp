@@ -619,16 +619,16 @@ Settings LoadSettings() {
                 ParseBool(value, settings.debug_ui.ent_swap_keep_tools);
         } else if (key == "player_tuning.gravity_scale") {
             settings.player_tuning.gravity_scale =
-                ParseFloat(value, settings.player_tuning.gravity_scale);
+                ParseSimScalar(value, settings.player_tuning.gravity_scale);
         } else if (key == "player_tuning.max_fall_speed") {
             settings.player_tuning.max_fall_speed =
-                ParseFloat(value, settings.player_tuning.max_fall_speed);
+                ParseSimScalar(value, settings.player_tuning.max_fall_speed);
         } else if (key == "player_tuning.jump_impulse") {
             settings.player_tuning.jump_impulse =
-                ParseFloat(value, settings.player_tuning.jump_impulse);
+                ParseSimScalar(value, settings.player_tuning.jump_impulse);
         } else if (key == "player_tuning.spring_shoes_jump_impulse_bonus") {
             settings.player_tuning.spring_shoes_jump_impulse_bonus =
-                ParseFloat(value, settings.player_tuning.spring_shoes_jump_impulse_bonus);
+                ParseSimScalar(value, settings.player_tuning.spring_shoes_jump_impulse_bonus);
         } else if (key == "player_tuning.jump_hold_frames") {
             settings.player_tuning.jump_hold_frames =
                 ParseInt(value, settings.player_tuning.jump_hold_frames);
@@ -649,34 +649,34 @@ Settings LoadSettings() {
                 ParseInt(value, settings.player_tuning.fall_damage_heavy_frames);
         } else if (key == "player_tuning.walk_speed") {
             settings.player_tuning.walk_speed =
-                ParseFloat(value, settings.player_tuning.walk_speed);
+                ParseSimScalar(value, settings.player_tuning.walk_speed);
         } else if (key == "player_tuning.run_speed") {
             settings.player_tuning.run_speed =
-                ParseFloat(value, settings.player_tuning.run_speed);
+                ParseSimScalar(value, settings.player_tuning.run_speed);
         } else if (key == "player_tuning.move_acc") {
             settings.player_tuning.move_acc =
-                ParseFloat(value, settings.player_tuning.move_acc);
+                ParseSimScalar(value, settings.player_tuning.move_acc);
         } else if (key == "player_tuning.run_acc") {
             settings.player_tuning.run_acc =
-                ParseFloat(value, settings.player_tuning.run_acc);
+                ParseSimScalar(value, settings.player_tuning.run_acc);
         } else if (key == "player_tuning.ground_friction_scale") {
             settings.player_tuning.ground_friction_scale =
-                ParseFloat(value, settings.player_tuning.ground_friction_scale);
+                ParseSimScalar(value, settings.player_tuning.ground_friction_scale);
         } else if (key == "player_tuning.air_friction") {
             settings.player_tuning.air_friction =
-                ParseFloat(value, settings.player_tuning.air_friction);
+                ParseSimScalar(value, settings.player_tuning.air_friction);
         } else if (key == "player_tuning.climb_speed") {
             settings.player_tuning.climb_speed =
-                ParseFloat(value, settings.player_tuning.climb_speed);
+                ParseSimScalar(value, settings.player_tuning.climb_speed);
         } else if (key == "player_tuning.climb_depart_horizontal_speed") {
             settings.player_tuning.climb_depart_horizontal_speed =
-                ParseFloat(value, settings.player_tuning.climb_depart_horizontal_speed);
+                ParseSimScalar(value, settings.player_tuning.climb_depart_horizontal_speed);
         } else if (key == "player_tuning.climb_probe_bias_pixels") {
             settings.player_tuning.climb_probe_bias_pixels =
-                ParseFloat(value, settings.player_tuning.climb_probe_bias_pixels);
+                ParseSimScalar(value, settings.player_tuning.climb_probe_bias_pixels);
         } else if (key == "player_tuning.climb_probe_x_scale") {
             settings.player_tuning.climb_probe_x_scale =
-                ParseFloat(value, settings.player_tuning.climb_probe_x_scale);
+                ParseSimScalar(value, settings.player_tuning.climb_probe_x_scale);
         } else if (key == "player_tuning.climb_required_probe_hits") {
             settings.player_tuning.climb_required_probe_hits =
                 ParseInt(value, settings.player_tuning.climb_required_probe_hits);
@@ -909,11 +909,13 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.ent_swap_keep_health ? 1 : 0) << "\n";
     output << "debug_ui.ent_swap_keep_tools="
            << (settings.debug_ui.ent_swap_keep_tools ? 1 : 0) << "\n";
-    output << "player_tuning.gravity_scale=" << settings.player_tuning.gravity_scale << "\n";
-    output << "player_tuning.max_fall_speed=" << settings.player_tuning.max_fall_speed << "\n";
-    output << "player_tuning.jump_impulse=" << settings.player_tuning.jump_impulse << "\n";
-    output << "player_tuning.spring_shoes_jump_impulse_bonus="
-           << settings.player_tuning.spring_shoes_jump_impulse_bonus << "\n";
+    write_sim_scalar("player_tuning.gravity_scale", settings.player_tuning.gravity_scale);
+    write_sim_scalar("player_tuning.max_fall_speed", settings.player_tuning.max_fall_speed);
+    write_sim_scalar("player_tuning.jump_impulse", settings.player_tuning.jump_impulse);
+    write_sim_scalar(
+        "player_tuning.spring_shoes_jump_impulse_bonus",
+        settings.player_tuning.spring_shoes_jump_impulse_bonus
+    );
     output << "player_tuning.jump_hold_frames=" << settings.player_tuning.jump_hold_frames << "\n";
     output << "player_tuning.coyote_frames=" << settings.player_tuning.coyote_frames << "\n";
     output << "player_tuning.jump_delay_frames=" << settings.player_tuning.jump_delay_frames << "\n";
@@ -923,20 +925,25 @@ bool SaveSettings(const Settings& settings) {
            << settings.player_tuning.fall_damage_medium_frames << "\n";
     output << "player_tuning.fall_damage_heavy_frames="
            << settings.player_tuning.fall_damage_heavy_frames << "\n";
-    output << "player_tuning.walk_speed=" << settings.player_tuning.walk_speed << "\n";
-    output << "player_tuning.run_speed=" << settings.player_tuning.run_speed << "\n";
-    output << "player_tuning.move_acc=" << settings.player_tuning.move_acc << "\n";
-    output << "player_tuning.run_acc=" << settings.player_tuning.run_acc << "\n";
-    output << "player_tuning.ground_friction_scale="
-           << settings.player_tuning.ground_friction_scale << "\n";
-    output << "player_tuning.air_friction=" << settings.player_tuning.air_friction << "\n";
-    output << "player_tuning.climb_speed=" << settings.player_tuning.climb_speed << "\n";
-    output << "player_tuning.climb_depart_horizontal_speed="
-           << settings.player_tuning.climb_depart_horizontal_speed << "\n";
-    output << "player_tuning.climb_probe_bias_pixels="
-           << settings.player_tuning.climb_probe_bias_pixels << "\n";
-    output << "player_tuning.climb_probe_x_scale="
-           << settings.player_tuning.climb_probe_x_scale << "\n";
+    write_sim_scalar("player_tuning.walk_speed", settings.player_tuning.walk_speed);
+    write_sim_scalar("player_tuning.run_speed", settings.player_tuning.run_speed);
+    write_sim_scalar("player_tuning.move_acc", settings.player_tuning.move_acc);
+    write_sim_scalar("player_tuning.run_acc", settings.player_tuning.run_acc);
+    write_sim_scalar(
+        "player_tuning.ground_friction_scale",
+        settings.player_tuning.ground_friction_scale
+    );
+    write_sim_scalar("player_tuning.air_friction", settings.player_tuning.air_friction);
+    write_sim_scalar("player_tuning.climb_speed", settings.player_tuning.climb_speed);
+    write_sim_scalar(
+        "player_tuning.climb_depart_horizontal_speed",
+        settings.player_tuning.climb_depart_horizontal_speed
+    );
+    write_sim_scalar(
+        "player_tuning.climb_probe_bias_pixels",
+        settings.player_tuning.climb_probe_bias_pixels
+    );
+    write_sim_scalar("player_tuning.climb_probe_x_scale", settings.player_tuning.climb_probe_x_scale);
     output << "player_tuning.climb_required_probe_hits="
            << settings.player_tuning.climb_required_probe_hits << "\n";
     output << "player_tuning.climb_detach_cooldown="

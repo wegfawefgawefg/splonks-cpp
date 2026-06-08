@@ -57,7 +57,7 @@ The expected end state is:
 - Current authoritative float-backed inventory:
   `Ent::pos`, `vel`, `acc`, `size`, and `counter_a` through `counter_d`;
   stage fluid amount, velocity, gravity vectors, and temporary gravity;
-  synchronized gameplay settings for fluids and player tuning.
+  synchronized gameplay settings for fluids.
 - Current lockstep hash behavior: entity position, velocity, acceleration,
   size, and counters are quantized through `sim::Scalar` / Fixed12 before
   hashing; entity rotation is stored and hashed as raw Fixed12, and
@@ -276,8 +276,15 @@ The expected end state is:
   values. These settings feed the runtime `InWater` effect modifiers for
   gravity, damping, movement speed, buoyancy, fall damage, stomp behavior, and
   swim impulse, so they no longer preserve raw float payloads before the effect
-  boundary. Fluid simulation settings and player tuning remain float-backed
-  gameplay settings for later passes. Recording format version is now 113.
+  boundary. Fluid simulation settings remain a float-backed gameplay settings
+  bucket for later passes. Recording format version is now 113.
+- Fixed in synchronized player tuning: float-valued `PlayerTuningState`
+  gameplay settings are now stored as Fixed12, settings-file parsing/UI editing
+  convert at local presentation boundaries, and debug playback records them as
+  raw fixed values. The current player control/physics helpers still accept
+  floats, so tuning converts back at the existing player boundary until the
+  broader player movement and `Ent::pos` / `vel` / `acc` migration. Recording
+  format version is now 114.
 - Fixed in stale entity scalar state: unused `Ent::attack_weight` and
   `Ent::weight` were removed instead of converted. A current code/data scan
   found no gameplay readers and no authored data writers; the fields were only

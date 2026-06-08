@@ -183,10 +183,10 @@ struct DebugUiSettings {
 };
 
 struct PlayerTuningState {
-    float gravity_scale = 1.0F;
-    float max_fall_speed = 9.0F;
-    float jump_impulse = 4.5F;
-    float spring_shoes_jump_impulse_bonus = 1.0F;
+    sim::Scalar gravity_scale = sim::Scalar::from_int(1);
+    sim::Scalar max_fall_speed = sim::Scalar::from_int(9);
+    sim::Scalar jump_impulse = sim::ToSimScalar(4.5F);
+    sim::Scalar spring_shoes_jump_impulse_bonus = sim::Scalar::from_int(1);
     int jump_hold_frames = 0;
     int coyote_frames = 6;
     int jump_delay_frames = 1;
@@ -194,17 +194,17 @@ struct PlayerTuningState {
     int fall_damage_medium_frames = 64;
     int fall_damage_heavy_frames = 96;
 
-    float walk_speed = 2.5F;
-    float run_speed = 4.0F;
-    float move_acc = 0.5F;
-    float run_acc = 0.5F;
-    float ground_friction_scale = 1.0F;
-    float air_friction = 0.85F;
+    sim::Scalar walk_speed = sim::ToSimScalar(2.5F);
+    sim::Scalar run_speed = sim::Scalar::from_int(4);
+    sim::Scalar move_acc = sim::ToSimScalar(0.5F);
+    sim::Scalar run_acc = sim::ToSimScalar(0.5F);
+    sim::Scalar ground_friction_scale = sim::Scalar::from_int(1);
+    sim::Scalar air_friction = sim::ToSimScalar(0.85F);
 
-    float climb_speed = 3.0F;
-    float climb_depart_horizontal_speed = 4.0F;
-    float climb_probe_bias_pixels = 8.0F;
-    float climb_probe_x_scale = 0.5F;
+    sim::Scalar climb_speed = sim::Scalar::from_int(3);
+    sim::Scalar climb_depart_horizontal_speed = sim::Scalar::from_int(4);
+    sim::Scalar climb_probe_bias_pixels = sim::Scalar::from_int(8);
+    sim::Scalar climb_probe_x_scale = sim::ToSimScalar(0.5F);
     int climb_required_probe_hits = 2;
     int climb_detach_cooldown = 5;
     int hang_drop_cooldown = 5;

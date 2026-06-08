@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 113;
+constexpr std::uint32_t kRecordingVersion = 114;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -2042,26 +2042,26 @@ bool ReadDebugUiSettings(std::istream& in, DebugUiSettings& settings) {
 }
 
 void WritePlayerTuningState(std::ostream& out, const PlayerTuningState& tuning) {
-    WriteFloat(out, tuning.gravity_scale);
-    WriteFloat(out, tuning.max_fall_speed);
-    WriteFloat(out, tuning.jump_impulse);
-    WriteFloat(out, tuning.spring_shoes_jump_impulse_bonus);
+    WriteSimScalar(out, tuning.gravity_scale);
+    WriteSimScalar(out, tuning.max_fall_speed);
+    WriteSimScalar(out, tuning.jump_impulse);
+    WriteSimScalar(out, tuning.spring_shoes_jump_impulse_bonus);
     WriteInt32(out, tuning.jump_hold_frames);
     WriteInt32(out, tuning.coyote_frames);
     WriteInt32(out, tuning.jump_delay_frames);
     WriteInt32(out, tuning.fall_damage_light_frames);
     WriteInt32(out, tuning.fall_damage_medium_frames);
     WriteInt32(out, tuning.fall_damage_heavy_frames);
-    WriteFloat(out, tuning.walk_speed);
-    WriteFloat(out, tuning.run_speed);
-    WriteFloat(out, tuning.move_acc);
-    WriteFloat(out, tuning.run_acc);
-    WriteFloat(out, tuning.ground_friction_scale);
-    WriteFloat(out, tuning.air_friction);
-    WriteFloat(out, tuning.climb_speed);
-    WriteFloat(out, tuning.climb_depart_horizontal_speed);
-    WriteFloat(out, tuning.climb_probe_bias_pixels);
-    WriteFloat(out, tuning.climb_probe_x_scale);
+    WriteSimScalar(out, tuning.walk_speed);
+    WriteSimScalar(out, tuning.run_speed);
+    WriteSimScalar(out, tuning.move_acc);
+    WriteSimScalar(out, tuning.run_acc);
+    WriteSimScalar(out, tuning.ground_friction_scale);
+    WriteSimScalar(out, tuning.air_friction);
+    WriteSimScalar(out, tuning.climb_speed);
+    WriteSimScalar(out, tuning.climb_depart_horizontal_speed);
+    WriteSimScalar(out, tuning.climb_probe_bias_pixels);
+    WriteSimScalar(out, tuning.climb_probe_x_scale);
     WriteInt32(out, tuning.climb_required_probe_hits);
     WriteInt32(out, tuning.climb_detach_cooldown);
     WriteInt32(out, tuning.hang_drop_cooldown);
@@ -2071,26 +2071,26 @@ void WritePlayerTuningState(std::ostream& out, const PlayerTuningState& tuning) 
 }
 
 bool ReadPlayerTuningState(std::istream& in, PlayerTuningState& tuning) {
-    return ReadFloat(in, tuning.gravity_scale) &&
-           ReadFloat(in, tuning.max_fall_speed) &&
-           ReadFloat(in, tuning.jump_impulse) &&
-           ReadFloat(in, tuning.spring_shoes_jump_impulse_bonus) &&
+    return ReadSimScalar(in, tuning.gravity_scale) &&
+           ReadSimScalar(in, tuning.max_fall_speed) &&
+           ReadSimScalar(in, tuning.jump_impulse) &&
+           ReadSimScalar(in, tuning.spring_shoes_jump_impulse_bonus) &&
            ReadInt32(in, tuning.jump_hold_frames) &&
            ReadInt32(in, tuning.coyote_frames) &&
            ReadInt32(in, tuning.jump_delay_frames) &&
            ReadInt32(in, tuning.fall_damage_light_frames) &&
            ReadInt32(in, tuning.fall_damage_medium_frames) &&
            ReadInt32(in, tuning.fall_damage_heavy_frames) &&
-           ReadFloat(in, tuning.walk_speed) &&
-           ReadFloat(in, tuning.run_speed) &&
-           ReadFloat(in, tuning.move_acc) &&
-           ReadFloat(in, tuning.run_acc) &&
-           ReadFloat(in, tuning.ground_friction_scale) &&
-           ReadFloat(in, tuning.air_friction) &&
-           ReadFloat(in, tuning.climb_speed) &&
-           ReadFloat(in, tuning.climb_depart_horizontal_speed) &&
-           ReadFloat(in, tuning.climb_probe_bias_pixels) &&
-           ReadFloat(in, tuning.climb_probe_x_scale) &&
+           ReadSimScalar(in, tuning.walk_speed) &&
+           ReadSimScalar(in, tuning.run_speed) &&
+           ReadSimScalar(in, tuning.move_acc) &&
+           ReadSimScalar(in, tuning.run_acc) &&
+           ReadSimScalar(in, tuning.ground_friction_scale) &&
+           ReadSimScalar(in, tuning.air_friction) &&
+           ReadSimScalar(in, tuning.climb_speed) &&
+           ReadSimScalar(in, tuning.climb_depart_horizontal_speed) &&
+           ReadSimScalar(in, tuning.climb_probe_bias_pixels) &&
+           ReadSimScalar(in, tuning.climb_probe_x_scale) &&
            ReadInt32(in, tuning.climb_required_probe_hits) &&
            ReadInt32(in, tuning.climb_detach_cooldown) &&
            ReadInt32(in, tuning.hang_drop_cooldown) &&
