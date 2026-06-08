@@ -139,6 +139,8 @@ Current state:
   contact AABBs.
 - Completed 2026-06-08: hurt-on-contact body overlap and player-foot exclusion
   checks now use fixed contact AABBs.
+- Completed 2026-06-08: spike-foot contact and authored spike tile contact
+  cbox overlap now use fixed contact AABBs.
 - Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
   including contact damage, ent contact, weapons, traps,
   sacrifice altar, teleporter, and web/cobweb logic.
@@ -168,6 +170,8 @@ Cleanup:
 - [x] Migrate projectile body-contact impact overlap checks to fixed contact
       geometry.
 - [x] Migrate hurt-on-contact body overlap checks to fixed contact geometry.
+- [x] Migrate spike-foot and spike tile contact cbox overlap checks to fixed
+      contact geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.

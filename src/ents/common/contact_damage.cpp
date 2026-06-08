@@ -79,8 +79,8 @@ bool CanProjImpactWithoutDamage(const Ent& target) {
            target.condition == EntCondition::Dead;
 }
 
-AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
-                                 const TileContactData& tile_contact_data, const Vec2& anchor) {
+sim::AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
+                                      const TileContactData& tile_contact_data, sim::Vec2 anchor) {
     FrameRect cbox = tile_contact_data.cbox;
     const TileRotation rotation = GetTileRotationForQuery(stage, tile_query);
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
@@ -113,13 +113,13 @@ AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult&
     default:
         break;
     }
-    const Vec2 tile_tl = ToVec2(tile_query.tile_pos) * static_cast<float>(kTileSize);
-    const AABB cbox_aabb = AABB::New(
-        tile_tl + Vec2::New(static_cast<float>(cbox.x), static_cast<float>(cbox.y)),
-        tile_tl + Vec2::New(
-            static_cast<float>(cbox.x + cbox.w - 1),
-            static_cast<float>(cbox.y + cbox.h - 1)
-        )
+    const sim::Vec2 tile_tl = sim::PixelVec2(
+        tile_query.tile_pos.x * static_cast<int>(kTileSize),
+        tile_query.tile_pos.y * static_cast<int>(kTileSize)
+    );
+    const sim::AABB cbox_aabb = sim::AABB::from_corners(
+        tile_tl + sim::PixelVec2(cbox.x, cbox.y),
+        tile_tl + sim::PixelVec2(cbox.x + cbox.w - 1, cbox.y + cbox.h - 1)
     );
     return GetNearestWorldAabb(stage, anchor, cbox_aabb);
 }
@@ -285,12 +285,12 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
 
     bool hit_spikes = false;
     {
-        const AABB ent_aabb = GetRenderContactAabbForEnt(ent, graphics);
-        const IAABB iaabb = ent_aabb.AsIAABB();
+        const sim::AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+        const int ent_bottom_y = ent_aabb.br.y.to_pixels_trunc();
         const bool override_tile_portion_check =
             gfxp::length_sq(ent.vel) > sim::ToSimScalar(kSpikeOverrideVelocitySq);
-        const bool in_top_portion_of_tile = (iaabb.br.y % static_cast<int>(kTileSize)) < 4;
-        for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, iaabb.tl, iaabb.br)) {
+        const bool in_top_portion_of_tile = (ent_bottom_y % static_cast<int>(kTileSize)) < 4;
+        for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent_aabb)) {
             if (tile_query.tile == nullptr || *tile_query.tile != Tile::Spikes) {
                 continue;
             }
@@ -309,13 +309,13 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
                 continue;
             }
 
-            const AABB spike_cbox_aabb = GetTileContactCboxWorldAabb(
+            const sim::AABB spike_cbox_aabb = GetTileContactCboxWorldAabb(
                 state.stage,
                 tile_query,
                 *tile_contact_data,
-                ent.GetCenter()
+                ent_aabb.center()
             );
-            if (AabbsIntersect(ent_aabb, spike_cbox_aabb)) {
+            if (gfxp::aabbs_intersect(ent_aabb, spike_cbox_aabb)) {
                 hit_spikes = true;
             }
         }
