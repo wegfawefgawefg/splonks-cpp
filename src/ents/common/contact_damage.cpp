@@ -373,13 +373,13 @@ bool TryApplyProjContactToEnt(
         return false;
     }
 
-    const AABB ent_aabb = GetRenderContactAabbForEnt(ent, graphics);
-    const AABB other_aabb = GetNearestWorldAabb(
+    const sim::AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const sim::AABB other_aabb = GetNearestWorldAabb(
         state.stage,
-        ent.GetCenter(),
-        GetRenderContactAabbForEnt(other_ent, graphics)
+        ent_aabb.center(),
+        GetContactAabbForEnt(other_ent, graphics)
     );
-    if (!AabbsIntersect(ent_aabb, other_aabb)) {
+    if (!gfxp::aabbs_intersect(ent_aabb, other_aabb)) {
         return false;
     }
 

@@ -135,6 +135,8 @@ Current state:
 - Completed 2026-06-08: teleporter probe destination blocking, telefrag, and
   splat overlap checks now use fixed contact AABBs. Debug probe rectangles
   convert fixed bounds at the render boundary.
+- Completed 2026-06-08: projectile body-contact impact overlap now uses fixed
+  contact AABBs.
 - Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
   including contact damage, ent contact, weapons, traps,
   sacrifice altar, teleporter, and web/cobweb logic.
@@ -161,6 +163,8 @@ Cleanup:
       geometry.
 - [x] Migrate arrow-trap sensor overlap checks to fixed contact geometry.
 - [x] Migrate teleporter probe overlap checks to fixed contact geometry.
+- [x] Migrate projectile body-contact impact overlap checks to fixed contact
+      geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.
