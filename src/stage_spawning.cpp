@@ -240,7 +240,7 @@ void PlacePlayerAtPosition(State& state, sim::Vec2 pos) {
     player->acc = sim::Vec2::zero();
 }
 
-void PlacePlayerAtPosition(State& state, const Vec2& pos) {
+void PlacePlayerAtRenderPosition(State& state, const Vec2& pos) {
     PlacePlayerAtPosition(state, sim::ToSimVec2(pos));
 }
 
@@ -291,7 +291,7 @@ void SpawnPlayer(State& state, sim::Vec2 pos) {
     state.controlled_ent_vid = player_vid;
 }
 
-void SpawnPlayer(State& state, const Vec2& pos) {
+void SpawnPlayerAtRenderPosition(State& state, const Vec2& pos) {
     SpawnPlayer(state, sim::ToSimVec2(pos));
 }
 
@@ -315,7 +315,11 @@ std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, sim:
     return std::nullopt;
 }
 
-std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, const Vec2& pos) {
+std::optional<VID> SpawnPlayerForPlayerIdAtRenderPosition(
+    State& state,
+    PlayerId player_id,
+    const Vec2& pos
+) {
     return SpawnPlayerForPlayerId(state, player_id, sim::ToSimVec2(pos));
 }
 
@@ -339,7 +343,7 @@ std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, sim::Vec2
     return vid;
 }
 
-std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, const Vec2& pos) {
+std::optional<VID> SpawnStageEntAtRenderTopLeft(State& state, EntType type_, const Vec2& pos) {
     return SpawnStageEntAtTopLeft(state, type_, sim::ToSimVec2(pos));
 }
 
@@ -360,7 +364,7 @@ std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, sim::Vec2 
     return vid;
 }
 
-std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, const Vec2& center) {
+std::optional<VID> SpawnStageEntAtRenderCenter(State& state, EntType type_, const Vec2& center) {
     return SpawnStageEntAtCenter(state, type_, sim::ToSimVec2(center));
 }
 

@@ -220,7 +220,7 @@ void InitHangTestStage(State& state) {
 
     const float spawn_x = static_cast<float>((wall_x + 1) * static_cast<int>(kTileSize) - 8);
     const float spawn_y = static_cast<float>(top_y * static_cast<int>(kTileSize) - 14);
-    SpawnPlayer(state, Vec2::New(spawn_x, spawn_y));
+    SpawnPlayerAtRenderPosition(state, Vec2::New(spawn_x, spawn_y));
 }
 
 void InitStompTestStage(State& state) {
@@ -229,7 +229,7 @@ void InitStompTestStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(4 * static_cast<int>(kTileSize) - 3);
     const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 10);
-    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
 
     if (const std::optional<VID> vid = state.ents.NewEnt()) {
         if (Ent* const stomp_pad = state.ents.GetEntMut(*vid)) {
@@ -248,7 +248,7 @@ void InitBorderTestStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(4 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(5 * static_cast<int>(kTileSize) - 10);
-    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
 }
 
 void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
@@ -261,10 +261,10 @@ void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
     const Vec2 spawn_pos = GetMazeDoorTestPlayerSpawn(room);
     if (!carryover.players.empty()) {
         RestoreStageCarryover(state, carryover);
-        PlacePlayerAtPosition(state, spawn_pos);
+        PlacePlayerAtRenderPosition(state, spawn_pos);
         SnapAttachedItemsToPlayer(state);
     } else {
-        SpawnPlayer(state, spawn_pos);
+        SpawnPlayerAtRenderPosition(state, spawn_pos);
     }
 
     switch (room) {

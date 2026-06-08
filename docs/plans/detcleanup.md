@@ -466,6 +466,13 @@ Current state:
   velocity/gravity vectors, and the rotation pivot in fixed coordinates. Render
   vectors remain only for particles, audio emitters, camera presentation, and
   animation interpolation.
+- Completed 2026-06-08. The normal stage-spawning API names now accept only
+  fixed `sim::Vec2` positions. Render-position adapters were renamed to
+  `PlacePlayerAtRenderPosition(...)`, `SpawnPlayerAtRenderPosition(...)`,
+  `SpawnPlayerForPlayerIdAtRenderPosition(...)`,
+  `SpawnStageEntAtRenderTopLeft(...)`, and
+  `SpawnStageEntAtRenderCenter(...)`, and their callers are debug/test fixture
+  authoring paths.
 - Some of this is harmless authoring/construction code, but much of it is
   gameplay topology and join-state code.
 
@@ -479,9 +486,10 @@ Cleanup:
 - [x] Move stage entrance spawn lookup and its network callers to fixed vectors.
 - [x] Move stage-rotation entity centers, fluid vectors, and pivot setup to
       fixed coordinates.
-- Use fixed spawn position helpers for remaining authoritative spawn/topology
-  paths.
-- Keep render `Vec2` spawning only for debug/test authoring adapters.
+- [x] Use fixed spawn position helpers for remaining authoritative
+      spawn/topology paths.
+- [x] Keep render `Vec2` spawning only for explicitly named debug/test
+      authoring adapters.
 - Prefer `sim::PixelVec2(...)` and fixed offsets for common integer-pixel spawn
   spacing.
 
@@ -535,8 +543,9 @@ Current state:
   debug/render rectangles, test fixture setup, or a small number of
   visual-authoring-to-gameplay bridges.
 - `stage_spawning.cpp` still exposes render-position spawn overloads that
-  convert into fixed positions. These are authoring/tooling boundaries, but
-  fixed overloads should stay preferred for gameplay callers.
+  convert into fixed positions, but their names now explicitly include
+  `RenderPosition`/`RenderTopLeft`/`RenderCenter`. These are authoring/tooling
+  boundaries; fixed spawn names are fixed-only for gameplay callers.
 - `world_query.cpp` keeps `RaycastRenderTiles(...)` as an explicit
   presentation-only tile ray for audio/debug occlusion visualization. Gameplay
   horizontal raycasts use fixed `sim::Vec2` starts.
@@ -566,8 +575,8 @@ Cleanup:
       similar projectile launch paths.
 - [x] Convert gameplay raycast entry points to fixed/int-friendly APIs and
       quarantine the remaining presentation tile ray as `RaycastRenderTiles`.
-- [ ] Prefer fixed spawn APIs in gameplay code and keep render spawn overloads
-      limited to authoring/tooling fixtures.
+- [x] Prefer fixed spawn APIs in gameplay code and keep render spawn adapters
+      explicitly named and limited to authoring/tooling fixtures.
 
 ## Suggested Order
 

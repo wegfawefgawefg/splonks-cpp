@@ -177,7 +177,7 @@ std::optional<VID> SpawnShopTestShop(
     }
     ents::shop::SetShopArea(*shop, shop_area);
 
-    const std::optional<VID> shopkeeper_vid = SpawnStageEntAtTopLeft(
+    const std::optional<VID> shopkeeper_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::Shopkeeper,
         Vec2::New(
@@ -200,7 +200,7 @@ void SpawnShopTestOwnedItem(
     std::optional<VID> shop_vid,
     const ShopTestItemSpec& spec
 ) {
-    const std::optional<VID> item_vid = SpawnStageEntAtTopLeft(
+    const std::optional<VID> item_vid = SpawnStageEntAtRenderTopLeft(
         state,
         spec.type_,
         Vec2::New(
@@ -234,14 +234,14 @@ void SpawnShopTestCrapsTable(
     std::optional<VID> shop_vid,
     const ShopTestStallSpec& stall
 ) {
-    const std::optional<VID> dice_vid = SpawnStageEntAtTopLeft(
+    const std::optional<VID> dice_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::Dice,
         Vec2::New(57.0F * static_cast<float>(kTileSize),
                   10.0F * static_cast<float>(kTileSize) -
                       sim::ToRenderScalar(GetEntSpec(EntType::Dice).size.y))
     );
-    const std::optional<VID> prize_vid = SpawnStageEntAtTopLeft(
+    const std::optional<VID> prize_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::JetPack,
         Vec2::New(62.0F * static_cast<float>(kTileSize),
@@ -266,7 +266,7 @@ void SpawnShopTestCrapsTable(
 }
 
 void SpawnShopTestSign(State& state, EntType type_, int tile_x) {
-    (void)SpawnStageEntAtTopLeft(
+    (void)SpawnStageEntAtRenderTopLeft(
         state,
         type_,
         Vec2::New(
@@ -284,7 +284,7 @@ void SpawnShopTestStoreLight(State& state, int anchor_tile_x, int start_tile_y) 
     if (!pos.has_value()) {
         return;
     }
-    (void)SpawnStageEntAtTopLeft(state, EntType::StoreLight, *pos);
+    (void)SpawnStageEntAtRenderTopLeft(state, EntType::StoreLight, *pos);
 }
 
 Stage MakeShopTestStage() {
@@ -325,12 +325,12 @@ void InitShopTestStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(3 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(10 * static_cast<int>(kTileSize) - 14);
-    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
     if (Ent* const player = GetPrimaryLocalPlayerMut(state)) {
         player->money = 50000;
     }
 
-    (void)SpawnStageEntAtTopLeft(
+    (void)SpawnStageEntAtRenderTopLeft(
         state,
         EntType::GoldIdol,
         Vec2::New(4.0F * static_cast<float>(kTileSize), 10.0F * static_cast<float>(kTileSize) - 16.0F)

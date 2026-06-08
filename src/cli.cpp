@@ -592,10 +592,12 @@ void InitBigMonkeySampleStage(State& state) {
 
     for (int room_y = 0; room_y < 4; ++room_y) {
         for (int room_x = 0; room_x < 4; ++room_x) {
-            const float center_x = static_cast<float>(room_x * 10 + 5) * static_cast<float>(kTileSize);
-            const float center_y = static_cast<float>(room_y * 8 + 4) * static_cast<float>(kTileSize);
+            const sim::Vec2 center = sim::PixelVec2(
+                (room_x * 10 + 5) * static_cast<int>(kTileSize),
+                (room_y * 8 + 4) * static_cast<int>(kTileSize)
+            );
             if (const std::optional<VID> monkey_vid =
-                    SpawnStageEntAtCenter(state, EntType::Monkey, Vec2::New(center_x, center_y))) {
+                    SpawnStageEntAtCenter(state, EntType::Monkey, center)) {
                 if (Ent* const monkey = state.ents.GetEntMut(*monkey_vid)) {
                     monkey->facing = ((room_x + room_y) % 2 == 0) ? Side::Left : Side::Right;
                 }

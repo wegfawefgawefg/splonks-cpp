@@ -264,7 +264,7 @@ void InitBowlingTestStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(4 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 10);
-    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
 
     const float caveman_center_y =
         static_cast<float>((kBowlingTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
@@ -307,7 +307,7 @@ void InitOpposingBodySmackStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(2 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 10);
-    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
 
     const float caveman_center_y =
         static_cast<float>((kOpposingBodySmackStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
@@ -327,7 +327,7 @@ void InitMonkeyTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    SpawnPlayer(
+    SpawnPlayerAtRenderPosition(
         state,
         Vec2::New(
             2.0F * static_cast<float>(kTileSize),
@@ -346,7 +346,7 @@ void InitMonkeyTestStage(State& state) {
 
     for (std::size_t i = 0; i < monkey_centers_tiles.size(); ++i) {
         const IVec2& tile_pos = monkey_centers_tiles[i];
-        if (const std::optional<VID> monkey_vid = SpawnStageEntAtCenter(
+        if (const std::optional<VID> monkey_vid = SpawnStageEntAtRenderCenter(
             state,
             EntType::Monkey,
             Vec2::New(
@@ -365,7 +365,7 @@ void InitWaterPiranhaTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    SpawnPlayer(
+    SpawnPlayerAtRenderPosition(
         state,
         Vec2::New(
             3.0F * static_cast<float>(kTileSize),
@@ -382,7 +382,7 @@ void InitWaterPiranhaTestStage(State& state) {
         Vec2::New(18.0F * static_cast<float>(kTileSize), 11.5F * static_cast<float>(kTileSize)),
     }};
     for (const Vec2& center : piranha_centers) {
-        (void)SpawnStageEntAtCenter(state, EntType::Piranha, center);
+        (void)SpawnStageEntAtRenderCenter(state, EntType::Piranha, center);
     }
 
     const std::array<std::pair<EntType, Vec2>, 8> props{{
@@ -396,7 +396,7 @@ void InitWaterPiranhaTestStage(State& state) {
         {EntType::Chest, Vec2::New(18.5F, 12.5F) * static_cast<float>(kTileSize)},
     }};
     for (const auto& [type, center] : props) {
-        (void)SpawnStageEntAtCenter(state, type, center);
+        (void)SpawnStageEntAtRenderCenter(state, type, center);
     }
 }
 

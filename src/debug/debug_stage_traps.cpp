@@ -165,7 +165,7 @@ void InitArrowTrapTestStage(State& state) {
 
     const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 3.0F * static_cast<float>(kTileSize) - 14.0F;
-    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
 
     constexpr int kTrapRows = 32;
     constexpr int kFirstTrapY = 6;
@@ -179,7 +179,7 @@ void InitArrowTrapTestStage(State& state) {
             static_cast<float>(tile_y * static_cast<int>(kTileSize))
         );
         if (const std::optional<VID> trap_vid =
-                SpawnStageEntAtTopLeft(state, EntType::ArrowTrap, left_pos)) {
+                SpawnStageEntAtRenderTopLeft(state, EntType::ArrowTrap, left_pos)) {
             if (Ent* const trap = state.ents.GetEntMut(*trap_vid)) {
                 trap->facing = Side::Right;
             }
@@ -190,7 +190,7 @@ void InitArrowTrapTestStage(State& state) {
             static_cast<float>(tile_y * static_cast<int>(kTileSize))
         );
         if (const std::optional<VID> trap_vid =
-                SpawnStageEntAtTopLeft(state, EntType::ArrowTrap, right_pos)) {
+                SpawnStageEntAtRenderTopLeft(state, EntType::ArrowTrap, right_pos)) {
             if (Ent* const trap = state.ents.GetEntMut(*trap_vid)) {
                 trap->facing = Side::Left;
             }
@@ -202,7 +202,7 @@ void InitSpikeTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    SpawnPlayer(
+    SpawnPlayerAtRenderPosition(
         state,
         Vec2::New(
             2.0F * static_cast<float>(kTileSize),
@@ -210,7 +210,7 @@ void InitSpikeTestStage(State& state) {
         )
     );
 
-    (void)SpawnStageEntAtTopLeft(
+    (void)SpawnStageEntAtRenderTopLeft(
         state,
         EntType::SpikeShoes,
         Vec2::New(
@@ -224,7 +224,7 @@ void InitTrapDoorTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    SpawnPlayer(
+    SpawnPlayerAtRenderPosition(
         state,
         Vec2::New(
             4.0F * static_cast<float>(kTileSize),
@@ -239,7 +239,7 @@ void InitTrapDoorTestStage(State& state) {
         static_cast<int>(sim::ToRenderScalar(GetEntSpec(EntType::Door).size.y));
     constexpr std::array<int, 4> kDropDoorXs{{18, 42, 66, 90}};
     for (const int door_x : kDropDoorXs) {
-        if (const std::optional<VID> door_vid = SpawnStageEntAtTopLeft(
+        if (const std::optional<VID> door_vid = SpawnStageEntAtRenderTopLeft(
             state,
             EntType::Door,
             Vec2::New(
@@ -264,7 +264,7 @@ void InitCrusherTrapTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    SpawnPlayer(
+    SpawnPlayerAtRenderPosition(
         state,
         Vec2::New(
             2.0F * static_cast<float>(kTileSize),
@@ -272,7 +272,7 @@ void InitCrusherTrapTestStage(State& state) {
         )
     );
 
-    (void)SpawnStageEntAtTopLeft(
+    (void)SpawnStageEntAtRenderTopLeft(
         state,
         EntType::ThwompTrap,
         Vec2::New(
@@ -289,7 +289,7 @@ void InitCrusherTrapTestStage(State& state) {
         IVec2::New(8, 3),
     }};
     for (const IVec2& tile_pos : kSquisherBlocks) {
-        (void)SpawnStageEntAtTopLeft(
+        (void)SpawnStageEntAtRenderTopLeft(
             state,
             EntType::TrapBlock,
             Vec2::New(
@@ -303,7 +303,7 @@ void InitCrusherTrapTestStage(State& state) {
         const int count = 5 - row;
         for (int column = 0; column < count; ++column) {
             const int tile_x = 19 + row + column;
-            if (const std::optional<VID> block_vid = SpawnStageEntAtTopLeft(
+            if (const std::optional<VID> block_vid = SpawnStageEntAtRenderTopLeft(
                 state,
                 EntType::TrapBlock,
                 Vec2::New(
@@ -333,7 +333,7 @@ void InitCrusherTrapTestStage(State& state) {
         if (row >= kStressHeight) {
             break;
         }
-        const std::optional<VID> block_vid = SpawnStageEntAtTopLeft(
+        const std::optional<VID> block_vid = SpawnStageEntAtRenderTopLeft(
             state,
             EntType::TrapBlock,
             Vec2::New(

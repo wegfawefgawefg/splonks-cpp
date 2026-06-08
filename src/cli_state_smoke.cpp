@@ -707,7 +707,7 @@ bool AddSecondLocalPlayerForDetReplay(State& state, Graphics& graphics) {
     }
 
     const std::optional<VID> second_player_vid =
-        SpawnPlayerForPlayerId(state, kSecondPlayerId, spawn_pos);
+        SpawnPlayerForPlayerIdAtRenderPosition(state, kSecondPlayerId, spawn_pos);
     if (!second_player_vid.has_value()) {
         return false;
     }
@@ -2653,7 +2653,8 @@ bool AddSmokePlayer(State& state, Graphics& graphics, PlayerId player_id, Vec2 o
             spawn_pos = primary_ent->GetRenderPos() + offset;
         }
     }
-    const std::optional<VID> player_vid = SpawnPlayerForPlayerId(state, player_id, spawn_pos);
+    const std::optional<VID> player_vid =
+        SpawnPlayerForPlayerIdAtRenderPosition(state, player_id, spawn_pos);
     if (!player_vid.has_value()) {
         return false;
     }
