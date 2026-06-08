@@ -391,6 +391,9 @@ Current state:
 - Completed 2026-06-08: unheld mattock fallback tile-strike selection now uses
   a fixed strike point and fixed-to-pixel truncation. Debug labels convert that
   fixed point to render coordinates only for annotation display.
+- Completed 2026-06-08: stage-entry attached item snapping, ankh back-item
+  snapping, embedded-treasure drops, and big-gold tile drops now place entities
+  with fixed centers and fixed pixel offsets instead of render-center setters.
 
 Cleanup:
 

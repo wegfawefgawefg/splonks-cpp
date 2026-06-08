@@ -206,7 +206,7 @@ void SnapBackItemToOwner(Ent& owner, State& state) {
     back_item->has_physics = false;
     back_item->can_collide = false;
     back_item->facing = owner.facing;
-    back_item->SetRenderCenter(owner.GetRenderCenter());
+    back_item->SetSimCenter(owner.GetSimCenter());
 }
 
 void OnAnkhEffectHook(

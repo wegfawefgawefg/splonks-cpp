@@ -255,28 +255,30 @@ void SnapAttachedItemsToPlayer(State& state) {
             continue;
         }
 
-        const Vec2 player_center = player->GetRenderCenter();
+        const sim::Vec2 player_center = player->GetSimCenter();
 
         if (player->holding_vid.has_value()) {
             if (Ent* const held_item = state.ents.GetEntMut(*player->holding_vid)) {
-                const Vec2 hold_offset = Vec2::New(4.0F, 1.0F);
+                const sim::Vec2 hold_offset = sim::PixelVec2(4, 1);
                 held_item->facing = player->facing;
                 held_item->draw_layer = DrawLayer::Foreground;
-                held_item->SetRenderCenter(player->facing == Side::Left
-                                         ? player_center + Vec2::New(-hold_offset.x, hold_offset.y)
-                                         : player_center + hold_offset);
+                held_item->SetSimCenter(player->facing == Side::Left
+                                            ? player_center +
+                                                  sim::Vec2{-hold_offset.x, hold_offset.y}
+                                            : player_center + hold_offset);
             }
         }
 
         if (player->back_vid.has_value()) {
             if (Ent* const back_item = state.ents.GetEntMut(*player->back_vid)) {
-                const Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
+                const sim::Vec2 back_offset = sim::PixelVec2(-3, 0);
                 back_item->facing = player->facing;
                 back_item->draw_layer = DrawLayer::Background;
                 TrySetAnim(*back_item, EntDisplayState::Neutral);
-                back_item->SetRenderCenter(player->facing == Side::Left
-                                         ? player_center + Vec2::New(-back_offset.x, back_offset.y)
-                                         : player_center + back_offset);
+                back_item->SetSimCenter(player->facing == Side::Left
+                                            ? player_center +
+                                                  sim::Vec2{-back_offset.x, back_offset.y}
+                                            : player_center + back_offset);
             }
         }
     }

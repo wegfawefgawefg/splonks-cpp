@@ -16,27 +16,27 @@ namespace splonks {
 
 namespace {
 
-Ent* SpawnEntAtCenter(EntType type_, const Vec2& center, State& state) {
+Ent* SpawnEntAtCenter(EntType type_, sim::Vec2 center, State& state) {
     return world_ops::SpawnEnt(state, type_, [center](Ent& ent) {
-        ent.SetRenderCenter(center);
+        ent.SetSimCenter(center);
         ent.vel = sim::Vec2::zero();
     });
 }
 
 void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const IVec2& tile_pos, State& state) {
-    const Vec2 center = Vec2::New(
-        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
-        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
+    const sim::Vec2 center = sim::PixelVec2(
+        tile_pos.x * static_cast<int>(kTileSize) + 8,
+        tile_pos.y * static_cast<int>(kTileSize) + 8
     );
-    static const std::array<Vec2, 8> kDropOffsets{{
-        Vec2::New(-4.0F, -1.0F),
-        Vec2::New(0.0F, 1.0F),
-        Vec2::New(4.0F, -1.0F),
-        Vec2::New(-2.0F, 3.0F),
-        Vec2::New(2.0F, -3.0F),
-        Vec2::New(-5.0F, 2.0F),
-        Vec2::New(5.0F, 2.0F),
-        Vec2::New(0.0F, -4.0F),
+    static const std::array<sim::Vec2, 8> kDropOffsets{{
+        sim::PixelVec2(-4, -1),
+        sim::PixelVec2(0, 1),
+        sim::PixelVec2(4, -1),
+        sim::PixelVec2(-2, 3),
+        sim::PixelVec2(2, -3),
+        sim::PixelVec2(-5, 2),
+        sim::PixelVec2(5, 2),
+        sim::PixelVec2(0, -4),
     }};
 
     std::size_t offset_index = 0;
