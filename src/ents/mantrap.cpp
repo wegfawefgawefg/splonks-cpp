@@ -9,8 +9,6 @@
 #include "state.hpp"
 #include "world_query.hpp"
 
-#include <cmath>
-
 namespace splonks::ents::mantrap {
 
 namespace {
@@ -54,10 +52,11 @@ bool CanMantrapEatEnt(const Ent& target) {
 }
 
 void FaceTarget(Ent& mantrap, const Ent& target, const Stage& stage) {
-    const Vec2 delta = GetNearestWorldDelta(stage, mantrap.GetCenter(), target.GetCenter());
-    if (delta.x < 0.0F) {
+    const sim::Vec2 delta = GetNearestWorldDelta(stage, mantrap.GetSimAABB().center(),
+                                                 target.GetSimAABB().center());
+    if (delta.x < sim::Scalar::zero()) {
         mantrap.facing = Side::Left;
-    } else if (delta.x > 0.0F) {
+    } else if (delta.x > sim::Scalar::zero()) {
         mantrap.facing = Side::Right;
     }
 }
@@ -69,18 +68,18 @@ bool TryEatOverlappingEnt(
     Audio& audio
 ) {
     Ent& mantrap = state.ents.ents[mantrap_idx];
-    const AABB mantrap_aabb = common::GetRenderContactAabbForEnt(mantrap, graphics);
+    const sim::AABB mantrap_aabb = common::GetContactAabbForEnt(mantrap, graphics);
     for (const VID& target_vid : QueryEntsInAabb(state, mantrap_aabb, mantrap.vid)) {
         Ent* const target = state.ents.GetEntMut(target_vid);
         if (target == nullptr || !CanMantrapEatEnt(*target)) {
             continue;
         }
-        const AABB target_aabb = GetNearestWorldAabb(
+        const sim::AABB target_aabb = GetNearestWorldAabb(
             state.stage,
-            mantrap.GetCenter(),
-            common::GetRenderContactAabbForEnt(*target, graphics)
+            mantrap_aabb.center(),
+            common::GetContactAabbForEnt(*target, graphics)
         );
-        if (!AabbsIntersect(mantrap_aabb, target_aabb)) {
+        if (!gfxp::aabbs_intersect(mantrap_aabb, target_aabb)) {
             continue;
         }
 

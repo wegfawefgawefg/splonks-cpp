@@ -110,6 +110,8 @@ Current state:
   contact AABBs and fixed world wrapping.
 - Completed 2026-06-08: generic touched-ent contact gathering and chest
   overlap/key-touch checks now use fixed contact AABBs.
+- Completed 2026-06-08: mantrap eating, baseball bat hit overlap, and
+  craps-table player overlap now use fixed contact/body AABBs.
 - Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
   including contact damage, ent contact, stomp, weapons, traps,
   sacrifice altar, teleporter, and web/cobweb logic.
@@ -121,6 +123,8 @@ Cleanup:
 - [x] Migrate DVD-logo/player transition contact to fixed contact geometry.
 - [x] Migrate generic touched-ent contact gathering and chest contact checks to
       fixed contact geometry.
+- [x] Migrate mantrap, baseball bat, and craps-table overlap checks to fixed
+      contact/body geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.

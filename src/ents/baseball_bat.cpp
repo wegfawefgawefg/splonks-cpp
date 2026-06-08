@@ -136,9 +136,13 @@ bool TryApplyBatContactToEnt(
         return false;
     }
 
-    const AABB bat_aabb = common::GetRenderContactAabbForEnt(bat_ent, graphics);
-    const AABB other_aabb = common::GetRenderContactAabbForEnt(other_ent_const, graphics);
-    if (!AabbsIntersect(bat_aabb, other_aabb)) {
+    const sim::AABB bat_aabb = common::GetContactAabbForEnt(bat_ent, graphics);
+    const sim::AABB other_aabb = GetNearestWorldAabb(
+        state.stage,
+        bat_aabb.center(),
+        common::GetContactAabbForEnt(other_ent_const, graphics)
+    );
+    if (!gfxp::aabbs_intersect(bat_aabb, other_aabb)) {
         return false;
     }
 
