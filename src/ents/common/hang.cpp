@@ -164,8 +164,8 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
 ) {
     std::optional<IVec2> best_tile = std::nullopt;
     int best_hits = 0;
-    float best_score = 0.0F;
-    const Vec2 ent_center = ent.GetRenderCenter();
+    sim::Scalar best_score = sim::Scalar::zero();
+    const sim::Vec2 ent_center = ent.GetSimCenter();
 
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
@@ -188,13 +188,13 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
             continue;
         }
 
-        const Vec2 tile_center = Vec2::New(
-            static_cast<float>(tile_query->tile_pos.x * static_cast<int>(kTileSize) + 8),
-            static_cast<float>(tile_query->tile_pos.y * static_cast<int>(kTileSize) + 8)
+        const sim::Vec2 tile_center = sim::Vec2::from_pixels(
+            tile_query->tile_pos.x * static_cast<int>(kTileSize) + 8,
+            tile_query->tile_pos.y * static_cast<int>(kTileSize) + 8
         );
-        const float dx = std::abs(tile_center.x - ent_center.x);
-        const float dy = std::abs(tile_center.y - ent_center.y);
-        const float score = dx + (dy * 0.25F);
+        const sim::Scalar dx = (tile_center.x - ent_center.x).abs();
+        const sim::Scalar dy = (tile_center.y - ent_center.y).abs();
+        const sim::Scalar score = dx + (dy / sim::Scalar::from_int(4));
         if (!best_tile.has_value() || hits > best_hits || (hits == best_hits && score < best_score)) {
             best_tile = tile_query->tile_pos;
             best_hits = hits;

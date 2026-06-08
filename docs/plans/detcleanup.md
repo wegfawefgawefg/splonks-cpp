@@ -373,6 +373,9 @@ Current state:
 - Completed 2026-06-08: bow arrow spawn now uses fixed aim direction and fixed
   rounded center placement; the firing sound converts fixed center to render at
   the audio boundary.
+- Completed 2026-06-08: current-entity climb-anchor probe scoring now uses
+  fixed entity and tile centers. Candidate-position climb-anchor scoring still
+  accepts render positions and needs a separate API cleanup.
 
 Cleanup:
 
