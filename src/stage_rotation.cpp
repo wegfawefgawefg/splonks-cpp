@@ -35,6 +35,14 @@ Vec2 GetStagePixelDims(const Stage& stage) {
     return Vec2::New(static_cast<float>(stage.GetWidth()), static_cast<float>(stage.GetHeight()));
 }
 
+sim::Vec2 GetSimStagePixelDims(const Stage& stage) {
+    return sim::PixelVec2(static_cast<int>(stage.GetWidth()), static_cast<int>(stage.GetHeight()));
+}
+
+sim::Vec2 Half(sim::Vec2 value) {
+    return sim::Vec2{value.x / 2, value.y / 2};
+}
+
 Vec2 RotatePointClockwise(const Vec2& point, const Vec2& old_dims) {
     const Vec2 old_center = old_dims / 2.0F;
     const Vec2 new_center = Vec2::New(old_dims.y, old_dims.x) / 2.0F;
@@ -51,6 +59,22 @@ Vec2 RotatePoint(const Vec2& point, Vec2 dims, int quarter_turns) {
     return rotated;
 }
 
+sim::Vec2 RotatePointClockwise(sim::Vec2 point, sim::Vec2 old_dims) {
+    const sim::Vec2 old_center = Half(old_dims);
+    const sim::Vec2 new_center = Half(sim::Vec2{old_dims.y, old_dims.x});
+    const sim::Vec2 delta = point - old_center;
+    return new_center + sim::Vec2{-delta.y, delta.x};
+}
+
+sim::Vec2 RotatePoint(sim::Vec2 point, sim::Vec2 dims, int quarter_turns) {
+    sim::Vec2 rotated = point;
+    for (int i = 0; i < quarter_turns; ++i) {
+        rotated = RotatePointClockwise(rotated, dims);
+        dims = sim::Vec2{dims.y, dims.x};
+    }
+    return rotated;
+}
+
 Vec2 RotateDirectionClockwise(const Vec2& direction) {
     return Vec2::New(-direction.y, direction.x);
 }
@@ -63,7 +87,10 @@ Vec2 RotateDirection(Vec2 direction, int quarter_turns) {
 }
 
 sim::Vec2 RotateDirection(sim::Vec2 direction, int quarter_turns) {
-    return sim::ToSimVec2(RotateDirection(sim::ToRenderVec2(direction), quarter_turns));
+    for (int i = 0; i < quarter_turns; ++i) {
+        direction = sim::Vec2{-direction.y, direction.x};
+    }
+    return direction;
 }
 
 IVec2 RotateTileCoordClockwise(const IVec2& tile_pos, int old_width, int old_height) {
@@ -179,6 +206,7 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
     const int old_tile_width = static_cast<int>(stage.GetTileWidth());
     const int old_tile_height = static_cast<int>(stage.GetTileHeight());
     const Vec2 old_dims = GetStagePixelDims(stage);
+    const sim::Vec2 sim_old_dims = GetSimStagePixelDims(stage);
 
     stage.SyncTileInstanceMetadataGrid();
     stage.tiles = RotateGrid(stage.tiles, quarter_turns);
@@ -243,7 +271,7 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
         if (!ent.active) {
             continue;
         }
-        ent.SetRenderCenter(RotatePoint(ent.GetRenderCenter(), old_dims, quarter_turns));
+        ent.SetSimCenter(RotatePoint(ent.GetSimCenter(), sim_old_dims, quarter_turns));
         ent.pos = sim::PixelVec2(ent.pos.x.to_pixels_round(), ent.pos.y.to_pixels_round());
         ent.vel = sim::Vec2::zero();
         ent.acc = sim::Vec2::zero();
@@ -339,7 +367,7 @@ void StartStageRotation(State& state, Graphics& graphics, Audio& audio, int quar
     state.stage_rotation.elapsed_frames = 0;
     state.stage_rotation.duration_frames = kDefaultStageRotationFrames;
     state.stage_rotation.quarter_turns = normalized == 3 ? -1 : normalized;
-    state.stage_rotation.pivot = sim::ToSimVec2(GetStagePixelDims(state.stage) / 2.0F);
+    state.stage_rotation.pivot = Half(GetSimStagePixelDims(state.stage));
     audio.PlayAudioAsset(audio_asset_ids::BigMachineRotate);
     SyncRenderRotation(state, graphics);
 }

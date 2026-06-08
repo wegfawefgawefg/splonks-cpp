@@ -462,6 +462,10 @@ Current state:
 - Completed 2026-06-08. Stage entrance spawn lookup now returns fixed
   `sim::Vec2`; network respawn/revive and reconnect spawn paths consume the
   entrance position without render-vector round trips.
+- Completed 2026-06-08. Stage rotation now rotates entity centers, fluid
+  velocity/gravity vectors, and the rotation pivot in fixed coordinates. Render
+  vectors remain only for particles, audio emitters, camera presentation, and
+  animation interpolation.
 - Some of this is harmless authoring/construction code, but much of it is
   gameplay topology and join-state code.
 
@@ -473,6 +477,8 @@ Cleanup:
 - [x] Move network player lifecycle, retained reconnect, join accept, and join
   barrier spawn positions to fixed vectors.
 - [x] Move stage entrance spawn lookup and its network callers to fixed vectors.
+- [x] Move stage-rotation entity centers, fluid vectors, and pivot setup to
+      fixed coordinates.
 - Use fixed spawn position helpers for remaining authoritative spawn/topology
   paths.
 - Keep render `Vec2` spawning only for debug/test authoring adapters.
