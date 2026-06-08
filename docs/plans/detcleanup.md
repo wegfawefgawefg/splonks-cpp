@@ -291,14 +291,20 @@ Cleanup:
 
 Current state:
 
-- `stage_fluids.cpp` still converts fixed fluid gravity/velocity through
-  `sim::ToRenderVec2` and `sim::ToSimVec2` during internal math.
+- Completed 2026-06-08. `stage_fluids.cpp` now keeps fluid velocity,
+  gravity, temporary gravity, direction, damping, and incoming velocity vector
+  math in `sim::Vec2`/`sim::Scalar` during internal simulation.
+- Fluid amount and transfer scoring still use float helpers, so this section is
+  only partially complete.
 - This was already called out in the determinism audit, but it is also API
   clutter because fixed state is being manipulated through float helpers.
 
 Cleanup:
 
-- Move fluid velocity/gravity math to fixed `sim::Vec2` helpers.
+- [x] Move fluid velocity/gravity math to fixed `sim::Vec2` helpers.
+- Convert fluid amount/transfer scoring to fixed scalar math or explicitly
+  quarantine any remaining float scoring as presentation/debug-free
+  deterministic migration debt.
 - Keep float only for rendering/debug visualization of fluid values.
 
 ### 9. Network and spawn code still converts through render `Vec2`
