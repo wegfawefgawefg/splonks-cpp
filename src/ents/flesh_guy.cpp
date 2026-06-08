@@ -534,7 +534,7 @@ void OnDeathAsFleshGuy(std::size_t ent_idx, State& state, Audio& audio) {
     if (const std::optional<MeatSlimeSurface> ground_surface = GetGroundSurface(flesh_guy, state)) {
         SpawnMeatSlime(state, GetTopMeatSlimeCenter(*ground_surface, state.stage));
     } else if (const std::optional<MeatSlimeSurface> center_surface =
-                   QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, flesh_guy.GetRenderCenter())) {
+                   QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, flesh_guy.GetSimCenter())) {
         SpawnMeatSlime(state, GetTopMeatSlimeCenter(*center_surface, state.stage));
     }
     (void)world_ops::DeactivateEnt(state, flesh_guy.vid);

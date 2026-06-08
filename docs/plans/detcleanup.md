@@ -382,6 +382,8 @@ Current state:
 - Completed 2026-06-08: craps-table prize spawn, dice launch placement, and
   result prompt anchor now use fixed center offsets, with prompt position
   converted to render only for UI.
+- Completed 2026-06-08: flesh-guy death fallback surface query now uses the
+  fixed entity center.
 
 Cleanup:
 
