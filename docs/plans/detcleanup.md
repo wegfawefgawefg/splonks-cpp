@@ -359,6 +359,9 @@ Current state:
   instead of round-tripping through render centers.
 - Completed 2026-06-08: shopkeeper held-pistol spawn/sync placement now uses
   fixed centers instead of `GetRenderCenter()`/`SetRenderCenter()`.
+- Completed 2026-06-08: flesh-guy climb tile probes/snapping and common
+  climb-centerline snapping now use fixed centers and fixed pixel conversion
+  instead of render center access.
 
 Cleanup:
 

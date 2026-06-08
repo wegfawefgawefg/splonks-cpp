@@ -291,9 +291,9 @@ bool CanAttachDownToClimbAnchor(const ClimbAnchor& climb_anchor, const State& st
 }
 
 void SnapEntToClimbTileCenterline(Ent& ent, const IVec2& tile_pos) {
-    Vec2 center = ent.GetRenderCenter();
-    center.x = static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8);
-    ent.SetRenderCenter(center);
+    sim::Vec2 center = ent.GetSimCenter();
+    center.x = sim::Scalar::from_int(tile_pos.x * static_cast<int>(kTileSize) + 8);
+    ent.SetSimCenter(center);
 }
 
 void SnapEntHangYToTile(Ent& ent) {

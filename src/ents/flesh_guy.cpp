@@ -43,7 +43,7 @@ constexpr float kMeatTileTopperHeight = 7.0F;
 constexpr float kMeatTileTopperYOffset = -1.0F;
 constexpr float kSideMeatTileInset = (kMeatTileTopperHeight * 0.5F) - 1.0F;
 constexpr float kClimbSpeed = 2.1F;
-constexpr float kClimbSnapSpeed = 1.0F;
+constexpr int kClimbSnapSpeedPixels = 1;
 
 enum class MeatSlimeSurfaceKind {
     Tile,
@@ -159,16 +159,22 @@ bool IsClimbableTileQuery(const std::optional<WorldTileQueryResult>& tile_query)
 }
 
 std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
-    const Vec2 center = ent.GetRenderCenter();
-    const float horizontal_offset = std::min(2.5F, std::max(0.0F, (ent.GetSize().x * 0.5F) - 1.0F));
-    const std::array<Vec2, 3> probes = {{
-        Vec2::New(center.x - horizontal_offset, center.y),
+    const sim::Vec2 center = ent.GetSimCenter();
+    constexpr sim::Scalar kMaxHorizontalOffset =
+        sim::Scalar::from_raw((sim::Scalar::scale * 5) / 2);
+    const sim::Scalar horizontal_offset = std::min(
+        kMaxHorizontalOffset,
+        std::max(sim::Scalar::zero(), (ent.size.x / sim::Scalar::from_int(2)) - sim::Scalar::from_int(1))
+    );
+    const std::array<sim::Vec2, 3> probes = {{
+        sim::Vec2{center.x - horizontal_offset, center.y},
         center,
-        Vec2::New(center.x + horizontal_offset, center.y),
+        sim::Vec2{center.x + horizontal_offset, center.y},
     }};
 
-    for (const Vec2& probe : probes) {
-        const std::optional<WorldTileQueryResult> tile_query = QueryTileAtWorldPos(state.stage, ToIVec2(probe));
+    for (const sim::Vec2& probe : probes) {
+        const std::optional<WorldTileQueryResult> tile_query =
+            QueryTileAtWorldPos(state.stage, sim::ToPixelIVec2Round(probe));
         if (IsClimbableTileQuery(tile_query)) {
             return tile_query->tile_pos;
         }
@@ -177,11 +183,16 @@ std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
 }
 
 void SnapToClimbTile(Ent& ent, const IVec2& tile_pos) {
-    Vec2 center = ent.GetRenderCenter();
-    const float target_x = static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2));
-    const float delta = std::clamp(target_x - center.x, -kClimbSnapSpeed, kClimbSnapSpeed);
+    sim::Vec2 center = ent.GetSimCenter();
+    const sim::Scalar target_x =
+        sim::Scalar::from_int(tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2));
+    const sim::Scalar delta = std::clamp(
+        target_x - center.x,
+        sim::Scalar::from_int(-kClimbSnapSpeedPixels),
+        sim::Scalar::from_int(kClimbSnapSpeedPixels)
+    );
     center.x += delta;
-    ent.SetRenderCenter(center);
+    ent.SetSimCenter(center);
 }
 
 std::optional<Side> GetWallSlideSide(
