@@ -122,6 +122,11 @@ struct FingerprintWriter {
         AddFixedScalar(fixed.y);
     }
 
+    void AddFixedVec2(const sim::Vec2& vec) {
+        AddFixedScalar(vec.x);
+        AddFixedScalar(vec.y);
+    }
+
     void AddFixedColor3(const sim::Color3& color) {
         AddFixedScalar(color.r);
         AddFixedScalar(color.g);
@@ -190,6 +195,13 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
                 }
                 return grid[y_][x_];
             };
+            const auto read_sim_vec2_grid = [](const std::vector<std::vector<sim::Vec2>>& grid,
+                                               std::size_t y_, std::size_t x_) {
+                if (y_ >= grid.size() || x_ >= grid[y_].size()) {
+                    return sim::Vec2::zero();
+                }
+                return grid[y_][x_];
+            };
 
             writer.AddPod(static_cast<std::uint16_t>(read_tile_grid(stage.tiles, Tile::Air)));
             writer.AddPod(static_cast<std::uint8_t>(read_rotation_grid()));
@@ -197,6 +209,9 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
                 static_cast<std::uint16_t>(read_tile_grid(stage.backwall_tiles, Tile::Air)));
             writer.AddPod(static_cast<std::uint16_t>(read_tile_grid(stage.fluid_tiles, Tile::Air)));
             writer.AddFixedScalar(read_sim_scalar_grid(stage.fluid_amount, row_y, col_x));
+            writer.AddFixedVec2(read_sim_vec2_grid(stage.fluid_velocity, row_y, col_x));
+            writer.AddFixedVec2(read_sim_vec2_grid(stage.fluid_gravity, row_y, col_x));
+            writer.AddFixedVec2(read_sim_vec2_grid(stage.fluid_temp_gravity, row_y, col_x));
 
             EmbeddedTreasure embedded{};
             if (row_y < stage.embedded_treasures.size() &&

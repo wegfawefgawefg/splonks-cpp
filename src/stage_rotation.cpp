@@ -62,6 +62,10 @@ Vec2 RotateDirection(Vec2 direction, int quarter_turns) {
     return direction;
 }
 
+sim::Vec2 RotateDirection(sim::Vec2 direction, int quarter_turns) {
+    return sim::ToSimVec2(RotateDirection(sim::ToRenderVec2(direction), quarter_turns));
+}
+
 IVec2 RotateTileCoordClockwise(const IVec2& tile_pos, int old_width, int old_height) {
     (void)old_width;
     return IVec2::New(old_height - 1 - tile_pos.y, tile_pos.x);
@@ -187,18 +191,18 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
     stage.fluid_gravity = RotateGrid(stage.fluid_gravity, quarter_turns);
     stage.fluid_gravity_strength = RotateGrid(stage.fluid_gravity_strength, quarter_turns);
     stage.fluid_temp_gravity = RotateGrid(stage.fluid_temp_gravity, quarter_turns);
-    for (std::vector<Vec2>& row : stage.fluid_velocity) {
-        for (Vec2& velocity : row) {
+    for (std::vector<sim::Vec2>& row : stage.fluid_velocity) {
+        for (sim::Vec2& velocity : row) {
             velocity = RotateDirection(velocity, quarter_turns);
         }
     }
-    for (std::vector<Vec2>& row : stage.fluid_gravity) {
-        for (Vec2& gravity : row) {
+    for (std::vector<sim::Vec2>& row : stage.fluid_gravity) {
+        for (sim::Vec2& gravity : row) {
             gravity = RotateDirection(gravity, quarter_turns);
         }
     }
-    for (std::vector<Vec2>& row : stage.fluid_temp_gravity) {
-        for (Vec2& gravity : row) {
+    for (std::vector<sim::Vec2>& row : stage.fluid_temp_gravity) {
+        for (sim::Vec2& gravity : row) {
             gravity = RotateDirection(gravity, quarter_turns);
         }
     }

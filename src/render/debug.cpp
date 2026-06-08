@@ -1336,10 +1336,11 @@ void RenderFluidGravityOverlay(
 
             const bool has_local_gravity =
                 state.stage.fluid_gravity_strength[grid_y][grid_x] != 0;
-            const Vec2 temp_gravity = state.stage.fluid_temp_gravity[grid_y][grid_x];
+            const Vec2 temp_gravity =
+                sim::ToRenderVec2(state.stage.fluid_temp_gravity[grid_y][grid_x]);
             const bool has_temp_gravity = Length(temp_gravity) > 0.01F;
             const Vec2 base_gravity = has_local_gravity
-                ? state.stage.fluid_gravity[grid_y][grid_x]
+                ? sim::ToRenderVec2(state.stage.fluid_gravity[grid_y][grid_x])
                 : global_gravity;
             const Vec2 effective_gravity = base_gravity + temp_gravity;
             if (Length(effective_gravity) <= 0.01F && !has_local_gravity && !has_temp_gravity) {

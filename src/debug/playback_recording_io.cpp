@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 116;
+constexpr std::uint32_t kRecordingVersion = 117;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -2658,10 +2658,10 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteGridExplicit(out, stage.fluid_tiles, WriteTile);
     WriteGridExplicit(out, stage.fluid_amount, WriteSimScalar);
     WriteGridExplicit(out, stage.fluid_display_amount, WriteSimScalar);
-    WriteGridExplicit(out, stage.fluid_velocity, WriteVec2);
-    WriteGridExplicit(out, stage.fluid_gravity, WriteVec2);
+    WriteGridExplicit(out, stage.fluid_velocity, WriteSimVec2);
+    WriteGridExplicit(out, stage.fluid_gravity, WriteSimVec2);
     WriteGridExplicit(out, stage.fluid_gravity_strength, WriteUint8);
-    WriteGridExplicit(out, stage.fluid_temp_gravity, WriteVec2);
+    WriteGridExplicit(out, stage.fluid_temp_gravity, WriteSimVec2);
     WriteGridExplicit(out, stage.tile_shake, WriteSimScalar);
     WriteGridExplicit(out, stage.backwall_tile_shake, WriteSimScalar);
     WriteGridExplicit(out, stage.backwall_tiles, WriteTile);
@@ -2731,10 +2731,10 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadGridExplicit(in, stage.fluid_tiles, ReadTile) ||
         !ReadGridExplicit(in, stage.fluid_amount, ReadSimScalar) ||
         !ReadGridExplicit(in, stage.fluid_display_amount, ReadSimScalar) ||
-        !ReadGridExplicit(in, stage.fluid_velocity, ReadVec2) ||
-        !ReadGridExplicit(in, stage.fluid_gravity, ReadVec2) ||
+        !ReadGridExplicit(in, stage.fluid_velocity, ReadSimVec2) ||
+        !ReadGridExplicit(in, stage.fluid_gravity, ReadSimVec2) ||
         !ReadGridExplicit(in, stage.fluid_gravity_strength, ReadUint8) ||
-        !ReadGridExplicit(in, stage.fluid_temp_gravity, ReadVec2) ||
+        !ReadGridExplicit(in, stage.fluid_temp_gravity, ReadSimVec2) ||
         !ReadGridExplicit(in, stage.tile_shake, ReadSimScalar) ||
         !ReadGridExplicit(in, stage.backwall_tile_shake, ReadSimScalar) ||
         !ReadGridExplicit(in, stage.backwall_tiles, ReadTile) ||

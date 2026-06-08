@@ -180,10 +180,10 @@ struct Stage {
     std::vector<std::vector<Tile>> fluid_tiles;
     std::vector<std::vector<sim::Scalar>> fluid_amount;
     std::vector<std::vector<sim::Scalar>> fluid_display_amount;
-    std::vector<std::vector<Vec2>> fluid_velocity;
-    std::vector<std::vector<Vec2>> fluid_gravity;
+    std::vector<std::vector<sim::Vec2>> fluid_velocity;
+    std::vector<std::vector<sim::Vec2>> fluid_gravity;
     std::vector<std::vector<std::uint8_t>> fluid_gravity_strength;
-    std::vector<std::vector<Vec2>> fluid_temp_gravity;
+    std::vector<std::vector<sim::Vec2>> fluid_temp_gravity;
     std::vector<std::vector<sim::Scalar>> tile_shake;
     std::vector<std::vector<sim::Scalar>> backwall_tile_shake;
     std::vector<std::vector<Tile>> backwall_tiles;

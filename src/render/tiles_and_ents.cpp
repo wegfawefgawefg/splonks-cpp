@@ -1344,7 +1344,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         x >= state.stage.fluid_velocity[y].size()) {
                         return;
                     }
-                    const Vec2 velocity = state.stage.fluid_velocity[y][x];
+                    const Vec2 velocity = sim::ToRenderVec2(state.stage.fluid_velocity[y][x]);
                     const std::uint64_t flow_tick =
                         static_cast<std::uint64_t>(state.scene_frame) +
                         (static_cast<std::uint64_t>(x) * 29ULL) +

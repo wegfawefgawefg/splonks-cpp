@@ -178,29 +178,29 @@ void ExpandStageForWrap(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<sim::Scalar>(static_cast<std::size_t>(new_tile_dims.x), sim::Scalar::zero())
     );
-    std::vector<std::vector<Vec2>> fluid_velocity(
+    std::vector<std::vector<sim::Vec2>> fluid_velocity(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<Vec2>(
+        std::vector<sim::Vec2>(
             static_cast<std::size_t>(new_tile_dims.x),
-            Vec2::New(0.0F, 0.0F)
+            sim::Vec2::zero()
         )
     );
-    std::vector<std::vector<Vec2>> fluid_gravity(
+    std::vector<std::vector<sim::Vec2>> fluid_gravity(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<Vec2>(
+        std::vector<sim::Vec2>(
             static_cast<std::size_t>(new_tile_dims.x),
-            Vec2::New(0.0F, 0.0F)
+            sim::Vec2::zero()
         )
     );
     std::vector<std::vector<std::uint8_t>> fluid_gravity_strength(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<std::uint8_t>(static_cast<std::size_t>(new_tile_dims.x), 0)
     );
-    std::vector<std::vector<Vec2>> fluid_temp_gravity(
+    std::vector<std::vector<sim::Vec2>> fluid_temp_gravity(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<Vec2>(
+        std::vector<sim::Vec2>(
             static_cast<std::size_t>(new_tile_dims.x),
-            Vec2::New(0.0F, 0.0F)
+            sim::Vec2::zero()
         )
     );
     std::vector<std::vector<sim::Scalar>> tile_shake(
@@ -320,21 +320,21 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
         static_cast<std::size_t>(core_size.y),
         std::vector<sim::Scalar>(static_cast<std::size_t>(core_size.x), sim::Scalar::zero())
     );
-    std::vector<std::vector<Vec2>> fluid_velocity(
+    std::vector<std::vector<sim::Vec2>> fluid_velocity(
         static_cast<std::size_t>(core_size.y),
-        std::vector<Vec2>(static_cast<std::size_t>(core_size.x), Vec2::New(0.0F, 0.0F))
+        std::vector<sim::Vec2>(static_cast<std::size_t>(core_size.x), sim::Vec2::zero())
     );
-    std::vector<std::vector<Vec2>> fluid_gravity(
+    std::vector<std::vector<sim::Vec2>> fluid_gravity(
         static_cast<std::size_t>(core_size.y),
-        std::vector<Vec2>(static_cast<std::size_t>(core_size.x), Vec2::New(0.0F, 0.0F))
+        std::vector<sim::Vec2>(static_cast<std::size_t>(core_size.x), sim::Vec2::zero())
     );
     std::vector<std::vector<std::uint8_t>> fluid_gravity_strength(
         static_cast<std::size_t>(core_size.y),
         std::vector<std::uint8_t>(static_cast<std::size_t>(core_size.x), 0)
     );
-    std::vector<std::vector<Vec2>> fluid_temp_gravity(
+    std::vector<std::vector<sim::Vec2>> fluid_temp_gravity(
         static_cast<std::size_t>(core_size.y),
-        std::vector<Vec2>(static_cast<std::size_t>(core_size.x), Vec2::New(0.0F, 0.0F))
+        std::vector<sim::Vec2>(static_cast<std::size_t>(core_size.x), sim::Vec2::zero())
     );
     std::vector<std::vector<sim::Scalar>> tile_shake(
         static_cast<std::size_t>(core_size.y),

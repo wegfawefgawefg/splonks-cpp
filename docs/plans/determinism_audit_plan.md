@@ -45,9 +45,9 @@ The expected end state is:
 - In progress. The network fingerprint no longer hashes raw float bits; it
   quantizes known hashed float fields through `sim::Scalar` / Fixed12.
 - Remaining authoritative float storage is still broad. `Ent::pos`, `vel`,
-  `acc`, `size`, `counter_a` through `counter_d`, and stage fluid state are the
-  highest-priority simulation fields because they affect movement, contact,
-  animation gates, world state, or lockstep fingerprints.
+  `acc`, `size`, and `counter_a` through `counter_d` are the highest-priority
+  simulation fields because they affect movement, contact, animation gates,
+  world state, or lockstep fingerprints.
 - Deferred risk: these fields are still simulated as float. The current
   quantized hash can prevent false cross-ISA mismatches from tiny float-bit
   differences, but it does not prevent two peers from crossing different branch
@@ -55,8 +55,7 @@ The expected end state is:
   authoritative gameplay storage/math to fixed-point, integer counters, or
   explicit threshold quantization.
 - Current authoritative float-backed inventory:
-  `Ent::pos`, `vel`, `acc`, `size`, and `counter_a` through `counter_d`;
-  stage fluid velocity, gravity vectors, and temporary gravity.
+  `Ent::pos`, `vel`, `acc`, `size`, and `counter_a` through `counter_d`.
 - Current lockstep hash behavior: entity position, velocity, acceleration,
   size, and counters are quantized through `sim::Scalar` / Fixed12 before
   hashing; entity rotation is stored and hashed as raw Fixed12, and
@@ -293,8 +292,16 @@ The expected end state is:
 - Fixed in authoritative fluid amount state: `Stage::fluid_amount` is now a
   Fixed12 grid, hashed as raw fixed values, and recorded as raw fixed values.
   The current fluid solver still converts to float for transfer calculations
-  and quantizes back at each amount write until the broader fluid velocity /
-  gravity vector migration. Recording format version is now 116.
+  and quantizes back at each amount write until the broader all-fixed fluid
+  solver migration. Recording format version is now 116.
+- Fixed in authoritative fluid vector state: `Stage::fluid_velocity`,
+  `Stage::fluid_gravity`, and `Stage::fluid_temp_gravity` are now Fixed12
+  vector grids, included in canonical/live stage fingerprints as raw fixed
+  values, and recorded as raw fixed values. The current fluid solver still
+  converts these vectors to float for transfer calculations and quantizes back
+  at each grid write, preserving the existing gameplay feel while removing raw
+  IEEE vector payloads from persistent stage state. Recording format version is
+  now 117.
 - Fixed in stale entity scalar state: unused `Ent::attack_weight` and
   `Ent::weight` were removed instead of converted. A current code/data scan
   found no gameplay readers and no authored data writers; the fields were only
@@ -348,15 +355,14 @@ The expected end state is:
 - Fixed in snapshot-preserved fluid presentation state:
   `Stage::fluid_display_amount` is now stored as a Fixed12 grid and recorded as
   raw fixed values. This field is render smoothing/presentation state; the
-  authoritative fluid simulation still uses `fluid_amount`, `fluid_velocity`,
-  gravity overrides, and gameplay fluid settings, which remain deferred for the
-  broader fluid determinism pass. Recording format version is now 111.
+  authoritative fluid amount/vector grids were handled in later fixed-storage
+  passes. Recording format version is now 111.
 - Fixed in fluid gravity override activation state:
   `Stage::fluid_gravity_strength` was actually a binary override-active flag,
   only written as `1.0F` / `0.0F` and read as `> 0`. It is now stored as an
   explicit `uint8_t` grid and recorded as bytes. The override gravity vectors
-  and temporary gravity vectors remain float-backed fluid simulation state for
-  the broader fluid pass. Recording format version is now 112.
+  and temporary gravity vectors were handled in a later fixed-vector pass.
+  Recording format version is now 112.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes. `AddPod` now rejects
@@ -406,13 +412,14 @@ The expected end state is:
 - Fixed in fluid vector math boundaries: `stage_fluids.cpp` now uses
   `LengthDeterministic` for velocity clamping and gravity magnitude, and
   `NormalizeOrZeroDeterministic` for gravity and neighbor transfer directions.
-  Fluid amounts and velocities are still stored as floats, but the remaining
-  simple cleanup pass no longer has an authoritative fluid path calling
-  platform libm `sqrt` through `Length` / `NormalizeOrZero`.
+  Fluid amount/vector storage is now Fixed12, but the current transfer solver
+  still converts to float locally and quantizes each authoritative grid write.
+  The remaining fluid risk is solver branch threshold drift before write-back,
+  not raw float payloads in the stage grids.
 - Remaining high-risk math boundary after the simple cleanup pass: broad
-  authoritative gameplay storage is still float-backed, including fluid
-  amounts/velocities and entity position/velocity/acceleration. These need the
-  larger fixed-point storage migration or explicit per-system quantization
+  authoritative gameplay storage is still float-backed, especially entity
+  position/velocity/acceleration/size and mixed-use entity counters. These need
+  the larger fixed-point storage migration or explicit per-system quantization
   policy covered by the Gameplay Float Audit, rather than more isolated libm
   call replacement.
 - Audited remaining `stage_lighting.cpp` libm use: `std::pow`, `std::floor`,
