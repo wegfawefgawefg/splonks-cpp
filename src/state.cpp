@@ -45,16 +45,21 @@ void AddShake(State& state, const Vec2& world_pos, float foreground_tile_amount,
     }
 
     const float radius_world = radius_tiles * static_cast<float>(kTileSize);
-    const AABB area = AABB::New(world_pos - Vec2::New(radius_world, radius_world),
-                                world_pos + Vec2::New(radius_world, radius_world));
+    const sim::Scalar radius_world_sim = sim::ToSimScalar(radius_world);
+    const sim::Vec2 world_pos_sim = sim::ToSimVec2(world_pos);
+    const sim::AABB area = sim::AABB::from_corners(
+        world_pos_sim - sim::Vec2{radius_world_sim, radius_world_sim},
+        world_pos_sim + sim::Vec2{radius_world_sim, radius_world_sim}
+    );
     for (const VID& vid : QueryEntsInAabb(state, area, exclude_ent_vid)) {
         Ent* const ent = state.ents.GetEntMut(vid);
         if (ent == nullptr || !ent->active) {
             continue;
         }
 
-        const Vec2 nearest_center = GetNearestWorldPoint(state.stage, world_pos, ent->GetCenter());
-        const Vec2 delta = nearest_center - world_pos;
+        const sim::Vec2 nearest_center =
+            GetNearestWorldPoint(state.stage, world_pos_sim, ent->GetSimCenter());
+        const Vec2 delta = sim::ToRenderVec2(nearest_center - world_pos_sim);
         if (radius_world > 0.0F) {
             const int radius_scaled =
                 std::max(1, RoundToInt(radius_world * static_cast<float>(kEntShakeDistanceScale)));
@@ -77,9 +82,7 @@ void AddShake(State& state, const Vec2& world_pos, float foreground_tile_amount,
             continue;
         }
 
-        const AABB nearest_aabb = GetNearestWorldAabb(state.stage, world_pos, ent->GetAABB());
-        if (world_pos.x >= nearest_aabb.tl.x && world_pos.x <= nearest_aabb.br.x &&
-            world_pos.y >= nearest_aabb.tl.y && world_pos.y <= nearest_aabb.br.y) {
+        if (WorldAabbContainsPoint(state.stage, ent->GetSimAABB(), world_pos_sim)) {
             AddEntShake(*ent, ent_amount);
         }
     }
