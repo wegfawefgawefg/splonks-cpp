@@ -549,8 +549,10 @@ Current state:
 - `world_query.cpp` keeps `RaycastRenderTiles(...)` as an explicit
   presentation-only tile ray for audio/debug occlusion visualization. Gameplay
   horizontal raycasts use fixed `sim::Vec2` starts.
-- Ball-and-chain uses a local raw-fixed delta helper; this is fixed data but the
-  helper name should be cleaned up if it survives the final API pass.
+- Completed 2026-06-08: ball-and-chain force logic now derives chain anchor,
+  ball center, and delta in fixed sim coordinates. The local rounded
+  length/ratio algorithm still uses raw fixed components internally, but no
+  render center or float re-quantization is part of the gameplay force path.
 - Cobra sight currently converts an animation-derived emit point into a fixed
   ray origin. That is a real boundary between visual emit-point authoring and
   gameplay ray logic; clean replacement likely needs fixed emit points or a

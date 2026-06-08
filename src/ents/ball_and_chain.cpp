@@ -13,25 +13,22 @@ namespace splonks::ents::ball_and_chain {
 
 namespace {
 
-constexpr std::int32_t kFixedScale = 4096;
-constexpr std::int32_t kDistanceEpsilonRaw = 4;
-constexpr std::int32_t kChainLengthRaw = 26 * kFixedScale;
-// Raw fixed-point forms of 0.32, 0.52, and 1.35.
-constexpr std::int32_t kBallCatchupAccelerationRaw = 1311;
-constexpr std::int32_t kChainPullAccelerationRaw = 2130;
+using FixedRaw = sim::Scalar::raw_type;
+
+constexpr FixedRaw kFixedScale = sim::Scalar::scale;
+constexpr sim::Scalar kDistanceEpsilon = sim::Scalar::from_raw(4);
+constexpr sim::Scalar kChainLength = sim::Scalar::from_int(26);
+constexpr sim::Scalar kBallCatchupAcceleration = sim::Scalar::from_raw(1311);
+constexpr sim::Scalar kChainPullAcceleration = sim::Scalar::from_raw(2130);
 constexpr std::int32_t kPlayerAwayVelocityDampingPercent = 85;
-constexpr std::int32_t kMaxPlayerPullRaw = 5529;
+constexpr sim::Scalar kMaxPlayerPull = sim::Scalar::from_raw(5529);
 
-Vec2 GetAnchorPos(const Ent& player) {
-    return player.GetRenderCenter() + Vec2::New(0.0F, (player.GetSize().y * 0.5F) - 1.0F);
+sim::Vec2 GetAnchorPos(const Ent& player) {
+    return player.GetSimCenter() +
+           sim::Vec2{sim::Scalar::zero(), (player.size.y / 2) - sim::Scalar::from_int(1)};
 }
 
-std::int32_t RoundFloatToFixedRaw(float value) {
-    const float scaled = value * static_cast<float>(kFixedScale);
-    return static_cast<std::int32_t>(scaled + (scaled >= 0.0F ? 0.5F : -0.5F));
-}
-
-std::int32_t RoundRatio(std::int64_t numerator, std::int64_t denominator) {
+FixedRaw RoundRatio(std::int64_t numerator, std::int64_t denominator) {
     if (denominator == 0) {
         return 0;
     }
@@ -42,9 +39,9 @@ std::int32_t RoundRatio(std::int64_t numerator, std::int64_t denominator) {
 
     const std::int64_t half = denominator / 2;
     if (numerator >= 0) {
-        return static_cast<std::int32_t>((numerator + half) / denominator);
+        return static_cast<FixedRaw>((numerator + half) / denominator);
     }
-    return static_cast<std::int32_t>((numerator - half) / denominator);
+    return static_cast<FixedRaw>((numerator - half) / denominator);
 }
 
 std::uint64_t IntSqrtFloor(std::uint64_t value) {
@@ -67,16 +64,12 @@ std::uint64_t IntSqrtFloor(std::uint64_t value) {
     return result;
 }
 
-std::int32_t IntSqrtRound(std::uint64_t value) {
+FixedRaw IntSqrtRound(std::uint64_t value) {
     const std::uint64_t floor = IntSqrtFloor(value);
     const std::uint64_t low_delta = value - (floor * floor);
     const std::uint64_t next = floor + 1;
     const std::uint64_t high_delta = (next * next) - value;
-    return static_cast<std::int32_t>(high_delta < low_delta ? next : floor);
-}
-
-sim::Vec2 FixedDeltaToSimVec2(std::int32_t x_raw, std::int32_t y_raw) {
-    return sim::Vec2::from_raw(x_raw, y_raw);
+    return static_cast<FixedRaw>(high_delta < low_delta ? next : floor);
 }
 
 } // namespace
@@ -143,62 +136,66 @@ void StepEntLogicAsBallAndChainBall(
         return;
     }
 
-    const Vec2 anchor_pos = GetAnchorPos(*player);
-    const Vec2 ball_center = GetNearestWorldPoint(state.stage, anchor_pos, ball.GetRenderCenter());
-    const Vec2 delta = ball_center - anchor_pos;
-    const std::int32_t delta_x_raw = RoundFloatToFixedRaw(delta.x);
-    const std::int32_t delta_y_raw = RoundFloatToFixedRaw(delta.y);
+    const sim::Vec2 anchor_pos = GetAnchorPos(*player);
+    const sim::Vec2 ball_center = GetNearestWorldPoint(state.stage, anchor_pos, ball.GetSimCenter());
+    const sim::Vec2 delta = ball_center - anchor_pos;
+    const FixedRaw delta_x_raw = delta.x.raw_value();
+    const FixedRaw delta_y_raw = delta.y.raw_value();
     const std::uint64_t distance_sq =
         static_cast<std::uint64_t>(static_cast<std::int64_t>(delta_x_raw) * delta_x_raw) +
         static_cast<std::uint64_t>(static_cast<std::int64_t>(delta_y_raw) * delta_y_raw);
-    const std::int32_t distance_raw = IntSqrtRound(distance_sq);
-    if (distance_raw <= kDistanceEpsilonRaw) {
+    const FixedRaw distance_raw = IntSqrtRound(distance_sq);
+    if (distance_raw <= kDistanceEpsilon.raw_value()) {
         return;
     }
 
-    const std::int32_t dir_x_raw =
+    const FixedRaw dir_x_raw =
         RoundRatio(static_cast<std::int64_t>(delta_x_raw) * kFixedScale, distance_raw);
-    const std::int32_t dir_y_raw =
+    const FixedRaw dir_y_raw =
         RoundRatio(static_cast<std::int64_t>(delta_y_raw) * kFixedScale, distance_raw);
-    const std::int32_t catchup_x_raw =
-        RoundRatio(static_cast<std::int64_t>(dir_x_raw) * kBallCatchupAccelerationRaw, kFixedScale);
-    const std::int32_t catchup_y_raw =
-        RoundRatio(static_cast<std::int64_t>(dir_y_raw) * kBallCatchupAccelerationRaw, kFixedScale);
-    ball.acc = ball.acc - FixedDeltaToSimVec2(catchup_x_raw, catchup_y_raw);
-    if (distance_raw <= kChainLengthRaw) {
+    const FixedRaw catchup_x_raw = RoundRatio(
+        static_cast<std::int64_t>(dir_x_raw) * kBallCatchupAcceleration.raw_value(),
+        kFixedScale
+    );
+    const FixedRaw catchup_y_raw = RoundRatio(
+        static_cast<std::int64_t>(dir_y_raw) * kBallCatchupAcceleration.raw_value(),
+        kFixedScale
+    );
+    ball.acc = ball.acc - sim::Vec2::from_raw(catchup_x_raw, catchup_y_raw);
+    if (distance_raw <= kChainLength.raw_value()) {
         return;
     }
 
-    const std::int32_t tautness_raw = distance_raw - kChainLengthRaw;
-    const std::int32_t pull_acceleration_raw =
-        kChainPullAccelerationRaw + RoundRatio(tautness_raw, 100);
-    const std::int32_t pull_x_raw =
+    const FixedRaw tautness_raw = distance_raw - kChainLength.raw_value();
+    const FixedRaw pull_acceleration_raw =
+        kChainPullAcceleration.raw_value() + RoundRatio(tautness_raw, 100);
+    const FixedRaw pull_x_raw =
         RoundRatio(static_cast<std::int64_t>(dir_x_raw) * pull_acceleration_raw, kFixedScale);
-    const std::int32_t pull_y_raw =
+    const FixedRaw pull_y_raw =
         RoundRatio(static_cast<std::int64_t>(dir_y_raw) * pull_acceleration_raw, kFixedScale);
-    ball.acc = ball.acc - FixedDeltaToSimVec2(pull_x_raw, pull_y_raw);
+    ball.acc = ball.acc - sim::Vec2::from_raw(pull_x_raw, pull_y_raw);
 
-    const std::int32_t player_vel_x_raw = player->vel.x.raw_value();
-    const std::int32_t player_vel_y_raw = player->vel.y.raw_value();
-    const std::int32_t player_away_speed_raw = RoundRatio(
+    const FixedRaw player_vel_x_raw = player->vel.x.raw_value();
+    const FixedRaw player_vel_y_raw = player->vel.y.raw_value();
+    const FixedRaw player_away_speed_raw = RoundRatio(
         (static_cast<std::int64_t>(player_vel_x_raw) * dir_x_raw) +
         (static_cast<std::int64_t>(player_vel_y_raw) * dir_y_raw),
         kFixedScale
     );
     if (player_away_speed_raw > 0) {
-        const std::int32_t damped_speed_raw = std::min(
+        const FixedRaw damped_speed_raw = std::min(
             RoundRatio(
                 static_cast<std::int64_t>(player_away_speed_raw) *
                     kPlayerAwayVelocityDampingPercent,
                 100
             ),
-            kMaxPlayerPullRaw
+            kMaxPlayerPull.raw_value()
         );
-        const std::int32_t pullback_x_raw =
+        const FixedRaw pullback_x_raw =
             RoundRatio(static_cast<std::int64_t>(dir_x_raw) * damped_speed_raw, kFixedScale);
-        const std::int32_t pullback_y_raw =
+        const FixedRaw pullback_y_raw =
             RoundRatio(static_cast<std::int64_t>(dir_y_raw) * damped_speed_raw, kFixedScale);
-        player->vel = player->vel - FixedDeltaToSimVec2(pullback_x_raw, pullback_y_raw);
+        player->vel = player->vel - sim::Vec2::from_raw(pullback_x_raw, pullback_y_raw);
     }
 }
 
