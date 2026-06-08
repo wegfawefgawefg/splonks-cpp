@@ -352,10 +352,11 @@ Current state:
   center use is presentation/audio or tool API boundary code.
 - Completed 2026-06-08: carry back-item placement, thrown-entity placement,
   and spawned tool-throw placement now write fixed centers directly instead of
-  using `SetRenderCenter(...)`/`GetRenderCenter(...)`. Held visual attachment
-  still uses `SetVisualCenterForEnt(...)` because that path intentionally
-  applies authored sprite-frame offsets and needs its own fixed visual-center
-  adapter pass.
+  using `SetRenderCenter(...)`/`GetRenderCenter(...)`.
+- Completed 2026-06-08: fixed `GetVisualCenterForEnt(...)` and
+  `SetVisualCenterForEnt(...)` overloads were added for authored sprite-frame
+  visual-center offsets. Held item attachment now uses those fixed overloads
+  instead of round-tripping through render centers.
 
 Cleanup:
 
@@ -600,18 +601,21 @@ Cleanup:
 
 ## Rule Of Thumb
 
-Authoritative gameplay code should stay inside the fixed-point boundary. Any
-function that can affect entities, tiles, damage, pickups, AI, topology, or
-other lockstep-visible state should take and return fixed/int simulation types,
-not old float `AABB` or render `Vec2`.
+Authoritative gameplay code should stay inside the fixed-point boundary. Code
+that can affect entities, tiles, damage, pickups, AI, topology, RNG, or any
+other lockstep-visible state should take and return fixed/int simulation types.
+It should not accept old float `AABB`, render `Vec2`, or presentation-only
+geometry.
 
-Float/render adapters are only for crossing out of that boundary. They belong at
-places where simulation data is being presented to, or authored by,
-non-authoritative systems: rendering, debug UI, audio, tooling, asset/data
-import, test fixtures, and serialization/display text. Their names should make
-the boundary crossing obvious, such as `ToRenderAABB(...)`,
+Adapters are only boundary crossings. They convert simulation data for systems
+outside authoritative gameplay, or convert authored/debug data before it enters
+simulation. Valid adapter homes are rendering, debug UI, audio, tooling,
+asset/data import, test fixtures, and display/serialization text. Their names
+should make the crossing obvious, such as `ToRenderAABB(...)`,
 `GetRenderCenter(...)`, or `SpawnDebug...(...)`.
 
 If gameplay needs a query, collision check, AI decision, damage check, pickup
-check, or topology change, it should not detour through a render/float adapter.
-That is a sign the fixed/int gameplay API is missing and should be added.
+check, spawn placement, or topology change, it should use a fixed/int gameplay
+API directly. If the only available path detours through a render/float adapter,
+that adapter does not belong in the gameplay path; add the missing fixed API
+instead.

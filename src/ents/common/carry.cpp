@@ -162,11 +162,11 @@ void SyncHeldAttachForHolder(
                               ? DrawLayer::Background
                               : DrawLayer::Foreground;
 
-    const Vec2 hold_offset = Vec2::New(4.0F, 0.0F);
-    const Vec2 holder_center = holder.GetRenderCenter() + Vec2::New(0.0F, 1.0F);
-    const Vec2 held_pos_target =
+    const sim::Vec2 hold_offset = sim::Vec2::from_pixels(4, 0);
+    const sim::Vec2 holder_center = holder.GetSimCenter() + sim::Vec2::from_pixels(0, 1);
+    const sim::Vec2 held_pos_target =
         holder.facing == Side::Left
-            ? holder_center + Vec2::New(-hold_offset.x, hold_offset.y)
+            ? holder_center + sim::Vec2{-hold_offset.x, hold_offset.y}
             : holder_center + hold_offset;
     SetVisualCenterForEnt(*holding, graphics, held_pos_target);
     SnapPlacedAttachToPixels(*holding);

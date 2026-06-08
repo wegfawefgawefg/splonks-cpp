@@ -116,6 +116,19 @@ Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const Vec2&
     return sprite_tl + (sprite_world_size * 0.5F);
 }
 
+sim::Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::Vec2 fallback) {
+    const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
+    if (aframe == nullptr) {
+        return fallback;
+    }
+
+    const sim::Vec2 sprite_tl = GetSimSpriteTopLeftForEnt(ent, *aframe);
+    const sim::Vec2 sprite_world_size =
+        sim::Vec2::from_pixels(aframe->sample_rect.w, aframe->sample_rect.h) *
+        ent.aframe_animator.scale;
+    return sprite_tl + (sprite_world_size / sim::Scalar::from_int(2));
+}
+
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, const Vec2& center) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
@@ -143,6 +156,31 @@ void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, const Vec2& cente
         facing_adjusted_draw_offset = Vec2::New(-draw_offset.x, draw_offset.y);
     }
     ent.SetRenderPos(center - facing_adjusted_draw_offset - pbox_center_offset);
+}
+
+void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::Vec2 center) {
+    const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
+    if (aframe == nullptr) {
+        ent.SetSimCenter(center);
+        return;
+    }
+
+    const sim::Vec2 draw_offset =
+        sim::Vec2::from_pixels(aframe->draw_offset.x, aframe->draw_offset.y);
+    const sim::Vec2 pbox_size = sim::Vec2::from_pixels(aframe->pbox.w, aframe->pbox.h);
+    const sim::Vec2 pbox_center_offset =
+        (pbox_size - sim::Vec2::from_pixels(1, 1)) / sim::Scalar::from_int(2);
+
+    if (ent.facing == Side::Left) {
+        ent.SetSimPos(center - draw_offset - pbox_center_offset);
+        return;
+    }
+
+    sim::Vec2 facing_adjusted_draw_offset = draw_offset;
+    if (ent.type_ == EntType::BaseballBat) {
+        facing_adjusted_draw_offset = sim::Vec2{-draw_offset.x, draw_offset.y};
+    }
+    ent.SetSimPos(center - facing_adjusted_draw_offset - pbox_center_offset);
 }
 
 Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback) {
