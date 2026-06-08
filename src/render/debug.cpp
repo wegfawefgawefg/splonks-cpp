@@ -726,7 +726,7 @@ void RenderEntCollisionBoxes(
                 continue;
             }
 
-            const AABB pbox_aabb = ent.GetAABB();
+            const AABB pbox_aabb = ent.GetRenderAABB();
             const Vec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect pbox_rect = WorldRectToScreen(
                 graphics,
@@ -853,7 +853,7 @@ void RenderEntLabels(
                 continue;
             }
 
-            const AABB pbox_aabb = ent.GetAABB();
+            const AABB pbox_aabb = ent.GetRenderAABB();
             const Vec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect pbox_rect = WorldRectToScreen(
                 graphics,

@@ -300,13 +300,17 @@ Current state:
   `GetFeet`, `GetGroundProbe`, `GetCenter`, and `SetCenter`.
 - `GetSimPos()` is functionally just `ent.pos`; it exists mostly as transition
   scaffolding.
+- Completed 2026-06-08: `Ent::GetAABB()` was renamed to
+  `Ent::GetRenderAABB()`, and the remaining callers are render/debug
+  presentation boundaries.
 
 Cleanup:
 
 - Prefer direct fixed fields or fixed helpers in gameplay.
 - Keep render accessors explicitly named and limit them to presentation or
   temporary adapter boundaries.
-- Migrate old generic helpers (`GetAABB`, `GetCenter`, `SetCenter`,
+- [x] Rename old render `GetAABB()` to explicit `GetRenderAABB()`.
+- Migrate old generic helpers (`GetCenter`, `SetCenter`,
   `GetBounds`, `GetFeet`, `GetGroundProbe`) to fixed defaults or render-named
   wrappers.
 

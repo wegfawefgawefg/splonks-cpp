@@ -196,7 +196,7 @@ struct Ent {
     sim::AABB GetSimFeet() const;
     sim::AABB GetSimGroundProbe() const;
     std::tuple<Vec2, Vec2> GetBounds() const;
-    AABB GetAABB() const;
+    AABB GetRenderAABB() const;
     Vec2 GetCenter() const;
     void SetCenter(const Vec2& center);
     void IncTravelSound();

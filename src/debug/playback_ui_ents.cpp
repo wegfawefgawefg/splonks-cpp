@@ -700,7 +700,7 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
     }
 
     Ent& ent = *selected_ent;
-    const AABB aabb = ent.GetAABB();
+    const AABB aabb = ent.GetRenderAABB();
     ImGui::Separator();
     ImGui::Text("Type: %s", EntTypeToString(ent.type_));
     ImGui::Text(
