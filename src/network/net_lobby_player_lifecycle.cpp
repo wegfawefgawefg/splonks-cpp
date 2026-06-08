@@ -94,7 +94,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         return false;
     }
 
-    const std::optional<Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
+    const std::optional<sim::Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
     if (!entrance_pos.has_value()) {
         if (status_out != nullptr) {
             *status_out = "Network respawn failed: no entrance was found.";
@@ -109,8 +109,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
             continue;
         }
 
-        const sim::Vec2 spawn_pos =
-            sim::ToSimVec2(*entrance_pos) + sim::PixelVec2(respawn_index * 8, 0);
+        const sim::Vec2 spawn_pos = *entrance_pos + sim::PixelVec2(respawn_index * 8, 0);
         ++respawn_index;
 
         Ent* ent = nullptr;
@@ -176,7 +175,7 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
         return false;
     }
 
-    const std::optional<Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
+    const std::optional<sim::Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
     if (!entrance_pos.has_value()) {
         if (status_out != nullptr) {
             *status_out = "Network respawn failed: no entrance was found.";
@@ -192,8 +191,7 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
             continue;
         }
 
-        const sim::Vec2 spawn_pos =
-            sim::ToSimVec2(*entrance_pos) + sim::PixelVec2(respawn_index * 8, 0);
+        const sim::Vec2 spawn_pos = *entrance_pos + sim::PixelVec2(respawn_index * 8, 0);
         ++respawn_index;
 
         if (!IsPlayerEntDeadOrMissing(state, slot)) {
@@ -278,7 +276,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
         return false;
     }
 
-    const std::optional<Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
+    const std::optional<sim::Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
     if (!entrance_pos.has_value()) {
         if (status_out != nullptr) {
             *status_out = "Network revive failed: no entrance was found.";
@@ -305,8 +303,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
             continue;
         }
 
-        const sim::Vec2 spawn_pos =
-            sim::ToSimVec2(*entrance_pos) + sim::PixelVec2(spawn_index * 8, 0);
+        const sim::Vec2 spawn_pos = *entrance_pos + sim::PixelVec2(spawn_index * 8, 0);
         ++spawn_index;
 
         Ent* ent = nullptr;

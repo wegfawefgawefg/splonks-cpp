@@ -30,8 +30,8 @@ sim::Vec2 GetRemoteSpawnPos(const State& state) {
 }
 
 sim::Vec2 GetEntranceOrRemoteSpawnPos(const State& state) {
-    if (const std::optional<Vec2> entrance_pos = FindStageEntranceSpawnPos(state)) {
-        return sim::ToSimVec2(*entrance_pos);
+    if (const std::optional<sim::Vec2> entrance_pos = FindStageEntranceSpawnPos(state)) {
+        return *entrance_pos;
     }
     return GetRemoteSpawnPos(state);
 }

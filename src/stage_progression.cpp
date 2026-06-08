@@ -181,19 +181,19 @@ void ApplyPendingStageTransition(State& state) {
     }
 }
 
-std::optional<Vec2> FindStageEntranceSpawnPos(const State& state) {
+std::optional<sim::Vec2> FindStageEntranceSpawnPos(const State& state) {
     for (unsigned int y = 0; y < state.stage.GetTileHeight(); ++y) {
         for (unsigned int x = 0; x < state.stage.GetTileWidth(); ++x) {
             if (state.stage.GetTile(x, y) == Tile::Entrance) {
-                return Vec2::New(static_cast<float>(x), static_cast<float>(y)) *
-                       static_cast<float>(kTileSize);
+                return sim::PixelVec2(static_cast<int>(x) * static_cast<int>(kTileSize),
+                                      static_cast<int>(y) * static_cast<int>(kTileSize));
             }
         }
     }
 
     for (const Ent& ent : state.ents.ents) {
         if (ent.active && ent.type_ == EntType::Entrance) {
-            return ent.GetRenderPos();
+            return ent.pos;
         }
     }
 

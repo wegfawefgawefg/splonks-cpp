@@ -325,6 +325,9 @@ Current state:
   `sim::Vec2` positions for retained reconnects, join accept positions, join
   barrier topology packets, synced stage reload placement, and player lifecycle
   respawns.
+- Completed 2026-06-08. Stage entrance spawn lookup now returns fixed
+  `sim::Vec2`; network respawn/revive and reconnect spawn paths consume the
+  entrance position without render-vector round trips.
 - Some of this is harmless authoring/construction code, but much of it is
   gameplay topology and join-state code.
 
@@ -335,6 +338,7 @@ Cleanup:
   positions.
 - [x] Move network player lifecycle, retained reconnect, join accept, and join
   barrier spawn positions to fixed vectors.
+- [x] Move stage entrance spawn lookup and its network callers to fixed vectors.
 - Use fixed spawn position helpers for remaining authoritative spawn/topology
   paths.
 - Keep render `Vec2` spawning only for debug/test authoring adapters.

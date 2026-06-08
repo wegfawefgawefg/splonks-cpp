@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math_types.hpp"
+#include "sim/fxp.hpp"
 #include "stage.hpp"
 #include "vid.hpp"
 
@@ -75,7 +76,7 @@ void QueueRespawnTransition(State& state);
 bool IsStageExitAllowed(const State& state, StageExitId exit_id);
 void QueueStageExitTransition(State& state, StageExitId exit_id);
 void ApplyPendingStageTransition(State& state);
-std::optional<Vec2> FindStageEntranceSpawnPos(const State& state);
+std::optional<sim::Vec2> FindStageEntranceSpawnPos(const State& state);
 std::vector<VID> ResetStageEntrancePres(State& state);
 
 } // namespace splonks
