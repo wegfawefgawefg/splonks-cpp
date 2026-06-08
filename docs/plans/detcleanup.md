@@ -321,6 +321,10 @@ Current state:
   render `Vec2` overloads are adapters for existing debug/tooling callers.
 - Completed 2026-06-08. Normal stage initialization now places connected
   players through fixed spawn positions and fixed integer-pixel spacing.
+- Completed 2026-06-08. Network player spawn/reconnect helpers now use fixed
+  `sim::Vec2` positions for retained reconnects, join accept positions, join
+  barrier topology packets, synced stage reload placement, and player lifecycle
+  respawns.
 - Some of this is harmless authoring/construction code, but much of it is
   gameplay topology and join-state code.
 
@@ -329,6 +333,8 @@ Cleanup:
 - [x] Add fixed spawn position helpers for stage spawning APIs.
 - [x] Move normal stage initialization player placement to fixed spawn
   positions.
+- [x] Move network player lifecycle, retained reconnect, join accept, and join
+  barrier spawn positions to fixed vectors.
 - Use fixed spawn position helpers for remaining authoritative spawn/topology
   paths.
 - Keep render `Vec2` spawning only for debug/test authoring adapters.
@@ -384,9 +390,12 @@ Cleanup:
 
 ## Rule Of Thumb
 
-If a function can change entities, tiles, damage, pickups, AI, topology, or
-lockstep-visible state, it should accept and return fixed/int simulation types.
-Old float `AABB` and render `Vec2` should stay outside those gameplay-facing
-APIs. Conversion code belongs at named render, debug, UI, audio, tooling, data
-import, or temporary migration boundaries, and those boundaries should not make
-authoritative gameplay decisions.
+Authoritative gameplay code should live inside the fixed-point boundary. If a
+function can change entities, tiles, damage, pickups, AI, topology, or any other
+lockstep-visible state, its public API should use fixed/int simulation types,
+not old float `AABB` or render `Vec2`.
+
+Float adapters are only for crossing into or out of that boundary: rendering,
+debug UI, audio, tooling, asset/data import, tests, or short-lived migration
+shims. Those adapter functions must be clearly named as adapters and must not
+decide gameplay outcomes.

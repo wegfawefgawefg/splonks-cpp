@@ -331,7 +331,7 @@ void HandleJoinRequestAsHost(
     }
 
     const std::string display_name = ReadFixedString(request.display_name);
-    Vec2 remote_spawn = GetRemoteSpawnPos(state);
+    sim::Vec2 remote_spawn = GetRemoteSpawnPos(state);
     for (std::size_t i = 0; i < player_ids.size(); ++i) {
         const PlayerId player_id = player_ids[i];
         const std::string player_name = display_name.empty()
@@ -339,7 +339,7 @@ void HandleJoinRequestAsHost(
             : display_name + " " + std::to_string(i + 1);
         PlayerSlot& slot = state.players.EnsureRemotePlayer(player_id, player_name);
         const NetRetainedPlayerState* const retained = FindRetainedPlayerState(state, player_id);
-        const Vec2 spawn_pos = ResolveReconnectSpawnPos(state, retained, i);
+        const sim::Vec2 spawn_pos = ResolveReconnectSpawnPos(state, retained, i);
         if (i == 0) {
             remote_spawn = spawn_pos;
         }
@@ -389,7 +389,7 @@ void HandleJoinRequestAsHost(
     }
     RegisterRemoteEndpoint(transport, player_ids, udp_packet.endpoint, transport.pump_tick);
 
-    const Vec2 host_spawn = GetPrimaryPlayerSpawnPos(state);
+    const sim::Vec2 host_spawn = GetPrimaryPlayerSpawnPos(state);
     JoinAcceptPacket accept;
     accept.assigned_player_count = static_cast<std::uint32_t>(std::min<std::size_t>(
         player_ids.size(),
@@ -400,10 +400,10 @@ void HandleJoinRequestAsHost(
     }
     accept.host_player_id = state.net_session.host_player_id;
     accept.stage_instance_id = state.net_session.stage_instance_id;
-    accept.remote_spawn_x = sim::ToSimScalar(remote_spawn.x);
-    accept.remote_spawn_y = sim::ToSimScalar(remote_spawn.y);
-    accept.host_spawn_x = sim::ToSimScalar(host_spawn.x);
-    accept.host_spawn_y = sim::ToSimScalar(host_spawn.y);
+    accept.remote_spawn_x = remote_spawn.x;
+    accept.remote_spawn_y = remote_spawn.y;
+    accept.host_spawn_x = host_spawn.x;
+    accept.host_spawn_y = host_spawn.y;
     accept.stage_seed = state.net_session.stage_seed;
     accept.lockstep_start_frame = state.net_session.lockstep_next_frame_to_step;
     accept.lockstep_input_delay_frames = state.net_session.lockstep_input_delay_frames;
@@ -516,19 +516,13 @@ void HandleJoinAcceptAsPeer(
         transport.last_error = "Join accepted, but synced quest stage load failed.";
         return;
     }
-    const Vec2 host_spawn = Vec2::New(
-        sim::ToRenderScalar(accept.host_spawn_x),
-        sim::ToRenderScalar(accept.host_spawn_y)
-    );
-    const Vec2 remote_spawn = Vec2::New(
-        sim::ToRenderScalar(accept.remote_spawn_x),
-        sim::ToRenderScalar(accept.remote_spawn_y)
-    );
+    const sim::Vec2 host_spawn{accept.host_spawn_x, accept.host_spawn_y};
+    const sim::Vec2 remote_spawn{accept.remote_spawn_x, accept.remote_spawn_y};
     PlayerSlot& host_slot =
         state.players.EnsureRemotePlayer(accept.host_player_id, ReadFixedString(accept.host_name));
     if (host_slot.ent_vid.has_value()) {
         if (Ent* const host = state.ents.GetEntMut(*host_slot.ent_vid)) {
-            host->pos = sim::ToSimVec2(host_spawn);
+            host->pos = host_spawn;
             host->vel = sim::Vec2::zero();
             host->acc = sim::Vec2::zero();
             state.net_session.LinkEnt(MakePlayerNetEntId(accept.host_player_id), host->vid);
@@ -563,7 +557,7 @@ void HandleJoinAcceptAsPeer(
             player_id,
             true,
             false,
-            Vec2::New(remote_spawn.x + static_cast<float>(i) * 8.0F, remote_spawn.y),
+            remote_spawn + sim::PixelVec2(static_cast<int>(i) * 8, 0),
             graphics
         );
     }

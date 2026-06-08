@@ -14,23 +14,26 @@
 
 namespace splonks::network {
 
-Vec2 GetPrimaryPlayerSpawnPos(const State& state) {
+sim::Vec2 GetPrimaryPlayerSpawnPos(const State& state) {
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal()) {
         if (primary->ent_vid.has_value()) {
             if (const Ent* const ent = state.ents.GetEnt(*primary->ent_vid)) {
-                return ent->GetRenderPos();
+                return ent->pos;
             }
         }
     }
-    return Vec2::New(24.0F, 24.0F);
+    return sim::PixelVec2(24, 24);
 }
 
-Vec2 GetRemoteSpawnPos(const State& state) {
-    return GetPrimaryPlayerSpawnPos(state) + Vec2::New(16.0F, 0.0F);
+sim::Vec2 GetRemoteSpawnPos(const State& state) {
+    return GetPrimaryPlayerSpawnPos(state) + sim::PixelVec2(16, 0);
 }
 
-Vec2 GetEntranceOrRemoteSpawnPos(const State& state) {
-    return FindStageEntranceSpawnPos(state).value_or(GetRemoteSpawnPos(state));
+sim::Vec2 GetEntranceOrRemoteSpawnPos(const State& state) {
+    if (const std::optional<Vec2> entrance_pos = FindStageEntranceSpawnPos(state)) {
+        return sim::ToSimVec2(*entrance_pos);
+    }
+    return GetRemoteSpawnPos(state);
 }
 
 NetRetainedPlayerState* FindRetainedPlayerState(State& state, PlayerId player_id) {
@@ -224,24 +227,25 @@ void ApplyRetainedAttachedEntState(
     const Graphics& graphics
 );
 
-Vec2 ResolveReconnectSpawnPos(
+sim::Vec2 ResolveReconnectSpawnPos(
     const State& state,
     const NetRetainedPlayerState* retained,
     std::size_t player_index
 ) {
-    Vec2 pos = GetRemoteSpawnPos(state) + Vec2::New(static_cast<float>(player_index) * 8.0F, 0.0F);
+    const sim::Vec2 player_offset = sim::PixelVec2(static_cast<int>(player_index) * 8, 0);
+    sim::Vec2 pos = GetRemoteSpawnPos(state) + player_offset;
     switch (state.net_session.reconnect_spawn_mode) {
     case NetReconnectSpawnMode::FreshAtEntrance:
     case NetReconnectSpawnMode::RetainedAtEntrance:
-        pos = GetEntranceOrRemoteSpawnPos(state) + Vec2::New(static_cast<float>(player_index) * 8.0F, 0.0F);
+        pos = GetEntranceOrRemoteSpawnPos(state) + player_offset;
         break;
     case NetReconnectSpawnMode::FreshAtHost:
     case NetReconnectSpawnMode::RetainedAtHost:
-        pos = GetPrimaryPlayerSpawnPos(state) + Vec2::New(16.0F + static_cast<float>(player_index) * 8.0F, 0.0F);
+        pos = GetPrimaryPlayerSpawnPos(state) + sim::PixelVec2(16, 0) + player_offset;
         break;
     case NetReconnectSpawnMode::RetainedAtLastPosition:
         if (retained != nullptr) {
-            pos = sim::ToRenderVec2(retained->last_pos);
+            pos = retained->last_pos;
         }
         break;
     }
@@ -252,7 +256,7 @@ void ApplyRetainedPlayerState(
     State& state,
     PlayerId player_id,
     const NetRetainedPlayerState& retained,
-    const Vec2& spawn_pos,
+    sim::Vec2 spawn_pos,
     const Graphics& graphics
 ) {
     EnsureSpawnedPlayer(state, player_id, false, false, spawn_pos, graphics);
@@ -267,7 +271,7 @@ void ApplyRetainedPlayerState(
     }
 
     SetEntAs(*player, retained.ent_type);
-    player->pos = sim::ToSimVec2(spawn_pos);
+    player->pos = spawn_pos;
     player->vel = sim::Vec2::zero();
     player->acc = sim::Vec2::zero();
     player->health = retained.health;

@@ -45,7 +45,7 @@ void EnsureSpawnedPlayer(
     PlayerId player_id,
     bool local,
     bool primary,
-    const Vec2& pos,
+    sim::Vec2 pos,
     const Graphics& graphics
 ) {
     const bool is_peer_local_player =
@@ -65,7 +65,7 @@ void EnsureSpawnedPlayer(
     if (slot.ent_vid.has_value()) {
         if (Ent* const ent = state.ents.GetEntMut(*slot.ent_vid)) {
             if (ent->active) {
-                ent->pos = sim::ToSimVec2(pos);
+                ent->pos = pos;
                 state.net_session.LinkEnt(MakePlayerNetEntId(player_id), ent->vid);
                 if (effective_local && effective_primary) {
                     state.controlled_ent_vid = ent->vid;
@@ -109,8 +109,8 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
             continue;
         }
 
-        const Vec2 spawn_pos =
-            *entrance_pos + Vec2::New(static_cast<float>(respawn_index) * 8.0F, 0.0F);
+        const sim::Vec2 spawn_pos =
+            sim::ToSimVec2(*entrance_pos) + sim::PixelVec2(respawn_index * 8, 0);
         ++respawn_index;
 
         Ent* ent = nullptr;
@@ -139,7 +139,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         const EntType respawn_type =
             IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
         SetEntAs(*ent, respawn_type);
-        ent->pos = sim::ToSimVec2(spawn_pos);
+        ent->pos = spawn_pos;
         ent->vel = sim::Vec2::zero();
         ent->acc = sim::Vec2::zero();
         ent->grounded = false;
@@ -192,8 +192,8 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
             continue;
         }
 
-        const Vec2 spawn_pos =
-            *entrance_pos + Vec2::New(static_cast<float>(respawn_index) * 8.0F, 0.0F);
+        const sim::Vec2 spawn_pos =
+            sim::ToSimVec2(*entrance_pos) + sim::PixelVec2(respawn_index * 8, 0);
         ++respawn_index;
 
         if (!IsPlayerEntDeadOrMissing(state, slot)) {
@@ -231,7 +231,7 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
         const EntType respawn_type =
             IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
         SetEntAs(*ent, respawn_type);
-        ent->pos = sim::ToSimVec2(spawn_pos);
+        ent->pos = spawn_pos;
         ent->vel = sim::Vec2::zero();
         ent->acc = sim::Vec2::zero();
         ent->grounded = false;
@@ -305,8 +305,8 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
             continue;
         }
 
-        const Vec2 spawn_pos =
-            *entrance_pos + Vec2::New(static_cast<float>(spawn_index) * 8.0F, 0.0F);
+        const sim::Vec2 spawn_pos =
+            sim::ToSimVec2(*entrance_pos) + sim::PixelVec2(spawn_index * 8, 0);
         ++spawn_index;
 
         Ent* ent = nullptr;
@@ -328,7 +328,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
                 const EntType respawn_type =
                     IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
                 SetEntAs(*ent, respawn_type);
-                ent->pos = sim::ToSimVec2(spawn_pos);
+                ent->pos = spawn_pos;
             } else {
                 EnsureSpawnedPlayer(
                     state,
@@ -348,7 +348,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
             continue;
         }
 
-        ent->pos = sim::ToSimVec2(spawn_pos);
+        ent->pos = spawn_pos;
         ent->vel = sim::Vec2::zero();
         ent->acc = sim::Vec2::zero();
         ent->grounded = false;

@@ -2808,8 +2808,8 @@ bool RunRetainedReconnectSmoke() {
     }
 
     state.net_session.reconnect_spawn_mode = network::NetReconnectSpawnMode::RetainedAtLastPosition;
-    const Vec2 spawn_pos = network::ResolveReconnectSpawnPos(state, retained, 1);
-    if (spawn_pos != Vec2::New(128.0F, 192.0F)) {
+    const sim::Vec2 spawn_pos = network::ResolveReconnectSpawnPos(state, retained, 1);
+    if (spawn_pos != sim::PixelVec2(128, 192)) {
         std::cerr << "retained reconnect smoke failed: retained spawn pos mismatch\n";
         return false;
     }
