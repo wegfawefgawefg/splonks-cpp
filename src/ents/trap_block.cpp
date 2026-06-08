@@ -344,6 +344,14 @@ IVec2 GetMoveDirection(const Ent& block) {
     return block.point_d;
 }
 
+sim::Vec2 GetMoveVelocity(const IVec2& direction) {
+    const sim::Scalar speed = sim::ToSimScalar(kMoveSpeed);
+    return sim::Vec2{
+        sim::Scalar::from_int(direction.x) * speed,
+        sim::Scalar::from_int(direction.y) * speed
+    };
+}
+
 bool IsMoving(const Ent& block) {
     return block.ai_state == EntAiState::Disturbed;
 }
@@ -384,7 +392,7 @@ void StartWindup(Ent& block, std::uint32_t direction_idx, State& state) {
 void StartMove(Ent& block) {
     const IVec2 tile_dir = GetMoveDirection(block);
     block.ai_state = EntAiState::Disturbed;
-    block.vel = sim::ToSimVec2(ToVec2(tile_dir) * kMoveSpeed);
+    block.vel = GetMoveVelocity(tile_dir);
     block.acc = sim::Vec2::zero();
     block.shake = std::max(block.shake, sim::ToSimScalar(kStartShake));
 }
@@ -507,11 +515,11 @@ void StepEntPhysicsAsTrapBlock(
     }
 
     const IVec2 move_dir = GetMoveDirection(block);
-    block.vel = sim::ToSimVec2(ToVec2(move_dir) * kMoveSpeed);
+    block.vel = GetMoveVelocity(move_dir);
     block.acc = sim::Vec2::zero();
 
     common::PrePartialEulerStep(ent_idx, state, dt);
-    block.vel = sim::ToSimVec2(ToVec2(move_dir) * kMoveSpeed);
+    block.vel = GetMoveVelocity(move_dir);
     common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     common::PostPartialEulerStep(ent_idx, state, dt);
 
