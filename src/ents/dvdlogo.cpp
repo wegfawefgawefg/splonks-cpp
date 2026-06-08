@@ -68,13 +68,13 @@ void MaybeQueueTransitionOnPlayerContact(
         return;
     }
 
-    const AABB door_aabb = common::GetRenderContactAabbForEnt(ent, graphics);
-    const AABB player_aabb = GetNearestWorldAabb(
+    const sim::AABB door_aabb = common::GetContactAabbForEnt(ent, graphics);
+    const sim::AABB player_aabb = GetNearestWorldAabb(
         state.stage,
-        ent.GetCenter(),
-        common::GetRenderContactAabbForEnt(*player, graphics)
+        door_aabb.center(),
+        common::GetContactAabbForEnt(*player, graphics)
     );
-    if (!AabbsIntersect(door_aabb, player_aabb)) {
+    if (!gfxp::aabbs_intersect(door_aabb, player_aabb)) {
         return;
     }
 
