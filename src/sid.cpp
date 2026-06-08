@@ -3,14 +3,25 @@
 #include "tile.hpp"
 
 #include <algorithm>
+
 namespace splonks {
 
 namespace {
 
-constexpr float kSidCellSize = static_cast<float>(kTileSize);
+int FloorDiv(int value, int divisor) {
+    if (divisor == 0) {
+        return 0;
+    }
+    int result = value / divisor;
+    const int remainder = value % divisor;
+    if ((remainder != 0) && ((value < 0) != (divisor < 0))) {
+        --result;
+    }
+    return result;
+}
 
-int GetCellCoord(float value) {
-    return FloorToInt(value / kSidCellSize);
+int GetCellCoord(sim::Scalar value) {
+    return FloorDiv(value.to_pixels_floor(), static_cast<int>(kTileSize));
 }
 
 std::int64_t MakeCellKey(int x, int y) {
@@ -18,11 +29,7 @@ std::int64_t MakeCellKey(int x, int y) {
            static_cast<std::uint32_t>(y);
 }
 
-AABB BuildAabb(const Vec2& pos, const Vec2& size) {
-    return AABB::New(pos, pos + size - Vec2::New(1.0F, 1.0F));
-}
-
-std::vector<SIDCell> BuildCoveredCells(const AABB& aabb) {
+std::vector<SIDCell> BuildCoveredCells(sim::AABB aabb) {
     const int min_x = GetCellCoord(aabb.tl.x);
     const int min_y = GetCellCoord(aabb.tl.y);
     const int max_x = GetCellCoord(aabb.br.x);
@@ -50,11 +57,7 @@ void SID::Clear() {
     records_.clear();
 }
 
-void SID::Insert(const VID& vid, const Vec2& pos, const Vec2& size) {
-    Upsert(vid, BuildAabb(pos, size));
-}
-
-void SID::Upsert(const VID& vid, const AABB& aabb) {
+void SID::Upsert(const VID& vid, sim::AABB aabb) {
     if (records_.size() <= vid.id) {
         records_.resize(vid.id + 1);
     }
@@ -109,12 +112,11 @@ void SID::Remove(const VID& vid) {
     record.cells.clear();
 }
 
-std::vector<VID> SID::Query(const Vec2& top_left, const Vec2& bottom_right) const {
-    const AABB query_box = AABB::New(top_left, bottom_right);
-    const int min_x = GetCellCoord(query_box.tl.x);
-    const int min_y = GetCellCoord(query_box.tl.y);
-    const int max_x = GetCellCoord(query_box.br.x);
-    const int max_y = GetCellCoord(query_box.br.y);
+std::vector<VID> SID::Query(sim::AABB area) const {
+    const int min_x = GetCellCoord(area.tl.x);
+    const int min_y = GetCellCoord(area.tl.y);
+    const int max_x = GetCellCoord(area.br.x);
+    const int max_y = GetCellCoord(area.br.y);
 
     std::vector<VID> result;
     std::vector<bool> already_added(records_.size(), false);
@@ -131,7 +133,8 @@ std::vector<VID> SID::Query(const Vec2& top_left, const Vec2& bottom_right) cons
                 }
 
                 const SIDRecord& record = records_[vid.id];
-                if (!record.active || record.vid != vid || !AabbsIntersect(record.aabb, query_box)) {
+                if (!record.active || record.vid != vid ||
+                    !gfxp::aabbs_intersect(record.aabb, area)) {
                     continue;
                 }
 
@@ -149,9 +152,8 @@ std::vector<VID> SID::Query(const Vec2& top_left, const Vec2& bottom_right) cons
     return result;
 }
 
-std::vector<VID> SID::QueryExclude(const Vec2& top_left, const Vec2& bottom_right,
-                                   const VID& exclude_vid) const {
-    std::vector<VID> result = Query(top_left, bottom_right);
+std::vector<VID> SID::QueryExclude(sim::AABB area, const VID& exclude_vid) const {
+    std::vector<VID> result = Query(area);
     result.erase(
         std::remove_if(
             result.begin(),
@@ -160,27 +162,6 @@ std::vector<VID> SID::QueryExclude(const Vec2& top_left, const Vec2& bottom_righ
         ),
         result.end()
     );
-    return result;
-}
-
-std::vector<VIDAABB> SID::QueryForVIDAABBsExclude(const Vec2& top_left, const Vec2& bottom_right,
-                                                  const VID& exclude_vid) const {
-    const std::vector<VID> vids = QueryExclude(top_left, bottom_right, exclude_vid);
-    std::vector<VIDAABB> result;
-    result.reserve(vids.size());
-    for (const VID& vid : vids) {
-        if (vid.id >= records_.size()) {
-            continue;
-        }
-        const SIDRecord& record = records_[vid.id];
-        if (!record.active || record.vid != vid) {
-            continue;
-        }
-        result.push_back(VIDAABB{
-            .vid = vid,
-            .aabb = record.aabb,
-        });
-    }
     return result;
 }
 

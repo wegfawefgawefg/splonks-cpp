@@ -52,8 +52,8 @@ Cleanup target:
 - Move or limit `GetRenderContactAabbForEnt(...)` to render/debug adapter code
   only.
 - Keep `GetEntBroadphaseAabb(...) -> sim::AABB`.
-- Move or limit `GetRenderEntBroadphaseAabb(...)` to the spatial index adapter
-  while the spatial index still stores old float `AABB`.
+- Limit `GetRenderEntBroadphaseAabb(...)` to render/debug or temporary adapter
+  callers. The spatial index should consume fixed `GetEntBroadphaseAabb(...)`.
 - Eventually old float `AABB` should not appear in authoritative gameplay
   files.
 
@@ -116,18 +116,29 @@ Cleanup:
 
 Current state:
 
-- `State::UpdateSidForEnt` uses `GetRenderEntBroadphaseAabb(...)` because
-  `SID` stores/query old float `AABB`.
-- `QueryEntsInAabb(state, sim::AABB, ...)` currently bridges through
-  `ToRenderAABB(area)`.
+- Completed 2026-06-08. `SID` stores fixed `sim::AABB` records, builds bucket
+  coverage from fixed pixel floor coordinates, and queries fixed `sim::AABB`
+  areas directly.
+- `State::UpdateSidForEnt` now indexes
+  `ents::common::GetEntBroadphaseAabb(...)` instead of the render wrapper.
+- `QueryEntsInAabb(state, sim::AABB, ...)` now queries `state.sid` directly.
+- The old float `QueryEntsInAabb(state, AABB, ...)` overload remains as a
+  temporary migration boundary and converts into the fixed query path.
+- Removed unused SID APIs that exposed float `AABB` records:
+  `SID::Insert(...)` and `QueryForVIDAABBsExclude(...)`.
 
 Cleanup:
 
-- Decide whether `SID` should store fixed `sim::AABB` or integer pixel cells.
-- Migrate `SID` to a deterministic fixed/int broadphase so fixed gameplay
-  queries do not need render conversions.
-- Until then, treat the `SID` render bridge as a known adapter boundary, not as
-  permission for gameplay code to use float AABBs.
+- [x] Decide whether `SID` should store fixed `sim::AABB` or integer pixel
+      cells: store fixed `sim::AABB` and derive integer bucket cells.
+- [x] Migrate `SID` to a deterministic fixed/int broadphase so fixed gameplay
+      queries do not need render conversions.
+- [x] Remove the spatial-index render bridge from `State::UpdateSidForEnt`.
+- [x] Remove unused float-AABB SID query surfaces.
+- [x] Validate with `./scripts/build.sh`,
+      `./build/splonks-cpp --check-state-fingerprint-smoke --project-root "$PWD"`,
+      `./build/splonks-cpp --check-state-equality-smoke --project-root "$PWD"`,
+      and `git diff --check`.
 
 ### 5. Entity sim/render accessor pairs are noisy
 

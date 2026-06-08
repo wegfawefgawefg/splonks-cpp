@@ -75,6 +75,11 @@ sim::Vec2 GetAabbCenter(sim::AABB aabb) {
     return aabb.center();
 }
 
+sim::AABB ToSimQueryAABB(const AABB& area) {
+    return sim::AABB::from_corners(sim::ToSimVec2(area.tl, gfxp::Rounding::Floor),
+                                   sim::ToSimVec2(area.br, gfxp::Rounding::Ceil));
+}
+
 int FloorDivBySpan(float value, float span) {
     if (span <= 0.0F) {
         return 0;
@@ -116,6 +121,40 @@ std::vector<Vec2> GetQueryOffsets(const Stage& stage, const AABB& area) {
                 static_cast<float>(copy_x) * stage_width,
                 static_cast<float>(copy_y) * stage_height
             ));
+        }
+    }
+    return offsets;
+}
+
+std::vector<sim::Vec2> GetQueryOffsets(const Stage& stage, sim::AABB area) {
+    std::vector<sim::Vec2> offsets;
+    offsets.push_back(sim::Vec2::zero());
+
+    const int stage_width_pixels = static_cast<int>(stage.GetWidth());
+    const int stage_height_pixels = static_cast<int>(stage.GetHeight());
+    const sim::Scalar stage_width = sim::Scalar::from_int(stage_width_pixels);
+    const sim::Scalar stage_height = sim::Scalar::from_int(stage_height_pixels);
+    if ((!stage.WrapsX() || stage_width <= sim::Scalar::zero()) &&
+        (!stage.WrapsY() || stage_height <= sim::Scalar::zero())) {
+        return offsets;
+    }
+
+    const int min_copy_x =
+        stage.WrapsX() ? FloorDiv(area.tl.x.to_pixels_floor(), stage_width_pixels) : 0;
+    const int max_copy_x =
+        stage.WrapsX() ? FloorDiv(area.br.x.to_pixels_floor(), stage_width_pixels) : 0;
+    const int min_copy_y =
+        stage.WrapsY() ? FloorDiv(area.tl.y.to_pixels_floor(), stage_height_pixels) : 0;
+    const int max_copy_y =
+        stage.WrapsY() ? FloorDiv(area.br.y.to_pixels_floor(), stage_height_pixels) : 0;
+
+    offsets.clear();
+    for (int copy_y = min_copy_y; copy_y <= max_copy_y; ++copy_y) {
+        for (int copy_x = min_copy_x; copy_x <= max_copy_x; ++copy_x) {
+            offsets.push_back(sim::Vec2{
+                sim::Scalar::from_int(copy_x) * stage_width,
+                sim::Scalar::from_int(copy_y) * stage_height,
+            });
         }
     }
     return offsets;
@@ -492,16 +531,22 @@ std::vector<VID> QueryEntsInAabb(
     const AABB& area,
     std::optional<VID> exclude_vid
 ) {
+    return QueryEntsInAabb(state, ToSimQueryAABB(area), exclude_vid);
+}
+
+std::vector<VID> QueryEntsInAabb(
+    const State& state,
+    sim::AABB area,
+    std::optional<VID> exclude_vid
+) {
     std::vector<VID> result;
     std::vector<bool> seen(state.ents.ents.size(), false);
-    const std::vector<Vec2> offsets = GetQueryOffsets(state.stage, area);
+    const std::vector<sim::Vec2> offsets = GetQueryOffsets(state.stage, area);
 
-    for (const Vec2& offset : offsets) {
-        const AABB sample_area = AABB{
-            .tl = area.tl - offset,
-            .br = area.br - offset,
-        };
-        const std::vector<VID> hits = state.sid.Query(sample_area.tl, sample_area.br);
+    for (const sim::Vec2& offset : offsets) {
+        sim::AABB sample_area = area;
+        sample_area.translate(-offset);
+        const std::vector<VID> hits = state.sid.Query(sample_area);
         for (const VID& vid : hits) {
             if (exclude_vid.has_value() && vid == *exclude_vid) {
                 continue;
@@ -516,14 +561,6 @@ std::vector<VID> QueryEntsInAabb(
 
     std::sort(result.begin(), result.end(), VidLess);
     return result;
-}
-
-std::vector<VID> QueryEntsInAabb(
-    const State& state,
-    sim::AABB area,
-    std::optional<VID> exclude_vid
-) {
-    return QueryEntsInAabb(state, ToRenderAABB(area), exclude_vid);
 }
 
 struct RaycastTarget {
