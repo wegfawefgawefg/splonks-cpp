@@ -235,7 +235,10 @@ void StepEntLogicAsBat(
                 SetAnim(mutable_bat, aframe_ids::HangingBat);
             } else {
                 //  keep going up till you get there
-                mutable_bat.acc += sim::ToSimVec2(0.0F, -2.0F);
+                mutable_bat.acc += sim::Vec2{
+                    sim::Scalar::zero(),
+                    sim::Scalar::from_int(-2),
+                };
                 mutable_bat.vel.x = sim::Scalar::zero();
                     SetAnim(mutable_bat, aframe_ids::FlyingBat);
             }

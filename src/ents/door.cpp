@@ -221,7 +221,10 @@ void MaintainDoorRumbleSound(Ent& door, State& state) {
 void StartDrop(Ent& door, State& state) {
     door.ai_state = EntAiState::Disturbed;
     door.render_enabled = true;
-    door.vel = sim::ToSimVec2(0.0F, GetMoveDirection(door) * kDropStartVelocity);
+    door.vel = sim::Vec2{
+        sim::Scalar::zero(),
+        sim::ToSimScalar(GetMoveDirection(door) * kDropStartVelocity),
+    };
     door.acc = sim::Vec2::zero();
     SetDoorShake(door, kDropStartDoorShake);
     AudioEmitterPlayParams params;

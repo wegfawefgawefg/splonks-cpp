@@ -170,7 +170,10 @@ void DoExplosion(
             }
             sim::Vec2 knockback_dir = sim::NormalizeOrZero(delta);
             if (knockback_dir == sim::Vec2::zero()) {
-                knockback_dir = sim::ToSimVec2(0.0F, -1.0F);
+                knockback_dir = sim::Vec2{
+                    sim::Scalar::zero(),
+                    sim::Scalar::from_int(-1),
+                };
             }
             (void)TryHitEnt(
                 vid.id,

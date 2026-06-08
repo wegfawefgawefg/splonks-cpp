@@ -96,7 +96,7 @@ void StartWait(Ent& thwomp, State& state) {
 
 void StartReturn(Ent& thwomp) {
     thwomp.ai_state = EntAiState::Returning;
-    thwomp.vel = sim::ToSimVec2(0.0F, kReturnVelocity);
+    thwomp.vel = sim::Vec2{sim::Scalar::zero(), sim::ToSimScalar(kReturnVelocity)};
     thwomp.acc = sim::Vec2::zero();
 }
 
@@ -178,7 +178,7 @@ void StepEntPhysicsAsThwompTrap(
     if (IsDropping(thwomp)) {
         thwomp.acc.y += sim::ToSimScalar(kDropGravity);
     } else {
-        thwomp.vel = sim::ToSimVec2(0.0F, kReturnVelocity);
+        thwomp.vel = sim::Vec2{sim::Scalar::zero(), sim::ToSimScalar(kReturnVelocity)};
         thwomp.acc = sim::Vec2::zero();
     }
 
