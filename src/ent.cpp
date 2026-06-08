@@ -299,7 +299,7 @@ std::tuple<Vec2, Vec2> Ent::GetRenderBounds() const {
     return {sim::ToRenderVec2(bounds.tl), sim::ToRenderVec2(bounds.br)};
 }
 
-AABB Ent::GetRenderAABB() const {
+RenderAABB Ent::GetRenderAABB() const {
     return ToRenderAABB(GetSimAABB());
 }
 

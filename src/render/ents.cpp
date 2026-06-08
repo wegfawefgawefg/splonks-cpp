@@ -292,7 +292,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                     );
                 }
                 if (ent.stone) {
-                    const AABB stone_overlay_aabb = ent.GetRenderAABB();
+                    const RenderAABB stone_overlay_aabb = ent.GetRenderAABB();
                     RenderStoneEntOverlay(
                         renderer,
                         state,

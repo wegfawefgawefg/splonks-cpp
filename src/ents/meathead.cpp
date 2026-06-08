@@ -121,7 +121,7 @@ void AddMeatheadDebugAnnotations(const Ent& player, State& state) {
         return;
     }
 
-    const AABB render_sensor = ToRenderAABB(ExpandAabb(player.GetSimAABB(), kMeatheadPickupRange));
+    const RenderAABB render_sensor = ToRenderAABB(ExpandAabb(player.GetSimAABB(), kMeatheadPickupRange));
     state.AddDebugRectAnnotation(DebugRectAnnotation{
         .area = render_sensor,
         .color = DebugAnnotationColor{255, 64, 192, 255},

@@ -520,7 +520,7 @@ void SacrificeVictim(
         return;
     }
 
-    const AABB render_victim_aabb = ToRenderAABB(common::GetContactAabbForEnt(victim, graphics));
+    const RenderAABB render_victim_aabb = ToRenderAABB(common::GetContactAabbForEnt(victim, graphics));
     const Vec2 victim_effect_pos = Vec2::New(
         (render_victim_aabb.tl.x + render_victim_aabb.br.x) * 0.5F,
         render_victim_aabb.br.y - 2.0F

@@ -110,7 +110,7 @@ std::vector<sim::Vec2> GetQueryOffsets(const Stage& stage, sim::AABB area) {
     return offsets;
 }
 
-bool PointInAabb(const IVec2& point, const AABB& aabb) {
+bool PointInAabb(const IVec2& point, const RenderAABB& aabb) {
     return static_cast<float>(point.x) >= aabb.tl.x &&
            static_cast<float>(point.x) <= aabb.br.x &&
            static_cast<float>(point.y) >= aabb.tl.y &&
@@ -419,7 +419,7 @@ struct RaycastTarget {
 std::vector<RaycastTarget> CollectRaycastTargets(
     const Ent& source_ent,
     const Vec2& start_pos,
-    const AABB& ray_aabb,
+    const RenderAABB& ray_aabb,
     const State& state,
     const Graphics& graphics,
     std::optional<VID> owner_vid
@@ -609,7 +609,7 @@ WorldRayHit RaycastHorizontal(
     const int start_x = ToIVec2(start_pos).x;
     const int ray_y = ToIVec2(start_pos).y;
     const int end_x = start_x + (step_dir * max_distance);
-    const AABB ray_aabb = AABB::New(
+    const RenderAABB ray_aabb = RenderAABB::New(
         Vec2::New(static_cast<float>(std::min(start_x, end_x)), static_cast<float>(ray_y)),
         Vec2::New(static_cast<float>(std::max(start_x, end_x)), static_cast<float>(ray_y))
     );
@@ -644,7 +644,7 @@ WorldRayHit RaycastVertical(
     const int ray_x = ToIVec2(start_pos).x;
     const int start_y = ToIVec2(start_pos).y;
     const int end_y = start_y + (step_dir * max_distance);
-    const AABB ray_aabb = AABB::New(
+    const RenderAABB ray_aabb = RenderAABB::New(
         Vec2::New(static_cast<float>(ray_x), static_cast<float>(std::min(start_y, end_y))),
         Vec2::New(static_cast<float>(ray_x), static_cast<float>(std::max(start_y, end_y)))
     );
@@ -677,7 +677,7 @@ WorldRayHit RaycastEnts(
     }
 
     const Vec2 end_pos = start_pos + (step_dir * static_cast<float>(max_distance));
-    const AABB ray_aabb = AABB::New(
+    const RenderAABB ray_aabb = RenderAABB::New(
         Vec2::New(std::min(start_pos.x, end_pos.x), std::min(start_pos.y, end_pos.y)),
         Vec2::New(std::max(start_pos.x, end_pos.x), std::max(start_pos.y, end_pos.y))
     );
@@ -732,7 +732,7 @@ WorldRayHit RaycastWorld(
     }
 
     const Vec2 end_pos = start_pos + (step_dir * static_cast<float>(max_distance));
-    const AABB ray_aabb = AABB::New(
+    const RenderAABB ray_aabb = RenderAABB::New(
         Vec2::New(std::min(start_pos.x, end_pos.x), std::min(start_pos.y, end_pos.y)),
         Vec2::New(std::max(start_pos.x, end_pos.x), std::max(start_pos.y, end_pos.y))
     );

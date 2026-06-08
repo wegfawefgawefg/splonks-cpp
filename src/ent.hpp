@@ -196,7 +196,7 @@ struct Ent {
     sim::AABB GetSimFeet() const;
     sim::AABB GetSimGroundProbe() const;
     std::tuple<Vec2, Vec2> GetRenderBounds() const;
-    AABB GetRenderAABB() const;
+    RenderAABB GetRenderAABB() const;
     Vec2 GetRenderCenter() const;
     void SetRenderCenter(const Vec2& center);
     void IncTravelSound();

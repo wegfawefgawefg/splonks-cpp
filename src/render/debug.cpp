@@ -726,7 +726,7 @@ void RenderEntCollisionBoxes(
                 continue;
             }
 
-            const AABB pbox_aabb = ent.GetRenderAABB();
+            const RenderAABB pbox_aabb = ent.GetRenderAABB();
             const Vec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect pbox_rect = WorldRectToScreen(
                 graphics,
@@ -734,7 +734,7 @@ void RenderEntCollisionBoxes(
                 pbox_aabb.tl + render_offset,
                 pbox_size
             );
-            const AABB cbox_aabb = ToRenderAABB(ents::common::GetContactAabbForEnt(ent, graphics));
+            const RenderAABB cbox_aabb = ToRenderAABB(ents::common::GetContactAabbForEnt(ent, graphics));
             const Vec2 cbox_size = cbox_aabb.br - cbox_aabb.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect cbox_rect = WorldRectToScreen(
                 graphics,
@@ -853,7 +853,7 @@ void RenderEntLabels(
                 continue;
             }
 
-            const AABB pbox_aabb = ent.GetRenderAABB();
+            const RenderAABB pbox_aabb = ent.GetRenderAABB();
             const Vec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect pbox_rect = WorldRectToScreen(
                 graphics,
@@ -1404,7 +1404,7 @@ void RenderAreaOverlay(
                 continue;
             }
 
-            const AABB area = ToRenderAABB(ents::shop::GetShopArea(ent));
+            const RenderAABB area = ToRenderAABB(ents::shop::GetShopArea(ent));
             const Vec2 area_size = area.br - area.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect area_rect = WorldRectToScreen(
                 graphics,

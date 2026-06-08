@@ -153,7 +153,7 @@ struct DebugAnnotationColor {
 };
 
 struct DebugRectAnnotation {
-    AABB area = AABB::New(Vec2::New(0.0F, 0.0F), Vec2::New(0.0F, 0.0F));
+    RenderAABB area = RenderAABB::New(Vec2::New(0.0F, 0.0F), Vec2::New(0.0F, 0.0F));
     DebugAnnotationColor color{};
 };
 

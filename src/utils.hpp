@@ -17,11 +17,11 @@ struct DetRng {
     float RandomFloat(float minimum, float maximum);
 };
 
-struct AABB {
+struct RenderAABB {
     Vec2 tl;
     Vec2 br;
 
-    static AABB New(const Vec2& top_left, const Vec2& bottom_right);
+    static RenderAABB New(const Vec2& top_left, const Vec2& bottom_right);
     struct IAABB AsIAABB() const;
 };
 
@@ -30,14 +30,14 @@ struct IAABB {
     IVec2 br;
 
     static IAABB New(const IVec2& top_left, const IVec2& bottom_right);
-    AABB AsAABB() const;
+    RenderAABB AsRenderAABB() const;
 };
 
-Vec2 GetMinDisplacement(const AABB& aabb1, const AABB& aabb2);
-bool AabbsIntersect(const AABB& left, const AABB& right);
+Vec2 GetMinDisplacement(const RenderAABB& aabb1, const RenderAABB& aabb2);
+bool AabbsIntersect(const RenderAABB& left, const RenderAABB& right);
 
-sim::AABB ToSimAABB(const AABB& value, gfxp::Rounding rounding = gfxp::Rounding::Nearest);
-AABB ToRenderAABB(const sim::AABB& value);
+sim::AABB ToSimAABB(const RenderAABB& value, gfxp::Rounding rounding = gfxp::Rounding::Nearest);
+RenderAABB ToRenderAABB(const sim::AABB& value);
 IAABB ToIAABBFloorCeil(const sim::AABB& value);
 Vec2 ToRenderMinDisplacement(sim::AABB aabb1, sim::AABB aabb2);
 

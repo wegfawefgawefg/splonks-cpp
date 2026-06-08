@@ -56,12 +56,12 @@ bool IsSwinging(const Ent& mattock) {
     return mattock.aframe_animator.anim_id == aframe_ids::MattockSwing;
 }
 
-[[nodiscard]] AABB RenderTileAabbForTilePos(const IVec2& tile_pos) {
+[[nodiscard]] RenderAABB RenderTileAabbForTilePos(const IVec2& tile_pos) {
     const Vec2 tile_tl = Vec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
     );
-    return AABB::New(
+    return RenderAABB::New(
         tile_tl,
         tile_tl + Vec2::New(
                       static_cast<float>(kTileSize - 1),
@@ -232,8 +232,8 @@ void AddMattockDebugAnnotations(
     }
 
     const MattockTileTargets targets = GetMattockTileTargets(*holder, state.stage);
-    const AABB primary_render_aabb = RenderTileAabbForTilePos(targets.primary);
-    const AABB secondary_render_aabb = RenderTileAabbForTilePos(targets.secondary);
+    const RenderAABB primary_render_aabb = RenderTileAabbForTilePos(targets.primary);
+    const RenderAABB secondary_render_aabb = RenderTileAabbForTilePos(targets.secondary);
     state.AddDebugRectAnnotation(DebugRectAnnotation{
         .area = primary_render_aabb,
         .color = DebugAnnotationColor{0, 255, 0, 255},

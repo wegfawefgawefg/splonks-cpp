@@ -78,14 +78,15 @@ Cleanup:
 
 Current state:
 
-- `src/utils.hpp` defines `struct AABB` as a float `Vec2` rectangle.
-- The name `AABB` is too authoritative-looking now that fixed geometry exists.
-- This type still appears in gameplay files, world queries, stage mutation,
-  contact dispatch, hit/damage logic, and debug/render.
+- Completed 2026-06-08. The old float/render rectangle type has been renamed
+  from `AABB` to `RenderAABB`.
+- `sim::AABB` remains the only unqualified gameplay rectangle spelling.
+- Remaining `RenderAABB` call sites are render/debug annotations or the
+  still-render-space raycast API tracked under the raycast cleanup item.
 
 Cleanup:
 
-- Rename or quarantine the old type as `RenderAABB` / `FloatAABB`.
+- [x] Rename or quarantine the old type as `RenderAABB` / `FloatAABB`.
 - Keep conversion helpers at boundaries, e.g. `ToRenderAABB(sim::AABB)`.
 - Do not allow unqualified float `AABB` in authoritative gameplay after the
   migration.

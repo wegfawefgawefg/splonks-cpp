@@ -700,7 +700,7 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
     }
 
     Ent& ent = *selected_ent;
-    const AABB aabb = ent.GetRenderAABB();
+    const RenderAABB aabb = ent.GetRenderAABB();
     ImGui::Separator();
     ImGui::Text("Type: %s", EntTypeToString(ent.type_));
     ImGui::Text(
@@ -761,8 +761,8 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
     ImGui::Text("Acc: (%.2f, %.2f)", ent_acc.x, ent_acc.y);
     const Vec2 ent_size = ent.GetSize();
     ImGui::Text("Size: (%.2f, %.2f)", ent_size.x, ent_size.y);
-    ImGui::Text("AABB TL: (%.2f, %.2f)", aabb.tl.x, aabb.tl.y);
-    ImGui::Text("AABB BR: (%.2f, %.2f)", aabb.br.x, aabb.br.y);
+    ImGui::Text("RenderAABB TL: (%.2f, %.2f)", aabb.tl.x, aabb.tl.y);
+    ImGui::Text("RenderAABB BR: (%.2f, %.2f)", aabb.br.x, aabb.br.y);
     ImGui::Text("Coyote: %u", ent.coyote_time);
     ImGui::Text("Fall timer: %u", ent.fall_timer);
     ImGui::Text("Health: %u", ent.health);
