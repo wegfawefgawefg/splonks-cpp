@@ -105,13 +105,14 @@ bool TryApplyStompContactToEnt(
         return false;
     }
 
-    const AABB stomper_aabb = GetRenderContactAabbForEnt(stomper, graphics);
-    const AABB stomped_aabb = GetNearestWorldAabb(
+    const sim::AABB stomper_aabb = GetContactAabbForEnt(stomper, graphics);
+    const sim::AABB stomped_aabb = GetNearestWorldAabb(
         state.stage,
-        stomper.GetCenter(),
-        GetRenderContactAabbForEnt(*stomped, graphics)
+        stomper_aabb.center(),
+        GetContactAabbForEnt(*stomped, graphics)
     );
-    const float stomped_head_band_bottom = stomped_aabb.tl.y + kStompHeadHeight;
+    const sim::Scalar stomped_head_band_bottom =
+        stomped_aabb.tl.y + sim::ToSimScalar(kStompHeadHeight);
     if (stomper_aabb.br.y > stomped_head_band_bottom) {
         return false;
     }
@@ -145,9 +146,11 @@ bool TryApplyStompContactToEnt(
     if (stomp_damage == 0) {
         return false;
     }
-    const Vec2 stomp_delta = GetNearestWorldDelta(state.stage, stomper.GetCenter(), stomped->GetCenter());
+    const sim::Vec2 stomp_delta =
+        GetNearestWorldDelta(state.stage, stomper.GetSimAABB().center(), stomped->GetSimAABB().center());
     const float stomp_knockback_x =
-        stomp_delta.x < 0.0F ? -kStompVictimKnockbackVelocityX : kStompVictimKnockbackVelocityX;
+        stomp_delta.x < sim::Scalar::zero() ? -kStompVictimKnockbackVelocityX
+                                            : kStompVictimKnockbackVelocityX;
     const KnockbackSpec knockback{
         .velocity = sim::ToSimVec2(stomp_knockback_x, kStompVictimKnockbackVelocityY),
         .clear_velocity = true,

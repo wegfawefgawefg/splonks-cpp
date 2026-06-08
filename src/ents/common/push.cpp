@@ -3,8 +3,6 @@
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
-#include <algorithm>
-
 namespace splonks::ents::common {
 
 namespace {
@@ -42,28 +40,30 @@ bool IsAtCrusherLeadingFace(
     const Ent& other_ent,
     const IVec2& push_direction
 ) {
-    const AABB crusher_aabb = crusher.GetAABB();
-    const AABB other_aabb =
-        GetNearestWorldAabb(stage, crusher.GetCenter(), other_ent.GetAABB());
-    const Vec2 crusher_center = crusher.GetCenter();
-    const Vec2 other_center = (other_aabb.tl + other_aabb.br) / 2.0F;
+    const sim::AABB crusher_aabb = crusher.GetSimAABB();
+    const sim::AABB other_aabb =
+        GetNearestWorldAabb(stage, crusher_aabb.center(), other_ent.GetSimAABB());
+    const sim::Vec2 crusher_center = crusher_aabb.center();
+    const sim::Vec2 other_center = other_aabb.center();
 
-    const float overlap_x = std::min(crusher_aabb.br.x, other_aabb.br.x) -
-                            std::max(crusher_aabb.tl.x, other_aabb.tl.x);
-    const float overlap_y = std::min(crusher_aabb.br.y, other_aabb.br.y) -
-                            std::max(crusher_aabb.tl.y, other_aabb.tl.y);
+    const sim::Scalar overlap_x =
+        gfxp::min(crusher_aabb.br.x, other_aabb.br.x) -
+        gfxp::max(crusher_aabb.tl.x, other_aabb.tl.x);
+    const sim::Scalar overlap_y =
+        gfxp::min(crusher_aabb.br.y, other_aabb.br.y) -
+        gfxp::max(crusher_aabb.tl.y, other_aabb.tl.y);
 
     if (push_direction.x > 0) {
-        return overlap_y >= 0.0F && other_center.x >= crusher_center.x;
+        return overlap_y >= sim::Scalar::zero() && other_center.x >= crusher_center.x;
     }
     if (push_direction.x < 0) {
-        return overlap_y >= 0.0F && other_center.x <= crusher_center.x;
+        return overlap_y >= sim::Scalar::zero() && other_center.x <= crusher_center.x;
     }
     if (push_direction.y > 0) {
-        return overlap_x >= 0.0F && other_center.y >= crusher_center.y;
+        return overlap_x >= sim::Scalar::zero() && other_center.y >= crusher_center.y;
     }
     if (push_direction.y < 0) {
-        return overlap_x >= 0.0F && other_center.y <= crusher_center.y;
+        return overlap_x >= sim::Scalar::zero() && other_center.y <= crusher_center.y;
     }
 
     return false;
@@ -89,22 +89,22 @@ bool TryApplyPushEntAction(
         return false;
     }
 
-    const AABB pusher_aabb = GetRenderContactAabbForEnt(*pusher, graphics);
-    const AABB push_zone{
-        .tl = pusher_aabb.tl - Vec2::New(6.0F, 0.0F),
-        .br = pusher_aabb.br + Vec2::New(6.0F, 0.0F),
+    const sim::AABB pusher_aabb = GetContactAabbForEnt(*pusher, graphics);
+    const sim::AABB push_zone{
+        .tl = pusher_aabb.tl - sim::PixelVec2(6, 0),
+        .br = pusher_aabb.br + sim::PixelVec2(6, 0),
     };
-    const Vec2 pusher_center = (pusher_aabb.tl + pusher_aabb.br) / 2.0F;
-    const AABB pushed_aabb = GetNearestWorldAabb(
+    const sim::Vec2 pusher_center = pusher_aabb.center();
+    const sim::AABB pushed_aabb = GetNearestWorldAabb(
         state.stage,
         pusher_center,
-        GetRenderContactAabbForEnt(*pushed, graphics)
+        GetContactAabbForEnt(*pushed, graphics)
     );
-    if (!AabbsIntersect(push_zone, pushed_aabb)) {
+    if (!gfxp::aabbs_intersect(push_zone, pushed_aabb)) {
         return false;
     }
 
-    const Vec2 pushed_center = (pushed_aabb.tl + pushed_aabb.br) / 2.0F;
+    const sim::Vec2 pushed_center = pushed_aabb.center();
     if (push_acc_delta > 0.0F && pushed_center.x < pusher_center.x) {
         return false;
     }
@@ -123,15 +123,15 @@ void TryPushBlocks(
 ) {
     Ent& ent = state.ents.ents[ent_idx];
     const bool ent_grounded = ent.grounded;
-    const AABB ent_aabb = GetRenderContactAabbForEnt(ent, graphics);
+    const sim::AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
     const VID ent_vid = ent.vid;
     const sim::Vec2 ent_vel = ent.vel;
 
     bool ready_to_push = false;
     if (ent_grounded) {
-        const AABB try_to_push_zone = {
-            .tl = ent_aabb.tl - Vec2::New(6.0F, 0.0F),
-            .br = ent_aabb.br + Vec2::New(6.0F, 0.0F),
+        const sim::AABB try_to_push_zone = {
+            .tl = ent_aabb.tl - sim::PixelVec2(6, 0),
+            .br = ent_aabb.br + sim::PixelVec2(6, 0),
         };
         const std::vector<VID> search_results =
             QueryEntsInAabb(state, try_to_push_zone, ent_vid);
@@ -142,22 +142,22 @@ void TryPushBlocks(
             }
             if (Ent* const block_ent = state.ents.GetEntMut(vid)) {
                 ready_to_push = true;
-                const float push_zone_left_x = ent_aabb.tl.x - 1.0F;
-                const float push_zone_right_x = ent_aabb.br.x + 1.0F;
-                const AABB nearest_block_aabb =
-                    GetNearestWorldAabb(state.stage, ent.GetCenter(), block_ent->GetAABB());
-                const Vec2 block_tl = nearest_block_aabb.tl;
-                const Vec2 block_br = nearest_block_aabb.br;
-                float block_x_acc_delta = 0.0F;
+                const sim::Scalar push_zone_left_x = ent_aabb.tl.x - sim::Scalar::from_int(1);
+                const sim::Scalar push_zone_right_x = ent_aabb.br.x + sim::Scalar::from_int(1);
+                const sim::AABB nearest_block_aabb =
+                    GetNearestWorldAabb(state.stage, ent_aabb.center(), block_ent->GetSimAABB());
+                const sim::Vec2 block_tl = nearest_block_aabb.tl;
+                const sim::Vec2 block_br = nearest_block_aabb.br;
+                sim::Scalar block_x_acc_delta = sim::Scalar::zero();
                 if (ent_vel.x > sim::Scalar::zero() && block_br.x > push_zone_left_x &&
                     block_tl.x > push_zone_left_x) {
-                    block_x_acc_delta = sim::ToRenderScalar(block_ent->push_acc);
+                    block_x_acc_delta = block_ent->push_acc;
                 } else if (ent_vel.x < sim::Scalar::zero() && block_tl.x < push_zone_right_x &&
                            block_br.x < push_zone_right_x) {
-                    block_x_acc_delta = -sim::ToRenderScalar(block_ent->push_acc);
+                    block_x_acc_delta = -block_ent->push_acc;
                 }
-                if (block_x_acc_delta != 0.0F) {
-                    block_ent->acc.x += sim::ToSimScalar(block_x_acc_delta);
+                if (block_x_acc_delta != sim::Scalar::zero()) {
+                    block_ent->acc.x += block_x_acc_delta;
                 }
                 break;
             }
