@@ -63,16 +63,18 @@ Cleanup target:
 
 Current state:
 
-- `src/sim/fxp.hpp` uses `gfxp::BasicVec2<Scalar>` and
-  `gfxp::BasicAabb<Scalar>` directly.
-- This is correct at the type level, but it reads like Splonks is hand-rolling
-  another vec/AABB family.
+- Completed 2026-06-08. `src/sim/fxp.hpp` now aliases `sim::Vec2` to
+  `gfxp::Vec2_12` and `sim::AABB` to `gfxp::Aabb_12`.
 
 Cleanup:
 
-- Replace those aliases with `gfxp::Vec2_12` and `gfxp::Aabb_12`.
-- Keep `sim::Scalar = gfxp::Fixed12`.
-- Document `sim::*` as "Splonks gameplay Fixed12 aliases over gfxp."
+- [x] Replace those aliases with `gfxp::Vec2_12` and `gfxp::Aabb_12`.
+- [x] Keep `sim::Scalar = gfxp::Fixed12`.
+- [x] Document `sim::*` as "Splonks gameplay Fixed12 aliases over gfxp."
+- [x] Validate with `./scripts/build.sh`,
+      `./build/splonks-cpp --check-state-fingerprint-smoke --project-root "$PWD"`,
+      and
+      `./build/splonks-cpp --check-state-equality-smoke --project-root "$PWD"`.
 
 ### 2. Old float `AABB` has a generic name
 

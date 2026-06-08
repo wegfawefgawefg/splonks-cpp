@@ -457,7 +457,8 @@ Proposed contents:
 ```cpp
 namespace splonks::sim {
 using Scalar = gfxp::Fixed12;
-using Vec2 = gfxp::BasicVec2<Scalar>;
+using Vec2 = gfxp::Vec2_12;
+using AABB = gfxp::Aabb_12;
 }
 ```
 
@@ -467,7 +468,8 @@ different scalar or add game-specific helpers without editing the vendored copy.
 Tasks:
 
 - [x] Add `src/sim/fxp.hpp`.
-- [x] Define `splonks::sim::Scalar` and `splonks::sim::Vec2`.
+- [x] Define `splonks::sim::Scalar`, `splonks::sim::Vec2`, and
+      `splonks::sim::AABB`.
 - [x] Add conversion helpers between current `splonks::Vec2` and
       `splonks::sim::Vec2`.
 - [x] Keep conversion names explicit, such as `ToSimVec2` and `ToRenderVec2`,
