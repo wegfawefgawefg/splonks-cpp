@@ -53,4 +53,24 @@ bool IsWaterAtWorldPos(const Stage& stage, const Vec2& world_pos) {
     return IsWaterAtWorldPos(stage, world_pos, 0.0F);
 }
 
+bool IsWaterAtWorldPos(const Stage& stage, sim::Vec2 world_pos, float amount_cutoff) {
+    const std::optional<WorldTileQueryResult> tile_query =
+        QueryTileAtWorldPos(stage, world_pos);
+    if (!tile_query.has_value()) {
+        return false;
+    }
+    if (stage.IsTileCoordInside(tile_query->tile_pos.x, tile_query->tile_pos.y)) {
+        const auto x = static_cast<unsigned int>(tile_query->tile_pos.x);
+        const auto y = static_cast<unsigned int>(tile_query->tile_pos.y);
+        if (IsWaterTile(stage.GetFluidTile(x, y)) && stage.GetFluidAmount(x, y) >= amount_cutoff) {
+            return true;
+        }
+    }
+    return tile_query->tile != nullptr && IsWaterTile(*tile_query->tile);
+}
+
+bool IsWaterAtWorldPos(const Stage& stage, sim::Vec2 world_pos) {
+    return IsWaterAtWorldPos(stage, world_pos, 0.0F);
+}
+
 } // namespace splonks

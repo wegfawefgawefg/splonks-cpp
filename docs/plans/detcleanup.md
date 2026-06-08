@@ -197,6 +197,9 @@ Current state:
 - Completed 2026-06-08: damsel rescue-kiss and gold-idol reward particle
   placement now derive render positions from fixed body AABBs at explicit
   presentation boundaries.
+- Completed 2026-06-08: water queries gained fixed-position overloads, and
+  piranha swim probes now use fixed center/body coordinates instead of generic
+  render `GetAABB()` geometry.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -247,6 +250,8 @@ Cleanup:
       `GetAABB()` and onto fixed body geometry plus explicit render conversion.
 - [x] Move damsel/gold-idol reward particle placement helpers off generic
       `GetAABB()` and onto fixed body geometry plus explicit render conversion.
+- [x] Add fixed water-query overloads and migrate piranha swim probes to fixed
+      body geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.
