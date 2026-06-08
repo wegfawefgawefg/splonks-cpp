@@ -103,13 +103,17 @@ Current state:
 - Completed 2026-06-08: buying overlap/prompt selection now uses fixed contact
   AABBs, fixed entity queries, fixed world wrapping, and render conversion only
   for final prompt placement.
+- Completed 2026-06-08: basic exit overlap/prompt selection now uses fixed
+  contact AABBs, fixed entity queries, fixed world wrapping, and render
+  conversion only for final prompt placement.
 - Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
-  including contact damage, ent contact, stomp, exits, weapons, traps,
+  including contact damage, ent contact, stomp, weapons, traps,
   sacrifice altar, teleporter, and web/cobweb logic.
 
 Cleanup:
 
 - [x] Migrate buying overlap/prompt selection to fixed contact geometry.
+- [x] Migrate basic exit overlap/prompt selection to fixed contact geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.

@@ -7,19 +7,18 @@
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
+#include <cstdint>
 #include <limits>
 
 namespace splonks::ents::basic_exit {
 
 namespace {
 
-Vec2 GetAabbCenter(const AABB& aabb) {
-    return (aabb.tl + aabb.br) / 2.0F;
-}
-
-float GetDistanceSq(const Vec2& from, const Vec2& to, const Stage& stage) {
-    const Vec2 delta = GetNearestWorldDelta(stage, from, to);
-    return (delta.x * delta.x) + (delta.y * delta.y);
+std::int64_t GetDistanceSq(sim::Vec2 from, sim::Vec2 to, const Stage& stage) {
+    const sim::Vec2 delta = GetNearestWorldDelta(stage, from, to);
+    const std::int64_t dx = delta.x.raw_value();
+    const std::int64_t dy = delta.y.raw_value();
+    return (dx * dx) + (dy * dy);
 }
 
 const Ent* GetActiveBasicExitEnt(
@@ -80,11 +79,11 @@ std::optional<std::size_t> FindOverlappingBasicExitEntIdx(
         return std::nullopt;
     }
 
-    const AABB ent_aabb = common::GetRenderContactAabbForEnt(ent, graphics);
-    const Vec2 ent_center = GetAabbCenter(ent_aabb);
+    const sim::AABB ent_aabb = common::GetContactAabbForEnt(ent, graphics);
+    const sim::Vec2 ent_center = ent_aabb.center();
     const std::vector<VID> results = QueryEntsInAabb(state, ent_aabb, ent.vid);
 
-    float best_distance_sq = std::numeric_limits<float>::max();
+    std::int64_t best_distance_sq = std::numeric_limits<std::int64_t>::max();
     std::optional<std::size_t> best_ent_idx;
     for (const VID& vid : results) {
         const Ent* const other = state.ents.GetEnt(vid);
@@ -92,16 +91,16 @@ std::optional<std::size_t> FindOverlappingBasicExitEntIdx(
             continue;
         }
 
-        const AABB other_aabb = GetNearestWorldAabb(
+        const sim::AABB other_aabb = GetNearestWorldAabb(
             state.stage,
             ent_center,
-            common::GetRenderContactAabbForEnt(*other, graphics)
+            common::GetContactAabbForEnt(*other, graphics)
         );
-        if (!AabbsIntersect(ent_aabb, other_aabb)) {
+        if (!gfxp::aabbs_intersect(ent_aabb, other_aabb)) {
             continue;
         }
 
-        const float distance_sq = GetDistanceSq(ent_center, GetAabbCenter(other_aabb), state.stage);
+        const std::int64_t distance_sq = GetDistanceSq(ent_center, other_aabb.center(), state.stage);
         if (!best_ent_idx.has_value() || distance_sq < best_distance_sq) {
             best_distance_sq = distance_sq;
             best_ent_idx = vid.id;
@@ -150,21 +149,21 @@ void StepEntLogicAsBasicExit(
         }
 
         state.ClaimInteractForEnt(*slot.ent_vid);
-        const AABB player_aabb = common::GetRenderContactAabbForEnt(*player, graphics);
-        const Vec2 player_center = GetAabbCenter(player_aabb);
-        const AABB nearest_exit_aabb = GetNearestWorldAabb(
+        const sim::AABB player_aabb = common::GetContactAabbForEnt(*player, graphics);
+        const sim::Vec2 player_center = player_aabb.center();
+        const sim::AABB nearest_exit_aabb = GetNearestWorldAabb(
             state.stage,
             player_center,
-            common::GetRenderContactAabbForEnt(exit_ent, graphics)
+            common::GetContactAabbForEnt(exit_ent, graphics)
         );
-        const Vec2 prompt_base = GetNearestWorldPoint(
+        const sim::Vec2 prompt_base = GetNearestWorldPoint(
             state.stage,
             player_center,
-            Vec2::New((nearest_exit_aabb.tl.x + nearest_exit_aabb.br.x) * 0.5F,
-                      nearest_exit_aabb.tl.y)
+            sim::Vec2{(nearest_exit_aabb.tl.x + nearest_exit_aabb.br.x) / 2,
+                      nearest_exit_aabb.tl.y}
         );
         state.AddWorldPrompt(WorldPrompt{
-            .world_pos = prompt_base + Vec2::New(0.0F, -6.0F),
+            .world_pos = sim::ToRenderVec2(prompt_base + sim::PixelVec2(0, -6)),
             .action_text = player_prompt->action_text,
             .message_text = player_prompt->message_text,
             .show_down_arrow = player_prompt->show_down_arrow,
