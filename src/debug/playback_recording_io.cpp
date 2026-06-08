@@ -44,7 +44,6 @@ void WriteSimScalar(std::ostream& out, sim::Scalar value);
 bool ReadSimScalar(std::istream& in, sim::Scalar& value);
 void WriteSimVec2(std::ostream& out, const sim::Vec2& value);
 bool ReadSimVec2(std::istream& in, sim::Vec2& value);
-bool ReadSimVec2AsRenderVec2(std::istream& in, Vec2& value);
 void WriteInt32(std::ostream& out, int value);
 bool ReadInt32(std::istream& in, int& value);
 void WriteSigned32(std::ostream& out, std::int32_t value);
@@ -612,15 +611,6 @@ void WriteSimVec2(std::ostream& out, const sim::Vec2& value) {
 bool ReadSimVec2(std::istream& in, sim::Vec2& value) {
     return ReadSimScalar(in, value.x) &&
            ReadSimScalar(in, value.y);
-}
-
-bool ReadSimVec2AsRenderVec2(std::istream& in, Vec2& value) {
-    sim::Vec2 fixed;
-    if (!ReadSimVec2(in, fixed)) {
-        return false;
-    }
-    value = sim::ToRenderVec2(fixed);
-    return true;
 }
 
 void WriteUVec2Vector(std::ostream& out, const std::vector<UVec2>& values) {
@@ -1538,9 +1528,9 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.impassable);
     WriteBoolByte(out, ent.can_be_hung_on);
     WriteUint32(out, ent.fall_timer);
-    WriteSimVec2(out, sim::ToSimVec2(ent.pos));
-    WriteSimVec2(out, sim::ToSimVec2(ent.vel));
-    WriteSimVec2(out, sim::ToSimVec2(ent.acc));
+    WriteSimVec2(out, ent.GetSimPos());
+    WriteSimVec2(out, ent.GetSimVel());
+    WriteSimVec2(out, ent.GetSimAcc());
     WriteSimScalar(out, ent.max_speed);
     WriteUint32(out, ent.jump_hold_gravity_frames_remaining);
     WriteSimScalar(out, ent.throw_velocity_scale);
@@ -1634,7 +1624,10 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
 }
 
 bool ReadEnt(std::istream& in, Ent& ent) {
-    return ReadBoolByte(in, ent.active) &&
+    sim::Vec2 pos;
+    sim::Vec2 vel;
+    sim::Vec2 acc;
+    const bool ok = ReadBoolByte(in, ent.active) &&
            ReadBoolByte(in, ent.marked_for_destruction) &&
            ReadEntType(in, ent.type_) &&
            ReadVid(in, ent.vid) &&
@@ -1664,9 +1657,9 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.impassable) &&
            ReadBoolByte(in, ent.can_be_hung_on) &&
            ReadUint32(in, ent.fall_timer) &&
-           ReadSimVec2AsRenderVec2(in, ent.pos) &&
-           ReadSimVec2AsRenderVec2(in, ent.vel) &&
-           ReadSimVec2AsRenderVec2(in, ent.acc) &&
+           ReadSimVec2(in, pos) &&
+           ReadSimVec2(in, vel) &&
+           ReadSimVec2(in, acc) &&
            ReadSimScalar(in, ent.max_speed) &&
            ReadUint32(in, ent.jump_hold_gravity_frames_remaining) &&
            ReadSimScalar(in, ent.throw_velocity_scale) &&
@@ -1757,6 +1750,13 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadFloat(in, ent.counter_d) &&
            ReadSimScalar(in, ent.threshold_a) &&
            ReadSimScalar(in, ent.threshold_b);
+    if (!ok) {
+        return false;
+    }
+    ent.SetSimPos(pos);
+    ent.SetSimVel(vel);
+    ent.SetSimAcc(acc);
+    return true;
 }
 
 void WriteVideoSettings(std::ostream& out, const VideoSettings& settings) {

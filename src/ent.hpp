@@ -177,6 +177,12 @@ struct Ent {
 
     static Ent New();
     void Reset();
+    sim::Vec2 GetSimPos() const;
+    sim::Vec2 GetSimVel() const;
+    sim::Vec2 GetSimAcc() const;
+    void SetSimPos(sim::Vec2 value);
+    void SetSimVel(sim::Vec2 value);
+    void SetSimAcc(sim::Vec2 value);
     Vec2 GetSize() const;
     std::tuple<Vec2, Vec2> GetBounds() const;
     AABB GetAABB() const;

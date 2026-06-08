@@ -221,6 +221,30 @@ void ClearTransientMovementFlags(Ent& ent) {
     SetMovementFlag(ent, EntMovementFlag::Pushing, false);
 }
 
+sim::Vec2 Ent::GetSimPos() const {
+    return sim::ToSimVec2(pos);
+}
+
+sim::Vec2 Ent::GetSimVel() const {
+    return sim::ToSimVec2(vel);
+}
+
+sim::Vec2 Ent::GetSimAcc() const {
+    return sim::ToSimVec2(acc);
+}
+
+void Ent::SetSimPos(sim::Vec2 value) {
+    pos = sim::ToRenderVec2(value);
+}
+
+void Ent::SetSimVel(sim::Vec2 value) {
+    vel = sim::ToRenderVec2(value);
+}
+
+void Ent::SetSimAcc(sim::Vec2 value) {
+    acc = sim::ToRenderVec2(value);
+}
+
 std::tuple<Vec2, Vec2> Ent::GetBounds() const {
     const Vec2 render_size = GetSize();
     return {pos, pos + render_size - Vec2::New(1.0F, 1.0F)};
