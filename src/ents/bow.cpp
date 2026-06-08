@@ -189,10 +189,10 @@ void ArmBow(Ent& bow, State& state) {
 
 void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
     (void)world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
-        const Vec2 direction = aim.direction;
-        const Vec2 spawn_center = bow.GetRenderCenter() + direction * 12.0F;
-        arrow.SetRenderCenter(Vec2::New(static_cast<float>(RoundToInt(spawn_center.x)),
-                                  static_cast<float>(RoundToInt(spawn_center.y))));
+        const sim::Vec2 spawn_center = bow.GetSimCenter() +
+                                       (aim.sim_direction * sim::Scalar::from_int(12));
+        arrow.SetSimCenter(sim::PixelVec2(spawn_center.x.to_pixels_round(),
+                                          spawn_center.y.to_pixels_round()));
         arrow.vel = aim.sim_direction * sim::ToSimScalar(kBowArrowSpeed);
         arrow.acc = sim::Vec2::zero();
         arrow.facing = aim.facing;
@@ -220,7 +220,7 @@ void FireBow(Ent& bow, State& state) {
     bow.counter_b -= sim::Scalar::from_int(1);
     bow.ent_a.reset();
     SetAnim(bow, GetLooseAnimId(bow));
-    (void)PlayWorldSoundEmitter(state, bow.GetRenderCenter(), audio_asset_ids::Throw);
+    (void)PlayWorldSoundEmitter(state, sim::ToRenderVec2(bow.GetSimCenter()), audio_asset_ids::Throw);
 }
 
 } // namespace

@@ -370,6 +370,9 @@ Current state:
   debug labels and shake/effect presentation.
 - Completed 2026-06-08: arrow-trap arrow spawn, loose-arrow spawn, and stuck
   arrow attachment now use fixed centers and fixed rounded pixel offsets.
+- Completed 2026-06-08: bow arrow spawn now uses fixed aim direction and fixed
+  rounded center placement; the firing sound converts fixed center to render at
+  the audio boundary.
 
 Cleanup:
 
