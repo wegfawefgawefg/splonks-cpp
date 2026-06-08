@@ -71,7 +71,7 @@ bool ResolveEmitterWorldPos(State& state, const Graphics& graphics, AudioEmitter
     const Ent* const attached = state.ents.GetEnt(*emitter.attached_ent_vid);
     if (attached != nullptr) {
         emitter.world_pos =
-            ents::common::GetVisualCenterForEnt(*attached, graphics, attached->GetCenter()) +
+            ents::common::GetVisualCenterForEnt(*attached, graphics, attached->GetRenderCenter()) +
             emitter.attached_offset;
         return true;
     }
@@ -294,7 +294,7 @@ std::optional<VID> PlayAttachedSoundEmitter(
     emitter->attached_ent_vid = attached_ent_vid;
     emitter->attached_offset = attached_offset;
     if (const Ent* const attached = state.ents.GetEnt(attached_ent_vid)) {
-        emitter->world_pos = attached->GetCenter() + attached_offset;
+        emitter->world_pos = attached->GetRenderCenter() + attached_offset;
     }
     return emitter->vid;
 }
@@ -332,7 +332,7 @@ std::optional<VID> PlayEntCenterSoundEmitter(
     }
     return PlayWorldSoundEmitter(
         state,
-        ent.GetCenter() + world_offset,
+        ent.GetRenderCenter() + world_offset,
         audio_asset_id,
         ent_params
     );

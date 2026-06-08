@@ -639,7 +639,7 @@ bool SampleMonkeyTest(int frames, bool big_stage) {
                 continue;
             }
 
-            const float center_y = ent.GetCenter().y;
+            const float center_y = ent.GetRenderCenter().y;
             if (count == 0) {
                 min_y = center_y;
                 max_y = center_y;

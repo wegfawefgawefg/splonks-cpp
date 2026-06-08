@@ -159,7 +159,7 @@ bool IsClimbableTileQuery(const std::optional<WorldTileQueryResult>& tile_query)
 }
 
 std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
-    const Vec2 center = ent.GetCenter();
+    const Vec2 center = ent.GetRenderCenter();
     const float horizontal_offset = std::min(2.5F, std::max(0.0F, (ent.GetSize().x * 0.5F) - 1.0F));
     const std::array<Vec2, 3> probes = {{
         Vec2::New(center.x - horizontal_offset, center.y),
@@ -177,11 +177,11 @@ std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
 }
 
 void SnapToClimbTile(Ent& ent, const IVec2& tile_pos) {
-    Vec2 center = ent.GetCenter();
+    Vec2 center = ent.GetRenderCenter();
     const float target_x = static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2));
     const float delta = std::clamp(target_x - center.x, -kClimbSnapSpeed, kClimbSnapSpeed);
     center.x += delta;
-    ent.SetCenter(center);
+    ent.SetRenderCenter(center);
 }
 
 std::optional<Side> GetWallSlideSide(
@@ -523,7 +523,7 @@ void OnDeathAsFleshGuy(std::size_t ent_idx, State& state, Audio& audio) {
     if (const std::optional<MeatSlimeSurface> ground_surface = GetGroundSurface(flesh_guy, state)) {
         SpawnMeatSlime(state, GetTopMeatSlimeCenter(*ground_surface, state.stage));
     } else if (const std::optional<MeatSlimeSurface> center_surface =
-                   QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, flesh_guy.GetCenter())) {
+                   QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, flesh_guy.GetRenderCenter())) {
         SpawnMeatSlime(state, GetTopMeatSlimeCenter(*center_surface, state.stage));
     }
     (void)world_ops::DeactivateEnt(state, flesh_guy.vid);

@@ -59,7 +59,7 @@ void StartWalking(Ent& cobra, const State& state) {
 }
 
 void FaceTowards(Ent& cobra, const Vec2& target_pos, const Stage& stage) {
-    const Vec2 delta = GetNearestWorldDelta(stage, cobra.GetCenter(), target_pos);
+    const Vec2 delta = GetNearestWorldDelta(stage, cobra.GetRenderCenter(), target_pos);
     if (delta.x < 0.0F) {
         cobra.facing = Side::Left;
     } else if (delta.x > 0.0F) {
@@ -73,7 +73,7 @@ bool ShouldRunSightScan(const Ent& cobra, std::uint64_t stage_frame) {
 }
 
 bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& graphics) {
-    const Vec2 spit_origin = common::GetEmitPointForEnt(cobra, graphics, cobra.GetCenter());
+    const Vec2 spit_origin = common::GetEmitPointForEnt(cobra, graphics, cobra.GetRenderCenter());
     const int direction = cobra.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -83,7 +83,7 @@ bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& gra
         if (player == nullptr || !player->active || player->condition != EntCondition::Normal) {
             continue;
         }
-        const Vec2 player_center = GetNearestWorldPoint(state.stage, spit_origin, player->GetCenter());
+        const Vec2 player_center = GetNearestWorldPoint(state.stage, spit_origin, player->GetRenderCenter());
         const Vec2 player_delta = player_center - spit_origin;
         if (std::abs(player_delta.y) > kCobraSightVerticalTolerance ||
             std::abs(player_delta.x) > static_cast<float>(kCobraSightDistance)) {
@@ -178,10 +178,10 @@ void SpawnSpitImpact(State& state, const Vec2& origin) {
 void FireCobraSpit(std::size_t ent_idx, State& state, Graphics& graphics) {
     Ent& cobra = state.ents.ents[ent_idx];
     const int direction = cobra.facing == Side::Left ? -1 : 1;
-    const Vec2 spit_origin = common::GetEmitPointForEnt(cobra, graphics, cobra.GetCenter());
+    const Vec2 spit_origin = common::GetEmitPointForEnt(cobra, graphics, cobra.GetRenderCenter());
 
     Ent* const spit = world_ops::SpawnEnt(state, EntType::CobraSpit, [&](Ent& spawned_spit) {
-        spawned_spit.SetCenter(spit_origin);
+        spawned_spit.SetRenderCenter(spit_origin);
         spawned_spit.facing = cobra.facing;
         spawned_spit.vel = sim::ToSimVec2(Vec2::New(
             static_cast<float>(direction) * kCobraSpitVelocityX,
@@ -214,7 +214,7 @@ void DestroyCobraSpit(std::size_t ent_idx, State& state) {
         return;
     }
 
-    SpawnSpitImpact(state, spit.GetCenter());
+    SpawnSpitImpact(state, spit.GetRenderCenter());
     (void)world_ops::DeactivateEnt(state, spit.vid);
 }
 
@@ -244,8 +244,8 @@ void StepEntLogicAsCobra(
 
     if (ShouldRunSightScan(cobra, state.stage_frame) && cobra.counter_b <= 0.0F &&
         CanSeePlayerAhead(cobra, state, graphics)) {
-        if (const Ent* const player = FindNearestPlayer(state, cobra.GetCenter())) {
-            FaceTowards(cobra, player->GetCenter(), state.stage);
+        if (const Ent* const player = FindNearestPlayer(state, cobra.GetRenderCenter())) {
+            FaceTowards(cobra, player->GetRenderCenter(), state.stage);
         }
         common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
         TrySetAnim(cobra, EntDisplayState::Walk);
@@ -316,7 +316,7 @@ void StepEntLogicAsCobraSpit(
 
     spit.counter_b -= 1.0F;
     if (spit.counter_b <= 0.0F) {
-        SpawnSpitTrail(state, spit.GetCenter(), spit.GetRenderVel());
+        SpawnSpitTrail(state, spit.GetRenderCenter(), spit.GetRenderVel());
         spit.counter_b = kCobraSpitTrailIntervalFrames;
     }
 }

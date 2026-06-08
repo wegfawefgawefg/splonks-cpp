@@ -195,7 +195,7 @@ CameraFocus ComputeLocalPlayerCameraFocus(const State& state, const Graphics& gr
     }
 
     const Vec2 anchor_center =
-        ents::common::GetVisualCenterForEnt(*anchor_ent, graphics, anchor_ent->GetCenter());
+        ents::common::GetVisualCenterForEnt(*anchor_ent, graphics, anchor_ent->GetRenderCenter());
     const float default_zoom = GetDefaultFollowCameraZoom(graphics);
     Vec2 union_tl = Vec2::New(
         std::numeric_limits<float>::max(),
@@ -218,7 +218,7 @@ CameraFocus ComputeLocalPlayerCameraFocus(const State& state, const Graphics& gr
         }
 
         const Vec2 visual_center =
-            ents::common::GetVisualCenterForEnt(*player, graphics, player->GetCenter());
+            ents::common::GetVisualCenterForEnt(*player, graphics, player->GetRenderCenter());
         const Vec2 local_center =
             anchor_center + GetNearestWorldDelta(state.stage, anchor_center, visual_center);
         const Vec2 single_camera_target = ClampCameraTargetToStage(state.stage, local_center);
@@ -287,7 +287,7 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                     : ents::common::GetVisualCenterForEnt(
                           *camera_target_ent,
                           graphics,
-                          camera_target_ent->GetCenter()
+                          camera_target_ent->GetRenderCenter()
                       );
             const Vec2 camera_follow_target =
                 RotateWorldPointForActiveWorldRotation(graphics, raw_follow_target);

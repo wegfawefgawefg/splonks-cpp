@@ -243,7 +243,7 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
         if (!ent.active) {
             continue;
         }
-        ent.SetCenter(RotatePoint(ent.GetCenter(), old_dims, quarter_turns));
+        ent.SetRenderCenter(RotatePoint(ent.GetRenderCenter(), old_dims, quarter_turns));
         ent.pos = sim::PixelVec2(ent.pos.x.to_pixels_round(), ent.pos.y.to_pixels_round());
         ent.vel = sim::Vec2::zero();
         ent.acc = sim::Vec2::zero();
@@ -293,7 +293,7 @@ void SnapCameraAfterStageRotation(State& state, Graphics& graphics) {
         target = ents::common::GetVisualCenterForEnt(
             *camera_target_ent,
             graphics,
-            camera_target_ent->GetCenter()
+            camera_target_ent->GetRenderCenter()
         );
         graphics.play_cam.pos = ClampCameraTargetToStage(state.stage, target);
         target = graphics.play_cam.pos;

@@ -41,16 +41,16 @@ bool IsPiranhaInWater(const Ent& piranha, const State& state) {
 }
 
 std::optional<Vec2> FindPiranhaTarget(const Ent& piranha, const State& state) {
-    const Ent* const player = FindNearestPlayer(state, piranha.GetCenter());
+    const Ent* const player = FindNearestPlayer(state, piranha.GetRenderCenter());
     if (player == nullptr) {
         return std::nullopt;
     }
 
-    const Vec2 delta = GetNearestWorldDelta(state.stage, piranha.GetCenter(), player->GetCenter());
+    const Vec2 delta = GetNearestWorldDelta(state.stage, piranha.GetRenderCenter(), player->GetRenderCenter());
     if (LengthSquared(delta) > kPiranhaTargetDistanceSq) {
         return std::nullopt;
     }
-    return piranha.GetCenter() + delta;
+    return piranha.GetRenderCenter() + delta;
 }
 
 void PatrolWater(Ent& piranha) {
@@ -63,7 +63,7 @@ void PatrolWater(Ent& piranha) {
 }
 
 void ChaseTarget(Ent& piranha, const Vec2& target, const Stage& stage) {
-    const Vec2 delta = GetNearestWorldDelta(stage, piranha.GetCenter(), target);
+    const Vec2 delta = GetNearestWorldDelta(stage, piranha.GetRenderCenter(), target);
     const Vec2 direction = NormalizeOrZeroDeterministic(delta);
     piranha.acc += sim::ToSimVec2(direction * kPiranhaChaseAcceleration);
     if (delta.x < 0.0F) {
@@ -115,7 +115,7 @@ void StepEntLogicAsPiranha(
 
     bool biting = false;
     if (const std::optional<Vec2> target = FindPiranhaTarget(piranha, state)) {
-        biting = LengthSquared(GetNearestWorldDelta(state.stage, piranha.GetCenter(), *target)) <=
+        biting = LengthSquared(GetNearestWorldDelta(state.stage, piranha.GetRenderCenter(), *target)) <=
                  kPiranhaBiteDistanceSq;
         ChaseTarget(piranha, *target, state.stage);
     } else {

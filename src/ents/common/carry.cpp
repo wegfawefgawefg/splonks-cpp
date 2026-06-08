@@ -163,7 +163,7 @@ void SyncHeldAttachForHolder(
                               : DrawLayer::Foreground;
 
     const Vec2 hold_offset = Vec2::New(4.0F, 0.0F);
-    const Vec2 holder_center = holder.GetCenter() + Vec2::New(0.0F, 1.0F);
+    const Vec2 holder_center = holder.GetRenderCenter() + Vec2::New(0.0F, 1.0F);
     const Vec2 held_pos_target =
         holder.facing == Side::Left
             ? holder_center + Vec2::New(-hold_offset.x, hold_offset.y)
@@ -213,12 +213,12 @@ void SyncBackAttachForHolder(
         TrySetAnim(*back_item, EntDisplayState::Neutral);
     }
 
-    const Vec2 holder_center = holder.GetCenter();
+    const Vec2 holder_center = holder.GetRenderCenter();
     const Vec2 held_pos_target =
         holder.facing == Side::Left
             ? holder_center + Vec2::New(-back_offset.x, back_offset.y)
             : holder_center + back_offset;
-    back_item->SetCenter(held_pos_target);
+    back_item->SetRenderCenter(held_pos_target);
     SnapPlacedAttachToPixels(*back_item);
     back_item->grounded = false;
     state.UpdateSidForEnt(back_item->vid.id, graphics);
@@ -251,21 +251,21 @@ void ApplyThrowState(
                 .type = EffectHookType::Throw,
                 .actor_vid = thrower.vid,
                 .target_vid = thrown.vid,
-                .world_pos = thrown.GetCenter(),
+                .world_pos = thrown.GetRenderCenter(),
             }
         );
     } else {
         RemoveEffect(thrown, EffectId::NoGravityUntilContact);
     }
 
-    const Vec2 thrower_center = thrower.GetCenter();
+    const Vec2 thrower_center = thrower.GetRenderCenter();
     const Vec2 thrower_size = thrower.GetSize();
     const Vec2 thrown_size = thrown.GetSize();
     if (thrower_size.y <= thrown_size.y) {
         const float delta = std::abs(thrower_size.y - thrown_size.y) / 2.0F;
-        thrown.SetCenter(thrower_center - Vec2::New(0.0F, delta));
+        thrown.SetRenderCenter(thrower_center - Vec2::New(0.0F, delta));
     } else {
-        thrown.SetCenter(thrower_center);
+        thrown.SetRenderCenter(thrower_center);
     }
 
     if (IsPlayerEnt(thrown, state)) {

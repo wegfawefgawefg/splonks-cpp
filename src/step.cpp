@@ -326,7 +326,7 @@ Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics&
             return ents::common::GetVisualCenterForEnt(
                 *controlled,
                 graphics,
-                controlled->GetCenter()
+                controlled->GetRenderCenter()
             );
         }
     }
@@ -578,7 +578,7 @@ void StepPlaying(
         if (primary_player_vid.has_value()) {
             if (const Ent* const player = state.ents.GetEnt(*primary_player_vid)) {
                 if (player->active) {
-                    game_over_pos = ents::common::GetVisualCenterForEnt(*player, graphics, player->GetCenter());
+                    game_over_pos = ents::common::GetVisualCenterForEnt(*player, graphics, player->GetRenderCenter());
                     state.controlled_ent_vid = primary_player_vid;
                 }
             }

@@ -46,7 +46,7 @@ void StepEntLogicAsGhostBall(
         // check if a there is a target.
         // if no, target the player.
         if (!ghost_ball.ent_a.has_value()) {
-            ghost_ball.ent_a = FindNearestPlayerVid(state, ghost_ball.GetCenter(), false);
+            ghost_ball.ent_a = FindNearestPlayerVid(state, ghost_ball.GetRenderCenter(), false);
         }
     }
 

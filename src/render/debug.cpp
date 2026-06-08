@@ -918,7 +918,7 @@ void RenderEntRenderCenters(
                 renderer,
                 graphics,
                 pres,
-                ent.GetCenter() + render_offset,
+                ent.GetRenderCenter() + render_offset,
                 color
             );
         }
@@ -1482,7 +1482,7 @@ void RenderAudioEmitterOverlay(
         if (emitter.attached_ent_vid.has_value()) {
             const Ent* const attached = state.ents.GetEnt(*emitter.attached_ent_vid);
             if (attached != nullptr) {
-                anchor_world = GetNearestWorldPoint(state.stage, emitter.world_pos, attached->GetCenter());
+                anchor_world = GetNearestWorldPoint(state.stage, emitter.world_pos, attached->GetRenderCenter());
             }
         }
 

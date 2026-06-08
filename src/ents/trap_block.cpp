@@ -405,7 +405,7 @@ void StopMove(Ent& block, State& state) {
     ShowSleepingFrame(block);
     AddShake(
         state,
-        block.GetCenter(),
+        block.GetRenderCenter(),
         kImpactTileShake,
         kImpactTileShake * 0.65F,
         0.0F,

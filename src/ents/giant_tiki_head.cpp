@@ -28,7 +28,7 @@ constexpr float kTikiHeadReleaseShakeRadiusTiles = 3.0F;
 void AddTikiHeadWindupShake(State& state, const Ent& head) {
     AddShake(
         state,
-        head.GetCenter(),
+        head.GetRenderCenter(),
         kTikiHeadWindupShakeForegroundAmount,
         kTikiHeadWindupShakeBackgroundAmount,
         kTikiHeadWindupShakeEntAmount,
@@ -39,7 +39,7 @@ void AddTikiHeadWindupShake(State& state, const Ent& head) {
 void AddTikiHeadReleaseShake(State& state, const Ent& head) {
     AddShake(
         state,
-        head.GetCenter(),
+        head.GetRenderCenter(),
         kTikiHeadReleaseShakeForegroundAmount,
         kTikiHeadReleaseShakeBackgroundAmount,
         kTikiHeadReleaseShakeEntAmount,
@@ -50,7 +50,7 @@ void AddTikiHeadReleaseShake(State& state, const Ent& head) {
 const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
     const Ent* best_player = nullptr;
     float best_distance_sq = std::numeric_limits<float>::max();
-    const Vec2 head_center = head.GetCenter();
+    const Vec2 head_center = head.GetRenderCenter();
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -60,7 +60,7 @@ const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
             continue;
         }
 
-        const Vec2 delta = GetNearestWorldDelta(state.stage, head_center, player->GetCenter());
+        const Vec2 delta = GetNearestWorldDelta(state.stage, head_center, player->GetRenderCenter());
         const float distance_sq = delta.x * delta.x + delta.y * delta.y;
         if (best_player == nullptr || distance_sq < best_distance_sq) {
             best_player = player;
@@ -74,11 +74,11 @@ std::optional<VID> SpawnBoulderForHead(Ent& head, State& state, Audio& audio) {
     (void)audio;
 
     Ent* const boulder = world_ops::SpawnEnt(state, EntType::Boulder, [&](Ent& spawned_boulder) {
-        spawned_boulder.SetCenter(head.GetCenter());
+        spawned_boulder.SetRenderCenter(head.GetRenderCenter());
 
         const Ent* const player = FindClosestPlayerToHead(head, state);
         if (player != nullptr) {
-            const Vec2 delta = GetNearestWorldDelta(state.stage, head.GetCenter(), player->GetCenter());
+            const Vec2 delta = GetNearestWorldDelta(state.stage, head.GetRenderCenter(), player->GetRenderCenter());
             spawned_boulder.facing = delta.x < 0.0F ? Side::Left : Side::Right;
         } else {
             spawned_boulder.facing = Side::Right;
@@ -89,7 +89,7 @@ std::optional<VID> SpawnBoulderForHead(Ent& head, State& state, Audio& audio) {
     }
 
     AddTikiHeadReleaseShake(state, head);
-    (void)PlayWorldSoundEmitter(state, head.GetCenter(), audio_asset_ids::BoulderHitGround);
+    (void)PlayWorldSoundEmitter(state, head.GetRenderCenter(), audio_asset_ids::BoulderHitGround);
     return boulder->vid;
 }
 

@@ -339,7 +339,7 @@ std::vector<LiveLightSource> BuildLiveLightSources(State& state) {
             continue;
         }
         sources.push_back(LiveLightSource{
-            .world_pos = light_ent.GetCenter(),
+            .world_pos = light_ent.GetRenderCenter(),
             .radius = light_ent.light_radius,
             .source = light_strength,
             .color = sim::ToRenderColor3(light_ent.light_color),

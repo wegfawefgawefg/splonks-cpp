@@ -206,7 +206,7 @@ void SnapBackItemToOwner(Ent& owner, State& state) {
     back_item->has_physics = false;
     back_item->can_collide = false;
     back_item->facing = owner.facing;
-    back_item->SetCenter(owner.GetCenter());
+    back_item->SetRenderCenter(owner.GetRenderCenter());
 }
 
 void OnAnkhEffectHook(
@@ -252,7 +252,7 @@ void OnAnkhEffectHook(
     RemoveEffect(owner, EffectId::Ankh);
 
     if (audio != nullptr) {
-        (void)PlayWorldSoundEmitter(state, owner.GetCenter(), audio_asset_ids::Present);
+        (void)PlayWorldSoundEmitter(state, owner.GetRenderCenter(), audio_asset_ids::Present);
     }
 }
 

@@ -169,8 +169,8 @@ void ArmBow(Ent& bow, State& state) {
 void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
     (void)world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         const Vec2 direction = aim.direction;
-        const Vec2 spawn_center = bow.GetCenter() + direction * 12.0F;
-        arrow.SetCenter(Vec2::New(static_cast<float>(RoundToInt(spawn_center.x)),
+        const Vec2 spawn_center = bow.GetRenderCenter() + direction * 12.0F;
+        arrow.SetRenderCenter(Vec2::New(static_cast<float>(RoundToInt(spawn_center.x)),
                                   static_cast<float>(RoundToInt(spawn_center.y))));
         arrow.vel = sim::ToSimVec2(direction * kBowArrowSpeed);
         arrow.acc = sim::Vec2::zero();
@@ -199,7 +199,7 @@ void FireBow(Ent& bow, State& state) {
     bow.counter_b -= 1.0F;
     bow.ent_a.reset();
     SetAnim(bow, GetLooseAnimId(bow));
-    (void)PlayWorldSoundEmitter(state, bow.GetCenter(), audio_asset_ids::Throw);
+    (void)PlayWorldSoundEmitter(state, bow.GetRenderCenter(), audio_asset_ids::Throw);
 }
 
 } // namespace

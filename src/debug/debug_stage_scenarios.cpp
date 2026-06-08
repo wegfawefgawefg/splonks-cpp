@@ -36,7 +36,7 @@ std::optional<VID> SpawnBowlingCaveman(
     }
     if (Ent* const caveman = state.ents.GetEntMut(*vid)) {
         SetEntAs(*caveman, EntType::Caveman);
-        caveman->SetCenter(center);
+        caveman->SetRenderCenter(center);
         caveman->condition = condition;
         caveman->SetRenderVel(vel);
         if (condition == EntCondition::Stunned) {
@@ -59,7 +59,7 @@ std::optional<VID> SpawnOpposingBodySmackCaveman(State& state, const Vec2& cente
     }
 
     SetEntAs(*caveman, EntType::Caveman);
-    caveman->SetCenter(center);
+    caveman->SetRenderCenter(center);
     caveman->condition = EntCondition::Stunned;
     caveman->SetRenderVel(vel);
     caveman->stun_timer = 600;
@@ -99,7 +99,7 @@ void GiveHeldRockToEnt(State& state, VID holder_vid) {
     rock->proj_contact_timer = 0;
     rock->vel = sim::Vec2::zero();
     rock->acc = sim::Vec2::zero();
-    rock->SetCenter(holder->GetCenter() + Vec2::New(4.0F, 1.0F));
+    rock->SetRenderCenter(holder->GetRenderCenter() + Vec2::New(4.0F, 1.0F));
     holder->holding_vid = rock->vid;
     holder->holding = true;
 }
@@ -127,7 +127,7 @@ void GiveHeldMattockToEnt(State& state, VID holder_vid) {
     mattock->can_collide = false;
     mattock->vel = sim::Vec2::zero();
     mattock->acc = sim::Vec2::zero();
-    mattock->SetCenter(holder->GetCenter() + Vec2::New(4.0F, 1.0F));
+    mattock->SetRenderCenter(holder->GetRenderCenter() + Vec2::New(4.0F, 1.0F));
     holder->holding_vid = mattock->vid;
     holder->holding = true;
 }

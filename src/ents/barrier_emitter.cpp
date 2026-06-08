@@ -21,7 +21,7 @@ constexpr float kBeamSegmentSize = 16.0F;
 constexpr std::uint32_t kBeamContactDamage = 1;
 
 bool HasSolidSupportAbove(const Ent& emitter, const State& state) {
-    const Vec2 probe = emitter.GetCenter() + Vec2::New(0.0F, -kBeamSegmentSize);
+    const Vec2 probe = emitter.GetRenderCenter() + Vec2::New(0.0F, -kBeamSegmentSize);
     const std::optional<WorldTileQueryResult> tile_query =
         QueryTileAtWorldPos(state.stage, ToIVec2(probe));
     return tile_query.has_value() && tile_query->tile != nullptr &&
@@ -37,7 +37,7 @@ std::vector<VID>& EnsureChildBeamVids(Ent& emitter) {
 
 Ent* SpawnBeamSegment(State& state, const Vec2& center, const Ent& emitter) {
     return world_ops::SpawnEnt(state, EntType::Beam, [&](Ent& beam) {
-        beam.SetCenter(center);
+        beam.SetRenderCenter(center);
         beam.ent_a = emitter.vid;
         beam.facing = emitter.facing;
         beam.alpha = emitter.alpha;
@@ -62,7 +62,7 @@ void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
 
     for (std::size_t segment_idx = 0; segment_idx < static_cast<std::size_t>(kBeamSegmentCount); ++segment_idx) {
         const Vec2 segment_center =
-            emitter.GetCenter() + Vec2::New(0.0F, kBeamSegmentSize * static_cast<float>(segment_idx + 1));
+            emitter.GetRenderCenter() + Vec2::New(0.0F, kBeamSegmentSize * static_cast<float>(segment_idx + 1));
         Ent* beam = state.ents.GetEntMut(beam_vids[segment_idx]);
         if (beam == nullptr || !beam->active || beam->type_ != EntType::Beam ||
             beam->ent_a != emitter.vid) {
@@ -74,7 +74,7 @@ void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
             beam_vids[segment_idx] = beam->vid;
         }
 
-        beam->SetCenter(segment_center);
+        beam->SetRenderCenter(segment_center);
         beam->facing = emitter.facing;
         beam->alpha = emitter.alpha;
     }
@@ -143,7 +143,7 @@ void OnDeathAsBarrierEmitter(std::size_t ent_idx, State& state, Audio& audio) {
     DestroyBeamChildren(emitter, state);
     AddShake(
         state,
-        emitter.GetCenter(),
+        emitter.GetRenderCenter(),
         1.4F,
         2.0F,
         ShakeMask::ForegroundTiles | ShakeMask::BackgroundTiles | ShakeMask::Ents

@@ -175,13 +175,13 @@ void SpawnSealParticles(State& state, const Ent& door) {
 }
 
 bool ShouldStartDrop(const Ent& door, const State& state) {
-    const Vec2 door_center = door.GetCenter();
+    const Vec2 door_center = door.GetRenderCenter();
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !IsPlayerLikeEntType(ent.type_) ||
             ent.condition == EntCondition::Dead) {
             continue;
         }
-        const Vec2 delta = GetNearestWorldDelta(state.stage, door_center, ent.GetCenter());
+        const Vec2 delta = GetNearestWorldDelta(state.stage, door_center, ent.GetRenderCenter());
         if (delta.x >= kRightSensorMinX && delta.x <= kRightSensorMaxX &&
             delta.y >= kRightSensorMinY &&
             delta.y <= kRightSensorMaxY) {

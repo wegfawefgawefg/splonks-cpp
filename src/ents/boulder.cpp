@@ -360,7 +360,7 @@ void OnDeathAsBoulder(std::size_t ent_idx, State& state, Audio& audio) {
         return;
     }
     Ent& boulder = state.ents.ents[ent_idx];
-    SpawnBoulderBreakEffects(boulder.GetCenter(), state);
+    SpawnBoulderBreakEffects(boulder.GetRenderCenter(), state);
     (void)world_ops::DeactivateEnt(state, boulder.vid);
 }
 

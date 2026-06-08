@@ -119,7 +119,7 @@ Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const Vec2&
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, const Vec2& center) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
-        ent.SetCenter(center);
+        ent.SetRenderCenter(center);
         return;
     }
 

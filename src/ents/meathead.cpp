@@ -104,7 +104,7 @@ std::optional<Vec2> SpawnMeatheadPopup(State& state, const Ent& player) {
 
 void PlayMeatheadHealFeedback(State& state, const Ent& player) {
     const std::optional<Vec2> popup_center = SpawnMeatheadPopup(state, player);
-    const Vec2 sound_pos = popup_center.value_or(player.GetCenter());
+    const Vec2 sound_pos = popup_center.value_or(player.GetRenderCenter());
     (void)PlayWorldSoundEmitter(state, sound_pos, audio_asset_ids::Present);
     (void)PlayWorldSoundEmitter(state, sound_pos, audio_asset_ids::Smooch);
 }

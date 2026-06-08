@@ -89,7 +89,7 @@ bool PlayerHasBallAndChainPunishment(const State& state, const Ent& player) {
 }
 
 void SpawnBallAndChainPunishment(State& state, const Ent* altar_context) {
-    const Vec2 search_pos = altar_context != nullptr ? altar_context->GetCenter() : Vec2::New(0.0F, 0.0F);
+    const Vec2 search_pos = altar_context != nullptr ? altar_context->GetRenderCenter() : Vec2::New(0.0F, 0.0F);
     const std::optional<VID> player_vid = altar_context != nullptr
         ? FindNearestPlayerVid(state, search_pos, true)
         : FindFirstConnectedLivingPlayerVid(state);
@@ -103,7 +103,7 @@ void SpawnBallAndChainPunishment(State& state, const Ent* altar_context) {
         state,
         EntType::BallAndChainBall,
         [&](Ent& spawned_ball) {
-            spawned_ball.SetCenter(player->GetCenter() + Vec2::New(0.0F, kBallAndChainSpawnOffsetY));
+            spawned_ball.SetRenderCenter(player->GetRenderCenter() + Vec2::New(0.0F, kBallAndChainSpawnOffsetY));
             spawned_ball.ent_a = player->vid;
             spawned_ball.vel = player->vel;
             spawned_ball.acc = sim::Vec2::zero();
@@ -222,13 +222,13 @@ EntType PickAccessoryReward(std::optional<VID> reward_target_vid, State& state) 
 }
 
 std::optional<VID> GetRewardTargetVid(const State& state, const Ent& altar) {
-    return FindNearestPlayerVid(state, altar.GetCenter(), true);
+    return FindNearestPlayerVid(state, altar.GetRenderCenter(), true);
 }
 
 Vec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics& graphics) {
     if (altar.ent_a.has_value()) {
         if (const Ent* const topper = state.ents.GetEnt(*altar.ent_a)) {
-            return common::GetEmitPointForEnt(*topper, graphics, topper->GetCenter());
+            return common::GetEmitPointForEnt(*topper, graphics, topper->GetRenderCenter());
         }
     }
 
@@ -242,7 +242,7 @@ Vec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics& gra
 Vec2 GetAltarSoundPos(const Ent& altar, const State& state, const Graphics& graphics) {
     if (altar.ent_a.has_value()) {
         if (const Ent* const topper = state.ents.GetEnt(*altar.ent_a)) {
-            return common::GetVisualCenterForEnt(*topper, graphics, topper->GetCenter());
+            return common::GetVisualCenterForEnt(*topper, graphics, topper->GetRenderCenter());
         }
     }
 
@@ -419,7 +419,7 @@ void DeactivateAltarEnt(Ent& ent, State& state) {
 }
 
 void SpawnAltarBreakEffects(const Ent& ent, State& state) {
-    const Vec2 center = ent.GetCenter();
+    const Vec2 center = ent.GetRenderCenter();
     SpawnSacrificeSmoke(state, center);
     SpawnSacrificeBodySmoke(state, center);
     SpawnSacrificeSparks(state, center);
@@ -463,7 +463,7 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
     if (state.sac_altar_reward_tier == 0 && state.sac_altar_favor >= kAccessoryRewardFavor) {
         const EntType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
         Ent* const reward = world_ops::SpawnEnt(state, reward_type, [&](Ent& spawned_reward) {
-            spawned_reward.SetCenter(emit_pos + Vec2::New(0.0F, -3.0F));
+            spawned_reward.SetRenderCenter(emit_pos + Vec2::New(0.0F, -3.0F));
             spawned_reward.vel = sim::ToSimVec2(Vec2::New(state.drng.RandomFloat(-0.55F, 0.55F), -1.7F));
             spawned_reward.acc = sim::Vec2::zero();
         });
@@ -478,7 +478,7 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
 
     if (state.sac_altar_reward_tier == 1 && state.sac_altar_favor >= kSecondRewardFavor) {
         Ent* const reward = world_ops::SpawnEnt(state, EntType::Meathead, [&](Ent& spawned_reward) {
-            spawned_reward.SetCenter(emit_pos + Vec2::New(0.0F, -2.0F));
+            spawned_reward.SetRenderCenter(emit_pos + Vec2::New(0.0F, -2.0F));
             spawned_reward.ent_a = altar.vid;
             spawned_reward.draw_layer = DrawLayer::Middle;
             spawned_reward.vel = sim::Vec2::zero();
@@ -618,7 +618,7 @@ void OnDeathAsSacAltarPiece(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     ApplySacAltarFavorDelta(state, -kAltarBreakFavorPenalty, owner);
-    const Vec2 owner_center = owner->GetCenter();
+    const Vec2 owner_center = owner->GetRenderCenter();
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !BelongsToOwnerAltar(ent, *owner)) {
             continue;

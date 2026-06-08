@@ -91,7 +91,7 @@ Color3 ClampRenderColor(Color3 color, float min_value = 0.0F, float max_value = 
 Color3 GetEntLightingColor(State& state, const Ent& ent, Graphics& graphics) {
     EnsureStageLighting(state);
     const Vec2 visual_center =
-        ents::common::GetVisualCenterForEnt(ent, graphics, ent.GetCenter());
+        ents::common::GetVisualCenterForEnt(ent, graphics, ent.GetRenderCenter());
     Color3 color = SampleForegroundLightColorForRender(state, visual_center);
     const float self_light = sim::ToRenderScalar(ent.self_light);
     if (self_light > 0.0F) {
@@ -244,10 +244,10 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 if (const Ent* const attached = state.ents.GetEnt(*ent.ent_a)) {
                     if (attached->active) {
                         SDL_SetRenderDrawColor(renderer, 132, 132, 132, 255);
-                        const Vec2 anchor_world = attached->GetCenter() +
+                        const Vec2 anchor_world = attached->GetRenderCenter() +
                                                   Vec2::New(0.0F, (attached->GetSize().y * 0.5F) - 1.0F);
                         const Vec2 ball_world =
-                            GetNearestWorldPoint(state.stage, anchor_world, ent.GetCenter());
+                            GetNearestWorldPoint(state.stage, anchor_world, ent.GetRenderCenter());
                         for (const Vec2& render_offset : render_offsets) {
                             const Vec2 anchor_screen = WorldToScreen(graphics, anchor_world + render_offset);
                             const Vec2 ball_screen = WorldToScreen(graphics, ball_world + render_offset);
@@ -272,7 +272,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                         ents::common::GetVisualCenterForEnt(
                             render_ent,
                             graphics,
-                            render_ent.GetCenter()
+                            render_ent.GetRenderCenter()
                         ) +
                         render_offset + shake_offset;
                     const Vec2 rotation_screen = WorldToScreen(graphics, rotation_world);

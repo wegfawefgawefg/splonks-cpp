@@ -223,7 +223,7 @@ bool SensorTouchesMovingEnt(
 
 Ent* SpawnArrow(State& state, const Vec2& center, int direction, const VID& trap_vid) {
     return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
-        arrow.SetCenter(center);
+        arrow.SetRenderCenter(center);
         arrow.vel = sim::ToSimVec2(Vec2::New(static_cast<float>(direction) * kArrowTrapArrowSpeed, 0.0F));
         arrow.acc = sim::Vec2::zero();
         arrow.facing = direction < 0 ? Side::Left : Side::Right;
@@ -240,7 +240,7 @@ Ent* SpawnArrow(State& state, const Vec2& center, int direction, const VID& trap
 
 Ent* SpawnLooseArrow(State& state, const Vec2& center) {
     return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
-        arrow.SetCenter(center);
+        arrow.SetRenderCenter(center);
         SnapArrowPositionToPixels(arrow);
         arrow.vel = sim::Vec2::zero();
         arrow.acc = sim::Vec2::zero();
@@ -259,7 +259,7 @@ void FireTrap(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const int direction = DirectionForTrap(trap);
-    const Vec2 arrow_center = trap.GetCenter() + Vec2::New(
+    const Vec2 arrow_center = trap.GetRenderCenter() + Vec2::New(
         static_cast<float>(direction) * 10.0F,
         -4.0F
     );
@@ -336,7 +336,7 @@ void StepEntLogicAsArrow(
         arrow.can_collide = false;
         arrow.vel = sim::Vec2::zero();
         arrow.acc = sim::Vec2::zero();
-        arrow.SetCenter(stuck_to->GetCenter() + FromStoredArrowOffsetPoint(arrow.point_a));
+        arrow.SetRenderCenter(stuck_to->GetRenderCenter() + FromStoredArrowOffsetPoint(arrow.point_a));
         SnapArrowPositionToPixels(arrow);
         return;
     }
@@ -430,11 +430,11 @@ bool TryCollectLooseArrowIntoHeldBow(
 }
 
 void StickArrowToEnt(Ent& arrow, Ent& other, State& state) {
-    const Vec2 other_center = other.GetCenter();
-    const Vec2 arrow_center = GetNearestWorldPoint(state.stage, other_center, arrow.GetCenter());
+    const Vec2 other_center = other.GetRenderCenter();
+    const Vec2 arrow_center = GetNearestWorldPoint(state.stage, other_center, arrow.GetRenderCenter());
     const Vec2 stored_offset = ToStoredArrowOffset(arrow_center - other_center);
 
-    arrow.SetCenter(other_center + stored_offset);
+    arrow.SetRenderCenter(other_center + stored_offset);
     SnapArrowPositionToPixels(arrow);
     arrow.ent_a = other.vid;
     arrow.point_a = ToStoredArrowOffsetPoint(stored_offset);
@@ -485,7 +485,7 @@ ents::common::ContactResult OnEntContactAsArrow(
 
     const sim::Vec2 impact_velocity = arrow.vel;
     if (arrow.collide_sound.has_value()) {
-        (void)PlayWorldSoundEmitter(state, arrow.GetCenter(), *arrow.collide_sound);
+        (void)PlayWorldSoundEmitter(state, arrow.GetRenderCenter(), *arrow.collide_sound);
     }
     const ents::common::DamageResult damage_result = ents::common::TryHitEnt(
         other_ent_idx,
@@ -580,7 +580,7 @@ void OnDeathAsArrowTrap(std::size_t ent_idx, State& state, Audio& audio) {
     if (HasFired(trap)) {
         return;
     }
-    (void)SpawnLooseArrow(state, trap.GetCenter());
+    (void)SpawnLooseArrow(state, trap.GetRenderCenter());
 }
 
 } // namespace

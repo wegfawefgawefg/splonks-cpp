@@ -53,14 +53,14 @@ bool IsReturning(const Ent& thwomp) {
 }
 
 bool ShouldDrop(const Ent& thwomp, const State& state) {
-    const Vec2 thwomp_center = thwomp.GetCenter();
+    const Vec2 thwomp_center = thwomp.GetRenderCenter();
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !IsPlayerLikeEntType(ent.type_) ||
             ent.condition == EntCondition::Dead) {
             continue;
         }
 
-        const Vec2 delta = GetNearestWorldDelta(state.stage, thwomp_center, ent.GetCenter());
+        const Vec2 delta = GetNearestWorldDelta(state.stage, thwomp_center, ent.GetRenderCenter());
         if (delta.y <= 0.0F || delta.y > kTriggerDistance ||
             std::abs(delta.x) > kTriggerHalfWidth) {
             continue;
@@ -84,7 +84,7 @@ void StartWait(Ent& thwomp, State& state) {
     AddEntShake(thwomp, kImpactShake);
     AddShake(
         state,
-        thwomp.GetCenter(),
+        thwomp.GetRenderCenter(),
         kImpactTileShake,
         kImpactTileShake * 0.65F,
         0.0F,

@@ -144,7 +144,7 @@ bool EntIsMovingIntoSpike(const Ent& ent, TileRotation spike_rotation) {
 }
 
 KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
-    const Vec2 delta = GetNearestWorldDelta(stage, source.GetCenter(), target.GetCenter());
+    const Vec2 delta = GetNearestWorldDelta(stage, source.GetRenderCenter(), target.GetRenderCenter());
     const float direction = delta.x < 0.0F ? -1.0F : 1.0F;
     (void)target;
     return KnockbackSpec{

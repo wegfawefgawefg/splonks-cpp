@@ -225,7 +225,7 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
     State& state,
     const Graphics& graphics
 ) {
-    const Vec2 holder_visual_center = common::GetVisualCenterForEnt(holder, graphics, holder.GetCenter());
+    const Vec2 holder_visual_center = common::GetVisualCenterForEnt(holder, graphics, holder.GetRenderCenter());
     const IVec2 holder_tile = state.stage.GetTileCoordAtWc(ToIVec2(holder_visual_center));
     const IVec2 raw_target_tile = holder_tile + IVec2::New(aim.direction.x * distance_tiles, aim.direction.y * distance_tiles);
     const IVec2 target_tile = state.stage.WrapTileCoord(raw_target_tile);
@@ -379,7 +379,7 @@ void SpawnTelefragSplitEffect(const Ent& ent, const Graphics& graphics, const IV
     SpawnTelefragSplitEffectAt(
         ent,
         graphics,
-        common::GetVisualCenterForEnt(ent, graphics, ent.GetCenter()),
+        common::GetVisualCenterForEnt(ent, graphics, ent.GetRenderCenter()),
         direction,
         state
     );
@@ -403,7 +403,7 @@ void SpawnTelefragMergeEffect(const Ent& ent, const Graphics& graphics, const IV
     SpawnTelefragMergeEffectAt(
         ent,
         graphics,
-        common::GetVisualCenterForEnt(ent, graphics, ent.GetCenter()),
+        common::GetVisualCenterForEnt(ent, graphics, ent.GetRenderCenter()),
         direction,
         state
     );
@@ -499,7 +499,7 @@ void AddTeleporterDebugAnnotations(
     const TeleportProbeCandidate* const chosen = FindFirstValidTeleportProbeCandidate(candidates);
 
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-        .world_pos = holder->GetCenter(),
+        .world_pos = holder->GetRenderCenter(),
         .text = "teleporter dir (" + std::to_string(aim.direction.x) + ", " + std::to_string(aim.direction.y) + ")",
         .color = DebugAnnotationColor{0, 255, 255, 255},
     });
@@ -581,7 +581,7 @@ void OnUseAsTeleporter(std::size_t ent_idx, State& state, Graphics& graphics, Au
 
     (void)PlayEntCenterSoundEmitter(state, *holder, audio_asset_ids::Teleport);
     const Vec2 source_center =
-        ents::common::GetVisualCenterForEnt(*holder, graphics, holder->GetCenter());
+        ents::common::GetVisualCenterForEnt(*holder, graphics, holder->GetRenderCenter());
     AddEntShake(*holder, 0.5F);
     AddEntShake(teleporter, 0.5F);
     ApplyTeleportAreaShake(state, source_center, 8.0F, 8.0F, 1.0F, 1.5F);

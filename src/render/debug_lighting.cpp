@@ -172,7 +172,7 @@ void RenderLightOverlay(
                 renderer,
                 graphics,
                 pres,
-                ent.GetCenter() + render_offset,
+                ent.GetRenderCenter() + render_offset,
                 ent.light_radius,
                 light_strength,
                 sim::ToRenderColor3(ent.light_color),

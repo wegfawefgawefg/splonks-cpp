@@ -69,7 +69,7 @@ bool TrySpawnAndThrowEntForToolUse(
         spawned.proj_contact_damage_type = spawned_spec.proj_contact_damage_type;
         spawned.proj_contact_damage_amount = spawned_spec.proj_contact_damage_amount;
         spawned.proj_contact_timer = kProjContactDuration;
-        spawned.SetCenter(thrower.GetCenter());
+        spawned.SetRenderCenter(thrower.GetRenderCenter());
         const Vec2 throw_velocity =
             throw_velocity_override.value_or(
                 velocity_builder(control) * sim::ToRenderScalar(thrower.throw_velocity_scale)

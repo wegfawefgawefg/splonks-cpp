@@ -255,14 +255,14 @@ void SnapAttachedItemsToPlayer(State& state) {
             continue;
         }
 
-        const Vec2 player_center = player->GetCenter();
+        const Vec2 player_center = player->GetRenderCenter();
 
         if (player->holding_vid.has_value()) {
             if (Ent* const held_item = state.ents.GetEntMut(*player->holding_vid)) {
                 const Vec2 hold_offset = Vec2::New(4.0F, 1.0F);
                 held_item->facing = player->facing;
                 held_item->draw_layer = DrawLayer::Foreground;
-                held_item->SetCenter(player->facing == Side::Left
+                held_item->SetRenderCenter(player->facing == Side::Left
                                          ? player_center + Vec2::New(-hold_offset.x, hold_offset.y)
                                          : player_center + hold_offset);
             }
@@ -274,7 +274,7 @@ void SnapAttachedItemsToPlayer(State& state) {
                 back_item->facing = player->facing;
                 back_item->draw_layer = DrawLayer::Background;
                 TrySetAnim(*back_item, EntDisplayState::Neutral);
-                back_item->SetCenter(player->facing == Side::Left
+                back_item->SetRenderCenter(player->facing == Side::Left
                                          ? player_center + Vec2::New(-back_offset.x, back_offset.y)
                                          : player_center + back_offset);
             }

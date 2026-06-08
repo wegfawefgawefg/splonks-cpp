@@ -320,6 +320,10 @@ Current state:
   `GetRenderContactAabbForEnt(...)` and `GetRenderEntBroadphaseAabb(...)` were
   removed. Render/debug callers now convert fixed contact AABBs explicitly at
   their boundary.
+- Completed 2026-06-08: old generic center helpers were renamed to
+  `GetRenderCenter()` and `SetRenderCenter()`. This removes the ambiguous
+  neutral names; remaining render-center use in gameplay files is still
+  visible migration debt.
 
 Cleanup:
 
@@ -330,8 +334,10 @@ Cleanup:
 - [x] Remove unused old render `GetFeet()` and `GetGroundProbe()` adapters.
 - [x] Rename old render `GetBounds()` to explicit `GetRenderBounds()` and move
       gameplay callers to fixed body AABBs.
-- Migrate old generic helpers (`GetCenter`, `SetCenter`) to fixed
-  defaults or render-named wrappers.
+- [x] Rename old generic helpers (`GetCenter`, `SetCenter`) to render-named
+      wrappers.
+- Migrate authoritative gameplay callers of `GetRenderCenter()` and
+  `SetRenderCenter()` to fixed center helpers or fixed placement APIs.
 
 ### 6. World query has duplicate float/fixed overload sets
 

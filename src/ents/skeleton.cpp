@@ -31,13 +31,13 @@ constexpr float kSkeletonWalkAcceleration = 0.2F;
 constexpr float kSkullBreakImpactSpeed = 2.25F;
 
 std::optional<Vec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
-    const Ent* const player = FindNearestPlayer(state, ent.GetCenter(), false);
+    const Ent* const player = FindNearestPlayer(state, ent.GetRenderCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const Vec2 ent_center = ent.GetCenter();
-    const Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetCenter());
+    const Vec2 ent_center = ent.GetRenderCenter();
+    const Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetRenderCenter());
     return player_center - ent_center;
 }
 
@@ -176,7 +176,7 @@ void SpawnSkeletonDeathEffects(const Vec2& center, State& state) {
 
 void DropLooseSkull(const Vec2& center, State& state) {
     (void)world_ops::SpawnEnt(state, EntType::Skull, [&](Ent& skull) {
-        skull.SetCenter(center);
+        skull.SetRenderCenter(center);
         skull.vel = sim::ToSimVec2(Vec2::New(
             state.drng.RandomFloat(-1.0F, 1.0F),
             state.drng.RandomFloat(-1.8F, -0.8F)
@@ -274,7 +274,7 @@ void OnDeathAsSkull(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& skull = state.ents.ents[ent_idx];
-    SpawnSkullBreakEffects(skull.GetCenter(), state);
+    SpawnSkullBreakEffects(skull.GetRenderCenter(), state);
 }
 
 void OnDeathAsSkeleton(std::size_t ent_idx, State& state, Audio& audio) {
@@ -284,7 +284,7 @@ void OnDeathAsSkeleton(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& skeleton = state.ents.ents[ent_idx];
-    const Vec2 center = skeleton.GetCenter();
+    const Vec2 center = skeleton.GetRenderCenter();
     SpawnSkeletonDeathEffects(center, state);
     DropLooseSkull(center, state);
     (void)world_ops::DeactivateEnt(state, skeleton.vid);

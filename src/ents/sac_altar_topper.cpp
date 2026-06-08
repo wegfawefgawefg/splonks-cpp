@@ -74,7 +74,7 @@ void StepEntLogicAsSacAltarTopper(
     }
     if (topper.counter_a <= 0.0F) {
         topper.counter_a = kIdleSmokeIntervalFrames;
-        const Vec2 emit_pos = ents::common::GetEmitPointForEnt(topper, graphics, topper.GetCenter());
+        const Vec2 emit_pos = ents::common::GetEmitPointForEnt(topper, graphics, topper.GetRenderCenter());
         SpawnTopperSmoke(state, emit_pos, 0.0F);
     }
 }

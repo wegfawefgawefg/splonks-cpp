@@ -326,7 +326,7 @@ bool SwapControlledCharacter(
     const bool keep_health = !debug.character_swap_fresh || debug.character_swap_keep_health;
     const bool keep_tools = !debug.character_swap_fresh || debug.character_swap_keep_tools;
 
-    const Vec2 spawn_center = source_ent->GetCenter();
+    const Vec2 spawn_center = source_ent->GetRenderCenter();
     const Side facing = source_ent->facing;
     const VID replacement_vid = source_ent->vid;
     const std::optional<VID> old_player_vid = FindPrimaryLocalPlayerVid(state);
@@ -350,7 +350,7 @@ bool SwapControlledCharacter(
     source_ent->acc = sim::Vec2::zero();
     source_ent->rotation = sim::Scalar::zero();
     source_ent->facing = facing;
-    source_ent->SetCenter(spawn_center);
+    source_ent->SetRenderCenter(spawn_center);
 
     if (keep_passives) {
         source_ent->effects.reset();
@@ -517,13 +517,13 @@ bool SpawnDebugEnt(
 
     Vec2 spawn_center = graphics.ScreenToWc(state.playing_inputs.mouse_pos);
     if (debug.spawn_center_on_selected && selected_ent != nullptr) {
-        spawn_center = selected_ent->GetCenter();
+        spawn_center = selected_ent->GetRenderCenter();
     }
 
     Ent* const spawned = world_ops::SpawnEnt(state, type_, [spawn_center](Ent& ent) {
         ent.vel = sim::Vec2::zero();
         ent.acc = sim::Vec2::zero();
-        ent.SetCenter(spawn_center);
+        ent.SetRenderCenter(spawn_center);
     });
     if (spawned == nullptr) {
         debug.spawn_status = "Spawn failed.";
@@ -540,7 +540,7 @@ bool SpawnDebugEnt(
             spawned->has_physics = false;
             spawned->can_collide = false;
             spawned->facing = player->facing;
-            spawned->SetCenter(player->GetCenter());
+            spawned->SetRenderCenter(player->GetRenderCenter());
             debug.spawn_status =
                 std::string("Spawned and attached ") + GetEntTypeName(type_) + ".";
         }

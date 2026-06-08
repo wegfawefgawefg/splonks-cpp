@@ -165,7 +165,7 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
     std::optional<IVec2> best_tile = std::nullopt;
     int best_hits = 0;
     float best_score = 0.0F;
-    const Vec2 ent_center = ent.GetCenter();
+    const Vec2 ent_center = ent.GetRenderCenter();
 
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
@@ -291,9 +291,9 @@ bool CanAttachDownToClimbAnchor(const ClimbAnchor& climb_anchor, const State& st
 }
 
 void SnapEntToClimbTileCenterline(Ent& ent, const IVec2& tile_pos) {
-    Vec2 center = ent.GetCenter();
+    Vec2 center = ent.GetRenderCenter();
     center.x = static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8);
-    ent.SetCenter(center);
+    ent.SetRenderCenter(center);
 }
 
 void SnapEntHangYToTile(Ent& ent) {

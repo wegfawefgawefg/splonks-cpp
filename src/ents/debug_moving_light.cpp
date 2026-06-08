@@ -31,7 +31,7 @@ void StepEntLogicAsDebugMovingLight(
     const float x = std::cos(light.counter_a) * sim::ToRenderScalar(light.threshold_a);
     const float y = std::sin(light.counter_a * 0.73F + light.counter_c) *
                     sim::ToRenderScalar(light.threshold_b);
-    light.SetCenter(home + Vec2::New(x, y));
+    light.SetRenderCenter(home + Vec2::New(x, y));
     light.rotation = sim::ToSimScalar(
         sim::ToRenderScalar(light.rotation) + 0.03F + (light.counter_b * 0.35F)
     );

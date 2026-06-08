@@ -33,7 +33,7 @@ constexpr int kCavemanIdleMaxFrames = 64;
 constexpr int kCavemanIdleChance = 120;
 
 void FaceTowards(Ent& caveman, const Vec2& target_pos, const Stage& stage) {
-    const Vec2 delta = GetNearestWorldDelta(stage, caveman.GetCenter(), target_pos);
+    const Vec2 delta = GetNearestWorldDelta(stage, caveman.GetRenderCenter(), target_pos);
     if (delta.x < 0.0F) {
         caveman.facing = Side::Left;
     } else if (delta.x > 0.0F) {
@@ -81,7 +81,7 @@ bool CanSeePlayerAhead(
     const State& state,
     const Graphics& graphics
 ) {
-    const Vec2 caveman_center = caveman.GetCenter();
+    const Vec2 caveman_center = caveman.GetRenderCenter();
     const int direction = caveman.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -92,7 +92,7 @@ bool CanSeePlayerAhead(
             continue;
         }
         const Vec2 player_center =
-            GetNearestWorldPoint(state.stage, caveman_center, player->GetCenter());
+            GetNearestWorldPoint(state.stage, caveman_center, player->GetRenderCenter());
         const Vec2 player_delta = player_center - caveman_center;
         if (std::abs(player_delta.y) > kCavemanSightVerticalTolerance ||
             std::abs(player_delta.x) > static_cast<float>(kCavemanSightDistance)) {
@@ -159,8 +159,8 @@ void StepEntLogicAsCaveman(
     if (caveman.ai_state != EntAiState::Pursuing &&
         ShouldRunSightScan(caveman, state.stage_frame) &&
         CanSeePlayerAhead(caveman, state, graphics)) {
-        if (const Ent* const player = FindNearestPlayer(state, caveman.GetCenter())) {
-            FaceTowards(caveman, player->GetCenter(), state.stage);
+        if (const Ent* const player = FindNearestPlayer(state, caveman.GetRenderCenter())) {
+            FaceTowards(caveman, player->GetRenderCenter(), state.stage);
         }
         if (caveman.grounded) {
             caveman.vel.y = sim::ToSimScalar(kCavemanAlertHopSpeedY);

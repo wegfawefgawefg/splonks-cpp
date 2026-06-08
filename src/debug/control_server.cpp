@@ -646,7 +646,7 @@ std::optional<Vec2> GetPrimaryLocalPlayerCenter(const State& state) {
     if (ent == nullptr) {
         return std::nullopt;
     }
-    return ent->GetCenter();
+    return ent->GetRenderCenter();
 }
 
 std::string HandleEntsCommand(const State& state, const std::vector<std::string>& parts) {
@@ -680,7 +680,7 @@ std::string HandleEntsCommand(const State& state, const std::vector<std::string>
             continue;
         }
         if (center.has_value()) {
-            const Vec2 delta = ent.GetCenter() - *center;
+            const Vec2 delta = ent.GetRenderCenter() - *center;
             const float dist_sq = delta.x * delta.x + delta.y * delta.y;
             if (dist_sq > radius * radius) {
                 continue;

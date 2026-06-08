@@ -114,7 +114,7 @@ std::optional<Vec2> FindDefaultExitCenter(const State& state) {
         if (should_match_exit_id && ent.stage_exit_id != default_exit_id) {
             continue;
         }
-        return ent.GetCenter();
+        return ent.GetRenderCenter();
     }
 
     return std::nullopt;

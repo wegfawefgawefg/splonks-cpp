@@ -86,7 +86,7 @@ Ent* SpawnWonPrize(Ent& table, const Ent& display_prize, State& state) {
         display_prize.type_,
         [&](Ent& ent) {
             ClearEntBuyableState(ent);
-            ent.SetCenter(table.GetCenter() + Vec2::New(0.0F, -18.0F));
+            ent.SetRenderCenter(table.GetRenderCenter() + Vec2::New(0.0F, -18.0F));
             ent.vel = sim::ToSimVec2(Vec2::New(0.0F, -2.25F));
             ent.acc = sim::Vec2::zero();
             ent.grounded = false;
@@ -113,8 +113,8 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
     dice.counter_b = kDiceRollState;
     dice.rotation = sim::ToSimScalar(static_cast<float>(state.drng.RandomIntInclusive(0, 359)));
 
-    const Vec2 table_center = table.GetCenter();
-    dice.SetCenter(table_center + Vec2::New(0.0F, -10.0F));
+    const Vec2 table_center = table.GetRenderCenter();
+    dice.SetRenderCenter(table_center + Vec2::New(0.0F, -10.0F));
     dice.vel = sim::ToSimVec2(Vec2::New(static_cast<float>(state.drng.RandomIntInclusive(-2, 2)), -5.0F));
     dice.acc = sim::Vec2::zero();
 }
@@ -160,7 +160,7 @@ void PayCrapsResult(
 
 void AddCrapsPrompt(Ent& table, State& state, const char* message, std::uint32_t quantity) {
     state.AddWorldPrompt(WorldPrompt{
-        .world_pos = table.GetCenter() + Vec2::New(0.0F, -24.0F),
+        .world_pos = table.GetRenderCenter() + Vec2::New(0.0F, -24.0F),
         .action_text = quantity > 0 ? "RB" : "",
         .message_text = message,
         .show_down_arrow = true,

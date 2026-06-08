@@ -30,13 +30,13 @@ bool HasCeilingSupport(const Ent& ent, const State& state) {
 }
 
 std::optional<Vec2> GetPlayerDeltaBelow(const Ent& ent, const State& state, int max_distance) {
-    const Ent* const player = FindNearestPlayer(state, ent.GetCenter(), false);
+    const Ent* const player = FindNearestPlayer(state, ent.GetRenderCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const Vec2 ent_center = ent.GetCenter();
-    const Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetCenter());
+    const Vec2 ent_center = ent.GetRenderCenter();
+    const Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetRenderCenter());
     const Vec2 delta = player_center - ent_center;
     const float max_distance_f = static_cast<float>(max_distance);
     if (delta.y <= 0.0F || LengthSquared(delta) >= max_distance_f * max_distance_f) {

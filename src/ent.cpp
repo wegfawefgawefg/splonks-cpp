@@ -303,11 +303,11 @@ AABB Ent::GetRenderAABB() const {
     return ToRenderAABB(GetSimAABB());
 }
 
-Vec2 Ent::GetCenter() const {
+Vec2 Ent::GetRenderCenter() const {
     return sim::ToRenderVec2(GetSimCenter());
 }
 
-void Ent::SetCenter(const Vec2& center) {
+void Ent::SetRenderCenter(const Vec2& center) {
     SetSimCenter(sim::ToSimVec2(center));
 }
 

@@ -152,7 +152,7 @@ void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio
     }
     jetpack.counter_a -= 1.0F;
 
-    const Vec2 center = jetpack.GetCenter();
+    const Vec2 center = jetpack.GetRenderCenter();
     SpawnJetpackSmoke(state, center + Vec2::New(3.0F, 3.0F));
     SpawnJetpackSmoke(state, center + Vec2::New(-3.0F, 3.0F));
 }

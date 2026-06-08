@@ -27,7 +27,7 @@ So under normal simulation, physics ents tend to stay on integer pixel coordinat
 
 Problems appear when code bypasses the normal move/sweep path and writes `ent.pos` directly from:
 
-- `SetCenter(...)`
+- `SetRenderCenter(...)`
 - `SetVisualCenterForEnt(...)`
 - helper functions that spawn or teleport by center
 
@@ -85,7 +85,7 @@ As currently written, both can leave `ent.pos` fractional.
 
 Scan target:
 
-- `SetCenter(...)`
+- `SetRenderCenter(...)`
 - `SetVisualCenterForEnt(...)`
 
 Interpretation:
@@ -122,12 +122,12 @@ These are root-level violations because many callsites inherit the problem from 
 - [spider.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/spider.cpp)
   `SpawnEntAtCenter`
 
-These helpers create active ents, call `SetEntAs(...)`, then place with `SetCenter(...)` and do not snap.
+These helpers create active ents, call `SetEntAs(...)`, then place with `SetRenderCenter(...)` and do not snap.
 
 ### Throw / proj spawn paths
 
 - [throw.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/throw.cpp)
-  thrown ents spawn with `spawned_ent->SetCenter(thrower.GetCenter())`
+  thrown ents spawn with `spawned_ent->SetRenderCenter(thrower.GetRenderCenter())`
 - [cobra.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/cobra.cpp)
   `SpawnCobraSpitEnt`
 - [web_cannon.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/web_cannon.cpp)
@@ -163,7 +163,7 @@ These sites were found by the same scan and are likely relevant, but they are a 
   Likely fine for some rewards, but still an unsnapped active spawn helper.
 - [hang.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/hang.cpp)
   `SnapEntToClimbTileCenterline`
-  This one is probably intentional lattice alignment, but it currently relies on `SetCenter(...)`, so odd-size ents could still end up fractional depending on anchor math.
+  This one is probably intentional lattice alignment, but it currently relies on `SetRenderCenter(...)`, so odd-size ents could still end up fractional depending on anchor math.
 
 These should be reviewed after the root setter policy is decided, because some may become automatically correct once the setters themselves are fixed.
 

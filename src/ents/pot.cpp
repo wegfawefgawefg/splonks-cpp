@@ -159,7 +159,7 @@ void OnDeathAsPot(std::size_t ent_idx, State& state, Audio& audio) {
     const Ent& pot = state.ents.ents[ent_idx];
 
     const sim::Vec2 spawn_pos = pot.pos;
-    SpawnBreakawayContainerShards(pot.GetCenter(), state);
+    SpawnBreakawayContainerShards(pot.GetRenderCenter(), state);
     const sim::Vec2 spider_spawn_pos = pot.pos + sim::PixelVec2(-8, -8);
 
     sim::Vec2 snake_spawn_pos = pot.pos + sim::PixelVec2(-8, -8);

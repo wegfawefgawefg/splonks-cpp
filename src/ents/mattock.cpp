@@ -83,7 +83,7 @@ sim::AABB SimTileAabbForTilePos(const IVec2& tile_pos) {
 
 Vec2 GetFallbackStrikePoint(const Ent& mattock) {
     const float direction = mattock.facing == Side::Left ? -1.0F : 1.0F;
-    return mattock.GetCenter() + Vec2::New(10.0F * direction, 0.0F);
+    return mattock.GetRenderCenter() + Vec2::New(10.0F * direction, 0.0F);
 }
 
 void SpawnMattockImpactParticles(State& state, const Vec2& pos, int direction) {
@@ -211,7 +211,7 @@ void AddMattockDebugAnnotations(
         .color = DebugAnnotationColor{0, 255, 255, 255},
     });
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-        .world_pos = mattock.GetCenter(),
+        .world_pos = mattock.GetRenderCenter(),
         .text = "mattock cbox",
         .color = DebugAnnotationColor{0, 255, 255, 255},
     });
@@ -355,7 +355,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
             (void)PlayWorldSoundEmitter(state, sim::ToRenderVec2(other_aabb.center()), audio_asset_ids::PotShatter);
         }
         if (Ent* const other_ent = state.ents.GetEntMut(other_ent_const->vid)) {
-            result.sound_pos = other_ent->GetCenter();
+            result.sound_pos = other_ent->GetRenderCenter();
         } else {
             result.sound_pos = sim::ToRenderVec2(other_aabb.center());
         }

@@ -35,7 +35,7 @@ void SpawnJetpackOnPlayer(State& state) {
     }
 
     const std::optional<VID> jetpack_vid =
-        SpawnStageEntAtCenter(state, EntType::JetPack, player->GetCenter());
+        SpawnStageEntAtCenter(state, EntType::JetPack, player->GetRenderCenter());
     if (!jetpack_vid.has_value()) {
         return;
     }
