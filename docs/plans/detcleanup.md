@@ -125,6 +125,8 @@ Current state:
 - Completed 2026-06-08: sacrifice-altar sacrifice area and victim overlap
   checks now use fixed contact AABBs. Victim effect placement converts fixed
   bounds to render coordinates only at the presentation boundary.
+- Completed 2026-06-08: mattock strike overlap now uses fixed contact AABBs.
+  The remaining mattock render contact wrapper use is debug annotation.
 - Many gameplay files still explicitly call `GetRenderContactAabbForEnt(...)`,
   including contact damage, ent contact, weapons, traps,
   sacrifice altar, teleporter, and web/cobweb logic.
@@ -146,6 +148,7 @@ Cleanup:
 - [x] Migrate shopkeeper pistol recovery checks to fixed contact geometry.
 - [x] Migrate sacrifice-altar sacrifice area and victim overlap checks to fixed
       contact geometry.
+- [x] Migrate mattock strike overlap checks to fixed contact geometry.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.

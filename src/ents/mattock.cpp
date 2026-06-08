@@ -293,7 +293,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
     const Graphics& graphics,
     Audio& audio
 ) {
-    const AABB strike_aabb = common::GetRenderContactAabbForEnt(mattock, graphics);
+    const sim::AABB strike_aabb = common::GetContactAabbForEnt(mattock, graphics);
     EntStrikeOutcome result{};
 
     for (const VID& other_vid : QueryEntsInAabb(state, strike_aabb, mattock.vid)) {
@@ -302,12 +302,12 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
             continue;
         }
 
-        const AABB other_aabb = GetNearestWorldAabb(
+        const sim::AABB other_aabb = GetNearestWorldAabb(
             state.stage,
-            mattock.GetCenter(),
-            common::GetRenderContactAabbForEnt(*other_ent_const, graphics)
+            strike_aabb.center(),
+            common::GetContactAabbForEnt(*other_ent_const, graphics)
         );
-        if (!AabbsIntersect(strike_aabb, other_aabb)) {
+        if (!gfxp::aabbs_intersect(strike_aabb, other_aabb)) {
             continue;
         }
 
@@ -341,12 +341,12 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
             continue;
         }
         if (is_heavy_target && damage_result == common::DamageResult::Died) {
-            (void)PlayWorldSoundEmitter(state, (other_aabb.tl + other_aabb.br) * 0.5F, audio_asset_ids::PotShatter);
+            (void)PlayWorldSoundEmitter(state, sim::ToRenderVec2(other_aabb.center()), audio_asset_ids::PotShatter);
         }
         if (Ent* const other_ent = state.ents.GetEntMut(other_ent_const->vid)) {
             result.sound_pos = other_ent->GetCenter();
         } else {
-            result.sound_pos = (other_aabb.tl + other_aabb.br) * 0.5F;
+            result.sound_pos = sim::ToRenderVec2(other_aabb.center());
         }
         result.hit_any = true;
     }
