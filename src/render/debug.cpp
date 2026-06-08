@@ -455,7 +455,7 @@ void RenderAudioBrushPreview(
             GetNearestWorldPoint(state.stage, listener_world, brush.source_world_pos);
         const Vec2 ray_delta = GetNearestWorldDelta(state.stage, source_world, listener_world);
         const float ray_length = std::sqrt((ray_delta.x * ray_delta.x) + (ray_delta.y * ray_delta.y));
-        const WorldRayHit hit = RaycastTiles(
+        const WorldRayHit hit = RaycastRenderTiles(
             source_world,
             ray_delta,
             static_cast<int>(std::ceil(ray_length)) + 1,
@@ -1514,7 +1514,7 @@ void RenderAudioEmitterOverlay(
                     GetNearestWorldDelta(state.stage, source_world, listener_for_source);
                 const float ray_length =
                     std::sqrt((ray_delta.x * ray_delta.x) + (ray_delta.y * ray_delta.y));
-                const WorldRayHit hit = RaycastTiles(
+                const WorldRayHit hit = RaycastRenderTiles(
                     source_world,
                     ray_delta,
                     static_cast<int>(std::ceil(ray_length)) + 1,

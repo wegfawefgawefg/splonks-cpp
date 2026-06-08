@@ -81,8 +81,8 @@ Current state:
 - Completed 2026-06-08. The old float/render rectangle type has been renamed
   from `AABB` to `RenderAABB`.
 - `sim::AABB` remains the only unqualified gameplay rectangle spelling.
-- Remaining `RenderAABB` call sites are render/debug annotations or the
-  still-render-space raycast API tracked under the raycast cleanup item.
+- Remaining `RenderAABB` call sites are render/debug annotations or other
+  explicit presentation boundaries.
 
 Cleanup:
 
@@ -152,9 +152,7 @@ Current state:
   after remaining flesh-guy wall-slide and DVD-logo bounce probes moved to fixed
   `sim::AABB`.
 - Completed 2026-06-08: world-query raycast target collection now stores fixed
-  target AABBs and uses fixed contact cboxes. The public raycast APIs and
-  point-walking remain float/int and are tracked under the separate raycast
-  cleanup item.
+  target AABBs and uses fixed contact cboxes.
 - Completed 2026-06-08: area-listener enter/exit overlap detection now uses
   fixed body AABBs for both the area entity and overlap candidates.
 - Completed 2026-06-08: area-listener tile-change notification checks now use
@@ -339,9 +337,7 @@ Current state:
   acceleration now stay in fixed positions/deltas instead of selecting a render
   target and converting it back to sim space.
 - Completed 2026-06-08: shopkeeper dropped-pistol recovery now uses fixed
-  positions/deltas for facing, movement direction, and jump decisions. The
-  remaining shopkeeper sight checks are still tied to the render-space raycast
-  API and belong to the raycast cleanup item.
+  positions/deltas for facing, movement direction, and jump decisions.
 - Completed 2026-06-08: body-contact knockback direction now uses fixed
   source/target centers and fixed wrapped deltas before producing the existing
   fixed knockback velocity.
@@ -378,15 +374,16 @@ Current state:
 - `world_query.cpp` has both float `AABB` and fixed `sim::AABB` overloads for
   nearest-world AABB, intersection, tile queries, blocking checks, and entity
   queries.
-- Raycasts still use old render `Vec2` / `AABB` paths.
+- Presentation-only tile raycasts still use render `Vec2` inputs for audio and
+  debug occlusion visualization.
 - Completed 2026-06-08: unused non-raycast float `AABB` overloads were removed
   from nearest-world AABB, world AABB contains/intersect, tile AABB query,
   entity AABB query, and one-way-support query APIs.
 - Completed 2026-06-08: horizontal world raycasts gained a fixed `sim::Vec2`
-  start-position overload with fixed ray broadphase collection. Caveman, cobra,
-  and shopkeeper sight checks now use fixed centers/deltas and the fixed
-  horizontal raycast path. The old render overload remains as an adapter for
-  hitscan and remaining presentation/migration callers.
+  start-position API with fixed ray broadphase collection. Caveman, cobra,
+  shopkeeper sight checks, and pistol hitscan now use fixed starts/deltas and
+  the fixed horizontal raycast path. The old render horizontal overload and the
+  unused render vertical/diagonal/world raycast APIs were removed.
 
 Cleanup:
 
@@ -395,11 +392,14 @@ Cleanup:
       fixed AABB APIs.
 - [x] Add fixed horizontal raycast path and migrate AI sight checks that affect
       gameplay state.
-- Move remaining old float overloads behind render/debug names or remove them
-  as callers migrate.
-- Audit raycast APIs separately. If raycasts affect gameplay, convert their
-  inputs, stepping, target bounds, and results to fixed/int types without
-  changing raycast semantics.
+- [x] Move the remaining old tile raycast behind an explicit
+      `RaycastRenderTiles(...)` name for audio/debug presentation callers.
+- [x] Remove unused render-space vertical, entity-only, and general world
+      raycast APIs instead of keeping compatibility clutter.
+- [x] Move pistol hitscan to the fixed horizontal raycast path.
+- Audit any future gameplay raycast APIs separately. If they affect gameplay,
+  convert their inputs, stepping, target bounds, and results to fixed/int types
+  without changing raycast semantics.
 
 ### 7. Stage mutation APIs still accept float AABB
 
@@ -532,14 +532,14 @@ Current state:
   projectile/recoil velocities, and common tool/carry throw APIs accept fixed
   `sim::Vec2` velocities instead of render `Vec2`.
 - Remaining conversion hits are mostly explicit authoring/spawn boundaries,
-  raycast adapters, debug/render rectangles, test fixture setup, or a small
-  number of visual-authoring-to-gameplay bridges.
+  debug/render rectangles, test fixture setup, or a small number of
+  visual-authoring-to-gameplay bridges.
 - `stage_spawning.cpp` still exposes render-position spawn overloads that
   convert into fixed positions. These are authoring/tooling boundaries, but
   fixed overloads should stay preferred for gameplay callers.
-- `world_query.cpp` raycast APIs still bridge render/int ray inputs into fixed
-  target AABBs. This is the largest remaining conversion cluster and should be
-  handled as a deliberate raycast API cleanup, not incidental call-site churn.
+- `world_query.cpp` keeps `RaycastRenderTiles(...)` as an explicit
+  presentation-only tile ray for audio/debug occlusion visualization. Gameplay
+  horizontal raycasts use fixed `sim::Vec2` starts.
 - Ball-and-chain uses a local raw-fixed delta helper; this is fixed data but the
   helper name should be cleaned up if it survives the final API pass.
 - Cobra sight currently converts an animation-derived emit point into a fixed
@@ -564,8 +564,8 @@ Cleanup:
       fixed vector construction.
 - [x] Add fixed aim/direction APIs for bow, web cannon, throw/carry aiming, and
       similar projectile launch paths.
-- [ ] Convert raycast entry points to fixed/int-friendly APIs, or explicitly
-      quarantine render raycast wrappers as compatibility adapters.
+- [x] Convert gameplay raycast entry points to fixed/int-friendly APIs and
+      quarantine the remaining presentation tile ray as `RaycastRenderTiles`.
 - [ ] Prefer fixed spawn APIs in gameplay code and keep render spawn overloads
       limited to authoring/tooling fixtures.
 

@@ -6,7 +6,7 @@ namespace splonks {
 
 HitscanHit TraceHitscan(
     const Ent& source_ent,
-    const Vec2& start_pos,
+    sim::Vec2 start_pos,
     int direction,
     int max_distance,
     State& state,

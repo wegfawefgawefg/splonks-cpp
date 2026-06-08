@@ -110,26 +110,12 @@ std::vector<sim::Vec2> GetQueryOffsets(const Stage& stage, sim::AABB area) {
     return offsets;
 }
 
-bool PointInAabb(const IVec2& point, const RenderAABB& aabb) {
-    return static_cast<float>(point.x) >= aabb.tl.x &&
-           static_cast<float>(point.x) <= aabb.br.x &&
-           static_cast<float>(point.y) >= aabb.tl.y &&
-           static_cast<float>(point.y) <= aabb.br.y;
-}
-
 bool PointInAabb(const IVec2& point, sim::AABB aabb) {
     const sim::Vec2 sim_point = sim::PixelVec2(point.x, point.y);
     return sim_point.x >= aabb.tl.x &&
            sim_point.x <= aabb.br.x &&
            sim_point.y >= aabb.tl.y &&
            sim_point.y <= aabb.br.y;
-}
-
-sim::AABB ToSimRayAABB(const RenderAABB& aabb) {
-    return sim::AABB::from_corners(
-        sim::ToSimVec2(aabb.tl, gfxp::Rounding::Floor),
-        sim::ToSimVec2(aabb.br, gfxp::Rounding::Ceil)
-    );
 }
 
 } // namespace
@@ -561,7 +547,7 @@ TileStepRaycastResult RaycastTileSteps(
     return result;
 }
 
-WorldRayHit RaycastTiles(
+WorldRayHit RaycastRenderTiles(
     const Vec2& start_pos,
     const Vec2& direction,
     int max_distance,
@@ -620,167 +606,6 @@ WorldRayHit RaycastHorizontal(
 
     for (int step = 0; step < max_distance; ++step) {
         const IVec2 point = IVec2::New(start_x + (step_dir * step), ray_y);
-        const WorldRayHit hit = QueryWorldRayHitAtPoint(point, state, targets);
-        if (hit.type != WorldRayHitType::None) {
-            return hit;
-        }
-    }
-
-    return WorldRayHit{};
-}
-
-WorldRayHit RaycastHorizontal(
-    const Ent& source_ent,
-    const Vec2& start_pos,
-    int direction,
-    int max_distance,
-    const State& state,
-    const Graphics& graphics,
-    std::optional<VID> owner_vid
-) {
-    return RaycastHorizontal(
-        source_ent,
-        sim::ToSimVec2(start_pos),
-        direction,
-        max_distance,
-        state,
-        graphics,
-        owner_vid
-    );
-}
-
-WorldRayHit RaycastVertical(
-    const Ent& source_ent,
-    const Vec2& start_pos,
-    int direction,
-    int max_distance,
-    const State& state,
-    const Graphics& graphics,
-    std::optional<VID> owner_vid
-) {
-    if (max_distance <= 0 || direction == 0) {
-        return WorldRayHit{};
-    }
-
-    const int step_dir = direction < 0 ? -1 : 1;
-    const int ray_x = ToIVec2(start_pos).x;
-    const int start_y = ToIVec2(start_pos).y;
-    const int end_y = start_y + (step_dir * max_distance);
-    const RenderAABB ray_aabb = RenderAABB::New(
-        Vec2::New(static_cast<float>(ray_x), static_cast<float>(std::min(start_y, end_y))),
-        Vec2::New(static_cast<float>(ray_x), static_cast<float>(std::max(start_y, end_y)))
-    );
-    const std::vector<RaycastTarget> targets = CollectRaycastTargets(
-        source_ent,
-        sim::ToSimVec2(start_pos),
-        ToSimRayAABB(ray_aabb),
-        state,
-        graphics,
-        owner_vid
-    );
-
-    for (int step = 0; step < max_distance; ++step) {
-        const IVec2 point = IVec2::New(ray_x, start_y + (step_dir * step));
-        const WorldRayHit hit = QueryWorldRayHitAtPoint(point, state, targets);
-        if (hit.type != WorldRayHitType::None) {
-            return hit;
-        }
-    }
-
-    return WorldRayHit{};
-}
-
-WorldRayHit RaycastEnts(
-    const Ent& source_ent,
-    const Vec2& start_pos,
-    const Vec2& direction,
-    int max_distance,
-    const State& state,
-    const Graphics& graphics,
-    std::optional<VID> owner_vid
-) {
-    const Vec2 step_dir = NormalizeOrZeroDeterministic(direction);
-    if (max_distance <= 0 || step_dir == Vec2::New(0.0F, 0.0F)) {
-        return WorldRayHit{};
-    }
-
-    const Vec2 end_pos = start_pos + (step_dir * static_cast<float>(max_distance));
-    const RenderAABB ray_aabb = RenderAABB::New(
-        Vec2::New(std::min(start_pos.x, end_pos.x), std::min(start_pos.y, end_pos.y)),
-        Vec2::New(std::max(start_pos.x, end_pos.x), std::max(start_pos.y, end_pos.y))
-    );
-    const std::vector<RaycastTarget> targets = CollectRaycastTargets(
-        source_ent,
-        sim::ToSimVec2(start_pos),
-        ToSimRayAABB(ray_aabb),
-        state,
-        graphics,
-        owner_vid
-    );
-
-    for (int step = 0; step < max_distance; ++step) {
-        const IVec2 point = ToIVec2(start_pos + (step_dir * static_cast<float>(step)));
-        if (const std::optional<WorldRayHit> ent_hit = QueryEntRayHitAtPoint(point, targets)) {
-            return *ent_hit;
-        }
-    }
-
-    return WorldRayHit{};
-}
-
-WorldRayHit RaycastWorld(
-    const Ent& source_ent,
-    const Vec2& start_pos,
-    const Vec2& direction,
-    int max_distance,
-    const State& state,
-    const Graphics& graphics,
-    std::optional<VID> owner_vid
-) {
-    if (direction.x != 0.0F && direction.y == 0.0F) {
-        return RaycastHorizontal(
-            source_ent,
-            start_pos,
-            direction.x < 0.0F ? -1 : 1,
-            max_distance,
-            state,
-            graphics,
-            owner_vid
-        );
-    }
-    if (direction.y != 0.0F && direction.x == 0.0F) {
-        return RaycastVertical(
-            source_ent,
-            start_pos,
-            direction.y < 0.0F ? -1 : 1,
-            max_distance,
-            state,
-            graphics,
-            owner_vid
-        );
-    }
-
-    const Vec2 step_dir = NormalizeOrZeroDeterministic(direction);
-    if (max_distance <= 0 || step_dir == Vec2::New(0.0F, 0.0F)) {
-        return WorldRayHit{};
-    }
-
-    const Vec2 end_pos = start_pos + (step_dir * static_cast<float>(max_distance));
-    const RenderAABB ray_aabb = RenderAABB::New(
-        Vec2::New(std::min(start_pos.x, end_pos.x), std::min(start_pos.y, end_pos.y)),
-        Vec2::New(std::max(start_pos.x, end_pos.x), std::max(start_pos.y, end_pos.y))
-    );
-    const std::vector<RaycastTarget> targets = CollectRaycastTargets(
-        source_ent,
-        sim::ToSimVec2(start_pos),
-        ToSimRayAABB(ray_aabb),
-        state,
-        graphics,
-        owner_vid
-    );
-
-    for (int step = 0; step < max_distance; ++step) {
-        const IVec2 point = ToIVec2(start_pos + (step_dir * static_cast<float>(step)));
         const WorldRayHit hit = QueryWorldRayHitAtPoint(point, state, targets);
         if (hit.type != WorldRayHitType::None) {
             return hit;

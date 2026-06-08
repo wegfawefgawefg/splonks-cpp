@@ -94,7 +94,7 @@ TileStepRaycastResult RaycastTileSteps(
     int max_steps
 );
 
-WorldRayHit RaycastTiles(
+WorldRayHit RaycastRenderTiles(
     const Vec2& start_pos,
     const Vec2& direction,
     int max_distance,
@@ -105,46 +105,6 @@ WorldRayHit RaycastHorizontal(
     const Ent& source_ent,
     sim::Vec2 start_pos,
     int direction,
-    int max_distance,
-    const State& state,
-    const Graphics& graphics,
-    std::optional<VID> owner_vid = std::nullopt
-);
-
-WorldRayHit RaycastHorizontal(
-    const Ent& source_ent,
-    const Vec2& start_pos,
-    int direction,
-    int max_distance,
-    const State& state,
-    const Graphics& graphics,
-    std::optional<VID> owner_vid = std::nullopt
-);
-
-WorldRayHit RaycastVertical(
-    const Ent& source_ent,
-    const Vec2& start_pos,
-    int direction,
-    int max_distance,
-    const State& state,
-    const Graphics& graphics,
-    std::optional<VID> owner_vid = std::nullopt
-);
-
-WorldRayHit RaycastEnts(
-    const Ent& source_ent,
-    const Vec2& start_pos,
-    const Vec2& direction,
-    int max_distance,
-    const State& state,
-    const Graphics& graphics,
-    std::optional<VID> owner_vid = std::nullopt
-);
-
-WorldRayHit RaycastWorld(
-    const Ent& source_ent,
-    const Vec2& start_pos,
-    const Vec2& direction,
     int max_distance,
     const State& state,
     const Graphics& graphics,

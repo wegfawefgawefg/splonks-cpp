@@ -114,7 +114,7 @@ void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio
 
     const HitscanHit hit = TraceHitscan(
         pistol,
-        muzzle_pos,
+        sim::ToSimVec2(muzzle_pos),
         direction,
         max_distance,
         state,

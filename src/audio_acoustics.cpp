@@ -125,7 +125,7 @@ PositionalAudioAcoustics ComputePositionalAudioAcoustics(
             listener_world_pos
         );
         const float ray_length = LengthDeterministic(ray_delta);
-        const WorldRayHit hit = RaycastTiles(
+        const WorldRayHit hit = RaycastRenderTiles(
             result.wrapped_source_world_pos,
             ray_delta,
             CeilToInt(ray_length) + 1,
