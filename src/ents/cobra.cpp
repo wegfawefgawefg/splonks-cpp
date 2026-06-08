@@ -111,6 +111,13 @@ bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& gra
     return false;
 }
 
+sim::Vec2 CobraSpitVelocity(int direction) {
+    return sim::Vec2{
+        sim::ToSimScalar(kCobraSpitVelocityX) * sim::Scalar::from_int(direction),
+        sim::ToSimScalar(kCobraSpitVelocityY),
+    };
+}
+
 void SpawnSpitParticle(State& state, const Vec2& pos, const Vec2& vel, float alpha, float size_jitter) {
     SpriteParticle particle{};
     particle.aframe_animator = AFrameAnimator::New(aframe_ids::CobraSpit);
@@ -184,10 +191,7 @@ void FireCobraSpit(std::size_t ent_idx, State& state, Graphics& graphics) {
     Ent* const spit = world_ops::SpawnEnt(state, EntType::CobraSpit, [&](Ent& spawned_spit) {
         spawned_spit.SetRenderCenter(spit_origin);
         spawned_spit.facing = cobra.facing;
-        spawned_spit.vel = sim::ToSimVec2(Vec2::New(
-            static_cast<float>(direction) * kCobraSpitVelocityX,
-            kCobraSpitVelocityY
-        ));
+        spawned_spit.vel = CobraSpitVelocity(direction);
         spawned_spit.acc = sim::Vec2::zero();
         spawned_spit.thrown_by = cobra.vid;
         spawned_spit.thrown_immunity_timer = common::kThrownByImmunityDuration;

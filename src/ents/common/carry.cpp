@@ -501,7 +501,8 @@ void DropHeldItemFromEnt(Ent& ent, State& state) {
         return;
     }
 
-    const float throw_x = ent.facing == Side::Left ? -3.0F : 3.0F;
+    const sim::Scalar throw_x =
+        sim::Scalar::from_int(ent.facing == Side::Left ? -3 : 3);
     held->held_by_vid.reset();
     held->attach_mode = AttachMode::None;
     StopUsingEnt(*held);
@@ -516,7 +517,7 @@ void DropHeldItemFromEnt(Ent& ent, State& state) {
     held->proj_contact_damage_type = held_spec.proj_contact_damage_type;
     held->proj_contact_damage_amount = held_spec.proj_contact_damage_amount;
     held->proj_contact_timer = kProjContactDuration;
-    held->vel = sim::ToSimVec2(Vec2::New(throw_x, -1.0F));
+    held->vel = sim::Vec2{throw_x, sim::Scalar::from_int(-1)};
     held->acc = sim::Vec2::zero();
     RemoveEffect(*held, EffectId::NoGravityUntilContact);
 }
