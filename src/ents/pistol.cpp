@@ -90,15 +90,15 @@ void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
     }
 }
 
-Vec2 GetFallbackMuzzlePos(const Ent& pistol) {
+sim::Vec2 GetFallbackMuzzlePos(const Ent& pistol) {
     const int direction = pistol.facing == Side::Left ? -1 : 1;
-    return pistol.GetRenderCenter() + Vec2::New(8.0F * static_cast<float>(direction), 1.0F);
+    return pistol.GetSimCenter() + sim::PixelVec2(8 * direction, 1);
 }
 
 void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     const Ent& pistol = state.ents.ents[ent_idx];
     const int direction = pistol.facing == Side::Left ? -1 : 1;
-    const Vec2 muzzle_pos = common::GetEmitPointForEnt(
+    const sim::Vec2 muzzle_pos = common::GetEmitPointForEnt(
         pistol,
         graphics,
         GetFallbackMuzzlePos(pistol)
@@ -107,14 +107,15 @@ void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio
     const std::optional<VID> owner_vid = pistol.held_by_vid.has_value() ? pistol.held_by_vid
                                                                         : pistol.use_state.user_vid;
 
-    (void)PlayWorldSoundEmitter(state, muzzle_pos, audio_asset_ids::PistolShoot);
+    const Vec2 render_muzzle_pos = sim::ToRenderVec2(muzzle_pos);
+    (void)PlayWorldSoundEmitter(state, render_muzzle_pos, audio_asset_ids::PistolShoot);
     const Color3 muzzle_light_color = Color3::New(1.0F, 0.72F, 0.34F);
-    AddTransientLight(state, muzzle_pos, 1.4F, muzzle_light_color, 5, 4);
-    SpawnPistolMuzzleSmoke(state, muzzle_pos, direction);
+    AddTransientLight(state, render_muzzle_pos, 1.4F, muzzle_light_color, 5, 4);
+    SpawnPistolMuzzleSmoke(state, render_muzzle_pos, direction);
 
     const HitscanHit hit = TraceHitscan(
         pistol,
-        sim::ToSimVec2(muzzle_pos),
+        muzzle_pos,
         direction,
         max_distance,
         state,

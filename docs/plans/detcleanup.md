@@ -400,6 +400,9 @@ Current state:
 - Completed 2026-06-08: chest trap bomb, treasure, and Udjat Eye spawn
   placement now use fixed emit centers. Chest sparkles and sounds convert that
   fixed emit point to render coordinates only at presentation boundaries.
+- Completed 2026-06-08: pistol muzzle fallback and hitscan origin now use
+  fixed emit positions. Pistol sound, muzzle light, and smoke convert the fixed
+  muzzle position to render coordinates at presentation boundaries.
 
 Cleanup:
 
