@@ -271,17 +271,21 @@ Cleanup:
 
 Current state:
 
-- `Stage::SetTilesInRectWc(const AABB& area, ...)` and
-  `Stage::SetTilesInRect(const AABB& area, ...)` accept old float AABB.
-- Stage break and several entity systems still construct float tile/world
-  rectangles for gameplay mutation.
+- Completed 2026-06-08. `Stage::SetTilesInRectWc(sim::AABB, ...)` now accepts
+  fixed world-space rectangles, and `Stage::SetTilesInRect(IAABB, ...)` now
+  accepts integer tile rectangles. The old float rectangle setter surface was
+  removed.
 - `BreakStageTilesInRectWc(sim::AABB, ...)` now exists for fixed gameplay
   callers. Mattock and boulder tile breaking use it.
+- Stage break and any future gameplay mutation callers should stay on the fixed
+  world-space or integer tile-space paths.
 
 Cleanup:
 
-- Add fixed or integer-tile rectangle APIs for gameplay stage mutation.
-- Make float rectangle stage mutation render/tooling-only or remove it.
+- [x] Add fixed or integer-tile rectangle APIs for gameplay stage mutation.
+- [x] Remove old float rectangle stage mutation APIs.
+- Keep any future render/tooling rectangle mutation adapters clearly named and
+  outside authoritative gameplay.
 
 ### 8. Stage fluids still round-trip through render vectors
 

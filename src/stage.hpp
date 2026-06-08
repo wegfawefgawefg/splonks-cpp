@@ -264,8 +264,8 @@ struct Stage {
     VID AddLightWithVid(VID vid, const IVec2& tile_pos, int radius);
     bool RemoveLight(VID vid);
     const StageLight* GetLight(VID vid) const;
-    void SetTilesInRectWc(const AABB& area, Tile tile_type);
-    void SetTilesInRect(const AABB& area, Tile tile_type);
+    void SetTilesInRectWc(sim::AABB area, Tile tile_type);
+    void SetTilesInRect(IAABB tile_area, Tile tile_type);
     std::vector<IAABB> GetAabbsForAllCollidableTilesInRect(const IVec2& tl, const IVec2& br) const;
     UVec2 GetRandomRegularRoomGridCoord(DetRng& det_rng) const;
     std::optional<IVec2> GetRandomNoncollidablePositionInStage(DetRng& det_rng) const;

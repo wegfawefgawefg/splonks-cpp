@@ -536,19 +536,23 @@ const StageLight* Stage::GetLight(VID vid) const {
     return nullptr;
 }
 
-void Stage::SetTilesInRectWc(const AABB& area, Tile tile_type) {
-    AABB area_tc;
-    area_tc.tl = area.tl / static_cast<float>(kTileSize);
-    area_tc.br = area.br / static_cast<float>(kTileSize);
-    SetTilesInRect(area_tc, tile_type);
+void Stage::SetTilesInRectWc(sim::AABB area, Tile tile_type) {
+    const sim::Scalar tile_size = sim::Scalar::from_int(static_cast<int>(kTileSize));
+    SetTilesInRect(
+        IAABB::New(
+            IVec2::New((area.tl.x / tile_size).floor_int(),
+                       (area.tl.y / tile_size).floor_int()),
+            IVec2::New((area.br.x / tile_size).floor_int(),
+                       (area.br.y / tile_size).floor_int())),
+        tile_type);
 }
 
-void Stage::SetTilesInRect(const AABB& area, Tile tile_type) {
+void Stage::SetTilesInRect(IAABB tile_area, Tile tile_type) {
     SyncTileInstanceMetadataGrid();
     const int max_x = static_cast<int>(GetTileWidth()) - 1;
     const int max_y = static_cast<int>(GetTileHeight()) - 1;
-    const IVec2 tl = IVec2::New(static_cast<int>(area.tl.x), static_cast<int>(area.tl.y));
-    const IVec2 br = IVec2::New(static_cast<int>(area.br.x), static_cast<int>(area.br.y));
+    const IVec2 tl = tile_area.tl;
+    const IVec2 br = tile_area.br;
 
     for (int y = (tl.y < 0 ? 0 : tl.y); y <= (br.y < max_y ? br.y : max_y); ++y) {
         for (int x = (tl.x < 0 ? 0 : tl.x); x <= (br.x < max_x ? br.x : max_x); ++x) {
