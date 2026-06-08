@@ -65,13 +65,18 @@ bool IsOpenWithAnim(const Ent& ent, AFrameId anim_id) {
     return ent.aframe_animator.anim_id == anim_id;
 }
 
+sim::Vec2 RandomChestLaunchVelocity(State& state) {
+    const int launch_x =
+        state.drng.RandomIntInclusive(0, 3) -
+        state.drng.RandomIntInclusive(0, 3);
+    return sim::Vec2{
+        sim::Scalar::from_int(launch_x),
+        sim::ToSimScalar(kChestLootLaunchY)
+    };
+}
+
 void LaunchChestLoot(State& state, Ent& ent, std::optional<VID> opener_vid = std::nullopt) {
-    ent.vel = sim::ToSimVec2(Vec2::New(
-        static_cast<float>(
-            state.drng.RandomIntInclusive(0, 3) -
-            state.drng.RandomIntInclusive(0, 3)),
-        kChestLootLaunchY
-    ));
+    ent.vel = RandomChestLaunchVelocity(state);
     ent.thrown_by = opener_vid;
     ent.thrown_immunity_timer =
         opener_vid.has_value() ? common::kThrownByImmunityDuration : 0;
@@ -122,12 +127,7 @@ void SpawnChestSparkles(const Vec2& emit_pos, State& state) {
 void SpawnChestTrapBomb(const Vec2& spawn_center, State& state) {
     (void)world_ops::SpawnEnt(state, EntType::Bomb, [&](Ent& bomb) {
         bomb.SetRenderCenter(spawn_center);
-        bomb.vel = sim::ToSimVec2(Vec2::New(
-            static_cast<float>(
-                state.drng.RandomIntInclusive(0, 3) -
-                state.drng.RandomIntInclusive(0, 3)),
-            kChestLootLaunchY
-        ));
+        bomb.vel = RandomChestLaunchVelocity(state);
         bomb.acc = sim::Vec2::zero();
         bomb.counter_a = sim::ToSimScalar(kChestTrapFuseFrames);
         SetAnim(bomb, aframe_ids::LiveGrenade);
