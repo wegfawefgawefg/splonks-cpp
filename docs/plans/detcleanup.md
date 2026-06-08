@@ -157,6 +157,8 @@ Current state:
 - Completed 2026-06-08: area-listener tile-change notification checks now use
   fixed tile-center points and fixed body AABBs.
 - Completed 2026-06-08: tile-overlap effect queries now use fixed body AABBs.
+- Completed 2026-06-08: fixed `QueryTileAtWorldPos(stage, sim::Vec2)` was added,
+  and hanging-spider ceiling support now samples from fixed body bounds.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 

@@ -521,6 +521,13 @@ std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, cons
     return QueryTileAtTilePos(stage, stage.GetTileCoordAtWc(world_pos));
 }
 
+std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, sim::Vec2 world_pos) {
+    return QueryTileAtWorldPos(
+        stage,
+        IVec2::New(world_pos.x.to_pixels_trunc(), world_pos.y.to_pixels_trunc())
+    );
+}
+
 std::vector<VID> QueryEntsInAabb(
     const State& state,
     const AABB& area,

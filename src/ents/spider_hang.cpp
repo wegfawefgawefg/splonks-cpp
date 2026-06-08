@@ -20,8 +20,11 @@ constexpr int kGiantSpiderDropDistance = 90;
 constexpr float kGiantSpiderDropXTolerance = 8.0F;
 
 bool HasCeilingSupport(const Ent& ent, const State& state) {
-    const AABB aabb = ent.GetAABB();
-    const IVec2 sample_pos = ToIVec2(Vec2::New((aabb.tl.x + aabb.br.x) * 0.5F, aabb.tl.y - 1.0F));
+    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::Vec2 sample_pos = sim::Vec2{
+        aabb.center().x,
+        aabb.tl.y - sim::Scalar::from_pixels(1),
+    };
     const std::optional<WorldTileQueryResult> tile_query = QueryTileAtWorldPos(state.stage, sample_pos);
     return tile_query.has_value() && tile_query->tile != nullptr && IsTileCollidable(*tile_query->tile);
 }

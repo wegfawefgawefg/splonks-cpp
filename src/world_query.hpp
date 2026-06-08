@@ -81,6 +81,7 @@ bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
 );
 std::optional<WorldTileQueryResult> QueryTileAtTilePos(const Stage& stage, const IVec2& tile_pos);
 std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, const IVec2& world_pos);
+std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, sim::Vec2 world_pos);
 std::vector<VID> QueryEntsInAabb(
     const State& state,
     const AABB& area,
