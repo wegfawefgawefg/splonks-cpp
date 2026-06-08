@@ -64,18 +64,18 @@ void SpawnTileBreakAnim(AFrameId anim_id, const IVec2& tile_pos, State& state) {
 }
 
 void NotifyAreaEntsTileChanged(const IVec2& tile_pos, State& state, Audio& audio) {
-    const Vec2 tile_center = Vec2::New(
-        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
-        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
+    const sim::Vec2 tile_center = sim::PixelVec2(
+        tile_pos.x * static_cast<int>(kTileSize) + 8,
+        tile_pos.y * static_cast<int>(kTileSize) + 8
     );
-    const AABB tile_point_aabb = AABB::New(tile_center, tile_center);
+    const sim::AABB tile_point_aabb = sim::AABB::from_corners(tile_center, tile_center);
 
     for (const VID& vid : QueryEntsInAabb(state, tile_point_aabb)) {
         const Ent* const ent = state.ents.GetEnt(vid);
         if (ent == nullptr || !ent->active || ent->on_area_tile_changed == nullptr) {
             continue;
         }
-        if (!WorldAabbContainsPoint(state.stage, ent->GetAABB(), tile_center)) {
+        if (!WorldAabbContainsPoint(state.stage, ent->GetSimAABB(), tile_center)) {
             continue;
         }
 

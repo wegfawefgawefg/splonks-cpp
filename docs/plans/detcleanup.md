@@ -154,6 +154,8 @@ Current state:
   cleanup item.
 - Completed 2026-06-08: area-listener enter/exit overlap detection now uses
   fixed body AABBs for both the area entity and overlap candidates.
+- Completed 2026-06-08: area-listener tile-change notification checks now use
+  fixed tile-center points and fixed body AABBs.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
