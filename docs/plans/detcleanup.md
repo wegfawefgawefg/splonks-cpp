@@ -191,6 +191,9 @@ Current state:
   fixed rectangle path.
 - Completed 2026-06-08: climber step-sound tile selection now queries ladder
   and rope tiles from the entity's fixed body AABB.
+- Completed 2026-06-08: boulder, block, and door particle/audio/shake
+  placement helpers now derive their render positions from fixed body AABBs at
+  explicit presentation boundaries.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -237,6 +240,8 @@ Cleanup:
 - [x] Migrate bat roof/perch and meathead popup tile queries to fixed geometry.
 - [x] Remove the old float stage-break rectangle API after callers are fixed.
 - [x] Migrate climber step-sound tile selection to fixed body geometry.
+- [x] Move boulder/block/door presentation placement helpers off generic
+      `GetAABB()` and onto fixed body geometry plus explicit render conversion.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.

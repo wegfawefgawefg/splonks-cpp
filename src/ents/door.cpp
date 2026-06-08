@@ -65,13 +65,13 @@ float GetMoveDirection(const Ent& door) {
 }
 
 Vec2 GetTopEmitPos(const Ent& door) {
-    const AABB aabb = door.GetAABB();
-    return Vec2::New((aabb.tl.x + aabb.br.x) * 0.5F, aabb.tl.y);
+    const sim::AABB aabb = door.GetSimAABB();
+    return sim::ToRenderVec2(sim::Vec2{aabb.center().x, aabb.tl.y});
 }
 
 Vec2 GetBottomEmitPos(const Ent& door) {
-    const AABB aabb = door.GetAABB();
-    return Vec2::New((aabb.tl.x + aabb.br.x) * 0.5F, aabb.br.y);
+    const sim::AABB aabb = door.GetSimAABB();
+    return sim::ToRenderVec2(sim::Vec2{aabb.center().x, aabb.br.y});
 }
 
 Vec2 GetTrailingEmitPos(const Ent& door) {

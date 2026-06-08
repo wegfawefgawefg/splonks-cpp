@@ -172,29 +172,29 @@ void PlayBoulderImpactSoundIfReady(Ent& boulder, State& state) {
 }
 
 Vec2 GetBoulderTrailingBottomCorner(const Ent& boulder) {
-    const AABB aabb = boulder.GetAABB();
-    return boulder.facing == Side::Right
-               ? Vec2::New(aabb.tl.x, aabb.br.y)
-               : Vec2::New(aabb.br.x, aabb.br.y);
+    const sim::AABB aabb = boulder.GetSimAABB();
+    return sim::ToRenderVec2(boulder.facing == Side::Right
+                                 ? sim::Vec2{aabb.tl.x, aabb.br.y}
+                                 : sim::Vec2{aabb.br.x, aabb.br.y});
 }
 
 Vec2 GetBoulderLeadingBottomCorner(const Ent& boulder) {
-    const AABB aabb = boulder.GetAABB();
-    return boulder.facing == Side::Right
-               ? Vec2::New(aabb.br.x, aabb.br.y)
-               : Vec2::New(aabb.tl.x, aabb.br.y);
+    const sim::AABB aabb = boulder.GetSimAABB();
+    return sim::ToRenderVec2(boulder.facing == Side::Right
+                                 ? sim::Vec2{aabb.br.x, aabb.br.y}
+                                 : sim::Vec2{aabb.tl.x, aabb.br.y});
 }
 
 Vec2 GetBoulderBottomCenter(const Ent& boulder) {
-    const AABB aabb = boulder.GetAABB();
-    return Vec2::New((aabb.tl.x + aabb.br.x) * 0.5F, aabb.br.y);
+    const sim::AABB aabb = boulder.GetSimAABB();
+    return sim::ToRenderVec2(sim::Vec2{aabb.center().x, aabb.br.y});
 }
 
 Vec2 GetBoulderFrontFaceCenter(const Ent& boulder) {
-    const AABB aabb = boulder.GetAABB();
-    return boulder.facing == Side::Right
-               ? Vec2::New(aabb.br.x, (aabb.tl.y + aabb.br.y) * 0.5F)
-               : Vec2::New(aabb.tl.x, (aabb.tl.y + aabb.br.y) * 0.5F);
+    const sim::AABB aabb = boulder.GetSimAABB();
+    return sim::ToRenderVec2(boulder.facing == Side::Right
+                                 ? sim::Vec2{aabb.br.x, aabb.center().y}
+                                 : sim::Vec2{aabb.tl.x, aabb.center().y});
 }
 
 void AddBoulderRollingShake(State& state, const Ent& boulder) {

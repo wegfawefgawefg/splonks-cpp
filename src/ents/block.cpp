@@ -124,10 +124,10 @@ void SpawnBlockTrailSmoke(State& state, const Vec2& pos, Side facing) {
 }
 
 Vec2 GetBlockTrailingBottomCorner(const Ent& block) {
-    const AABB aabb = block.GetAABB();
-    return block.facing == Side::Right
-               ? Vec2::New(aabb.tl.x, aabb.br.y)
-               : Vec2::New(aabb.br.x, aabb.br.y);
+    const sim::AABB aabb = block.GetSimAABB();
+    return sim::ToRenderVec2(block.facing == Side::Right
+                                 ? sim::Vec2{aabb.tl.x, aabb.br.y}
+                                 : sim::Vec2{aabb.br.x, aabb.br.y});
 }
 
 } // namespace
