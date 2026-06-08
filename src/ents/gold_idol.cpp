@@ -71,7 +71,7 @@ Vec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& s
     const AABB target_aabb = target->GetAABB();
     return Vec2::New(
         (target_aabb.tl.x + target_aabb.br.x) * 0.5F,
-        target_aabb.tl.y + target->size.y * kRewardParticleYOffsetFactor
+        target_aabb.tl.y + target->GetSize().y * kRewardParticleYOffsetFactor
     );
 }
 

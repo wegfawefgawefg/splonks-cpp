@@ -259,8 +259,10 @@ void ApplyThrowState(
     }
 
     const Vec2 thrower_center = thrower.GetCenter();
-    if (thrower.size.y <= thrown.size.y) {
-        const float delta = std::abs(thrower.size.y - thrown.size.y) / 2.0F;
+    const Vec2 thrower_size = thrower.GetSize();
+    const Vec2 thrown_size = thrown.GetSize();
+    if (thrower_size.y <= thrown_size.y) {
+        const float delta = std::abs(thrower_size.y - thrown_size.y) / 2.0F;
         thrown.SetCenter(thrower_center - Vec2::New(0.0F, delta));
     } else {
         thrown.SetCenter(thrower_center);

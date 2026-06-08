@@ -275,7 +275,7 @@ void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
     writer.AddVec2(ent.pos);
     writer.AddVec2(ent.vel);
     writer.AddVec2(ent.acc);
-    writer.AddVec2(ent.size);
+    writer.AddFixedVec2(ent.size);
     writer.AddFixedScalar(ent.rotation);
     writer.AddPod(ent.coyote_time);
     writer.AddPod(ent.stun_timer);
@@ -464,7 +464,7 @@ void AddNetworkEntFingerprint(FingerprintWriter& writer, const State& state, con
     writer.AddVec2(ent.pos);
     writer.AddVec2(ent.vel);
     writer.AddVec2(ent.acc);
-    writer.AddVec2(ent.size);
+    writer.AddFixedVec2(ent.size);
     writer.AddFixedScalar(ent.rotation);
     writer.AddPod(ent.coyote_time);
     writer.AddPod(ent.stun_timer);

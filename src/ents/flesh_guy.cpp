@@ -137,7 +137,7 @@ bool IsClimbableTileQuery(const std::optional<WorldTileQueryResult>& tile_query)
 
 std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
     const Vec2 center = ent.GetCenter();
-    const float horizontal_offset = std::min(2.5F, std::max(0.0F, (ent.size.x * 0.5F) - 1.0F));
+    const float horizontal_offset = std::min(2.5F, std::max(0.0F, (ent.GetSize().x * 0.5F) - 1.0F));
     const std::array<Vec2, 3> probes = {{
         Vec2::New(center.x - horizontal_offset, center.y),
         center,

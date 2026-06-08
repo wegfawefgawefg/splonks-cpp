@@ -287,7 +287,7 @@ void WriteEntJson(std::ostringstream& out, const State& state, const Ent& ent) {
     out << ",\"vel\":";
     WriteVec2(out, ent.vel);
     out << ",\"size\":";
-    WriteVec2(out, ent.size);
+    WriteVec2(out, ent.GetSize());
     out << ",\"holding\":";
     WriteOptionalVid(out, ent.holding_vid);
     out << ",\"held_by\":";

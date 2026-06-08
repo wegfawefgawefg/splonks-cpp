@@ -756,7 +756,8 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
     ImGui::Text("Pos: (%.2f, %.2f)", ent.pos.x, ent.pos.y);
     ImGui::Text("Vel: (%.2f, %.2f)", ent.vel.x, ent.vel.y);
     ImGui::Text("Acc: (%.2f, %.2f)", ent.acc.x, ent.acc.y);
-    ImGui::Text("Size: (%.2f, %.2f)", ent.size.x, ent.size.y);
+    const Vec2 ent_size = ent.GetSize();
+    ImGui::Text("Size: (%.2f, %.2f)", ent_size.x, ent_size.y);
     ImGui::Text("AABB TL: (%.2f, %.2f)", aabb.tl.x, aabb.tl.y);
     ImGui::Text("AABB BR: (%.2f, %.2f)", aabb.br.x, aabb.br.y);
     ImGui::Text("Coyote: %u", ent.coyote_time);

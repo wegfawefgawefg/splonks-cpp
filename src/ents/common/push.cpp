@@ -188,7 +188,7 @@ bool TryDisplaceEntByOnePixel(
 
     const Vec2 candidate_pos = ent.pos + ToVec2(direction);
     const AABB candidate_aabb = AABB::New(
-        candidate_pos, candidate_pos + ent.size - Vec2::New(1.0F, 1.0F));
+        candidate_pos, candidate_pos + ent.GetSize() - Vec2::New(1.0F, 1.0F));
     const BlockingContactSet contacts =
         GatherBlockingContactsForAabb(ent_idx, candidate_aabb, state, true, true);
     if (ResolveBlockingContactSet(ent_idx, contacts, state).blocks_movement) {

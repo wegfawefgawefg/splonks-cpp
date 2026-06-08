@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 117;
+constexpr std::uint32_t kRecordingVersion = 118;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1536,7 +1536,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteSimScalar(out, ent.throw_velocity_scale);
     WriteSimScalar(out, ent.buoyancy);
     WriteEntEffects(out, ent.effects);
-    WriteVec2(out, ent.size);
+    WriteSimVec2(out, ent.size);
     WriteSimScalar(out, ent.self_light);
     WriteSimScalar(out, ent.light_strength);
     WriteSimColor3(out, ent.light_color);
@@ -1662,7 +1662,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadSimScalar(in, ent.throw_velocity_scale) &&
            ReadSimScalar(in, ent.buoyancy) &&
            ReadEntEffects(in, ent.effects) &&
-           ReadVec2(in, ent.size) &&
+           ReadSimVec2(in, ent.size) &&
            ReadSimScalar(in, ent.self_light) &&
            ReadSimScalar(in, ent.light_strength) &&
            ReadSimColor3(in, ent.light_color) &&

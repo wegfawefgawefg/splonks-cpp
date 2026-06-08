@@ -77,7 +77,7 @@ Vec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, c
     const AABB target_aabb = target->GetAABB();
     return Vec2::New(
         (target_aabb.tl.x + target_aabb.br.x) * 0.5F,
-        target_aabb.tl.y + target->size.y * kRescueKissYOffsetFactor
+        target_aabb.tl.y + target->GetSize().y * kRescueKissYOffsetFactor
     );
 }
 

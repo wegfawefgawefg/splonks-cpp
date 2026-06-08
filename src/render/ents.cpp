@@ -244,7 +244,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                     if (attached->active) {
                         SDL_SetRenderDrawColor(renderer, 132, 132, 132, 255);
                         const Vec2 anchor_world = attached->GetCenter() +
-                                                  Vec2::New(0.0F, (attached->size.y * 0.5F) - 1.0F);
+                                                  Vec2::New(0.0F, (attached->GetSize().y * 0.5F) - 1.0F);
                         const Vec2 ball_world =
                             GetNearestWorldPoint(state.stage, anchor_world, ent.GetCenter());
                         for (const Vec2& render_offset : render_offsets) {

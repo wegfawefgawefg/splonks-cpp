@@ -112,6 +112,14 @@ The expected end state is:
   `--check-input-lockstep-smoke` run was stopped after several CPU-bound
   minutes with no failure output; keep that as a test-runtime follow-up rather
   than counting broad lockstep smoke coverage as complete for this slice.
+- Audit checkpoint 2026-06-08: `gfxp` now owns a generic fixed-point
+  `BasicAabb` / `Aabb` primitive beside `BasicVec2`, and Splonks vendors it
+  with a `sim::AABB` alias plus explicit render/fixed bridge helpers. Runtime
+  `Ent::size` now stores Fixed12 values and replay/fingerprint paths serialize
+  that fixed representation directly. This is a buildable checkpoint, not the
+  end state: `Ent::pos`, `vel`, and `acc` plus gameplay collision/query AABB
+  decisions still need to migrate from float `Vec2` / `AABB` to fixed geometry
+  so branches cannot diverge before hashing.
 
 ## Math Function Audit
 

@@ -23,7 +23,7 @@ constexpr std::int32_t kPlayerAwayVelocityDampingPercent = 85;
 constexpr std::int32_t kMaxPlayerPullRaw = 5529;
 
 Vec2 GetAnchorPos(const Ent& player) {
-    return player.GetCenter() + Vec2::New(0.0F, (player.size.y * 0.5F) - 1.0F);
+    return player.GetCenter() + Vec2::New(0.0F, (player.GetSize().y * 0.5F) - 1.0F);
 }
 
 std::int32_t RoundFloatToFixedRaw(float value) {

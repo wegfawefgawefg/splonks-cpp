@@ -207,7 +207,7 @@ void MaintainDoorRumbleSound(Ent& door, State& state) {
         state,
         door.vid,
         door.vid,
-        Vec2::New(0.0F, door.size.y * 0.5F),
+        Vec2::New(0.0F, door.GetSize().y * 0.5F),
         audio_asset_ids::BoulderRoll,
         kDoorRumbleVolumeScale
     );
@@ -225,7 +225,7 @@ void StartDrop(Ent& door, State& state) {
     (void)PlayAttachedSoundEmitter(
         state,
         door.vid,
-        Vec2::New(0.0F, door.size.y * 0.5F),
+        Vec2::New(0.0F, door.GetSize().y * 0.5F),
         audio_asset_ids::BoulderLatch,
         params
     );

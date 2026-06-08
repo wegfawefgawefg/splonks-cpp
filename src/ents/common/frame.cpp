@@ -24,10 +24,7 @@ void ApplyAFrameGeometryToEnt(std::size_t ent_idx, State& state, const Graphics&
         return;
     }
 
-    ent.size = Vec2::New(
-        static_cast<float>(aframe->pbox.w),
-        static_cast<float>(aframe->pbox.h)
-    );
+    ent.size = sim::Vec2::from_pixels(aframe->pbox.w, aframe->pbox.h);
 }
 
 } // namespace

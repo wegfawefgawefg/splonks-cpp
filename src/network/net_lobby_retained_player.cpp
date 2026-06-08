@@ -116,7 +116,7 @@ NetRetainedAttachedEntState CaptureRetainedAttachedEnt(
     retained.pos = sim::ToSimVec2(attached->pos);
     retained.vel = sim::ToSimVec2(attached->vel);
     retained.acc = sim::ToSimVec2(attached->acc);
-    retained.size = sim::ToSimVec2(attached->size);
+    retained.size = attached->size;
     retained.rotation = attached->rotation;
     retained.counter_a = sim::ToSimScalar(attached->counter_a);
     retained.counter_b = sim::ToSimScalar(attached->counter_b);
@@ -316,7 +316,7 @@ void ApplyRetainedAttachedEntState(
             ent.pos = sim::ToRenderVec2(retained.pos);
             ent.vel = sim::ToRenderVec2(retained.vel);
             ent.acc = sim::ToRenderVec2(retained.acc);
-            ent.size = sim::ToRenderVec2(retained.size);
+            ent.size = retained.size;
             ent.rotation = retained.rotation;
             ent.counter_a = sim::ToRenderScalar(retained.counter_a);
             ent.counter_b = sim::ToRenderScalar(retained.counter_b);

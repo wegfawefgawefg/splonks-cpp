@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math_types.hpp"
+#include "sim/fxp.hpp"
 
 #include <cstdint>
 
@@ -34,6 +35,11 @@ struct IAABB {
 
 Vec2 GetMinDisplacement(const AABB& aabb1, const AABB& aabb2);
 bool AabbsIntersect(const AABB& left, const AABB& right);
+
+sim::AABB ToSimAABB(const AABB& value, gfxp::Rounding rounding = gfxp::Rounding::Nearest);
+AABB ToRenderAABB(const sim::AABB& value);
+IAABB ToIAABBFloorCeil(const sim::AABB& value);
+Vec2 ToRenderMinDisplacement(sim::AABB aabb1, sim::AABB aabb2);
 
 namespace rng {
 

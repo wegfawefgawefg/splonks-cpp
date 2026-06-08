@@ -89,7 +89,7 @@ void StepRollingSound(State& state, Ent& boulder) {
     (void)PlayAttachedSoundEmitter(
         state,
         boulder.vid,
-        Vec2::New(0.0F, boulder.size.y * 0.5F),
+        Vec2::New(0.0F, boulder.GetSize().y * 0.5F),
         audio_asset_ids::BoulderRoll,
         params
     );

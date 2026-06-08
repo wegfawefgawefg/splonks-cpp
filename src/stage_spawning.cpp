@@ -364,7 +364,7 @@ void SpawnAuthoredStageEnts(State& state) {
         ent->stage_spawn_index = static_cast<std::uint32_t>(i);
         ent->pos = spawn.pos;
         if (spawn.size_override.has_value()) {
-            ent->size = *spawn.size_override;
+            ent->size = sim::ToSimVec2(*spawn.size_override);
         }
         ent->facing = spawn.facing;
         ent->vel = Vec2::New(0.0F, 0.0F);

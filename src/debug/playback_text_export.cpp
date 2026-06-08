@@ -179,7 +179,8 @@ bool ExportRecordingToTextFile(
             out << "    pos: (" << ent.pos.x << ", " << ent.pos.y << ")\n";
             out << "    vel: (" << ent.vel.x << ", " << ent.vel.y << ")\n";
             out << "    acc: (" << ent.acc.x << ", " << ent.acc.y << ")\n";
-            out << "    size: (" << ent.size.x << ", " << ent.size.y << ")\n";
+            const Vec2 ent_size = ent.GetSize();
+            out << "    size: (" << ent_size.x << ", " << ent_size.y << ")\n";
             out << "    health: " << ent.health << "\n";
             out << "    money: " << ent.money << "\n";
 

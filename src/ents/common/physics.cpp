@@ -22,7 +22,7 @@ bool VidLess(const VID& left, const VID& right) {
 }
 
 AABB GetAabbAtPosition(const Ent& ent, const Vec2& pos) {
-    return AABB::New(pos, pos + ent.size - Vec2::New(1.0F, 1.0F));
+    return AABB::New(pos, pos + ent.GetSize() - Vec2::New(1.0F, 1.0F));
 }
 
 void StoreDistanceTraveled(std::size_t ent_idx, State& state, const Vec2& start_pos) {
@@ -110,7 +110,7 @@ bool TrySnapToDownwardBlockingSurface(
     if (contacts.touches_stage_bounds &&
         stage.IsBorderSideBlocking(StageBorderSideKind::Bottom) &&
         next_bottom > static_cast<float>(stage.GetHeight() - 1)) {
-        ent.pos.y = static_cast<float>(RoundToInt(static_cast<float>(stage.GetHeight()) - ent.size.y));
+        ent.pos.y = static_cast<float>(RoundToInt(static_cast<float>(stage.GetHeight()) - ent.GetSize().y));
         return true;
     }
 
@@ -138,7 +138,7 @@ bool TrySnapToDownwardBlockingSurface(
         return false;
     }
 
-    ent.pos.y = static_cast<float>(RoundToInt(*nearest_floor_top - ent.size.y));
+    ent.pos.y = static_cast<float>(RoundToInt(*nearest_floor_top - ent.GetSize().y));
     return true;
 }
 

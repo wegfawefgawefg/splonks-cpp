@@ -60,7 +60,7 @@ Ent Ent::New() {
     ent.jump_hold_gravity_frames_remaining = 0;
     ent.throw_velocity_scale = sim::Scalar::from_int(1);
     ent.buoyancy = sim::Scalar::zero();
-    ent.size = Vec2::New(8.0F, 8.0F);
+    ent.size = sim::Vec2::from_pixels(8, 8);
     ent.self_light = sim::Scalar::zero();
     ent.light_strength = sim::Scalar::zero();
     ent.light_color = sim::ToSimColor3(Color3::White());
@@ -222,19 +222,25 @@ void ClearTransientMovementFlags(Ent& ent) {
 }
 
 std::tuple<Vec2, Vec2> Ent::GetBounds() const {
-    return {pos, pos + size - Vec2::New(1.0F, 1.0F)};
+    const Vec2 render_size = GetSize();
+    return {pos, pos + render_size - Vec2::New(1.0F, 1.0F)};
 }
 
 AABB Ent::GetAABB() const {
-    return AABB::New(pos, pos + size - Vec2::New(1.0F, 1.0F));
+    const Vec2 render_size = GetSize();
+    return AABB::New(pos, pos + render_size - Vec2::New(1.0F, 1.0F));
 }
 
 Vec2 Ent::GetCenter() const {
-    return pos + size / 2.0F;
+    return pos + GetSize() / 2.0F;
 }
 
 void Ent::SetCenter(const Vec2& center) {
-    pos = center - size / 2.0F;
+    pos = center - GetSize() / 2.0F;
+}
+
+Vec2 Ent::GetSize() const {
+    return sim::ToRenderVec2(size);
 }
 
 void Ent::IncTravelSound() {
@@ -277,7 +283,7 @@ bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
         return false;
     }
 
-    pos.y = static_cast<float>(RoundToInt(static_cast<float>(stage.GetHeight()) - size.y));
+    pos.y = static_cast<float>(RoundToInt(static_cast<float>(stage.GetHeight()) - GetSize().y));
     return true;
 }
 
@@ -299,7 +305,7 @@ void Ent::SetGrounded(const Stage& stage) {
 }
 
 std::tuple<Vec2, Vec2> Ent::GetTlAndTrCorners() const {
-    return {Vec2::New(pos.x, pos.y), Vec2::New(pos.x + size.x, pos.y)};
+    return {Vec2::New(pos.x, pos.y), Vec2::New(pos.x + GetSize().x, pos.y)};
 }
 
 HangHands Ent::GetHangHands() const {
@@ -312,7 +318,7 @@ HangHands Ent::GetHangHands() const {
 
 HangHandBounds Ent::GetHangHandsBounds() const {
     const auto [tl, _br] = GetBounds();
-    const Vec2 right_edge = tl + Vec2::New(size.x, 0.0F);
+    const Vec2 right_edge = tl + Vec2::New(GetSize().x, 0.0F);
     HangHandBounds hang_hands;
     hang_hands.left_tl = tl - kHangHandSize;
     hang_hands.left_br = tl;

@@ -267,8 +267,10 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << "/" << b.vel.x << "," << b.vel.y
                    << " acc " << a.acc.x << "," << a.acc.y
                    << "/" << b.acc.x << "," << b.acc.y
-                   << " size " << a.size.x << "," << a.size.y
-                   << "/" << b.size.x << "," << b.size.y
+                   << " size " << sim::ToRenderScalar(a.size.x) << ","
+                   << sim::ToRenderScalar(a.size.y)
+                   << "/" << sim::ToRenderScalar(b.size.x) << ","
+                   << sim::ToRenderScalar(b.size.y)
                    << " grounded " << a.grounded << "/" << b.grounded
                    << " holding " << a.holding << "/" << b.holding
                    << " wanted " << a.wanted << "/" << b.wanted
@@ -573,7 +575,7 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
         return false;
     }
 
-    player->pos = Vec2::New(4.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - player->size.y);
+    player->pos = Vec2::New(4.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - player->GetSize().y);
     player->vel = Vec2::New(0.0F, 0.0F);
     player->acc = Vec2::New(0.0F, 0.0F);
     player->grounded = false;
@@ -652,7 +654,7 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
 
     player->pos = Vec2::New(
         22.0F * static_cast<float>(kTileSize),
-        20.0F * static_cast<float>(kTileSize) - player->size.y
+        20.0F * static_cast<float>(kTileSize) - player->GetSize().y
     );
     player->vel = Vec2::New(0.0F, 0.0F);
     player->acc = Vec2::New(0.0F, 0.0F);
@@ -679,7 +681,7 @@ bool PrepareShopDetReplayScenario(State& state, const char*& failed_step) {
     player->money = 50000;
     player->pos = Vec2::New(
         16.0F * static_cast<float>(kTileSize),
-        10.0F * static_cast<float>(kTileSize) - player->size.y
+        10.0F * static_cast<float>(kTileSize) - player->GetSize().y
     );
     player->vel = Vec2::New(0.0F, 0.0F);
     player->acc = Vec2::New(0.0F, 0.0F);
@@ -841,8 +843,8 @@ bool PlaceCarryTransitionSmokePlayers(State& state, Graphics& graphics, const ch
 
     const float tile = static_cast<float>(kTileSize);
     const float floor_y = 20.0F * tile;
-    p1->pos = Vec2::New(8.0F * tile, floor_y - p1->size.y);
-    p2->pos = Vec2::New(9.0F * tile, floor_y - p2->size.y);
+    p1->pos = Vec2::New(8.0F * tile, floor_y - p1->GetSize().y);
+    p2->pos = Vec2::New(9.0F * tile, floor_y - p2->GetSize().y);
     for (Ent* const player : {p1, p2}) {
         player->vel = Vec2::New(0.0F, 0.0F);
         player->acc = Vec2::New(0.0F, 0.0F);

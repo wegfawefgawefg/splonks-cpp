@@ -141,4 +141,22 @@ bool AabbsIntersect(const AABB& left, const AABB& right) {
     return true;
 }
 
+sim::AABB ToSimAABB(const AABB& value, gfxp::Rounding rounding) {
+    return sim::AABB::from_corners(sim::ToSimVec2(value.tl, rounding),
+                                   sim::ToSimVec2(value.br, rounding));
+}
+
+AABB ToRenderAABB(const sim::AABB& value) {
+    return AABB::New(sim::ToRenderVec2(value.tl), sim::ToRenderVec2(value.br));
+}
+
+IAABB ToIAABBFloorCeil(const sim::AABB& value) {
+    return IAABB::New(IVec2::New(value.tl.x.to_pixels_floor(), value.tl.y.to_pixels_floor()),
+                      IVec2::New(value.br.x.to_pixels_ceil(), value.br.y.to_pixels_ceil()));
+}
+
+Vec2 ToRenderMinDisplacement(sim::AABB aabb1, sim::AABB aabb2) {
+    return sim::ToRenderVec2(gfxp::min_displacement(aabb1, aabb2));
+}
+
 } // namespace splonks

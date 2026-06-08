@@ -263,7 +263,7 @@ void SpawnShopTestCrapsTable(
     if (table == nullptr) {
         return;
     }
-    table->size = shop_area.br - shop_area.tl + Vec2::New(1.0F, 1.0F);
+    table->size = sim::ToSimVec2(shop_area.br - shop_area.tl + Vec2::New(1.0F, 1.0F));
     table->ent_a = shop_vid;
     table->ent_b = dice_vid;
     table->ent_c = prize_vid;

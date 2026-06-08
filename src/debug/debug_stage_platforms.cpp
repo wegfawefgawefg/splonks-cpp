@@ -197,7 +197,7 @@ void InitMovingPlatformTestStage(State& state) {
     );
     if (icy_platform_vid.has_value()) {
         if (Ent* const icy_platform = state.ents.GetEntMut(*icy_platform_vid)) {
-            icy_platform->size = Vec2::New(64.0F, 16.0F);
+            icy_platform->size = sim::Vec2::from_pixels(64, 16);
             icy_platform->support_ground_friction = sim::ToSimScalar(1.0F);
             icy_platform->can_be_hung_on = false;
             icy_platform->aframe_animator = AFrameAnimator::New(aframe_ids::IceBlock);

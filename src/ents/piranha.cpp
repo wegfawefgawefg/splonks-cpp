@@ -33,7 +33,7 @@ bool IsPiranhaInWater(const Ent& piranha, const State& state) {
     const Vec2 center = piranha.GetCenter();
     const float cutoff = sim::ToRenderScalar(state.settings.fluid.render_cutoff_amount);
     return IsWaterAtWorldPos(state.stage, center, cutoff) ||
-           IsWaterAtWorldPos(state.stage, center + Vec2::New(0.0F, piranha.size.y * 0.35F), cutoff);
+           IsWaterAtWorldPos(state.stage, center + Vec2::New(0.0F, piranha.GetSize().y * 0.35F), cutoff);
 }
 
 std::optional<Vec2> FindPiranhaTarget(const Ent& piranha, const State& state) {

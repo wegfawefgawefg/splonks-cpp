@@ -896,7 +896,7 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintFieldDiff("pos", Vec2DebugString(left->pos), Vec2DebugString(right->pos));
     PrintFieldDiff("vel", Vec2DebugString(left->vel), Vec2DebugString(right->vel));
     PrintFieldDiff("acc", Vec2DebugString(left->acc), Vec2DebugString(right->acc));
-    PrintFieldDiff("size", Vec2DebugString(left->size), Vec2DebugString(right->size));
+    PrintFieldDiff("size", Vec2DebugString(left->GetSize()), Vec2DebugString(right->GetSize()));
     if (left->rotation != right->rotation) {
         std::cout << "    rotation: " << sim::ToRenderScalar(left->rotation)
                   << " != " << sim::ToRenderScalar(right->rotation) << '\n';

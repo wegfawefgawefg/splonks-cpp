@@ -66,10 +66,11 @@ ClimbProbePoints GetClimbProbePointsAtPosition(
     const Vec2& pos,
     const JumpAndClimbTuning& tuning
 ) {
-    const Vec2 center = pos + (ent.size / 2.0F);
+    const Vec2 size = ent.GetSize();
+    const Vec2 center = pos + (size / 2.0F);
     const float probe_y =
-        pos.y + std::min(tuning.climb_probe_bias_pixels, std::max(0.0F, ent.size.y - 1.0F));
-    const float horizontal_offset = (ent.size.x * 0.5F) * std::max(0.0F, tuning.climb_probe_x_scale);
+        pos.y + std::min(tuning.climb_probe_bias_pixels, std::max(0.0F, size.y - 1.0F));
+    const float horizontal_offset = (size.x * 0.5F) * std::max(0.0F, tuning.climb_probe_x_scale);
     return ClimbProbePoints{
         .left = Vec2::New(center.x - horizontal_offset, probe_y),
         .center = Vec2::New(center.x, probe_y),
@@ -100,7 +101,7 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
     std::optional<IVec2> best_tile = std::nullopt;
     int best_hits = 0;
     float best_score = 0.0F;
-    const Vec2 ent_center = pos + (ent.size / 2.0F);
+    const Vec2 ent_center = pos + (ent.GetSize() / 2.0F);
 
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
@@ -525,7 +526,7 @@ bool CanCornerHangOnSide(
     const float side_x = left_side ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
     const float upper_probe_y_a = aabb.tl.y + 2.0F;
     const float upper_probe_y_b = aabb.tl.y + 3.0F;
-    const float center_x = aabb.tl.x + static_cast<float>(FloorToInt(ent.size.x / 2.0F));
+    const float center_x = aabb.tl.x + static_cast<float>(FloorToInt(ent.GetSize().x / 2.0F));
     const float below_probe_y = aabb.br.y + 1.0F;
 
     const bool upper_probe_blocked =
@@ -787,7 +788,7 @@ bool TryCaptureHdHang(
     }
 
     const bool has_gloves = EntHasHangGloves(ent);
-    const float center_x = aabb.tl.x + static_cast<float>(FloorToInt(ent.size.x / 2.0F));
+    const float center_x = aabb.tl.x + static_cast<float>(FloorToInt(ent.GetSize().x / 2.0F));
     const float upper_probe_y_a = aabb.tl.y + 2.0F;
     const float upper_probe_y_b = aabb.tl.y + 3.0F;
     const float below_probe_y = aabb.br.y + 1.0F;

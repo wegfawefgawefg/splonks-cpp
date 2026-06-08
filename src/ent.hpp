@@ -76,7 +76,7 @@ struct Ent {
     std::uint32_t jump_hold_gravity_frames_remaining = 0;
     sim::Scalar throw_velocity_scale = sim::Scalar::from_int(1);
     sim::Scalar buoyancy = sim::Scalar::zero();
-    Vec2 size;
+    sim::Vec2 size;
     sim::Scalar self_light = sim::Scalar::zero();
     sim::Scalar light_strength = sim::Scalar::zero();
     sim::Color3 light_color = sim::ToSimColor3(Color3::White());
@@ -177,6 +177,7 @@ struct Ent {
 
     static Ent New();
     void Reset();
+    Vec2 GetSize() const;
     std::tuple<Vec2, Vec2> GetBounds() const;
     AABB GetAABB() const;
     Vec2 GetCenter() const;

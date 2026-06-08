@@ -8,6 +8,7 @@ namespace splonks::sim {
 
 using Scalar = gfxp::Fixed12;
 using Vec2 = gfxp::BasicVec2<Scalar>;
+using AABB = gfxp::BasicAabb<Scalar>;
 
 struct Color3 {
     Scalar r = Scalar::from_int(1);

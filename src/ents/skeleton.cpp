@@ -42,8 +42,8 @@ std::optional<Vec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
 }
 
 void ResizeEntPreservingBottomCenter(Ent& ent, const Vec2& new_size) {
-    const Vec2 bottom_center = ent.pos + Vec2::New(ent.size.x * 0.5F, ent.size.y);
-    ent.size = new_size;
+    const Vec2 bottom_center = ent.pos + Vec2::New(ent.GetSize().x * 0.5F, ent.GetSize().y);
+    ent.size = sim::ToSimVec2(new_size);
     ent.pos = bottom_center - Vec2::New(new_size.x * 0.5F, new_size.y);
 }
 
