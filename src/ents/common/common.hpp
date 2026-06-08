@@ -171,7 +171,7 @@ bool TryDropEntByVid(
 bool TryThrowEntByVid(
     VID thrower_vid,
     VID thrown_vid,
-    Vec2 throw_velocity,
+    sim::Vec2 throw_velocity,
     State& state,
     const Graphics& graphics,
     Audio& audio
@@ -244,7 +244,7 @@ bool TrySpawnAndThrowEntForToolUse(
     std::uint32_t thrown_immunity_timer,
     void (*setup_ent)(Ent&),
     ToolThrowVelocityBuilder build_throw_velocity = nullptr,
-    std::optional<Vec2> throw_velocity_override = std::nullopt
+    std::optional<sim::Vec2> throw_velocity_override = std::nullopt
 );
 bool TryUseToolSlot(
     std::size_t ent_idx,
@@ -254,7 +254,7 @@ bool TryUseToolSlot(
     std::size_t tool_slot_index,
     bool trigger_pressed,
     ToolThrowVelocityBuilder build_throw_velocity = nullptr,
-    std::optional<Vec2> throw_velocity_override = std::nullopt
+    std::optional<sim::Vec2> throw_velocity_override = std::nullopt
 );
 
 enum class DamageResult {

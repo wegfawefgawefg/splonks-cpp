@@ -227,7 +227,7 @@ void SyncBackAttachForHolder(
 void ApplyThrowState(
     Ent& thrower,
     Ent& thrown,
-    Vec2 throw_velocity,
+    sim::Vec2 throw_velocity,
     State& state,
     const Graphics& graphics,
     Audio& audio
@@ -269,11 +269,11 @@ void ApplyThrowState(
     }
 
     if (IsPlayerEnt(thrown, state)) {
-        thrown.vel = sim::ToSimVec2(throw_velocity);
+        thrown.vel = throw_velocity;
         thrown.acc = sim::Vec2::zero();
     } else {
         thrown.vel = sim::Vec2::zero();
-        thrown.acc = sim::ToSimVec2(throw_velocity);
+        thrown.acc = throw_velocity;
     }
     state.UpdateSidForEnt(thrown.vid.id, graphics);
     (void)PlayEntCenterSoundEmitter(state, thrower, audio_asset_ids::Throw);
@@ -572,7 +572,7 @@ bool TryDropEntByVid(
 bool TryThrowEntByVid(
     VID thrower_vid,
     VID thrown_vid,
-    Vec2 throw_velocity,
+    sim::Vec2 throw_velocity,
     State& state,
     const Graphics& graphics,
     Audio& audio
@@ -764,37 +764,38 @@ void UpdateCarryAndBackItems(
 
             if (thrown_vid.has_value()) {
                 if (Ent* const thrown = state.ents.GetEntMut(*thrown_vid)) {
-                    Vec2 throw_vel = Vec2::New(0.0F, 0.0F);
+                    sim::Vec2 throw_vel = sim::Vec2::zero();
                     if (trying_to_go_left) {
-                        throw_vel.x = -10.0F;
+                        throw_vel.x = sim::Scalar::from_int(-10);
                     } else if (trying_to_go_right) {
-                        throw_vel.x = 10.0F;
+                        throw_vel.x = sim::Scalar::from_int(10);
                     }
                     if (trying_to_go_up) {
-                        throw_vel.y = -10.0F;
+                        throw_vel.y = sim::Scalar::from_int(-10);
                     }
                     if (trying_to_go_down) {
-                        throw_vel.y = 10.0F;
+                        throw_vel.y = sim::Scalar::from_int(10);
                     }
                     if (!trying_to_go_up && !trying_to_go_down &&
                         (trying_to_go_left || trying_to_go_right)) {
-                        throw_vel.y = -2.0F;
+                        throw_vel.y = sim::Scalar::from_int(-2);
                     }
                     if (mitt_throw) {
-                        const float throw_direction =
-                            throw_vel.x < 0.0F ? -1.0F :
-                            throw_vel.x > 0.0F ? 1.0F :
-                            ent.facing == Side::Left ? -1.0F : 1.0F;
-                        throw_vel.x += throw_direction * mitt_throw_boost;
+                        const int throw_direction =
+                            throw_vel.x < sim::Scalar::zero() ? -1 :
+                            throw_vel.x > sim::Scalar::zero() ? 1 :
+                            ent.facing == Side::Left ? -1 : 1;
+                        throw_vel.x += sim::Scalar::from_int(throw_direction) *
+                                       sim::ToSimScalar(mitt_throw_boost);
                         if (!trying_to_go_up && !trying_to_go_down) {
-                            throw_vel.y = -0.4F;
+                            throw_vel.y = sim::ToSimScalar(-0.4F);
                         } else if (trying_to_go_down) {
-                            throw_vel.y = 6.0F;
+                            throw_vel.y = sim::Scalar::from_int(6);
                         }
                     }
 
-                    const Vec2 scaled_throw_vel =
-                        throw_vel * sim::ToRenderScalar(ent.throw_velocity_scale);
+                    const sim::Vec2 scaled_throw_vel =
+                        throw_vel * ent.throw_velocity_scale;
                     (void)TryThrowEntByVid(
                         ent.vid,
                         thrown->vid,

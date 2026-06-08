@@ -4720,7 +4720,10 @@ bool CheckInputLockstepSmoke() {
                 std::cerr << "input lockstep carry-transition smoke failed: peer-owned player could not re-pickup host-owned player\n";
                 return false;
             }
-            const Vec2 throw_velocity = Vec2::New(2.0F, -2.0F);
+            const sim::Vec2 throw_velocity{
+                sim::Scalar::from_int(2),
+                sim::Scalar::from_int(-2),
+            };
             if (!ents::common::TryThrowEntByVid(
                     *peer0_p2,
                     *peer0_p1,

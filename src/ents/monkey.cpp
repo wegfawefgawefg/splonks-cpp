@@ -185,12 +185,18 @@ void ThrowSpawnedEnt(Ent& ent, const Ent& monkey) {
     ent.proj_contact_timer = common::kProjContactDuration;
 }
 
-Vec2 BuildMonkeyThrowLeft(const controls::ControlIntent&) {
-    return Vec2::New(-kMonkeyItemThrowSpeedX, kMonkeyItemThrowSpeedY);
+sim::Vec2 BuildMonkeyThrowLeft(const controls::ControlIntent&) {
+    return sim::Vec2{
+        sim::ToSimScalar(-kMonkeyItemThrowSpeedX),
+        sim::ToSimScalar(kMonkeyItemThrowSpeedY),
+    };
 }
 
-Vec2 BuildMonkeyThrowRight(const controls::ControlIntent&) {
-    return Vec2::New(kMonkeyItemThrowSpeedX, kMonkeyItemThrowSpeedY);
+sim::Vec2 BuildMonkeyThrowRight(const controls::ControlIntent&) {
+    return sim::Vec2{
+        sim::ToSimScalar(kMonkeyItemThrowSpeedX),
+        sim::ToSimScalar(kMonkeyItemThrowSpeedY),
+    };
 }
 
 bool CanMonkeyStealToolSlot(const ToolSlot& slot) {

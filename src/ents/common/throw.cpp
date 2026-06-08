@@ -9,21 +9,21 @@ namespace splonks::ents::common {
 
 namespace {
 
-Vec2 BuildThrowVelocity(const controls::ControlIntent& control) {
-    Vec2 throw_vel = Vec2::New(0.0F, 0.0F);
+sim::Vec2 BuildThrowVelocity(const controls::ControlIntent& control) {
+    sim::Vec2 throw_vel = sim::Vec2::zero();
     if (control.left) {
-        throw_vel.x = -10.0F;
+        throw_vel.x = sim::Scalar::from_int(-10);
     } else if (control.right) {
-        throw_vel.x = 10.0F;
+        throw_vel.x = sim::Scalar::from_int(10);
     }
     if (control.up) {
-        throw_vel.y = -10.0F;
+        throw_vel.y = sim::Scalar::from_int(-10);
     }
     if (control.down) {
-        throw_vel.y = 10.0F;
+        throw_vel.y = sim::Scalar::from_int(10);
     }
     if (!control.up && !control.down && (control.left || control.right)) {
-        throw_vel.y = -2.0F;
+        throw_vel.y = sim::Scalar::from_int(-2);
     }
     return throw_vel;
 }
@@ -41,7 +41,7 @@ bool TrySpawnAndThrowEntForToolUse(
     std::uint32_t thrown_immunity_timer,
     void (*setup_ent)(Ent&),
     ToolThrowVelocityBuilder build_throw_velocity,
-    std::optional<Vec2> throw_velocity_override
+    std::optional<sim::Vec2> throw_velocity_override
 ) {
     (void)audio;
     if (!trigger_pressed) {
@@ -70,11 +70,11 @@ bool TrySpawnAndThrowEntForToolUse(
         spawned.proj_contact_damage_amount = spawned_spec.proj_contact_damage_amount;
         spawned.proj_contact_timer = kProjContactDuration;
         spawned.SetRenderCenter(thrower.GetRenderCenter());
-        const Vec2 throw_velocity =
+        const sim::Vec2 throw_velocity =
             throw_velocity_override.value_or(
-                velocity_builder(control) * sim::ToRenderScalar(thrower.throw_velocity_scale)
+                velocity_builder(control) * thrower.throw_velocity_scale
             );
-        spawned.acc += sim::ToSimVec2(throw_velocity);
+        spawned.acc += throw_velocity;
         if (spawned.on_use != nullptr) {
             spawned.on_use(spawned.vid.id, state, graphics, audio);
         }
