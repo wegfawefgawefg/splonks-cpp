@@ -270,7 +270,7 @@ extern const EntSpec kBowSpec{
     .facing = Side::Left,
     .condition = EntCondition::Normal,
     .display_state = EntDisplayState::Neutral,
-    .counter_b = kBowArrowAmmo,
+    .counter_b = EntSpecCounter(kBowArrowAmmo),
     .damage_vuln = DamageVuln::Vulnerable,
     .on_use = OnUseAsBow,
     .step_logic = StepEntLogicAsBow,

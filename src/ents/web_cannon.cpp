@@ -841,7 +841,7 @@ extern const EntSpec kWebCannonSpec{
     .facing = Side::Left,
     .condition = EntCondition::Normal,
     .display_state = EntDisplayState::Neutral,
-    .counter_b = kWebGunBurstShots,
+    .counter_b = EntSpecCounter(kWebGunBurstShots),
     .damage_vuln = DamageVuln::Vulnerable,
     .on_use = OnUseAsWebCannon,
     .step_logic = StepEntLogicAsWebCannon,

@@ -59,7 +59,7 @@ extern const EntSpec kJetPackSpec{
     .facing = Side::Left,
     .condition = EntCondition::Normal,
     .display_state = EntDisplayState::Neutral,
-    .counter_a = kFuel,
+    .counter_a = EntSpecCounter(kFuel),
     .damage_vuln = DamageVuln::CrushingSpikesAndExplosion,
     .on_death = OnDeathAsJetpack,
     .on_damage = OnDamageAsJetpack,

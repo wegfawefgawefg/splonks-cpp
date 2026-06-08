@@ -67,8 +67,12 @@ void RestoreEntRenderEnabledFromSpec(Ent& ent) { ent.render_enabled = GetSpecFor
 void RestoreEntConditionFromSpec(Ent& ent) { ent.condition = GetSpecForEnt(ent).condition; }
 void RestoreEntAiStateFromSpec(Ent& ent) { ent.ai_state = GetSpecForEnt(ent).ai_state; }
 void RestoreEntHealthFromSpec(Ent& ent) { ent.health = GetSpecForEnt(ent).health; }
-void RestoreEntCounterAFromSpec(Ent& ent) { ent.counter_a = GetSpecForEnt(ent).counter_a; }
-void RestoreEntCounterBFromSpec(Ent& ent) { ent.counter_b = GetSpecForEnt(ent).counter_b; }
+void RestoreEntCounterAFromSpec(Ent& ent) {
+    ent.counter_a = sim::ToRenderScalar(GetSpecForEnt(ent).counter_a);
+}
+void RestoreEntCounterBFromSpec(Ent& ent) {
+    ent.counter_b = sim::ToRenderScalar(GetSpecForEnt(ent).counter_b);
+}
 void RestoreEntDamageVulnFromSpec(Ent& ent) { ent.damage_vuln = GetSpecForEnt(ent).damage_vuln; }
 void RestoreEntLabelAFromSpec(Ent& ent) { ent.ent_label_a = GetSpecForEnt(ent).ent_label_a; }
 void RestoreEntAlignmentFromSpec(Ent& ent) { ent.alignment = GetSpecForEnt(ent).alignment; }

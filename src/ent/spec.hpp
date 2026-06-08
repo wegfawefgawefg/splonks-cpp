@@ -58,9 +58,9 @@ struct EntSpec {
     EntCondition condition = EntCondition::Normal;
     EntAiState ai_state = EntAiState::Idle;
     EntDisplayState display_state = EntDisplayState::Neutral;
-    float counter_a = 0.0F;
-    float counter_b = 0.0F;
-    float counter_d = 0.0F;
+    sim::Scalar counter_a = sim::Scalar::zero();
+    sim::Scalar counter_b = sim::Scalar::zero();
+    sim::Scalar counter_d = sim::Scalar::zero();
     DamageVuln damage_vuln = DamageVuln::Vulnerable;
     DamageType proj_contact_damage_type = DamageType::Attack;
     std::uint32_t proj_contact_damage_amount = 1;
@@ -97,6 +97,10 @@ inline sim::Vec2 EntSpecSize(float width, float height) {
 
 inline sim::Vec2 EntSpecSize(const Vec2& size) {
     return sim::ToSimVec2(size);
+}
+
+inline sim::Scalar EntSpecCounter(float value) {
+    return sim::ToSimScalar(value);
 }
 
 const EntSpec& GetEntSpec(EntType type_);

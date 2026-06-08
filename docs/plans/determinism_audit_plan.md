@@ -98,6 +98,20 @@ The expected end state is:
   `SetEntAs` / spec-restore boundaries, so live entity collision size remains
   part of the broader `Ent::pos` / `vel` / `acc` / `size` migration, but new
   spawned/restored sizes no longer start from duplicate raw IEEE spec payloads.
+- Audit checkpoint 2026-06-08: authored `EntSpec::counter_a`,
+  `counter_b`, and `counter_d` defaults are now stored as Fixed12 scalars and
+  spec definitions use the explicit `EntSpecCounter(...)` authoring helper.
+  Runtime generic counters still convert to float at `SetEntAs` /
+  spec-restore boundaries, so the live mixed-use counter migration remains
+  deferred, but new spawned/restored default counters no longer start from raw
+  IEEE spec payloads. A stale unused duplicate `src/ent_spec.hpp` header was
+  removed so the active spec boundary is unambiguous.
+- Validation 2026-06-08: release build, state-equality smoke, deterministic
+  replay smoke, join-barrier protocol smoke, and join-barrier next-stage
+  restart smoke passed after the spec-counter boundary cleanup. The broad
+  `--check-input-lockstep-smoke` run was stopped after several CPU-bound
+  minutes with no failure output; keep that as a test-runtime follow-up rather
+  than counting broad lockstep smoke coverage as complete for this slice.
 
 ## Math Function Audit
 
