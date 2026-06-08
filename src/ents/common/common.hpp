@@ -342,13 +342,6 @@ std::vector<VID> GatherTouchedEntContactsForAabb(
 );
 BlockingContactSet GatherBlockingContactsForAabb(
     std::size_t ent_idx,
-    const AABB& aabb,
-    const State& state,
-    bool check_tiles,
-    bool check_ents
-);
-BlockingContactSet GatherBlockingContactsForAabb(
-    std::size_t ent_idx,
     sim::AABB aabb,
     const State& state,
     bool check_tiles,
