@@ -90,16 +90,6 @@ BlockingImpactSurface GetImpactSurfaceForBlockedContacts(const BlockingContactSe
     return BlockingImpactSurface::ImpassableEnt;
 }
 
-AABB GetTileAabbForContact(const TileContact& tile_contact, const Stage& stage, const Vec2& anchor) {
-    const Vec2 tile_tl = ToVec2(tile_contact.tile_pos * static_cast<int>(kTileSize));
-    return GetNearestWorldAabb(
-        stage,
-        anchor,
-        AABB::New(tile_tl, tile_tl + Vec2::New(static_cast<float>(kTileSize - 1),
-                                               static_cast<float>(kTileSize - 1)))
-    );
-}
-
 sim::AABB GetTileAabbForContact(const TileContact& tile_contact, const Stage& stage, sim::Vec2 anchor) {
     const sim::Vec2 tile_tl =
         sim::Vec2::from_pixels(tile_contact.tile_pos.x * static_cast<int>(kTileSize),
@@ -112,49 +102,6 @@ sim::AABB GetTileAabbForContact(const TileContact& tile_contact, const Stage& st
             tile_tl + sim::Vec2::from_pixels(static_cast<int>(kTileSize - 1),
                                              static_cast<int>(kTileSize - 1)))
     );
-}
-
-bool TrySnapToDownwardBlockingSurface(
-    Ent& ent,
-    const BlockingContactSet& contacts,
-    const Stage& stage
-) {
-    const AABB current_aabb = ent.GetAABB();
-    const float next_bottom = current_aabb.br.y + 1.0F;
-
-    if (contacts.touches_stage_bounds &&
-        stage.IsBorderSideBlocking(StageBorderSideKind::Bottom) &&
-        next_bottom > static_cast<float>(stage.GetHeight() - 1)) {
-        ent.pos.y = sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetHeight())) - ent.size.y;
-        return true;
-    }
-
-    std::optional<float> nearest_floor_top;
-    const Vec2 anchor = (current_aabb.tl + current_aabb.br) / 2.0F;
-    for (const TileContact& tile_contact : contacts.tile_contacts) {
-        if (!tile_contact.blocks_movement) {
-            continue;
-        }
-
-        const AABB tile_aabb = GetTileAabbForContact(tile_contact, stage, anchor);
-        if (tile_aabb.tl.y < current_aabb.br.y) {
-            continue;
-        }
-        if (tile_aabb.tl.y > next_bottom) {
-            continue;
-        }
-
-        if (!nearest_floor_top.has_value() || tile_aabb.tl.y < *nearest_floor_top) {
-            nearest_floor_top = tile_aabb.tl.y;
-        }
-    }
-
-    if (!nearest_floor_top.has_value()) {
-        return false;
-    }
-
-    ent.pos.y = sim::ToSimScalar(*nearest_floor_top) - ent.size.y;
-    return true;
 }
 
 bool TrySnapToDownwardBlockingSurface(
@@ -198,35 +145,6 @@ bool TrySnapToDownwardBlockingSurface(
 
     ent.pos.y = *nearest_floor_top - ent.size.y;
     return true;
-}
-
-bool DoesOneWayTopContactBlock(
-    const Ent& ent,
-    const TileContact& tile_contact,
-    const Stage& stage,
-    const AABB& current_aabb,
-    const AABB& next_aabb,
-    BlockingImpactAxis impact_axis,
-    int direction
-) {
-    if (tile_contact.tile == nullptr || !IsTileOneWayTopSolid(*tile_contact.tile)) {
-        return false;
-    }
-    if (impact_axis != BlockingImpactAxis::Vertical || direction <= 0) {
-        return false;
-    }
-    if (ent.IsClimbing()) {
-        return false;
-    }
-
-    const AABB tile_aabb = GetTileAabbForContact(tile_contact, stage, (next_aabb.tl + next_aabb.br) / 2.0F);
-    if (current_aabb.br.y >= tile_aabb.tl.y) {
-        return false;
-    }
-    if (next_aabb.br.y < tile_aabb.tl.y) {
-        return false;
-    }
-    return next_aabb.br.x >= tile_aabb.tl.x && next_aabb.tl.x <= tile_aabb.br.x;
 }
 
 bool DoesOneWayTopContactBlock(
@@ -387,19 +305,19 @@ bool DispatchPostSweepEntOverlapContacts(
     );
 }
 
-AABB GetTopCarryStrip(const Ent& ent) {
-    const AABB aabb = ent.GetAABB();
-    return AABB{
-        .tl = Vec2::New(aabb.tl.x, aabb.tl.y - 1.0F),
-        .br = Vec2::New(aabb.br.x, aabb.tl.y - 1.0F),
+sim::AABB GetTopCarryStrip(const Ent& ent) {
+    const sim::AABB aabb = ent.GetSimAABB();
+    return sim::AABB{
+        .tl = sim::Vec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_int(1)},
+        .br = sim::Vec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_int(1)},
     };
 }
 
-AABB GetTopCarryQueryArea(const Ent& ent, const IVec2& direction) {
-    const AABB carry_strip = GetTopCarryStrip(ent);
+sim::AABB GetTopCarryQueryArea(const Ent& ent, const IVec2& direction) {
+    const sim::AABB carry_strip = GetTopCarryStrip(ent);
     if (direction.y > 0) {
-        return AABB{
-            .tl = Vec2::New(carry_strip.tl.x, carry_strip.tl.y - 1.0F),
+        return sim::AABB{
+            .tl = sim::Vec2{carry_strip.tl.x, carry_strip.tl.y - sim::Scalar::from_int(1)},
             .br = carry_strip.br,
         };
     }
@@ -418,29 +336,32 @@ bool IsCarryTargetOnTopOfMover(
         return false;
     }
 
-    const AABB carry_strip = GetTopCarryStrip(mover);
-    const AABB target_feet = GetNearestWorldAabb(stage, mover.GetCenter(), target.GetFeet());
-    if (!AabbsIntersect(carry_strip, target_feet)) {
+    const sim::AABB carry_strip = GetTopCarryStrip(mover);
+    const sim::AABB target_feet =
+        GetNearestWorldAabb(stage, mover.GetSimCenter(), target.GetSimFeet());
+    if (!gfxp::aabbs_intersect(carry_strip, target_feet)) {
         return false;
     }
 
-    const float overlap_x =
+    const sim::Scalar overlap_x =
         std::min(carry_strip.br.x, target_feet.br.x) -
         std::max(carry_strip.tl.x, target_feet.tl.x);
-    return overlap_x > 0.0F;
+    return overlap_x > sim::Scalar::zero();
 }
 
-AABB GetHangCarryStripForMoverSide(const Ent& mover, Side mover_side) {
-    const AABB aabb = mover.GetAABB();
+sim::AABB GetHangCarryStripForMoverSide(const Ent& mover, Side mover_side) {
+    const sim::AABB aabb = mover.GetSimAABB();
     if (mover_side == Side::Right) {
-        return AABB{
-            .tl = Vec2::New(aabb.br.x + 1.0F, aabb.tl.y),
-            .br = Vec2::New(aabb.br.x + 1.0F, aabb.br.y),
+        const sim::Scalar x = aabb.br.x + sim::Scalar::from_int(1);
+        return sim::AABB{
+            .tl = sim::Vec2{x, aabb.tl.y},
+            .br = sim::Vec2{x, aabb.br.y},
         };
     }
-    return AABB{
-        .tl = Vec2::New(aabb.tl.x - 1.0F, aabb.tl.y),
-        .br = Vec2::New(aabb.tl.x - 1.0F, aabb.br.y),
+    const sim::Scalar x = aabb.tl.x - sim::Scalar::from_int(1);
+    return sim::AABB{
+        .tl = sim::Vec2{x, aabb.tl.y},
+        .br = sim::Vec2{x, aabb.br.y},
     };
 }
 
@@ -467,19 +388,20 @@ bool IsHangCarryTargetOnMoverSide(
         }
     }
 
-    const AABB mover_aabb = mover.GetAABB();
-    const AABB target_aabb = GetNearestWorldAabb(stage, mover.GetCenter(), target.GetAABB());
-    const float overlap_y =
+    const sim::AABB mover_aabb = mover.GetSimAABB();
+    const sim::AABB target_aabb =
+        GetNearestWorldAabb(stage, mover.GetSimCenter(), target.GetSimAABB());
+    const sim::Scalar overlap_y =
         std::min(mover_aabb.br.y, target_aabb.br.y) -
         std::max(mover_aabb.tl.y, target_aabb.tl.y);
-    if (overlap_y <= 0.0F) {
+    if (overlap_y <= sim::Scalar::zero()) {
         return false;
     }
 
     if (mover_side == Side::Right) {
-        return target_aabb.tl.x == mover_aabb.br.x + 1.0F;
+        return target_aabb.tl.x == mover_aabb.br.x + sim::Scalar::from_int(1);
     }
-    return target_aabb.br.x == mover_aabb.tl.x - 1.0F;
+    return target_aabb.br.x == mover_aabb.tl.x - sim::Scalar::from_int(1);
 }
 
 void AppendHangCarryTargetsOnMoverSide(
@@ -558,10 +480,10 @@ void TryCarryEntsOnTopByOnePixel(
                 return false;
             }
 
-            const float left_x =
-                GetNearestWorldAabb(state.stage, mover.GetCenter(), left->GetAABB()).tl.x;
-            const float right_x =
-                GetNearestWorldAabb(state.stage, mover.GetCenter(), right->GetAABB()).tl.x;
+            const sim::Scalar left_x =
+                GetNearestWorldAabb(state.stage, mover.GetSimCenter(), left->GetSimAABB()).tl.x;
+            const sim::Scalar right_x =
+                GetNearestWorldAabb(state.stage, mover.GetSimCenter(), right->GetSimAABB()).tl.x;
             if (direction.x > 0) {
                 if (left_x != right_x) {
                     return left_x > right_x;

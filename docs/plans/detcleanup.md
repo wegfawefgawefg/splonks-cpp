@@ -172,6 +172,9 @@ Current state:
 - Completed 2026-06-08: the old float `GatherBlockingContactsForAabb(...)`
   overload was removed; blocking contact gathering now exposes only the fixed
   `sim::AABB` API.
+- Completed 2026-06-08: physics movement cleanup removed dead float tile-contact
+  snap/one-way helpers, and moving-platform top/hang carry detection now uses
+  fixed body/feet AABBs and fixed overlap comparisons.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -209,6 +212,7 @@ Cleanup:
       AABBs.
 - [x] Remove float blocking-world query overloads after callers moved to fixed
       AABBs.
+- [x] Migrate moving-platform carry/hang carry physics queries to fixed AABBs.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter
   boundaries.
