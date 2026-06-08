@@ -16,26 +16,21 @@ namespace splonks {
 
 namespace {
 
-Vec2 GetAabbCenter(const AABB& aabb) {
-    return (aabb.tl + aabb.br) / 2.0F;
-}
-
 std::int64_t GetBuyPromptDistanceSq(
-    const Vec2& buyer_center,
-    const Vec2& item_center,
+    sim::Vec2 buyer_center,
+    sim::Vec2 item_center,
     const Stage& stage
 ) {
-    const Vec2 delta = GetNearestWorldDelta(stage, buyer_center, item_center);
-    const sim::Vec2 fixed_delta = sim::ToSimVec2(delta);
-    const std::int64_t dx = fixed_delta.x.raw_value();
-    const std::int64_t dy = fixed_delta.y.raw_value();
+    const sim::Vec2 delta = GetNearestWorldDelta(stage, buyer_center, item_center);
+    const std::int64_t dx = delta.x.raw_value();
+    const std::int64_t dy = delta.y.raw_value();
     return (dx * dx) + (dy * dy);
 }
 
 struct OverlappingBuyableEnt {
     std::size_t ent_idx = 0;
     std::int64_t distance_sq = 0;
-    AABB nearest_aabb = AABB::New(Vec2::New(0.0F, 0.0F), Vec2::New(0.0F, 0.0F));
+    sim::AABB nearest_aabb = sim::AABB::zero();
 };
 
 std::vector<OverlappingBuyableEnt> FindOverlappingBuyableEnts(
@@ -52,8 +47,8 @@ std::vector<OverlappingBuyableEnt> FindOverlappingBuyableEnts(
         return {};
     }
 
-    const AABB buyer_aabb = ents::common::GetRenderContactAabbForEnt(buyer, graphics);
-    const Vec2 buyer_center = GetAabbCenter(buyer_aabb);
+    const sim::AABB buyer_aabb = ents::common::GetContactAabbForEnt(buyer, graphics);
+    const sim::Vec2 buyer_center = buyer_aabb.center();
     const std::vector<VID> results = QueryEntsInAabb(state, buyer_aabb, buyer.vid);
 
     std::vector<OverlappingBuyableEnt> overlaps;
@@ -64,18 +59,18 @@ std::vector<OverlappingBuyableEnt> FindOverlappingBuyableEnts(
             continue;
         }
 
-        const AABB item_aabb = GetNearestWorldAabb(
+        const sim::AABB item_aabb = GetNearestWorldAabb(
             state.stage,
             buyer_center,
-            ents::common::GetRenderContactAabbForEnt(*item, graphics)
+            ents::common::GetContactAabbForEnt(*item, graphics)
         );
-        if (!AabbsIntersect(buyer_aabb, item_aabb)) {
+        if (!gfxp::aabbs_intersect(buyer_aabb, item_aabb)) {
             continue;
         }
 
         overlaps.push_back(OverlappingBuyableEnt{
             .ent_idx = vid.id,
-            .distance_sq = GetBuyPromptDistanceSq(buyer_center, GetAabbCenter(item_aabb), state.stage),
+            .distance_sq = GetBuyPromptDistanceSq(buyer_center, item_aabb.center(), state.stage),
             .nearest_aabb = item_aabb,
         });
     }
@@ -191,8 +186,10 @@ void AddBuyPromptsForPlayer(State& state, const Graphics& graphics) {
         FindOverlappingBuyableEnts(state, graphics, buyer_idx);
     for (const OverlappingBuyableEnt& overlap : overlaps) {
         const Ent& item = state.ents.ents[overlap.ent_idx];
+        const Vec2 prompt_tl = sim::ToRenderVec2(overlap.nearest_aabb.tl);
+        const Vec2 prompt_br = sim::ToRenderVec2(overlap.nearest_aabb.br);
         state.AddWorldPrompt(WorldPrompt{
-            .world_pos = Vec2::New((overlap.nearest_aabb.tl.x + overlap.nearest_aabb.br.x) * 0.5F, overlap.nearest_aabb.tl.y - 6.0F),
+            .world_pos = Vec2::New((prompt_tl.x + prompt_br.x) * 0.5F, prompt_tl.y - 6.0F),
             .action_text = "RB",
             .message_text = "",
             .show_down_arrow = false,
