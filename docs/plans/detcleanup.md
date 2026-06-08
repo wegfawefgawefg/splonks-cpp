@@ -194,6 +194,9 @@ Current state:
 - Completed 2026-06-08: boulder, block, and door particle/audio/shake
   placement helpers now derive their render positions from fixed body AABBs at
   explicit presentation boundaries.
+- Completed 2026-06-08: damsel rescue-kiss and gold-idol reward particle
+  placement now derive render positions from fixed body AABBs at explicit
+  presentation boundaries.
 - Remaining code references to `GetRenderContactAabbForEnt(...)` are in debug
   rendering, the helper declaration/definition, and a mattock debug annotation.
 
@@ -241,6 +244,8 @@ Cleanup:
 - [x] Remove the old float stage-break rectangle API after callers are fixed.
 - [x] Migrate climber step-sound tile selection to fixed body geometry.
 - [x] Move boulder/block/door presentation placement helpers off generic
+      `GetAABB()` and onto fixed body geometry plus explicit render conversion.
+- [x] Move damsel/gold-idol reward particle placement helpers off generic
       `GetAABB()` and onto fixed body geometry plus explicit render conversion.
 - Migrate these systems one at a time to fixed contact geometry.
 - Keep render wrappers only in render/debug and temporary float adapter

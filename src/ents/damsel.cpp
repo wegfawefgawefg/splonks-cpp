@@ -66,19 +66,19 @@ void SpawnRescueKissParticle(const Vec2& pos, State& state) {
 
 Vec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, const Ent& damsel) {
     if (!target_vid.has_value()) {
-        return damsel.GetCenter();
+        return sim::ToRenderVec2(damsel.GetSimCenter());
     }
 
     const Ent* const target = state.ents.GetEnt(*target_vid);
     if (target == nullptr || !target->active) {
-        return damsel.GetCenter();
+        return sim::ToRenderVec2(damsel.GetSimCenter());
     }
 
-    const AABB target_aabb = target->GetAABB();
-    return Vec2::New(
-        (target_aabb.tl.x + target_aabb.br.x) * 0.5F,
-        target_aabb.tl.y + target->GetSize().y * kRescueKissYOffsetFactor
-    );
+    const sim::AABB target_aabb = target->GetSimAABB();
+    return sim::ToRenderVec2(sim::Vec2{
+        target_aabb.center().x,
+        target_aabb.tl.y + target->size.y * sim::ToSimScalar(kRescueKissYOffsetFactor),
+    });
 }
 
 Vec2 GetRescueKissPos(const State& state, const Ent& damsel) {

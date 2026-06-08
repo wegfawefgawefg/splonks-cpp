@@ -60,19 +60,19 @@ std::optional<VID> GetRewardTargetVid(const Ent& idol, const State& state) {
 
 Vec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& state, const Ent& idol) {
     if (!target_vid.has_value()) {
-        return idol.GetCenter();
+        return sim::ToRenderVec2(idol.GetSimCenter());
     }
 
     const Ent* const target = state.ents.GetEnt(*target_vid);
     if (target == nullptr || !target->active) {
-        return idol.GetCenter();
+        return sim::ToRenderVec2(idol.GetSimCenter());
     }
 
-    const AABB target_aabb = target->GetAABB();
-    return Vec2::New(
-        (target_aabb.tl.x + target_aabb.br.x) * 0.5F,
-        target_aabb.tl.y + target->GetSize().y * kRewardParticleYOffsetFactor
-    );
+    const sim::AABB target_aabb = target->GetSimAABB();
+    return sim::ToRenderVec2(sim::Vec2{
+        target_aabb.center().x,
+        target_aabb.tl.y + target->size.y * sim::ToSimScalar(kRewardParticleYOffsetFactor),
+    });
 }
 
 std::optional<std::size_t> FindIntersectingShopIdx(const Ent& idol, const State& state) {
