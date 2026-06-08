@@ -55,36 +55,13 @@ sim::Scalar GetNearestWrappedDelta(sim::Scalar from,
     return delta;
 }
 
-AABB ShiftAabb(const AABB& aabb, const Vec2& delta) {
-    return AABB{
-        .tl = aabb.tl + delta,
-        .br = aabb.br + delta,
-    };
-}
-
 sim::AABB ShiftAabb(sim::AABB aabb, sim::Vec2 delta) {
     aabb.translate(delta);
     return aabb;
 }
 
-Vec2 GetAabbCenter(const AABB& aabb) {
-    return (aabb.tl + aabb.br) / 2.0F;
-}
-
 sim::Vec2 GetAabbCenter(sim::AABB aabb) {
     return aabb.center();
-}
-
-sim::AABB ToSimQueryAABB(const AABB& area) {
-    return sim::AABB::from_corners(sim::ToSimVec2(area.tl, gfxp::Rounding::Floor),
-                                   sim::ToSimVec2(area.br, gfxp::Rounding::Ceil));
-}
-
-int FloorDivBySpan(float value, float span) {
-    if (span <= 0.0F) {
-        return 0;
-    }
-    return FloorToInt(value / span);
 }
 
 int FloorDiv(int value, int divisor) {
@@ -97,33 +74,6 @@ int FloorDiv(int value, int divisor) {
         --result;
     }
     return result;
-}
-
-std::vector<Vec2> GetQueryOffsets(const Stage& stage, const AABB& area) {
-    std::vector<Vec2> offsets;
-    offsets.push_back(Vec2::New(0.0F, 0.0F));
-
-    const float stage_width = static_cast<float>(stage.GetWidth());
-    const float stage_height = static_cast<float>(stage.GetHeight());
-    if ((!stage.WrapsX() || stage_width <= 0.0F) && (!stage.WrapsY() || stage_height <= 0.0F)) {
-        return offsets;
-    }
-
-    const int min_copy_x = stage.WrapsX() ? FloorDivBySpan(area.tl.x, stage_width) : 0;
-    const int max_copy_x = stage.WrapsX() ? FloorDivBySpan(area.br.x, stage_width) : 0;
-    const int min_copy_y = stage.WrapsY() ? FloorDivBySpan(area.tl.y, stage_height) : 0;
-    const int max_copy_y = stage.WrapsY() ? FloorDivBySpan(area.br.y, stage_height) : 0;
-
-    offsets.clear();
-    for (int copy_y = min_copy_y; copy_y <= max_copy_y; ++copy_y) {
-        for (int copy_x = min_copy_x; copy_x <= max_copy_x; ++copy_x) {
-            offsets.push_back(Vec2::New(
-                static_cast<float>(copy_x) * stage_width,
-                static_cast<float>(copy_y) * stage_height
-            ));
-        }
-    }
-    return offsets;
 }
 
 std::vector<sim::Vec2> GetQueryOffsets(const Stage& stage, sim::AABB area) {
@@ -226,34 +176,16 @@ bool IsTileQueryClimbable(const Stage& stage, const WorldTileQueryResult& tile_q
     );
 }
 
-AABB GetNearestWorldAabb(const Stage& stage, const Vec2& anchor, const AABB& aabb) {
-    const Vec2 center = GetAabbCenter(aabb);
-    const Vec2 nearest_center = GetNearestWorldPoint(stage, anchor, center);
-    return ShiftAabb(aabb, nearest_center - center);
-}
-
 sim::AABB GetNearestWorldAabb(const Stage& stage, sim::Vec2 anchor, sim::AABB aabb) {
     const sim::Vec2 center = GetAabbCenter(aabb);
     const sim::Vec2 nearest_center = GetNearestWorldPoint(stage, anchor, center);
     return ShiftAabb(aabb, nearest_center - center);
 }
 
-bool WorldAabbContainsPoint(const Stage& stage, const AABB& area, const Vec2& point) {
-    const AABB nearest_area = GetNearestWorldAabb(stage, point, area);
-    return point.x >= nearest_area.tl.x && point.x <= nearest_area.br.x &&
-           point.y >= nearest_area.tl.y && point.y <= nearest_area.br.y;
-}
-
 bool WorldAabbContainsPoint(const Stage& stage, sim::AABB area, sim::Vec2 point) {
     const sim::AABB nearest_area = GetNearestWorldAabb(stage, point, area);
     return point.x >= nearest_area.tl.x && point.x <= nearest_area.br.x &&
            point.y >= nearest_area.tl.y && point.y <= nearest_area.br.y;
-}
-
-bool WorldAabbsIntersect(const Stage& stage, const AABB& area, const AABB& other) {
-    const Vec2 anchor = GetAabbCenter(area);
-    const AABB nearest_other = GetNearestWorldAabb(stage, anchor, other);
-    return AabbsIntersect(area, nearest_other);
 }
 
 bool WorldAabbsIntersect(const Stage& stage, sim::AABB area, sim::AABB other) {
@@ -325,40 +257,12 @@ std::vector<WorldTileQueryResult> QueryTilesInWorldRect(
     );
 }
 
-std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, const AABB& area) {
-    return QueryTilesInWorldRect(stage, ToIVec2(area.tl), ToIVec2(area.br));
-}
-
 std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, sim::AABB area) {
     return QueryTilesInWorldRect(stage,
                                  IVec2::New(area.tl.x.to_pixels_floor(),
                                             area.tl.y.to_pixels_floor()),
                                  IVec2::New(area.br.x.to_pixels_floor(),
                                             area.br.y.to_pixels_floor()));
-}
-
-bool IsOneWayTopTileSupportingAabb(
-    const Stage& stage,
-    const WorldTileQueryResult& tile_query,
-    const AABB& area
-) {
-    if (tile_query.tile == nullptr || !IsTileOneWayTopSolid(*tile_query.tile)) {
-        return false;
-    }
-
-    const Vec2 tile_tl = ToVec2(tile_query.tile_pos * static_cast<int>(kTileSize));
-    const AABB tile_aabb = GetNearestWorldAabb(
-        stage,
-        (area.tl + area.br) / 2.0F,
-        AABB::New(
-            tile_tl,
-            tile_tl + Vec2::New(
-                static_cast<float>(kTileSize - 1),
-                static_cast<float>(kTileSize - 1)
-            )
-        )
-    );
-    return area.tl.y < tile_aabb.tl.y;
 }
 
 bool IsOneWayTopTileSupportingAabb(
@@ -480,14 +384,6 @@ std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, sim:
 
 std::vector<VID> QueryEntsInAabb(
     const State& state,
-    const AABB& area,
-    std::optional<VID> exclude_vid
-) {
-    return QueryEntsInAabb(state, ToSimQueryAABB(area), exclude_vid);
-}
-
-std::vector<VID> QueryEntsInAabb(
-    const State& state,
     sim::AABB area,
     std::optional<VID> exclude_vid
 ) {
@@ -528,7 +424,11 @@ std::vector<RaycastTarget> CollectRaycastTargets(
     const Graphics& graphics,
     std::optional<VID> owner_vid
 ) {
-    const std::vector<VID> hits = QueryEntsInAabb(state, ray_aabb, source_ent.vid);
+    const sim::AABB sim_ray_aabb = sim::AABB::from_corners(
+        sim::ToSimVec2(ray_aabb.tl, gfxp::Rounding::Floor),
+        sim::ToSimVec2(ray_aabb.br, gfxp::Rounding::Ceil)
+    );
+    const std::vector<VID> hits = QueryEntsInAabb(state, sim_ray_aabb, source_ent.vid);
     const sim::Vec2 sim_start_pos = sim::ToSimVec2(start_pos);
 
     std::vector<RaycastTarget> targets;

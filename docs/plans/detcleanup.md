@@ -335,12 +335,17 @@ Current state:
   nearest-world AABB, intersection, tile queries, blocking checks, and entity
   queries.
 - Raycasts still use old render `Vec2` / `AABB` paths.
+- Completed 2026-06-08: unused non-raycast float `AABB` overloads were removed
+  from nearest-world AABB, world AABB contains/intersect, tile AABB query,
+  entity AABB query, and one-way-support query APIs.
 
 Cleanup:
 
 - Make fixed/int query APIs the canonical gameplay path.
-- Move old float overloads behind render/debug names or remove them as callers
-  migrate.
+- [x] Remove unused non-raycast float AABB overloads after callers migrated to
+      fixed AABB APIs.
+- Move remaining old float overloads behind render/debug names or remove them
+  as callers migrate.
 - Audit raycast APIs separately. If raycasts affect gameplay, convert their
   inputs, stepping, target bounds, and results to fixed/int types without
   changing raycast semantics.

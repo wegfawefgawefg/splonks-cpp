@@ -9,12 +9,9 @@ namespace splonks {
 
 Vec2 GetNearestWorldDelta(const Stage& stage, const Vec2& from, const Vec2& to);
 Vec2 GetNearestWorldPoint(const Stage& stage, const Vec2& anchor, const Vec2& point);
-AABB GetNearestWorldAabb(const Stage& stage, const Vec2& anchor, const AABB& aabb);
 sim::Vec2 GetNearestWorldDelta(const Stage& stage, sim::Vec2 from, sim::Vec2 to);
 sim::Vec2 GetNearestWorldPoint(const Stage& stage, sim::Vec2 anchor, sim::Vec2 point);
 sim::AABB GetNearestWorldAabb(const Stage& stage, sim::Vec2 anchor, sim::AABB aabb);
-bool WorldAabbContainsPoint(const Stage& stage, const AABB& area, const Vec2& point);
-bool WorldAabbsIntersect(const Stage& stage, const AABB& area, const AABB& other);
 bool WorldAabbContainsPoint(const Stage& stage, sim::AABB area, sim::Vec2 point);
 bool WorldAabbsIntersect(const Stage& stage, sim::AABB area, sim::AABB other);
 std::vector<IVec2> GetTileCoordsInRect(const Stage& stage, const IVec2& tl, const IVec2& br);
@@ -37,13 +34,7 @@ std::vector<WorldTileQueryResult> QueryTilesInWorldRect(
     const IVec2& tl,
     const IVec2& br
 );
-std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, const AABB& area);
 std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, sim::AABB area);
-bool IsOneWayTopTileSupportingAabb(
-    const Stage& stage,
-    const WorldTileQueryResult& tile_query,
-    const AABB& area
-);
 bool IsOneWayTopTileSupportingAabb(
     const Stage& stage,
     const WorldTileQueryResult& tile_query,
@@ -67,11 +58,6 @@ bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
 std::optional<WorldTileQueryResult> QueryTileAtTilePos(const Stage& stage, const IVec2& tile_pos);
 std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, const IVec2& world_pos);
 std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, sim::Vec2 world_pos);
-std::vector<VID> QueryEntsInAabb(
-    const State& state,
-    const AABB& area,
-    std::optional<VID> exclude_vid = std::nullopt
-);
 std::vector<VID> QueryEntsInAabb(
     const State& state,
     sim::AABB area,
