@@ -56,8 +56,8 @@ bool HasTargetTopY(const Ent& door) {
     return door.point_label_a == PointLabel::Target;
 }
 
-float GetTargetTopY(const Ent& door) {
-    return static_cast<float>(door.point_a.y);
+sim::Scalar GetTargetTopY(const Ent& door) {
+    return sim::Scalar::from_pixels(door.point_a.y);
 }
 
 float GetMoveDirection(const Ent& door) {
@@ -195,8 +195,8 @@ void MaintainDoorRumbleSound(Ent& door, State& state);
 
 void StartRumble(Ent& door, State& state) {
     door.ai_state = EntAiState::Pursuing;
-    door.vel = Vec2::New(0.0F, 0.0F);
-    door.acc = Vec2::New(0.0F, 0.0F);
+    door.vel = sim::Vec2::zero();
+    door.acc = sim::Vec2::zero();
     door.counter_b = kRumbleFrames;
     SetDoorShake(door, kRumbleDoorShake);
     MaintainDoorRumbleSound(door, state);
@@ -216,8 +216,8 @@ void MaintainDoorRumbleSound(Ent& door, State& state) {
 void StartDrop(Ent& door, State& state) {
     door.ai_state = EntAiState::Disturbed;
     door.render_enabled = true;
-    door.vel = Vec2::New(0.0F, GetMoveDirection(door) * kDropStartVelocity);
-    door.acc = Vec2::New(0.0F, 0.0F);
+    door.vel = sim::ToSimVec2(0.0F, GetMoveDirection(door) * kDropStartVelocity);
+    door.acc = sim::Vec2::zero();
     SetDoorShake(door, kDropStartDoorShake);
     AudioEmitterPlayParams params;
     params.volume_scale = 0.85F;
@@ -233,8 +233,8 @@ void StartDrop(Ent& door, State& state) {
 
 void SealDoor(Ent& door, State& state, Audio& audio) {
     door.ai_state = EntAiState::Returning;
-    door.vel = Vec2::New(0.0F, 0.0F);
-    door.acc = Vec2::New(0.0F, 0.0F);
+    door.vel = sim::Vec2::zero();
+    door.acc = sim::Vec2::zero();
     door.counter_a = kDoorSealWaitFrames;
     (void)StopOwnedSoundEmitter(
         state,
@@ -309,7 +309,7 @@ void StepEntLogicAsDoor(
     }
 
     if (door.ai_state == EntAiState::Idle) {
-        door.vel = Vec2::New(0.0F, 0.0F);
+        door.vel = sim::Vec2::zero();
         if (ShouldStartDrop(door, state)) {
             StartRumble(door, state);
         }
@@ -317,7 +317,7 @@ void StepEntLogicAsDoor(
     }
 
     if (IsRumbling(door)) {
-        door.vel = Vec2::New(0.0F, 0.0F);
+        door.vel = sim::Vec2::zero();
         SetDoorShake(door, kRumbleDoorShake);
         MaintainDoorRumbleSound(door, state);
         if (((state.stage_frame + door.vid.id) % (kTopSmokeIntervalFrames * 2)) == 0U) {
@@ -367,14 +367,16 @@ void StepEntPhysicsAsDoor(
     }
 
     const bool was_grounded = door.grounded;
-    const float pre_vel_y = door.vel.y;
+    const sim::Scalar pre_vel_y = door.vel.y;
     const float move_direction = GetMoveDirection(door);
-    door.acc.y += move_direction * kDropGravity;
+    door.acc.y += sim::ToSimScalar(move_direction * kDropGravity);
     common::PrePartialEulerStep(ent_idx, state, dt);
     if (move_direction > 0.0F) {
-        door.vel.y = std::clamp(door.vel.y, 0.0F, kDropMaxVelocity);
+        door.vel.y = gfxp::clamp(door.vel.y, sim::Scalar::zero(),
+                                 sim::ToSimScalar(kDropMaxVelocity));
     } else {
-        door.vel.y = std::clamp(door.vel.y, -kDropMaxVelocity, 0.0F);
+        door.vel.y = gfxp::clamp(door.vel.y, -sim::ToSimScalar(kDropMaxVelocity),
+                                 sim::Scalar::zero());
     }
     if (HasTargetTopY(door)) {
         common::DoEntCollisions(ent_idx, state, graphics, audio);
@@ -384,7 +386,7 @@ void StepEntPhysicsAsDoor(
     common::PostPartialEulerStep(ent_idx, state, dt);
 
     if (HasTargetTopY(door)) {
-        const float target_top_y = GetTargetTopY(door);
+        const sim::Scalar target_top_y = GetTargetTopY(door);
         if ((move_direction > 0.0F && door.pos.y >= target_top_y) ||
             (move_direction < 0.0F && door.pos.y <= target_top_y)) {
             door.pos.y = target_top_y;
@@ -395,7 +397,8 @@ void StepEntPhysicsAsDoor(
 
     const bool hit_bottom =
         (move_direction > 0.0F && !was_grounded && door.grounded) ||
-        (pre_vel_y != 0.0F && door.collided && door.vel.y == 0.0F);
+        (pre_vel_y != sim::Scalar::zero() && door.collided &&
+         door.vel.y == sim::Scalar::zero());
     if (hit_bottom) {
         SealDoor(door, state, audio);
     }

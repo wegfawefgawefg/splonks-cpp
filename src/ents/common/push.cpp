@@ -112,7 +112,7 @@ bool TryApplyPushEntAction(
         return false;
     }
 
-    pushed->acc.x += push_acc_delta;
+    pushed->acc.x += sim::ToSimScalar(push_acc_delta);
     return true;
 }
 
@@ -125,7 +125,7 @@ void TryPushBlocks(
     const bool ent_grounded = ent.grounded;
     const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
     const VID ent_vid = ent.vid;
-    const Vec2 ent_vel = ent.vel;
+    const sim::Vec2 ent_vel = ent.vel;
 
     bool ready_to_push = false;
     if (ent_grounded) {
@@ -149,15 +149,15 @@ void TryPushBlocks(
                 const Vec2 block_tl = nearest_block_aabb.tl;
                 const Vec2 block_br = nearest_block_aabb.br;
                 float block_x_acc_delta = 0.0F;
-                if (ent_vel.x > 0.0F && block_br.x > push_zone_left_x &&
+                if (ent_vel.x > sim::Scalar::zero() && block_br.x > push_zone_left_x &&
                     block_tl.x > push_zone_left_x) {
                     block_x_acc_delta = sim::ToRenderScalar(block_ent->push_acc);
-                } else if (ent_vel.x < 0.0F && block_tl.x < push_zone_right_x &&
+                } else if (ent_vel.x < sim::Scalar::zero() && block_tl.x < push_zone_right_x &&
                            block_br.x < push_zone_right_x) {
                     block_x_acc_delta = -sim::ToRenderScalar(block_ent->push_acc);
                 }
                 if (block_x_acc_delta != 0.0F) {
-                    block_ent->acc.x += block_x_acc_delta;
+                    block_ent->acc.x += sim::ToSimScalar(block_x_acc_delta);
                 }
                 break;
             }
@@ -186,9 +186,10 @@ bool TryDisplaceEntByOnePixel(
         return false;
     }
 
-    const Vec2 candidate_pos = ent.pos + ToVec2(direction);
+    const sim::Vec2 candidate_pos = ent.pos + sim::PixelVec2(direction.x, direction.y);
     const AABB candidate_aabb = AABB::New(
-        candidate_pos, candidate_pos + ent.GetSize() - Vec2::New(1.0F, 1.0F));
+        sim::ToRenderVec2(candidate_pos),
+        sim::ToRenderVec2(candidate_pos + ent.size - sim::PixelVec2(1, 1)));
     const BlockingContactSet contacts =
         GatherBlockingContactsForAabb(ent_idx, candidate_aabb, state, true, true);
     if (ResolveBlockingContactSet(ent_idx, contacts, state).blocks_movement) {

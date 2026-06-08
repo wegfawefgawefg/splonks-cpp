@@ -45,7 +45,7 @@ std::optional<Vec2> FindBatTargetPosition(const Ent& bat, const State& state) {
 
     std::optional<Vec2> best_target;
     float best_dist_sq = std::numeric_limits<float>::max();
-    const Vec2 bat_pos = bat.pos;
+    const Vec2 bat_pos = bat.GetRenderPos();
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -56,7 +56,7 @@ std::optional<Vec2> FindBatTargetPosition(const Ent& bat, const State& state) {
             continue;
         }
 
-        const Vec2 player_delta = GetNearestWorldDelta(state.stage, bat_pos, player->pos);
+        const Vec2 player_delta = GetNearestWorldDelta(state.stage, bat_pos, player->GetRenderPos());
         if (player_delta.y <= 0.0F ||
             std::abs(player_delta.y) >= static_cast<float>(kVerticalDetectDist) ||
             std::abs(player_delta.x) >= static_cast<float>(kHorizontalChaseDist)) {
@@ -78,7 +78,7 @@ void SnapBatToRoof(Ent& bat, const State& state) {
     }
 
     for (int i = 0; i < static_cast<int>(kTileSize); ++i) {
-        bat.pos.y -= 1.0F;
+        bat.pos.y -= sim::Scalar::from_pixels(1);
         if (IsAtPerchOrRoof(bat, state)) {
             return;
         }
@@ -109,8 +109,8 @@ void ControlEntAsBat(
     if (!steering && IsAtPerchOrRoof(bat, state)) {
         bat.ai_state = EntAiState::Idle;
         SetAnim(bat, aframe_ids::HangingBat);
-        bat.acc = Vec2::New(0.0F, 0.0F);
-        bat.vel = Vec2::New(0.0F, 0.0F);
+        bat.acc = sim::Vec2::zero();
+        bat.vel = sim::Vec2::zero();
         return;
     }
 
@@ -123,26 +123,27 @@ void ControlEntAsBat(
 
     bat.ai_state = EntAiState::Pursuing;
     SetAnim(bat, aframe_ids::FlyingBat);
-    bat.acc = Vec2::New(0.0F, 0.0F);
+    bat.acc = sim::Vec2::zero();
+    const sim::Scalar chase_speed = sim::ToSimScalar(kChaseSpeed);
     if (control.left) {
-        bat.acc.x -= kChaseSpeed;
+        bat.acc.x -= chase_speed;
     }
     if (control.right) {
-        bat.acc.x += kChaseSpeed;
+        bat.acc.x += chase_speed;
     }
     if (control.up) {
-        bat.acc.y -= kChaseSpeed;
+        bat.acc.y -= chase_speed;
     }
     if (control.down) {
-        bat.acc.y += kChaseSpeed;
+        bat.acc.y += chase_speed;
     }
     if (!steering) {
-        bat.vel = bat.vel * 0.8F;
+        bat.vel = bat.vel * sim::ToSimScalar(0.8F);
     }
-    if (bat.vel.x < 0.0F) {
+    if (bat.vel.x < sim::Scalar::zero()) {
         bat.facing = Side::Left;
     }
-    if (bat.vel.x > 0.0F) {
+    if (bat.vel.x > sim::Scalar::zero()) {
         bat.facing = Side::Right;
     }
 }
@@ -217,7 +218,9 @@ void StepEntLogicAsBat(
             }
             //  go to the target
             mutable_bat.ai_state = EntAiState::Pursuing;
-            mutable_bat.acc += NormalizeOrZeroDeterministic(*target_position - mutable_bat.pos) * kChaseSpeed;
+            mutable_bat.acc += sim::NormalizeOrZero(sim::ToSimVec2(*target_position) -
+                                                     mutable_bat.pos) *
+                               sim::ToSimScalar(kChaseSpeed);
             SetAnim(mutable_bat, aframe_ids::FlyingBat);
         } else {
             //  Go Back To Your Perch, (straight up from here lol)
@@ -226,21 +229,21 @@ void StepEntLogicAsBat(
             const bool at_perch_or_roof = IsAtPerchOrRoof(mutable_bat, state);
             if (at_perch_or_roof) {
                 mutable_bat.ai_state = EntAiState::Idle;
-                mutable_bat.acc = Vec2::New(0.0F, 0.0F);
-                mutable_bat.vel = Vec2::New(0.0F, 0.0F);
+                mutable_bat.acc = sim::Vec2::zero();
+                mutable_bat.vel = sim::Vec2::zero();
                 SetAnim(mutable_bat, aframe_ids::HangingBat);
             } else {
                 //  keep going up till you get there
-                mutable_bat.acc += Vec2::New(0.0F, -2.0F);
-                mutable_bat.vel.x = 0.0F;
+                mutable_bat.acc += sim::ToSimVec2(0.0F, -2.0F);
+                mutable_bat.vel.x = sim::Scalar::zero();
                     SetAnim(mutable_bat, aframe_ids::FlyingBat);
             }
         }
-        if (mutable_bat.vel.x < 0.0F) {
+        if (mutable_bat.vel.x < sim::Scalar::zero()) {
             mutable_bat.facing = Side::Left;
         }
 
-        if (mutable_bat.vel.x > 0.0F) {
+        if (mutable_bat.vel.x > sim::Scalar::zero()) {
             mutable_bat.facing = Side::Right;
         }
     }
@@ -271,8 +274,8 @@ void StepEntPhysicsAsBat(
     if (bat_condition != EntCondition::Normal) {
         common::ApplyGravity(ent_idx, state, dt);
     } else if (bat_ai_state == EntAiState::Idle) {
-        bat.acc = Vec2::New(0.0F, 0.0F);
-        bat.vel = Vec2::New(0.0F, 0.0F);
+        bat.acc = sim::Vec2::zero();
+        bat.vel = sim::Vec2::zero();
     } else if (!controlled) {
         common::ApplyGravity(ent_idx, state, dt);
     }
@@ -281,12 +284,14 @@ void StepEntPhysicsAsBat(
     if (bat_condition != EntCondition::Normal) {
         common::ApplySpecGroundFriction(ent_idx, state);
     } else if (controlled) {
-        bat.vel.x = std::clamp(bat.vel.x, -kChaseMaxSpeed, kChaseMaxSpeed);
-        bat.vel.y = std::clamp(bat.vel.y, -kChaseMaxSpeed, kChaseMaxSpeed);
+        const sim::Scalar chase_max_speed = sim::ToSimScalar(kChaseMaxSpeed);
+        bat.vel.x = gfxp::clamp(bat.vel.x, -chase_max_speed, chase_max_speed);
+        bat.vel.y = gfxp::clamp(bat.vel.y, -chase_max_speed, chase_max_speed);
     } else if (bat.ai_state == EntAiState::Pursuing ||
         bat.ai_state == EntAiState::Returning) {
-        bat.vel.x = std::clamp(bat.vel.x, -kChaseMaxSpeed, kChaseMaxSpeed);
-        bat.vel.y = std::clamp(bat.vel.y, -kChaseMaxSpeed, kChaseMaxSpeed);
+        const sim::Scalar chase_max_speed = sim::ToSimScalar(kChaseMaxSpeed);
+        bat.vel.x = gfxp::clamp(bat.vel.x, -chase_max_speed, chase_max_speed);
+        bat.vel.y = gfxp::clamp(bat.vel.y, -chase_max_speed, chase_max_speed);
     }
     common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     if (bat_ai_state != EntAiState::Pursuing) {

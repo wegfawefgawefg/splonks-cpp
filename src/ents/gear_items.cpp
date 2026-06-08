@@ -98,8 +98,8 @@ void UpdateOpenParachuteVisual(Ent& owner, State& state, const Graphics& graphic
     const Vec2 owner_visual_center =
         common::GetVisualCenterForEnt(owner, graphics, owner.GetCenter());
     parachute->SetCenter(owner_visual_center + Vec2::New(0.0F, kParachuteVisualOffsetY));
-    parachute->vel = Vec2::New(0.0F, 0.0F);
-    parachute->acc = Vec2::New(0.0F, 0.0F);
+    parachute->vel = sim::Vec2::zero();
+    parachute->acc = sim::Vec2::zero();
     state.UpdateSidForEnt(parachute->vid.id, graphics);
     (void)spawned_visual;
 }
@@ -119,7 +119,7 @@ void StepEquippedParachute(Ent& owner, State& state, const Graphics& graphics) {
         RemoveEffect(owner, EffectId::Parachute);
     }
 
-    owner.vel.y = std::min(owner.vel.y, kParachuteMaxFallSpeed);
+    owner.vel.y = std::min(owner.vel.y, sim::ToSimScalar(kParachuteMaxFallSpeed));
     owner.fall_timer = 0;
     UpdateOpenParachuteVisual(owner, state, graphics);
 }
@@ -169,8 +169,8 @@ void OnUseAsCape(std::size_t ent_idx, State& state, Graphics& graphics, Audio& a
     }
 
     cape.counter_a = 1.0F;
-    if (!holder->grounded && holder->vel.y > 0.0F) {
-        holder->vel.y = std::min(holder->vel.y, kCapeMaxFallSpeed);
+    if (!holder->grounded && holder->vel.y > sim::Scalar::zero()) {
+        holder->vel.y = std::min(holder->vel.y, sim::ToSimScalar(kCapeMaxFallSpeed));
         holder->fall_timer = 0;
     }
 }

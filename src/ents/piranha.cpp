@@ -50,15 +50,18 @@ std::optional<Vec2> FindPiranhaTarget(const Ent& piranha, const State& state) {
 }
 
 void PatrolWater(Ent& piranha) {
-    const float target_x = piranha.facing == Side::Left ? -kPiranhaMaxSwimSpeed : kPiranhaMaxSwimSpeed;
-    piranha.acc.x += std::clamp(target_x - piranha.vel.x, -kPiranhaSwimAcceleration, kPiranhaSwimAcceleration);
-    piranha.acc.y += std::clamp(-piranha.vel.y, -kPiranhaSwimAcceleration, kPiranhaSwimAcceleration);
+    const sim::Scalar swim_acc = sim::ToSimScalar(kPiranhaSwimAcceleration);
+    const sim::Scalar target_x = piranha.facing == Side::Left
+                                     ? -sim::ToSimScalar(kPiranhaMaxSwimSpeed)
+                                     : sim::ToSimScalar(kPiranhaMaxSwimSpeed);
+    piranha.acc.x += gfxp::clamp(target_x - piranha.vel.x, -swim_acc, swim_acc);
+    piranha.acc.y += gfxp::clamp(-piranha.vel.y, -swim_acc, swim_acc);
 }
 
 void ChaseTarget(Ent& piranha, const Vec2& target, const Stage& stage) {
     const Vec2 delta = GetNearestWorldDelta(stage, piranha.GetCenter(), target);
     const Vec2 direction = NormalizeOrZeroDeterministic(delta);
-    piranha.acc += direction * kPiranhaChaseAcceleration;
+    piranha.acc += sim::ToSimVec2(direction * kPiranhaChaseAcceleration);
     if (delta.x < 0.0F) {
         piranha.facing = Side::Left;
     } else if (delta.x > 0.0F) {
@@ -139,23 +142,24 @@ void StepEntPhysicsAsPiranha(
         return;
     }
 
-    const Vec2 old_pos = piranha.pos;
+    const sim::Vec2 old_pos = piranha.pos;
     common::PrePartialEulerStep(ent_idx, state, dt);
-    piranha.vel = piranha.vel * kPiranhaWaterDamping;
-    piranha.vel.x = std::clamp(piranha.vel.x, -kPiranhaMaxSwimSpeed, kPiranhaMaxSwimSpeed);
-    piranha.vel.y = std::clamp(piranha.vel.y, -kPiranhaMaxSwimSpeed, kPiranhaMaxSwimSpeed);
+    piranha.vel = piranha.vel * sim::ToSimScalar(kPiranhaWaterDamping);
+    const sim::Scalar max_swim_speed = sim::ToSimScalar(kPiranhaMaxSwimSpeed);
+    piranha.vel.x = gfxp::clamp(piranha.vel.x, -max_swim_speed, max_swim_speed);
+    piranha.vel.y = gfxp::clamp(piranha.vel.y, -max_swim_speed, max_swim_speed);
 
     const SwimProbeResult swim_probe = QuerySwimProbes(piranha, state);
     if (!swim_probe.center || !swim_probe.bottom) {
         if (swim_probe.bottom) {
-            piranha.vel.y = std::max(piranha.vel.y, kPiranhaSurfaceDiveSpeed);
-            piranha.vel.x *= 0.75F;
+            piranha.vel.y = gfxp::max(piranha.vel.y, sim::ToSimScalar(kPiranhaSurfaceDiveSpeed));
+            piranha.vel.x *= sim::ToSimScalar(0.75F);
             common::DoEntCollisions(ent_idx, state, graphics, audio);
             common::PostPartialEulerStep(ent_idx, state, dt);
             return;
         }
         piranha.pos = old_pos;
-        piranha.vel = Vec2::New(-piranha.vel.x * 0.5F, -piranha.vel.y * 0.5F);
+        piranha.vel = -piranha.vel * sim::ToSimScalar(0.5F);
         piranha.facing = piranha.facing == Side::Left ? Side::Right : Side::Left;
     }
 

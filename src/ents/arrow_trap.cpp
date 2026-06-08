@@ -49,12 +49,13 @@ Vec2 GetSensorStart(const Ent& trap) {
 }
 
 bool ShouldTriggerOnEnt(const Ent& ent) {
-    return LengthSquared(ent.vel) > kArrowTrapMovingEntSpeedSq;
+    return gfxp::length_sq(ent.vel) >
+           sim::ToSimScalar(kArrowTrapMovingEntSpeedSq);
 }
 
 void SnapArrowPositionToPixels(Ent& arrow) {
-    arrow.pos = Vec2::New(static_cast<float>(RoundToInt(arrow.pos.x)),
-                          static_cast<float>(RoundToInt(arrow.pos.y)));
+    arrow.pos = sim::PixelVec2(arrow.pos.x.to_pixels_floor(),
+                               arrow.pos.y.to_pixels_floor());
 }
 
 Vec2 ToStoredArrowOffset(const Vec2& offset) {
@@ -92,14 +93,16 @@ std::int64_t AtanUnitRatioDegreesRaw(std::int64_t ratio_raw) {
     return linear + curve;
 }
 
-sim::Scalar ArrowRotationFromVelocity(const Vec2& velocity, Side facing) {
+sim::Scalar ArrowRotationFromVelocity(sim::Vec2 velocity, Side facing) {
     const std::int64_t x_raw = std::max<std::int64_t>(
         1,
         AbsInt64(static_cast<std::int64_t>(
-            RoundToInt(std::abs(velocity.x) * static_cast<float>(kAngleScale))))
+            (velocity.x.abs() *
+             sim::Scalar::from_int(static_cast<int>(kAngleScale))).round_int()))
     );
     const std::int64_t y_raw = static_cast<std::int64_t>(
-        RoundToInt(velocity.y * static_cast<float>(kAngleScale)));
+        (velocity.y *
+         sim::Scalar::from_int(static_cast<int>(kAngleScale))).round_int());
     const std::int64_t abs_y_raw = AbsInt64(y_raw);
     std::int64_t angle_raw = 0;
     if (abs_y_raw <= x_raw) {
@@ -211,8 +214,8 @@ bool SensorTouchesMovingEnt(
 Ent* SpawnArrow(State& state, const Vec2& center, int direction, const VID& trap_vid) {
     return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         arrow.SetCenter(center);
-        arrow.vel = Vec2::New(static_cast<float>(direction) * kArrowTrapArrowSpeed, 0.0F);
-        arrow.acc = Vec2::New(0.0F, 0.0F);
+        arrow.vel = sim::ToSimVec2(Vec2::New(static_cast<float>(direction) * kArrowTrapArrowSpeed, 0.0F));
+        arrow.acc = sim::Vec2::zero();
         arrow.facing = direction < 0 ? Side::Left : Side::Right;
         arrow.rotation = sim::Scalar::zero();
         arrow.thrown_by = trap_vid;
@@ -229,8 +232,8 @@ Ent* SpawnLooseArrow(State& state, const Vec2& center) {
     return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         arrow.SetCenter(center);
         SnapArrowPositionToPixels(arrow);
-        arrow.vel = Vec2::New(0.0F, 0.0F);
-        arrow.acc = Vec2::New(0.0F, 0.0F);
+        arrow.vel = sim::Vec2::zero();
+        arrow.acc = sim::Vec2::zero();
         arrow.proj_contact_timer = 0;
         arrow.proj_contact_damage_amount = kArrowDamage;
         arrow.can_apply_proj_contact = false;
@@ -312,8 +315,8 @@ void StepEntLogicAsArrow(
             arrow.ent_a.reset();
             arrow.has_physics = true;
             arrow.can_collide = true;
-            arrow.vel = Vec2::New(0.0F, 0.0F);
-            arrow.acc = Vec2::New(0.0F, kArrowGravity);
+            arrow.vel = sim::Vec2::zero();
+            arrow.acc = sim::ToSimVec2(Vec2::New(0.0F, kArrowGravity));
             arrow.proj_contact_timer = 0;
             arrow.can_apply_proj_contact = false;
             return;
@@ -321,8 +324,8 @@ void StepEntLogicAsArrow(
 
         arrow.has_physics = false;
         arrow.can_collide = false;
-        arrow.vel = Vec2::New(0.0F, 0.0F);
-        arrow.acc = Vec2::New(0.0F, 0.0F);
+        arrow.vel = sim::Vec2::zero();
+        arrow.acc = sim::Vec2::zero();
         arrow.SetCenter(stuck_to->GetCenter() + FromStoredArrowOffsetPoint(arrow.point_a));
         SnapArrowPositionToPixels(arrow);
         return;
@@ -333,18 +336,18 @@ void StepEntLogicAsArrow(
         return;
     }
 
-    if (LengthSquared(arrow.vel) > kArrowRotationVelocityEpsilonSq) {
+    if (gfxp::length_sq(arrow.vel) > sim::ToSimScalar(kArrowRotationVelocityEpsilonSq)) {
         if (arrow.proj_contact_timer > 0) {
             arrow.proj_contact_damage_amount = kArrowDamage;
         }
-        if (std::abs(arrow.vel.x) > kArrowRotationVelocityEpsilon) {
-            arrow.facing = arrow.vel.x < 0.0F ? Side::Left : Side::Right;
+        if (arrow.vel.x.abs() > sim::ToSimScalar(kArrowRotationVelocityEpsilon)) {
+            arrow.facing = arrow.vel.x < sim::Scalar::zero() ? Side::Left : Side::Right;
         }
         arrow.rotation = ArrowRotationFromVelocity(arrow.vel, arrow.facing);
     }
     const float gravity_scale =
         GetModifiedEffectValue(arrow, EffectModifierTarget::GravityScale, 1.0F);
-    arrow.acc.y += kArrowGravity * gravity_scale;
+    arrow.acc.y += sim::ToSimScalar(kArrowGravity * gravity_scale);
 }
 
 bool CanArrowHitEnt(const Ent& arrow, const Ent& other) {
@@ -431,8 +434,8 @@ void StickArrowToEnt(Ent& arrow, Ent& other, State& state) {
     arrow.can_apply_proj_contact = false;
     arrow.thrown_by.reset();
     arrow.thrown_immunity_timer = 0;
-    arrow.vel = Vec2::New(0.0F, 0.0F);
-    arrow.acc = Vec2::New(0.0F, 0.0F);
+    arrow.vel = sim::Vec2::zero();
+    arrow.acc = sim::Vec2::zero();
 }
 
 ents::common::ContactResult OnEntContactAsArrow(
@@ -470,7 +473,7 @@ ents::common::ContactResult OnEntContactAsArrow(
         return {};
     }
 
-    const Vec2 impact_velocity = arrow.vel;
+    const sim::Vec2 impact_velocity = arrow.vel;
     if (arrow.collide_sound.has_value()) {
         (void)PlayWorldSoundEmitter(state, arrow.GetCenter(), *arrow.collide_sound);
     }
@@ -483,7 +486,7 @@ ents::common::ContactResult OnEntContactAsArrow(
         ents::common::HitOptions{
             .source_vid = arrow.vid,
             .knockback = ents::common::KnockbackSpec{
-                .velocity = arrow.vel * kArrowImpactVelocityScale,
+                .velocity = arrow.vel * sim::ToSimScalar(kArrowImpactVelocityScale),
                 .clear_velocity = false,
                 .clear_acceleration = true,
                 .thrown_by = arrow.thrown_by,
@@ -521,8 +524,8 @@ ents::common::ContactResult OnTileContactAsArrow(
         return {};
     }
 
-    arrow.vel = Vec2::New(0.0F, 0.0F);
-    arrow.acc = Vec2::New(0.0F, 0.0F);
+    arrow.vel = sim::Vec2::zero();
+    arrow.acc = sim::Vec2::zero();
     arrow.proj_contact_timer = 0;
     arrow.proj_contact_damage_amount = 0;
     arrow.can_apply_proj_contact = false;

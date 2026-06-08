@@ -381,7 +381,7 @@ void SetFleshGuyAnim(Ent& ent, std::optional<Side> wall_slide_side = std::nullop
         return;
     }
 
-    if (ent.grounded && std::abs(ent.vel.x) > kWalkAnimVelocityEpsilon) {
+    if (ent.grounded && ent.vel.x.abs() > sim::ToSimScalar(kWalkAnimVelocityEpsilon)) {
         if (ent.aframe_animator.anim_id != aframe_ids::FleshGuyWalk) {
             ent.aframe_animator.PlayLoop(aframe_ids::FleshGuyWalk);
         }
@@ -521,8 +521,8 @@ void ControlEntAsFleshGuy(
 
     const bool climbing = flesh_guy.IsClimbing();
     if (climbing) {
-        flesh_guy.acc.x = 0.0F;
-        flesh_guy.vel.x = 0.0F;
+        flesh_guy.acc.x = sim::Scalar::zero();
+        flesh_guy.vel.x = sim::Scalar::zero();
     } else if (control.left && !control.right) {
         common::AccelerateHorizontallyTowardSpeed(
             flesh_guy,
@@ -542,12 +542,12 @@ void ControlEntAsFleshGuy(
     } else if (flesh_guy.grounded) {
         common::DecelerateHorizontallyToStop(flesh_guy, kGroundNoInputDecel);
     } else {
-        flesh_guy.vel.x *= kAirNoInputDamping;
+        flesh_guy.vel.x *= sim::ToSimScalar(kAirNoInputDamping);
     }
 
     if (control.stop) {
-        flesh_guy.acc = Vec2::New(0.0F, 0.0F);
-        flesh_guy.vel = Vec2::New(0.0F, 0.0F);
+        flesh_guy.acc = sim::Vec2::zero();
+        flesh_guy.vel = sim::Vec2::zero();
     }
 }
 
@@ -577,7 +577,7 @@ void StepEntLogicAsFleshGuy(
         !loss_of_control &&
         flesh_guy.grounded &&
         (control.left != control.right) &&
-        std::abs(flesh_guy.vel.x) > kWalkAnimVelocityEpsilon;
+        flesh_guy.vel.x.abs() > sim::ToSimScalar(kWalkAnimVelocityEpsilon);
     SetMovementFlag(flesh_guy, EntMovementFlag::Walking, walking);
     SetMovementFlag(flesh_guy, EntMovementFlag::Running, false);
 
@@ -612,27 +612,27 @@ void StepEntPhysicsAsFleshGuy(
     } else if (!flesh_guy.IsClimbing() && (control.up || control.down)) {
         SetMovementFlag(flesh_guy, EntMovementFlag::Climbing, true);
         flesh_guy.grounded = false;
-        flesh_guy.vel = Vec2::New(0.0F, 0.0F);
-        flesh_guy.acc = Vec2::New(0.0F, 0.0F);
+        flesh_guy.vel = sim::Vec2::zero();
+        flesh_guy.acc = sim::Vec2::zero();
     }
 
     bool jumped_this_frame = false;
     if (flesh_guy.IsClimbing() && climb_tile.has_value()) {
         SnapToClimbTile(flesh_guy, *climb_tile);
         flesh_guy.grounded = false;
-        flesh_guy.vel.x = 0.0F;
-        flesh_guy.acc.x = 0.0F;
-        flesh_guy.acc.y = 0.0F;
+        flesh_guy.vel.x = sim::Scalar::zero();
+        flesh_guy.acc.x = sim::Scalar::zero();
+        flesh_guy.acc.y = sim::Scalar::zero();
         if (control.up && !control.down) {
-            flesh_guy.vel.y = -kClimbSpeed;
+            flesh_guy.vel.y = -sim::ToSimScalar(kClimbSpeed);
         } else if (control.down && !control.up) {
-            flesh_guy.vel.y = kClimbSpeed;
+            flesh_guy.vel.y = sim::ToSimScalar(kClimbSpeed);
         } else {
-            flesh_guy.vel.y = 0.0F;
+            flesh_guy.vel.y = sim::Scalar::zero();
         }
         if (control.jump_pressed) {
             SetMovementFlag(flesh_guy, EntMovementFlag::Climbing, false);
-            flesh_guy.vel.y = control.down ? 0.0F : -kJumpImpulse;
+            flesh_guy.vel.y = control.down ? sim::Scalar::zero() : -sim::ToSimScalar(kJumpImpulse);
             flesh_guy.grounded = false;
             flesh_guy.coyote_time = 0;
             jumped_this_frame = !control.down;
@@ -652,10 +652,10 @@ void StepEntPhysicsAsFleshGuy(
                                                             ? wall_slide_side
                                                             : GetWallSlideCoyoteSide(flesh_guy);
         if (wall_jump_side.has_value()) {
-            flesh_guy.vel.y = -kJumpImpulse;
+            flesh_guy.vel.y = -sim::ToSimScalar(kJumpImpulse);
             flesh_guy.vel.x = *wall_jump_side == Side::Left
-                                 ? kWallJumpHorizontalSpeed
-                                 : -kWallJumpHorizontalSpeed;
+                                 ? sim::ToSimScalar(kWallJumpHorizontalSpeed)
+                                 : -sim::ToSimScalar(kWallJumpHorizontalSpeed);
             flesh_guy.grounded = false;
             flesh_guy.coyote_time = 0;
             ClearWallSlideCoyote(flesh_guy);
@@ -663,7 +663,7 @@ void StepEntPhysicsAsFleshGuy(
             flesh_guy.jump_delay_frame_count = player::kJumpDelayFrames;
             (void)PlayEntCenterSoundEmitter(state, flesh_guy, audio_asset_ids::FleshmanJump);
         } else if ((flesh_guy.grounded && flesh_guy.jump_delay_frame_count == 0) || flesh_guy.coyote_time > 0) {
-            flesh_guy.vel.y = -kJumpImpulse;
+            flesh_guy.vel.y = -sim::ToSimScalar(kJumpImpulse);
             flesh_guy.grounded = false;
             flesh_guy.coyote_time = 0;
             jumped_this_frame = true;
@@ -681,17 +681,20 @@ void StepEntPhysicsAsFleshGuy(
     }
 
     if (!flesh_guy.grounded && !flesh_guy.IsClimbing()) {
-        flesh_guy.acc.y +=
-            sim::ToRenderScalar(state.stage.gravity) *
-            (wall_sliding ? kWallSlideGravityScale : kGravityScale);
+        flesh_guy.acc.y += state.stage.gravity *
+            sim::ToSimScalar(wall_sliding ? kWallSlideGravityScale : kGravityScale);
     }
 
     common::PrePartialEulerStep(ent_idx, state, dt);
-    if (wall_sliding && flesh_guy.vel.y > kWallSlideMaxFallSpeed) {
-        flesh_guy.vel.y = kWallSlideMaxFallSpeed;
+    if (wall_sliding && flesh_guy.vel.y > sim::ToSimScalar(kWallSlideMaxFallSpeed)) {
+        flesh_guy.vel.y = sim::ToSimScalar(kWallSlideMaxFallSpeed);
     }
-    flesh_guy.vel.x = std::clamp(flesh_guy.vel.x, -kMaxHorizontalSpeed, kMaxHorizontalSpeed);
-    flesh_guy.vel.y = std::clamp(flesh_guy.vel.y, -kMaxRiseSpeed, kMaxFallSpeed);
+    flesh_guy.vel.x = gfxp::clamp(flesh_guy.vel.x,
+                                  -sim::ToSimScalar(kMaxHorizontalSpeed),
+                                  sim::ToSimScalar(kMaxHorizontalSpeed));
+    flesh_guy.vel.y = gfxp::clamp(flesh_guy.vel.y,
+                                  -sim::ToSimScalar(kMaxRiseSpeed),
+                                  sim::ToSimScalar(kMaxFallSpeed));
 
     common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     if (flesh_guy.grounded) {

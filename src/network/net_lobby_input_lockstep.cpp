@@ -802,7 +802,7 @@ JoinBarrierTopologyPacket BuildJoinBarrierTopologyPacket(const State& state) {
     for (std::uint32_t i = 0; i < packet.player_count; ++i) {
         const PlayerId player_id = state.net_session.join_barrier_joined_player_ids[i];
         packet.player_ids[i] = player_id;
-        Vec2 pos = GetRemoteSpawnPos(state);
+        sim::Vec2 pos = sim::ToSimVec2(GetRemoteSpawnPos(state));
         if (const PlayerSlot* const slot = state.players.Find(player_id)) {
             if (slot->ent_vid.has_value()) {
                 if (const Ent* const ent = state.ents.GetEnt(*slot->ent_vid)) {
@@ -810,9 +810,8 @@ JoinBarrierTopologyPacket BuildJoinBarrierTopologyPacket(const State& state) {
                 }
             }
         }
-        const sim::Vec2 fixed_pos = sim::ToSimVec2(pos);
-        packet.player_pos_x_raw[i] = fixed_pos.x.raw_value();
-        packet.player_pos_y_raw[i] = fixed_pos.y.raw_value();
+        packet.player_pos_x_raw[i] = pos.x.raw_value();
+        packet.player_pos_y_raw[i] = pos.y.raw_value();
     }
     packet.removed_player_count = static_cast<std::uint32_t>(std::min<std::size_t>(
         state.net_session.join_barrier_removed_player_ids.size(),

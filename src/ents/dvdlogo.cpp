@@ -29,18 +29,18 @@ bool WouldBlockAt(
     );
 }
 
-void StepBounceAxis(std::size_t ent_idx, State& state, const Graphics& graphics, const Vec2& delta) {
-    if (delta.x == 0.0F && delta.y == 0.0F) {
+void StepBounceAxis(std::size_t ent_idx, State& state, const Graphics& graphics, sim::Vec2 delta) {
+    if (delta.x == sim::Scalar::zero() && delta.y == sim::Scalar::zero()) {
         return;
     }
 
     Ent& ent = state.ents.ents[ent_idx];
-    const AABB moved_aabb = TranslateAabb(ent.GetAABB(), delta);
+    const AABB moved_aabb = TranslateAabb(ent.GetAABB(), sim::ToRenderVec2(delta));
     if (WouldBlockAt(ent_idx, moved_aabb, state, graphics)) {
-        if (delta.x != 0.0F) {
+        if (delta.x != sim::Scalar::zero()) {
             ent.vel.x = -ent.vel.x;
         }
-        if (delta.y != 0.0F) {
+        if (delta.y != sim::Scalar::zero()) {
             ent.vel.y = -ent.vel.y;
         }
         return;
@@ -117,13 +117,13 @@ void StepEntLogicAsDvdLogo(
         ent_idx,
         state,
         graphics,
-        Vec2::New(state.ents.ents[ent_idx].vel.x, 0.0F)
+        sim::Vec2{state.ents.ents[ent_idx].vel.x, sim::Scalar::zero()}
     );
     StepBounceAxis(
         ent_idx,
         state,
         graphics,
-        Vec2::New(0.0F, state.ents.ents[ent_idx].vel.y)
+        sim::Vec2{sim::Scalar::zero(), state.ents.ents[ent_idx].vel.y}
     );
     MaybeQueueTransitionOnPlayerContact(ent_idx, state, graphics);
 }

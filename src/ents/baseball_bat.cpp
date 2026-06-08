@@ -147,25 +147,34 @@ bool TryApplyBatContactToEnt(
     const SwingStage swing_stage = GetSwingStage(bat_ent);
 
     if (Ent* const other_ent = state.ents.GetEntMut(other_ent_const.vid)) {
-        constexpr float kKnockBackImpulse = 10.0F;
-        constexpr float kAirKnockBackLift = 4.0F;
-        const bool should_lift_target = !other_ent->grounded || other_ent->vel.y > 0.0F;
-        Vec2 knock_back_vel = other_ent->vel;
+        const sim::Scalar knock_back_impulse = sim::Scalar::from_int(10);
+        const sim::Scalar air_knock_back_lift = sim::Scalar::from_int(4);
+        const bool should_lift_target =
+            !other_ent->grounded || other_ent->vel.y > sim::Scalar::zero();
+        sim::Vec2 knock_back_vel = other_ent->vel;
         switch (swing_stage) {
         case SwingStage::Back:
             knock_back_vel = bat_facing == Side::Left
-                                 ? Vec2::New(kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F)
-                                 : Vec2::New(-kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F);
+                                 ? sim::Vec2{knock_back_impulse,
+                                             should_lift_target ? -air_knock_back_lift
+                                                                : sim::Scalar::zero()}
+                                 : sim::Vec2{-knock_back_impulse,
+                                             should_lift_target ? -air_knock_back_lift
+                                                                : sim::Scalar::zero()};
             break;
         case SwingStage::Above:
             knock_back_vel = bat_facing == Side::Left
-                                 ? Vec2::New(-kKnockBackImpulse / 2.0F, -kKnockBackImpulse)
-                                 : Vec2::New(kKnockBackImpulse / 2.0F, -kKnockBackImpulse);
+                                 ? sim::Vec2{-(knock_back_impulse / 2), -knock_back_impulse}
+                                 : sim::Vec2{knock_back_impulse / 2, -knock_back_impulse};
             break;
         case SwingStage::Swing:
             knock_back_vel = bat_facing == Side::Left
-                                 ? Vec2::New(-kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F)
-                                 : Vec2::New(kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F);
+                                 ? sim::Vec2{-knock_back_impulse,
+                                             should_lift_target ? -air_knock_back_lift
+                                                                : sim::Scalar::zero()}
+                                 : sim::Vec2{knock_back_impulse,
+                                             should_lift_target ? -air_knock_back_lift
+                                                                : sim::Scalar::zero()};
             break;
         }
         const common::DamageResult damage_result = common::TryHitEnt(

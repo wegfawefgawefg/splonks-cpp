@@ -26,8 +26,8 @@ void ApplyHeldState(Ent& ent, bool reset_anim = true) {
     ent.proj_contact_damage_type = spec.proj_contact_damage_type;
     ent.proj_contact_damage_amount = spec.proj_contact_damage_amount;
     ent.proj_contact_timer = 0;
-    ent.vel = Vec2::New(0.0F, 0.0F);
-    ent.acc = Vec2::New(0.0F, 0.0F);
+    ent.vel = sim::Vec2::zero();
+    ent.acc = sim::Vec2::zero();
     RemoveEffect(ent, EffectId::NoGravityUntilContact);
     ent.rotation = sim::Scalar::zero();
     ent.hang_side.reset();
@@ -62,8 +62,8 @@ void RestoreDetachedCarryEnt(Ent& ent) {
 }
 
 void SnapPlacedAttachToPixels(Ent& ent) {
-    ent.pos = Vec2::New(static_cast<float>(RoundToInt(ent.pos.x)),
-                        static_cast<float>(RoundToInt(ent.pos.y)));
+    ent.pos = sim::PixelVec2(ent.pos.x.to_pixels_round(),
+                             ent.pos.y.to_pixels_round());
 }
 
 bool IsAttachDriven(const Ent& ent) {
@@ -149,8 +149,8 @@ void SyncHeldAttachForHolder(
 
     holding->has_physics = false;
     holding->can_collide = false;
-    holding->vel = Vec2::New(0.0F, 0.0F);
-    holding->acc = Vec2::New(0.0F, 0.0F);
+    holding->vel = sim::Vec2::zero();
+    holding->acc = sim::Vec2::zero();
     holding->held_by_vid = holder.vid;
     holding->attach_mode = AttachMode::Held;
     ApplyHeldState(*holding, false);
@@ -190,8 +190,8 @@ void SyncBackAttachForHolder(
 
     back_item->has_physics = false;
     back_item->can_collide = false;
-    back_item->vel = Vec2::New(0.0F, 0.0F);
-    back_item->acc = Vec2::New(0.0F, 0.0F);
+    back_item->vel = sim::Vec2::zero();
+    back_item->acc = sim::Vec2::zero();
     back_item->facing = holder.facing;
     back_item->held_by_vid = holder.vid;
     back_item->attach_mode = AttachMode::Back;
@@ -269,11 +269,11 @@ void ApplyThrowState(
     }
 
     if (IsPlayerEnt(thrown, state)) {
-        thrown.vel = throw_velocity;
-        thrown.acc = Vec2::New(0.0F, 0.0F);
+        thrown.vel = sim::ToSimVec2(throw_velocity);
+        thrown.acc = sim::Vec2::zero();
     } else {
-        thrown.vel = Vec2::New(0.0F, 0.0F);
-        thrown.acc = throw_velocity;
+        thrown.vel = sim::Vec2::zero();
+        thrown.acc = sim::ToSimVec2(throw_velocity);
     }
     state.UpdateSidForEnt(thrown.vid.id, graphics);
     (void)PlayEntCenterSoundEmitter(state, thrower, audio_asset_ids::Throw);
@@ -481,8 +481,8 @@ void DropHeldItemFromEnt(Ent& ent, State& state) {
     if (IsPlayerEnt(*held, state)) {
         const VID dropped_by_vid = ent.vid;
         ReleaseEntFromHolder(*held, state);
-        held->vel = Vec2::New(0.0F, 0.0F);
-        held->acc = Vec2::New(0.0F, 0.0F);
+        held->vel = sim::Vec2::zero();
+        held->acc = sim::Vec2::zero();
         state.contact.AddInteractionCooldown(
             ent.vid,
             held->vid,
@@ -516,8 +516,8 @@ void DropHeldItemFromEnt(Ent& ent, State& state) {
     held->proj_contact_damage_type = held_spec.proj_contact_damage_type;
     held->proj_contact_damage_amount = held_spec.proj_contact_damage_amount;
     held->proj_contact_timer = kProjContactDuration;
-    held->vel = Vec2::New(throw_x, -1.0F);
-    held->acc = Vec2::New(0.0F, 0.0F);
+    held->vel = sim::ToSimVec2(Vec2::New(throw_x, -1.0F));
+    held->acc = sim::Vec2::zero();
     RemoveEffect(*held, EffectId::NoGravityUntilContact);
 }
 
@@ -562,8 +562,8 @@ bool TryDropEntByVid(
     }
 
     ReleaseEntFromHolder(*held, state);
-    held->vel = Vec2::New(0.0F, 0.0F);
-    held->acc = Vec2::New(0.0F, 0.0F);
+    held->vel = sim::Vec2::zero();
+    held->acc = sim::Vec2::zero();
     state.UpdateSidForEnt(held->vid.id, graphics);
     return true;
 }

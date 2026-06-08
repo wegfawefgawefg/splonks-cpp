@@ -24,21 +24,21 @@ void StepControlledRock(Ent& rock, const controls::ControlIntent& control) {
     }
 
     if (control.left && !control.right) {
-        rock.acc.x -= rock.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
+        rock.acc.x -= sim::ToSimScalar(rock.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
         rock.facing = Side::Left;
     } else if (control.right && !control.left) {
-        rock.acc.x += rock.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
+        rock.acc.x += sim::ToSimScalar(rock.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
         rock.facing = Side::Right;
     }
 
     if (control.jump_pressed && rock.grounded) {
-        rock.vel.y = -kControlledJumpVel;
+        rock.vel.y = -sim::ToSimScalar(kControlledJumpVel);
         rock.grounded = false;
     }
 
     if (control.attack_pressed && rock.grounded && rock.attack_delay_countdown == 0) {
-        const float slide_vel = rock.facing == Side::Left ? -kControlledSlideVel
-                                                                 : kControlledSlideVel;
+        const sim::Scalar slide_vel =
+            sim::ToSimScalar(rock.facing == Side::Left ? -kControlledSlideVel : kControlledSlideVel);
         rock.vel.x = slide_vel;
         rock.attack_delay_countdown = kControlledSlideCooldownFrames;
     }

@@ -2,6 +2,7 @@
 
 #include "ent.hpp"
 #include "graphics.hpp"
+#include "sim/fxp.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
 #include "state.hpp"
@@ -23,11 +24,12 @@ Vec2 GetCoreSizeWc(const Stage& stage) {
 }
 
 void ShiftActiveEnts(State& state, const Vec2& delta) {
+    const sim::Vec2 sim_delta = sim::ToSimVec2(delta);
     for (Ent& ent : state.ents.ents) {
         if (!ent.active) {
             continue;
         }
-        ent.pos += delta;
+        ent.pos += sim_delta;
     }
 }
 
@@ -70,13 +72,37 @@ void WrapPosIntoCore(const Stage& stage, Vec2& pos) {
     }
 }
 
+void WrapPosIntoCore(const Stage& stage, sim::Vec2& pos) {
+    const sim::Vec2 core_origin = sim::ToSimVec2(GetCoreOriginWc(stage));
+    const sim::Vec2 core_size = sim::ToSimVec2(GetCoreSizeWc(stage));
+
+    if (stage.border.wrap_x && core_size.x > sim::Scalar::zero()) {
+        while (pos.x < core_origin.x) {
+            pos.x += core_size.x;
+        }
+        while (pos.x >= core_origin.x + core_size.x) {
+            pos.x -= core_size.x;
+        }
+    }
+
+    if (stage.border.wrap_y && core_size.y > sim::Scalar::zero()) {
+        while (pos.y < core_origin.y) {
+            pos.y += core_size.y;
+        }
+        while (pos.y >= core_origin.y + core_size.y) {
+            pos.y -= core_size.y;
+        }
+    }
+}
+
 void CropEntsAndShiftBack(State& state, const Vec2& delta_wc) {
+    const sim::Vec2 sim_delta_wc = sim::ToSimVec2(delta_wc);
     for (Ent& ent : state.ents.ents) {
         if (!ent.active) {
             continue;
         }
         WrapPosIntoCore(state.stage, ent.pos);
-        ent.pos = ent.pos - delta_wc;
+        ent.pos -= sim_delta_wc;
     }
 }
 

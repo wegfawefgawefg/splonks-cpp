@@ -346,8 +346,8 @@ bool SwapControlledCharacter(
     }
 
     SetEntAs(*source_ent, target_type);
-    source_ent->vel = Vec2::New(0.0F, 0.0F);
-    source_ent->acc = Vec2::New(0.0F, 0.0F);
+    source_ent->vel = sim::Vec2::zero();
+    source_ent->acc = sim::Vec2::zero();
     source_ent->rotation = sim::Scalar::zero();
     source_ent->facing = facing;
     source_ent->SetCenter(spawn_center);
@@ -521,8 +521,8 @@ bool SpawnDebugEnt(
     }
 
     Ent* const spawned = world_ops::SpawnEnt(state, type_, [spawn_center](Ent& ent) {
-        ent.vel = Vec2::New(0.0F, 0.0F);
-        ent.acc = Vec2::New(0.0F, 0.0F);
+        ent.vel = sim::Vec2::zero();
+        ent.acc = sim::Vec2::zero();
         ent.SetCenter(spawn_center);
     });
     if (spawned == nullptr) {
@@ -753,9 +753,12 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
     }
     ImGui::Text("Facing: %s", SideToString(ent.facing));
     ImGui::Text("Grounded: %s", ent.grounded ? "true" : "false");
-    ImGui::Text("Pos: (%.2f, %.2f)", ent.pos.x, ent.pos.y);
-    ImGui::Text("Vel: (%.2f, %.2f)", ent.vel.x, ent.vel.y);
-    ImGui::Text("Acc: (%.2f, %.2f)", ent.acc.x, ent.acc.y);
+    const Vec2 ent_pos = ent.GetRenderPos();
+    const Vec2 ent_vel = ent.GetRenderVel();
+    const Vec2 ent_acc = ent.GetRenderAcc();
+    ImGui::Text("Pos: (%.2f, %.2f)", ent_pos.x, ent_pos.y);
+    ImGui::Text("Vel: (%.2f, %.2f)", ent_vel.x, ent_vel.y);
+    ImGui::Text("Acc: (%.2f, %.2f)", ent_acc.x, ent_acc.y);
     const Vec2 ent_size = ent.GetSize();
     ImGui::Text("Size: (%.2f, %.2f)", ent_size.x, ent_size.y);
     ImGui::Text("AABB TL: (%.2f, %.2f)", aabb.tl.x, aabb.tl.y);

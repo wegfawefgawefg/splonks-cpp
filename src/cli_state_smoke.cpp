@@ -261,12 +261,12 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << " vidver " << a.vid.version << "/" << b.vid.version
                    << " physics " << a.has_physics << "/" << b.has_physics
                    << " collide " << a.can_collide << "/" << b.can_collide
-                   << " pos " << a.pos.x << "," << a.pos.y
-                   << "/" << b.pos.x << "," << b.pos.y
-                   << " vel " << a.vel.x << "," << a.vel.y
-                   << "/" << b.vel.x << "," << b.vel.y
-                   << " acc " << a.acc.x << "," << a.acc.y
-                   << "/" << b.acc.x << "," << b.acc.y
+                   << " pos " << a.pos.x.raw_value() << "," << a.pos.y.raw_value()
+                   << "/" << b.pos.x.raw_value() << "," << b.pos.y.raw_value()
+                   << " vel " << a.vel.x.raw_value() << "," << a.vel.y.raw_value()
+                   << "/" << b.vel.x.raw_value() << "," << b.vel.y.raw_value()
+                   << " acc " << a.acc.x.raw_value() << "," << a.acc.y.raw_value()
+                   << "/" << b.acc.x.raw_value() << "," << b.acc.y.raw_value()
                    << " size " << sim::ToRenderScalar(a.size.x) << ","
                    << sim::ToRenderScalar(a.size.y)
                    << "/" << sim::ToRenderScalar(b.size.x) << ","
@@ -419,9 +419,9 @@ bool ApplyDetWorldOpsSmokeMutations(State& state, const char*& failed_step) {
         state,
         EntType::Rock,
         [](Ent& ent) {
-            ent.pos = Vec2::New(96.0F, 64.0F);
-            ent.vel = Vec2::New(1.0F, -2.0F);
-            ent.acc = Vec2::New(0.0F, 0.0F);
+            ent.SetRenderPos(Vec2::New(96.0F, 64.0F));
+            ent.SetRenderVel(Vec2::New(1.0F, -2.0F));
+            ent.acc = sim::Vec2::zero();
         }
     );
     if (rock == nullptr) {
@@ -575,9 +575,9 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
         return false;
     }
 
-    player->pos = Vec2::New(4.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - player->GetSize().y);
-    player->vel = Vec2::New(0.0F, 0.0F);
-    player->acc = Vec2::New(0.0F, 0.0F);
+    player->SetRenderPos(Vec2::New(4.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - player->GetSize().y));
+    player->vel = sim::Vec2::zero();
+    player->acc = sim::Vec2::zero();
     player->grounded = false;
     player->condition = EntCondition::Normal;
     player->stun_timer = 0;
@@ -586,9 +586,9 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
 
     const auto spawn = [&](EntType type, Vec2 pos) -> bool {
         Ent* const ent = world_ops::SpawnEnt(state, type, [&](Ent& spawned) {
-            spawned.pos = pos;
-            spawned.vel = Vec2::New(0.0F, 0.0F);
-            spawned.acc = Vec2::New(0.0F, 0.0F);
+            spawned.SetRenderPos(pos);
+            spawned.vel = sim::Vec2::zero();
+            spawned.acc = sim::Vec2::zero();
         });
         return ent != nullptr;
     };
@@ -643,21 +643,21 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
     state.stage.AddFluidTempGravity(IVec2::New(12, 11), Vec2::New(1.25F, 0.0F));
 
     Ent* const box = world_ops::SpawnEnt(state, EntType::Box, [](Ent& ent) {
-        ent.pos = Vec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize));
-        ent.vel = Vec2::New(0.0F, 0.0F);
-        ent.acc = Vec2::New(0.0F, 0.0F);
+        ent.SetRenderPos(Vec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize)));
+        ent.SetRenderVel(Vec2::New(0.0F, 0.0F));
+        ent.acc = sim::Vec2::zero();
     });
     if (box == nullptr) {
         failed_step = "spawn fluid scenario box";
         return false;
     }
 
-    player->pos = Vec2::New(
+    player->SetRenderPos(Vec2::New(
         22.0F * static_cast<float>(kTileSize),
         20.0F * static_cast<float>(kTileSize) - player->GetSize().y
-    );
-    player->vel = Vec2::New(0.0F, 0.0F);
-    player->acc = Vec2::New(0.0F, 0.0F);
+    ));
+    player->vel = sim::Vec2::zero();
+    player->acc = sim::Vec2::zero();
     return true;
 }
 
@@ -679,12 +679,12 @@ bool PrepareShopDetReplayScenario(State& state, const char*& failed_step) {
         return false;
     }
     player->money = 50000;
-    player->pos = Vec2::New(
+    player->SetRenderPos(Vec2::New(
         16.0F * static_cast<float>(kTileSize),
         10.0F * static_cast<float>(kTileSize) - player->GetSize().y
-    );
-    player->vel = Vec2::New(0.0F, 0.0F);
-    player->acc = Vec2::New(0.0F, 0.0F);
+    ));
+    player->vel = sim::Vec2::zero();
+    player->acc = sim::Vec2::zero();
     player->grounded = false;
     state.mode = Mode::Playing;
     return true;
@@ -698,7 +698,7 @@ bool AddSecondLocalPlayerForDetReplay(State& state, Graphics& graphics) {
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal();
         primary != nullptr && primary->ent_vid.has_value()) {
         if (const Ent* const primary_ent = state.ents.GetEnt(*primary->ent_vid)) {
-            spawn_pos = primary_ent->pos + Vec2::New(16.0F, 0.0F);
+            spawn_pos = primary_ent->GetRenderPos() + Vec2::New(16.0F, 0.0F);
         }
     }
 
@@ -843,11 +843,11 @@ bool PlaceCarryTransitionSmokePlayers(State& state, Graphics& graphics, const ch
 
     const float tile = static_cast<float>(kTileSize);
     const float floor_y = 20.0F * tile;
-    p1->pos = Vec2::New(8.0F * tile, floor_y - p1->GetSize().y);
-    p2->pos = Vec2::New(9.0F * tile, floor_y - p2->GetSize().y);
+    p1->SetRenderPos(Vec2::New(8.0F * tile, floor_y - p1->GetSize().y));
+    p2->SetRenderPos(Vec2::New(9.0F * tile, floor_y - p2->GetSize().y));
     for (Ent* const player : {p1, p2}) {
-        player->vel = Vec2::New(0.0F, 0.0F);
-        player->acc = Vec2::New(0.0F, 0.0F);
+        player->vel = sim::Vec2::zero();
+        player->acc = sim::Vec2::zero();
         player->condition = EntCondition::Normal;
         player->stun_timer = 0;
         player->grounded = true;
@@ -2646,7 +2646,7 @@ bool AddSmokePlayer(State& state, Graphics& graphics, PlayerId player_id, Vec2 o
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal();
         primary != nullptr && primary->ent_vid.has_value()) {
         if (const Ent* const primary_ent = state.ents.GetEnt(*primary->ent_vid)) {
-            spawn_pos = primary_ent->pos + offset;
+            spawn_pos = primary_ent->GetRenderPos() + offset;
         }
     }
     const std::optional<VID> player_vid = SpawnPlayerForPlayerId(state, player_id, spawn_pos);
@@ -2739,7 +2739,7 @@ bool RunRetainedReconnectSmoke() {
         return false;
     }
 
-    player->pos = Vec2::New(128.0F, 192.0F);
+    player->SetRenderPos(Vec2::New(128.0F, 192.0F));
     player->health = 277;
     player->money = 54321;
     (void)AddEffect(*player, EffectId::Gloves);
@@ -2748,12 +2748,12 @@ bool RunRetainedReconnectSmoke() {
     FillToolSlot(state.ent_tools.EnsureToolSlot(player->vid, 1), ToolKind::ThrowRope, 7, true);
 
     Ent* const held = world_ops::SpawnEnt(state, EntType::Rock, [](Ent& ent) {
-        ent.pos = Vec2::New(136.0F, 192.0F);
-        ent.vel = Vec2::New(1.0F, -2.0F);
+        ent.SetRenderPos(Vec2::New(136.0F, 192.0F));
+        ent.SetRenderVel(Vec2::New(1.0F, -2.0F));
         ent.counter_a = 3.0F;
     });
     Ent* const back = world_ops::SpawnEnt(state, EntType::Cape, [](Ent& ent) {
-        ent.pos = Vec2::New(120.0F, 192.0F);
+        ent.SetRenderPos(Vec2::New(120.0F, 192.0F));
         ent.counter_b = 4.0F;
     });
     if (held == nullptr || back == nullptr) {
@@ -2795,7 +2795,7 @@ bool RunRetainedReconnectSmoke() {
         return false;
     }
 
-    player->pos = Vec2::New(16.0F, 16.0F);
+    player->SetRenderPos(Vec2::New(16.0F, 16.0F));
     player->health = 1;
     player->money = 2;
     player->holding_vid.reset();
@@ -2817,7 +2817,7 @@ bool RunRetainedReconnectSmoke() {
     network::ApplyRetainedPlayerState(state, slot->player_id, *retained, spawn_pos, graphics);
     player = state.ents.GetEntMut(*slot->ent_vid);
     if (player == nullptr ||
-        player->pos != Vec2::New(128.0F, 192.0F) ||
+        player->GetRenderPos() != Vec2::New(128.0F, 192.0F) ||
         player->health != 277 ||
         player->money != 54321 ||
         !HasEffect(*player, EffectId::Gloves) ||

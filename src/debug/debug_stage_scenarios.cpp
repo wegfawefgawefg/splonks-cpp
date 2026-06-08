@@ -38,7 +38,7 @@ std::optional<VID> SpawnBowlingCaveman(
         SetEntAs(*caveman, EntType::Caveman);
         caveman->SetCenter(center);
         caveman->condition = condition;
-        caveman->vel = vel;
+        caveman->SetRenderVel(vel);
         if (condition == EntCondition::Stunned) {
             caveman->stun_timer = 600;
             TrySetAnim(*caveman, EntDisplayState::Stunned);
@@ -61,7 +61,7 @@ std::optional<VID> SpawnOpposingBodySmackCaveman(State& state, const Vec2& cente
     SetEntAs(*caveman, EntType::Caveman);
     caveman->SetCenter(center);
     caveman->condition = EntCondition::Stunned;
-    caveman->vel = vel;
+    caveman->SetRenderVel(vel);
     caveman->stun_timer = 600;
     caveman->proj_contact_damage_type = DamageType::Attack;
     caveman->proj_contact_damage_amount = 1;
@@ -97,8 +97,8 @@ void GiveHeldRockToEnt(State& state, VID holder_vid) {
     rock->proj_contact_damage_type = DamageType::Attack;
     rock->proj_contact_damage_amount = 1;
     rock->proj_contact_timer = 0;
-    rock->vel = Vec2::New(0.0F, 0.0F);
-    rock->acc = Vec2::New(0.0F, 0.0F);
+    rock->vel = sim::Vec2::zero();
+    rock->acc = sim::Vec2::zero();
     rock->SetCenter(holder->GetCenter() + Vec2::New(4.0F, 1.0F));
     holder->holding_vid = rock->vid;
     holder->holding = true;
@@ -125,8 +125,8 @@ void GiveHeldMattockToEnt(State& state, VID holder_vid) {
     mattock->attach_mode = AttachMode::Held;
     mattock->has_physics = false;
     mattock->can_collide = false;
-    mattock->vel = Vec2::New(0.0F, 0.0F);
-    mattock->acc = Vec2::New(0.0F, 0.0F);
+    mattock->vel = sim::Vec2::zero();
+    mattock->acc = sim::Vec2::zero();
     mattock->SetCenter(holder->GetCenter() + Vec2::New(4.0F, 1.0F));
     holder->holding_vid = mattock->vid;
     holder->holding = true;

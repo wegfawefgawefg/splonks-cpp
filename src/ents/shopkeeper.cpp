@@ -201,7 +201,7 @@ bool TryRecoverDroppedPistol(
         shopkeeper.grounded &&
         IsShopkeeperBlockedMovingTowardPistol(shopkeeper, move_direction, state, graphics);
     if (shopkeeper.grounded && shopkeeper.counter_a <= 0.0F && (pistol_above || blocked_ahead)) {
-        shopkeeper.vel.y = kShopkeeperJumpSpeedY;
+        shopkeeper.vel.y = sim::ToSimScalar(kShopkeeperJumpSpeedY);
         shopkeeper.counter_a = kShopkeeperJumpCooldownFrames;
     }
 
@@ -311,7 +311,7 @@ void StepEntLogicAsShopkeeper(
     }
 
     if (shopkeeper.grounded && shopkeeper.counter_a <= 0.0F) {
-        shopkeeper.vel.y = kShopkeeperJumpSpeedY;
+        shopkeeper.vel.y = sim::ToSimScalar(kShopkeeperJumpSpeedY);
         common::AccelerateHorizontallyTowardSpeed(
             shopkeeper,
             state,

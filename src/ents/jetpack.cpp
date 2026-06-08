@@ -8,6 +8,7 @@
 #include "state.hpp"
 #include "world_ops.hpp"
 
+#include <algorithm>
 #include <memory>
 
 namespace splonks::ents::jetpack {
@@ -128,10 +129,10 @@ void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio
 
     if (held_by_vid.has_value()) {
         if (Ent* const holder = state.ents.GetEntMut(*held_by_vid)) {
-            const float jetpack_max_upspeed = -2.0F;
+            const sim::Scalar jetpack_max_upspeed = sim::ToSimScalar(-2.0F);
             if (holder->vel.y > jetpack_max_upspeed) {
-                holder->acc.y = -0.6F;
-                holder->vel.y = Min(holder->vel.y, jetpack_max_upspeed);
+                holder->acc.y = sim::ToSimScalar(-0.6F);
+                holder->vel.y = std::min(holder->vel.y, jetpack_max_upspeed);
             }
             if (!holder->IsHanging()) {
                 TrySetAnim(*holder, EntDisplayState::Neutral);

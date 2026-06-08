@@ -172,8 +172,8 @@ void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
         const Vec2 spawn_center = bow.GetCenter() + direction * 12.0F;
         arrow.SetCenter(Vec2::New(static_cast<float>(RoundToInt(spawn_center.x)),
                                   static_cast<float>(RoundToInt(spawn_center.y))));
-        arrow.vel = direction * kBowArrowSpeed;
-        arrow.acc = Vec2::New(0.0F, 0.0F);
+        arrow.vel = sim::ToSimVec2(direction * kBowArrowSpeed);
+        arrow.acc = sim::Vec2::zero();
         arrow.facing = aim.facing;
         arrow.rotation = aim.rotation;
         arrow.thrown_by = bow.ent_a.has_value() ? bow.ent_a : bow.held_by_vid;

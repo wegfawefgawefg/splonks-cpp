@@ -66,12 +66,12 @@ bool IsOpenWithAnim(const Ent& ent, AFrameId anim_id) {
 }
 
 void LaunchChestLoot(State& state, Ent& ent, std::optional<VID> opener_vid = std::nullopt) {
-    ent.vel = Vec2::New(
+    ent.vel = sim::ToSimVec2(Vec2::New(
         static_cast<float>(
             state.drng.RandomIntInclusive(0, 3) -
             state.drng.RandomIntInclusive(0, 3)),
         kChestLootLaunchY
-    );
+    ));
     ent.thrown_by = opener_vid;
     ent.thrown_immunity_timer =
         opener_vid.has_value() ? common::kThrownByImmunityDuration : 0;
@@ -122,13 +122,13 @@ void SpawnChestSparkles(const Vec2& emit_pos, State& state) {
 void SpawnChestTrapBomb(const Vec2& spawn_center, State& state) {
     (void)world_ops::SpawnEnt(state, EntType::Bomb, [&](Ent& bomb) {
         bomb.SetCenter(spawn_center);
-        bomb.vel = Vec2::New(
+        bomb.vel = sim::ToSimVec2(Vec2::New(
             static_cast<float>(
                 state.drng.RandomIntInclusive(0, 3) -
                 state.drng.RandomIntInclusive(0, 3)),
             kChestLootLaunchY
-        );
-        bomb.acc = Vec2::New(0.0F, 0.0F);
+        ));
+        bomb.acc = sim::Vec2::zero();
         bomb.counter_a = kChestTrapFuseFrames;
         SetAnim(bomb, aframe_ids::LiveGrenade);
     });
@@ -144,8 +144,8 @@ void SpawnChestTreasure(
     for (int i = 0; i < gem_count; ++i) {
         if (world_ops::SpawnEnt(state, RandomChestGemType(state), [&](Ent& gem) {
                 gem.SetCenter(spawn_center);
-                gem.vel = Vec2::New(0.0F, 0.0F);
-                gem.acc = Vec2::New(0.0F, 0.0F);
+                gem.vel = sim::Vec2::zero();
+                gem.acc = sim::Vec2::zero();
                 LaunchChestLoot(state, gem, opener_vid);
             }) == nullptr) {
             return;
@@ -158,8 +158,8 @@ void SpawnChestTreasure(
 
     (void)world_ops::SpawnEnt(state, RandomChestGemType(state), [&](Ent& gem) {
         gem.SetCenter(spawn_center);
-        gem.vel = Vec2::New(0.0F, 0.0F);
-        gem.acc = Vec2::New(0.0F, 0.0F);
+        gem.vel = sim::Vec2::zero();
+        gem.acc = sim::Vec2::zero();
         LaunchChestLoot(state, gem, opener_vid);
     });
 }
@@ -368,8 +368,8 @@ bool TryOpenKeyChestWithKey(
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
     (void)world_ops::SpawnEnt(state, EntType::UdjatEye, [&](Ent& udjat_eye) {
         udjat_eye.SetCenter(emit_pos);
-        udjat_eye.vel = Vec2::New(0.0F, 0.0F);
-        udjat_eye.acc = Vec2::New(0.0F, 0.0F);
+        udjat_eye.vel = sim::Vec2::zero();
+        udjat_eye.acc = sim::Vec2::zero();
         LaunchChestLoot(
             state,
             udjat_eye,

@@ -85,7 +85,7 @@ bool TryEatOverlappingEnt(
         }
 
         FaceTarget(mantrap, *target, state.stage);
-        mantrap.vel.x = 0.0F;
+        mantrap.vel.x = sim::Scalar::zero();
         mantrap.counter_b = kMantrapEatFrames;
         SetAnim(mantrap, aframe_ids::MantrapEat);
         const common::DamageResult damage_result =
@@ -125,7 +125,7 @@ void StepEntLogicAsMantrap(
 
     if (mantrap.counter_b > 0.0F) {
         mantrap.counter_b -= 1.0F;
-        mantrap.vel.x = 0.0F;
+        mantrap.vel.x = sim::Scalar::zero();
         SetAnim(mantrap, aframe_ids::MantrapEat);
         return;
     }

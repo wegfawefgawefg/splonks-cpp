@@ -106,7 +106,7 @@ inline std::optional<VID> FindNearestPlayerVid(
         if (require_normal_condition && player->condition != EntCondition::Normal) {
             continue;
         }
-        const Vec2 delta = GetNearestWorldDelta(state.stage, world_pos, player->pos);
+        const Vec2 delta = GetNearestWorldDelta(state.stage, world_pos, player->GetRenderPos());
         const float dist_sq = delta.x * delta.x + delta.y * delta.y;
         if (dist_sq < best_dist_sq) {
             best_dist_sq = dist_sq;

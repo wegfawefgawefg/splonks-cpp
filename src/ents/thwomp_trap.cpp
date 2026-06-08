@@ -33,11 +33,11 @@ void StoreHomePosition(Ent& thwomp) {
         return;
     }
     thwomp.point_label_a = PointLabel::Target;
-    thwomp.point_a = ToIVec2(thwomp.pos);
+    thwomp.point_a = sim::ToPixelIVec2Round(thwomp.pos);
 }
 
-float GetHomeY(const Ent& thwomp) {
-    return static_cast<float>(thwomp.point_a.y);
+sim::Scalar GetHomeY(const Ent& thwomp) {
+    return sim::Scalar::from_pixels(thwomp.point_a.y);
 }
 
 bool IsDropping(const Ent& thwomp) {
@@ -72,14 +72,14 @@ bool ShouldDrop(const Ent& thwomp, const State& state) {
 
 void StartDrop(Ent& thwomp) {
     thwomp.ai_state = EntAiState::Disturbed;
-    thwomp.vel = Vec2::New(0.0F, 0.0F);
-    thwomp.acc = Vec2::New(0.0F, 0.0F);
+    thwomp.vel = sim::Vec2::zero();
+    thwomp.acc = sim::Vec2::zero();
 }
 
 void StartWait(Ent& thwomp, State& state) {
     thwomp.ai_state = EntAiState::Pursuing;
-    thwomp.vel = Vec2::New(0.0F, 0.0F);
-    thwomp.acc = Vec2::New(0.0F, 0.0F);
+    thwomp.vel = sim::Vec2::zero();
+    thwomp.acc = sim::Vec2::zero();
     thwomp.counter_a = kWaitFrames;
     AddEntShake(thwomp, kImpactShake);
     AddShake(
@@ -96,15 +96,15 @@ void StartWait(Ent& thwomp, State& state) {
 
 void StartReturn(Ent& thwomp) {
     thwomp.ai_state = EntAiState::Returning;
-    thwomp.vel = Vec2::New(0.0F, kReturnVelocity);
-    thwomp.acc = Vec2::New(0.0F, 0.0F);
+    thwomp.vel = sim::ToSimVec2(0.0F, kReturnVelocity);
+    thwomp.acc = sim::Vec2::zero();
 }
 
 void FinishReturn(Ent& thwomp) {
     thwomp.ai_state = EntAiState::Idle;
     thwomp.pos.y = GetHomeY(thwomp);
-    thwomp.vel = Vec2::New(0.0F, 0.0F);
-    thwomp.acc = Vec2::New(0.0F, 0.0F);
+    thwomp.vel = sim::Vec2::zero();
+    thwomp.acc = sim::Vec2::zero();
     thwomp.grounded = false;
     thwomp.collided = false;
 }
@@ -134,8 +134,8 @@ void StepEntLogicAsThwompTrap(
     }
 
     if (thwomp.ai_state == EntAiState::Idle) {
-        thwomp.vel = Vec2::New(0.0F, 0.0F);
-        thwomp.acc = Vec2::New(0.0F, 0.0F);
+        thwomp.vel = sim::Vec2::zero();
+        thwomp.acc = sim::Vec2::zero();
         if (ShouldDrop(thwomp, state)) {
             StartDrop(thwomp);
         }
@@ -143,8 +143,8 @@ void StepEntLogicAsThwompTrap(
     }
 
     if (IsWaiting(thwomp)) {
-        thwomp.vel = Vec2::New(0.0F, 0.0F);
-        thwomp.acc = Vec2::New(0.0F, 0.0F);
+        thwomp.vel = sim::Vec2::zero();
+        thwomp.acc = sim::Vec2::zero();
         thwomp.counter_a -= 1.0F;
         if (thwomp.counter_a <= 0.0F) {
             StartReturn(thwomp);
@@ -173,25 +173,27 @@ void StepEntPhysicsAsThwompTrap(
     }
 
     const bool was_grounded = thwomp.grounded;
-    const float pre_vel_y = thwomp.vel.y;
+    const sim::Scalar pre_vel_y = thwomp.vel.y;
 
     if (IsDropping(thwomp)) {
-        thwomp.acc.y += kDropGravity;
+        thwomp.acc.y += sim::ToSimScalar(kDropGravity);
     } else {
-        thwomp.vel = Vec2::New(0.0F, kReturnVelocity);
-        thwomp.acc = Vec2::New(0.0F, 0.0F);
+        thwomp.vel = sim::ToSimVec2(0.0F, kReturnVelocity);
+        thwomp.acc = sim::Vec2::zero();
     }
 
     common::PrePartialEulerStep(ent_idx, state, dt);
     if (IsDropping(thwomp)) {
-        thwomp.vel.y = std::clamp(thwomp.vel.y, 0.0F, kDropMaxVelocity);
+        thwomp.vel.y = gfxp::clamp(thwomp.vel.y, sim::Scalar::zero(),
+                                   sim::ToSimScalar(kDropMaxVelocity));
     }
     common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     common::PostPartialEulerStep(ent_idx, state, dt);
 
     if (IsDropping(thwomp)) {
         const bool hit_bottom = (!was_grounded && thwomp.grounded) ||
-                                (pre_vel_y > 0.0F && thwomp.collided && thwomp.vel.y == 0.0F);
+                                (pre_vel_y > sim::Scalar::zero() && thwomp.collided &&
+                                 thwomp.vel.y == sim::Scalar::zero());
         if (hit_bottom) {
             StartWait(thwomp, state);
         }
@@ -200,7 +202,8 @@ void StepEntPhysicsAsThwompTrap(
 
     if (IsReturning(thwomp)) {
         if (thwomp.pos.y <= GetHomeY(thwomp) ||
-            (pre_vel_y < 0.0F && thwomp.collided && thwomp.vel.y == 0.0F)) {
+            (pre_vel_y < sim::Scalar::zero() && thwomp.collided &&
+             thwomp.vel.y == sim::Scalar::zero())) {
             FinishReturn(thwomp);
         }
     }

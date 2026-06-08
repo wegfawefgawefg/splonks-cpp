@@ -229,8 +229,8 @@ void OnAnkhEffectHook(
     owner.last_condition = EntCondition::Normal;
     owner.stun_timer = 0;
     owner.fall_timer = 0;
-    owner.vel = Vec2::New(0.0F, 0.0F);
-    owner.acc = Vec2::New(0.0F, 0.0F);
+    owner.vel = sim::Vec2::zero();
+    owner.acc = sim::Vec2::zero();
     owner.grounded = false;
     owner.marked_for_destruction = false;
     owner.has_physics = spec.has_physics;
@@ -246,7 +246,7 @@ void OnAnkhEffectHook(
     (void)TrySetAnim(owner, EntDisplayState::Neutral);
 
     if (const std::optional<Vec2> entrance_pos = FindEntranceRevivePos(state)) {
-        owner.pos = *entrance_pos;
+        owner.SetRenderPos(*entrance_pos);
     }
     SnapBackItemToOwner(owner, state);
     RemoveEffect(owner, EffectId::Ankh);

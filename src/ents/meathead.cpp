@@ -154,8 +154,8 @@ void StepEntLogicAsMeathead(
         return;
     }
 
-    meathead.vel = Vec2::New(0.0F, 0.0F);
-    meathead.acc = Vec2::New(0.0F, 0.0F);
+    meathead.vel = sim::Vec2::zero();
+    meathead.acc = sim::Vec2::zero();
 
     if (meathead.aframe_animator.anim_id == aframe_ids::MeatheadRise &&
         meathead.aframe_animator.IsFinished()) {

@@ -42,9 +42,15 @@ std::optional<Vec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
 }
 
 void ResizeEntPreservingBottomCenter(Ent& ent, const Vec2& new_size) {
-    const Vec2 bottom_center = ent.pos + Vec2::New(ent.GetSize().x * 0.5F, ent.GetSize().y);
+    const sim::Vec2 bottom_center = ent.pos + sim::Vec2{
+        ent.size.x / sim::Scalar::from_int(2),
+        ent.size.y,
+    };
     ent.size = sim::ToSimVec2(new_size);
-    ent.pos = bottom_center - Vec2::New(new_size.x * 0.5F, new_size.y);
+    ent.pos = bottom_center - sim::Vec2{
+        ent.size.x / sim::Scalar::from_int(2),
+        ent.size.y,
+    };
 }
 
 void EnterDormantState(Ent& ent) {
@@ -52,8 +58,8 @@ void EnterDormantState(Ent& ent) {
     ent.ai_state = EntAiState::Idle;
     ent.hurt_on_contact = false;
     ent.can_be_stomped = false;
-    ent.vel = Vec2::New(0.0F, 0.0F);
-    ent.acc = Vec2::New(0.0F, 0.0F);
+    ent.vel = sim::Vec2::zero();
+    ent.acc = sim::Vec2::zero();
     ent.aframe_animator.loop = true;
     TrySetAnim(ent, EntDisplayState::Neutral);
 }
@@ -171,11 +177,11 @@ void SpawnSkeletonDeathEffects(const Vec2& center, State& state) {
 void DropLooseSkull(const Vec2& center, State& state) {
     (void)world_ops::SpawnEnt(state, EntType::Skull, [&](Ent& skull) {
         skull.SetCenter(center);
-        skull.vel = Vec2::New(
+        skull.vel = sim::ToSimVec2(Vec2::New(
             state.drng.RandomFloat(-1.0F, 1.0F),
             state.drng.RandomFloat(-1.8F, -0.8F)
-        );
-        skull.acc = Vec2::New(0.0F, 0.0F);
+        ));
+        skull.acc = sim::Vec2::zero();
     });
 }
 

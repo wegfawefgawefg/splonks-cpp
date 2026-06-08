@@ -193,7 +193,7 @@ std::optional<Vec2> FindStageEntranceSpawnPos(const State& state) {
 
     for (const Ent& ent : state.ents.ents) {
         if (ent.active && ent.type_ == EntType::Entrance) {
-            return ent.pos;
+            return ent.GetRenderPos();
         }
     }
 

@@ -8,6 +8,7 @@
 #include "ents/shop.hpp"
 #include "ents/store_light.hpp"
 #include "player_queries.hpp"
+#include "sim/fxp.hpp"
 #include "tools/tool_spec.hpp"
 
 #include <algorithm>
@@ -76,8 +77,8 @@ void PrepareEntForStageEntry(Ent& ent) {
     ent.back_vid.reset();
     ent.held_by_vid.reset();
     ent.attach_mode = AttachMode::None;
-    ent.vel = Vec2::New(0.0F, 0.0F);
-    ent.acc = Vec2::New(0.0F, 0.0F);
+    ent.vel = sim::Vec2::zero();
+    ent.acc = sim::Vec2::zero();
     ent.grounded = false;
     ent.coyote_time = 0;
     ent.fall_timer = 0;
@@ -234,9 +235,9 @@ void PlacePlayerAtPosition(State& state, const Vec2& pos) {
     if (player == nullptr) {
         return;
     }
-    player->pos = pos;
-    player->vel = Vec2::New(0.0F, 0.0F);
-    player->acc = Vec2::New(0.0F, 0.0F);
+    player->pos = sim::ToSimVec2(pos);
+    player->vel = sim::Vec2::zero();
+    player->acc = sim::Vec2::zero();
 }
 
 void SnapAttachedItemsToPlayer(State& state) {
@@ -291,9 +292,9 @@ std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, cons
         if (Ent* const player = state.ents.GetEntMut(*player_vid)) {
             const EntType spawn_type = GetConfiguredPlayerSpawnType(state, player_id);
             SetEntAs(*player, spawn_type);
-            player->pos = pos;
-            player->vel = Vec2::New(0.0F, 0.0F);
-            player->acc = Vec2::New(0.0F, 0.0F);
+            player->pos = sim::ToSimVec2(pos);
+            player->vel = sim::Vec2::zero();
+            player->acc = sim::Vec2::zero();
             player->money = kPlayerInitialTestingMoney;
             state.players.AssignEnt(player_id, *player_vid);
 
@@ -318,8 +319,8 @@ std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, const Vec
     }
 
     SetEntAs(*ent, type_);
-    ent->pos = pos;
-    ent->vel = Vec2::New(0.0F, 0.0F);
+    ent->pos = sim::ToSimVec2(pos);
+    ent->vel = sim::Vec2::zero();
     if (type_ == EntType::StoreLight) {
         ents::store_light::AttachStoreLight(*ent, state);
     }
@@ -339,7 +340,7 @@ std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, const Vec2
 
     SetEntAs(*ent, type_);
     ent->SetCenter(center);
-    ent->vel = Vec2::New(0.0F, 0.0F);
+    ent->vel = sim::Vec2::zero();
     return vid;
 }
 
@@ -362,12 +363,12 @@ void SpawnAuthoredStageEnts(State& state) {
 
         SetEntAs(*ent, spawn.type_);
         ent->stage_spawn_index = static_cast<std::uint32_t>(i);
-        ent->pos = spawn.pos;
+        ent->pos = sim::ToSimVec2(spawn.pos);
         if (spawn.size_override.has_value()) {
             ent->size = sim::ToSimVec2(*spawn.size_override);
         }
         ent->facing = spawn.facing;
-        ent->vel = Vec2::New(0.0F, 0.0F);
+        ent->vel = sim::Vec2::zero();
         if (spawn.ai_state_override.has_value()) {
             ent->ai_state = *spawn.ai_state_override;
         }
@@ -412,22 +413,22 @@ void SpawnAuthoredStageEnts(State& state) {
         switch (slot) {
         case 0:
             ent->ent_a = *spawned_vids[*linked_spawn_index];
-            ent->point_a = ToIVec2(linked_ent->pos);
+            ent->point_a = sim::ToPixelIVec2Round(linked_ent->pos);
             ent->point_label_a = PointLabel::Target;
             break;
         case 1:
             ent->ent_b = *spawned_vids[*linked_spawn_index];
-            ent->point_b = ToIVec2(linked_ent->pos);
+            ent->point_b = sim::ToPixelIVec2Round(linked_ent->pos);
             ent->point_label_b = PointLabel::Target;
             break;
         case 2:
             ent->ent_c = *spawned_vids[*linked_spawn_index];
-            ent->point_c = ToIVec2(linked_ent->pos);
+            ent->point_c = sim::ToPixelIVec2Round(linked_ent->pos);
             ent->point_label_c = PointLabel::Target;
             break;
         case 3:
             ent->ent_d = *spawned_vids[*linked_spawn_index];
-            ent->point_d = ToIVec2(linked_ent->pos);
+            ent->point_d = sim::ToPixelIVec2Round(linked_ent->pos);
             ent->point_label_d = PointLabel::Target;
             break;
         default:

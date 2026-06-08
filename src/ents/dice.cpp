@@ -51,19 +51,19 @@ void StepEntLogicAsDice(
         return;
     }
 
-    if (!dice.grounded || std::abs(dice.vel.x) > kSettleSpeed ||
-        std::abs(dice.vel.y) > kSettleSpeed) {
+    if (!dice.grounded || dice.vel.x.abs() > sim::ToSimScalar(kSettleSpeed) ||
+        dice.vel.y.abs() > sim::ToSimScalar(kSettleSpeed)) {
         dice.counter_a = static_cast<float>(RollDicePairTotal(state));
         dice.rotation = sim::ToSimScalar(
             WrapRotationDegrees(sim::ToRenderScalar(dice.rotation) + 24.0F +
-                                std::abs(dice.vel.x) * 8.0F)
+                                sim::ToRenderScalar(dice.vel.x.abs()) * 8.0F)
         );
         return;
     }
 
     dice.counter_b = 0.0F;
     dice.rotation = sim::Scalar::zero();
-    dice.vel = Vec2::New(0.0F, 0.0F);
+    dice.vel = sim::Vec2::zero();
 }
 
 } // namespace

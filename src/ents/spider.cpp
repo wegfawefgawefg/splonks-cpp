@@ -57,10 +57,10 @@ void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
 
         if (world_ops::SpawnEnt(state, gem_type, [&](Ent& gem) {
                 gem.SetCenter(center);
-                gem.vel = Vec2::New(
+                gem.vel = sim::ToSimVec2(Vec2::New(
                     state.drng.RandomFloat(-2.0F, 2.0F),
                     -2.0F
-                );
+                ));
             }) == nullptr) {
             continue;
         }
@@ -68,7 +68,7 @@ void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
 
     (void)world_ops::SpawnEnt(state, EntType::Paste, [&](Ent& paste) {
         paste.SetCenter(center);
-        paste.vel = Vec2::New(0.0F, 0.0F);
+        paste.vel = sim::Vec2::zero();
     });
 }
 
@@ -109,8 +109,8 @@ void StepPassiveSpider(Ent& ent, State& state) {
 
     if (ent.counter_a > 0.0F) {
         ent.counter_a -= 1.0F;
-        if (std::abs(ent.vel.x) < kSpiderIdleSpeedThreshold) {
-            ent.vel.x = 0.0F;
+        if (ent.vel.x.abs() < sim::ToSimScalar(kSpiderIdleSpeedThreshold)) {
+            ent.vel.x = sim::Scalar::zero();
         }
         return;
     }
@@ -119,8 +119,10 @@ void StepPassiveSpider(Ent& ent, State& state) {
         ent.facing = ent.facing == Side::Left ? Side::Right : Side::Left;
     }
 
-    ent.vel.y = -static_cast<float>(state.drng.RandomIntInclusive(2, 4));
-    ent.vel.x = ent.facing == Side::Left ? -kPassiveSpiderHopSpeedX : kPassiveSpiderHopSpeedX;
+    ent.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(2, 4));
+    ent.vel.x = sim::ToSimScalar(
+        ent.facing == Side::Left ? -kPassiveSpiderHopSpeedX : kPassiveSpiderHopSpeedX
+    );
     ent.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
         kPassiveSpiderCooldownMinFrames,
         kPassiveSpiderCooldownMaxFrames
@@ -147,8 +149,8 @@ void TryHopTowardPlayer(
     }
 
     FaceTowardNearestPlayer(ent, state);
-    ent.vel.y = -static_cast<float>(state.drng.RandomIntInclusive(hop_speed_y_min, hop_speed_y_max));
-    ent.vel.x = ent.facing == Side::Left ? -hop_speed_x : hop_speed_x;
+    ent.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(hop_speed_y_min, hop_speed_y_max));
+    ent.vel.x = sim::ToSimScalar(ent.facing == Side::Left ? -hop_speed_x : hop_speed_x);
     ent.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
         kAggroSpiderCooldownMinFrames,
         kAggroSpiderCooldownMaxFrames
@@ -174,8 +176,8 @@ void StepAggroSpider(
 
     if (ent.counter_a > 0.0F) {
         ent.counter_a -= 1.0F;
-        if (std::abs(ent.vel.x) < kSpiderIdleSpeedThreshold) {
-            ent.vel.x = 0.0F;
+        if (ent.vel.x.abs() < sim::ToSimScalar(kSpiderIdleSpeedThreshold)) {
+            ent.vel.x = sim::Scalar::zero();
         }
         return;
     }

@@ -528,9 +528,9 @@ void HandleJoinAcceptAsPeer(
         state.players.EnsureRemotePlayer(accept.host_player_id, ReadFixedString(accept.host_name));
     if (host_slot.ent_vid.has_value()) {
         if (Ent* const host = state.ents.GetEntMut(*host_slot.ent_vid)) {
-            host->pos = host_spawn;
-            host->vel = Vec2::New(0.0F, 0.0F);
-            host->acc = Vec2::New(0.0F, 0.0F);
+            host->pos = sim::ToSimVec2(host_spawn);
+            host->vel = sim::Vec2::zero();
+            host->acc = sim::Vec2::zero();
             state.net_session.LinkEnt(MakePlayerNetEntId(accept.host_player_id), host->vid);
         }
     } else {

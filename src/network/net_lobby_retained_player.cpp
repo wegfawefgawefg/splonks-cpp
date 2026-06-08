@@ -18,7 +18,7 @@ Vec2 GetPrimaryPlayerSpawnPos(const State& state) {
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal()) {
         if (primary->ent_vid.has_value()) {
             if (const Ent* const ent = state.ents.GetEnt(*primary->ent_vid)) {
-                return ent->pos;
+                return ent->GetRenderPos();
             }
         }
     }
@@ -113,9 +113,9 @@ NetRetainedAttachedEntState CaptureRetainedAttachedEnt(
 
     retained.valid = true;
     retained.ent_type = attached->type_;
-    retained.pos = sim::ToSimVec2(attached->pos);
-    retained.vel = sim::ToSimVec2(attached->vel);
-    retained.acc = sim::ToSimVec2(attached->acc);
+    retained.pos = attached->pos;
+    retained.vel = attached->vel;
+    retained.acc = attached->acc;
     retained.size = attached->size;
     retained.rotation = attached->rotation;
     retained.counter_a = sim::ToSimScalar(attached->counter_a);
@@ -152,7 +152,7 @@ void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Ent& p
     retained.quest_id = state.stage.quest_id;
     retained.quest_stage_id = state.stage.quest_stage_id;
     retained.ent_type = player.type_;
-    retained.last_pos = sim::ToSimVec2(player.pos);
+    retained.last_pos = player.pos;
     retained.health = player.health;
     retained.money = player.money;
     retained.disconnected_frame = state.frame;
@@ -267,9 +267,9 @@ void ApplyRetainedPlayerState(
     }
 
     SetEntAs(*player, retained.ent_type);
-    player->pos = spawn_pos;
-    player->vel = Vec2::New(0.0F, 0.0F);
-    player->acc = Vec2::New(0.0F, 0.0F);
+    player->pos = sim::ToSimVec2(spawn_pos);
+    player->vel = sim::Vec2::zero();
+    player->acc = sim::Vec2::zero();
     player->health = retained.health;
     player->money = retained.money;
     player->held_by_vid.reset();
@@ -313,9 +313,9 @@ void ApplyRetainedAttachedEntState(
         state,
         retained.ent_type,
         [&](Ent& ent) {
-            ent.pos = sim::ToRenderVec2(retained.pos);
-            ent.vel = sim::ToRenderVec2(retained.vel);
-            ent.acc = sim::ToRenderVec2(retained.acc);
+            ent.pos = retained.pos;
+            ent.vel = retained.vel;
+            ent.acc = retained.acc;
             ent.size = retained.size;
             ent.rotation = retained.rotation;
             ent.counter_a = sim::ToRenderScalar(retained.counter_a);

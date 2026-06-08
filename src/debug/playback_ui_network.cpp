@@ -280,7 +280,7 @@ Vec2 GetDebugBotSpawnPos(const State& state) {
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal()) {
         if (primary->ent_vid.has_value()) {
             if (const Ent* const ent = state.ents.GetEnt(*primary->ent_vid)) {
-                return ent->pos + Vec2::New(12.0F, -2.0F);
+                return ent->GetRenderPos() + Vec2::New(12.0F, -2.0F);
             }
         }
     }

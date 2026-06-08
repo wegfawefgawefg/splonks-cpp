@@ -65,7 +65,7 @@ void EnsureSpawnedPlayer(
     if (slot.ent_vid.has_value()) {
         if (Ent* const ent = state.ents.GetEntMut(*slot.ent_vid)) {
             if (ent->active) {
-                ent->pos = pos;
+                ent->pos = sim::ToSimVec2(pos);
                 state.net_session.LinkEnt(MakePlayerNetEntId(player_id), ent->vid);
                 if (effective_local && effective_primary) {
                     state.controlled_ent_vid = ent->vid;
@@ -139,9 +139,9 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         const EntType respawn_type =
             IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
         SetEntAs(*ent, respawn_type);
-        ent->pos = spawn_pos;
-        ent->vel = Vec2::New(0.0F, 0.0F);
-        ent->acc = Vec2::New(0.0F, 0.0F);
+        ent->pos = sim::ToSimVec2(spawn_pos);
+        ent->vel = sim::Vec2::zero();
+        ent->acc = sim::Vec2::zero();
         ent->grounded = false;
         ent->coyote_time = 0;
         ent->fall_timer = 0;
@@ -231,9 +231,9 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
         const EntType respawn_type =
             IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
         SetEntAs(*ent, respawn_type);
-        ent->pos = spawn_pos;
-        ent->vel = Vec2::New(0.0F, 0.0F);
-        ent->acc = Vec2::New(0.0F, 0.0F);
+        ent->pos = sim::ToSimVec2(spawn_pos);
+        ent->vel = sim::Vec2::zero();
+        ent->acc = sim::Vec2::zero();
         ent->grounded = false;
         ent->coyote_time = 0;
         ent->fall_timer = 0;
@@ -328,7 +328,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
                 const EntType respawn_type =
                     IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
                 SetEntAs(*ent, respawn_type);
-                ent->pos = spawn_pos;
+                ent->pos = sim::ToSimVec2(spawn_pos);
             } else {
                 EnsureSpawnedPlayer(
                     state,
@@ -348,9 +348,9 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
             continue;
         }
 
-        ent->pos = spawn_pos;
-        ent->vel = Vec2::New(0.0F, 0.0F);
-        ent->acc = Vec2::New(0.0F, 0.0F);
+        ent->pos = sim::ToSimVec2(spawn_pos);
+        ent->vel = sim::Vec2::zero();
+        ent->acc = sim::Vec2::zero();
         ent->grounded = false;
         ent->coyote_time = 0;
         ent->fall_timer = 0;

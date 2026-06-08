@@ -23,21 +23,23 @@ constexpr float kBlockTrailSmokeDistInterval = 14.0F;
 constexpr float kBlockPushAcc = 0.2F;
 
 void StepControlledBlock(Ent& block, const controls::ControlIntent& control) {
+    const sim::Scalar move_acc = sim::ToSimScalar(kControlledBlockMoveAcc);
     if (block.attack_delay_countdown > 0) {
         block.attack_delay_countdown -= 1;
     }
 
     if (control.left && !control.right) {
-        block.acc.x -= kControlledBlockMoveAcc;
+        block.acc.x -= move_acc;
         block.facing = Side::Left;
     } else if (control.right && !control.left) {
-        block.acc.x += kControlledBlockMoveAcc;
+        block.acc.x += move_acc;
         block.facing = Side::Right;
     }
 
     if (control.attack_pressed && block.grounded && block.attack_delay_countdown == 0) {
-        block.vel.x =
-            block.facing == Side::Left ? -kControlledBlockSlideVel : kControlledBlockSlideVel;
+        block.vel.x = block.facing == Side::Left
+                          ? -sim::ToSimScalar(kControlledBlockSlideVel)
+                          : sim::ToSimScalar(kControlledBlockSlideVel);
         block.attack_delay_countdown = kControlledBlockSlideCooldownFrames;
     }
 }

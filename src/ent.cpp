@@ -53,9 +53,9 @@ Ent Ent::New() {
     ent.impassable = false;
     ent.can_be_hung_on = true;
     ent.fall_timer = 0;
-    ent.pos = Vec2::New(0.0F, 0.0F);
-    ent.vel = Vec2::New(0.0F, 0.0F);
-    ent.acc = Vec2::New(0.0F, 0.0F);
+    ent.pos = sim::Vec2::zero();
+    ent.vel = sim::Vec2::zero();
+    ent.acc = sim::Vec2::zero();
     ent.max_speed = sim::ToSimScalar(7.0F);
     ent.jump_hold_gravity_frames_remaining = 0;
     ent.throw_velocity_scale = sim::Scalar::from_int(1);
@@ -222,45 +222,80 @@ void ClearTransientMovementFlags(Ent& ent) {
 }
 
 sim::Vec2 Ent::GetSimPos() const {
-    return sim::ToSimVec2(pos);
+    return pos;
 }
 
 sim::Vec2 Ent::GetSimVel() const {
-    return sim::ToSimVec2(vel);
+    return vel;
 }
 
 sim::Vec2 Ent::GetSimAcc() const {
-    return sim::ToSimVec2(acc);
+    return acc;
 }
 
 void Ent::SetSimPos(sim::Vec2 value) {
-    pos = sim::ToRenderVec2(value);
+    pos = value;
 }
 
 void Ent::SetSimVel(sim::Vec2 value) {
-    vel = sim::ToRenderVec2(value);
+    vel = value;
 }
 
 void Ent::SetSimAcc(sim::Vec2 value) {
-    acc = sim::ToRenderVec2(value);
+    acc = value;
+}
+
+Vec2 Ent::GetRenderPos() const {
+    return sim::ToRenderVec2(pos);
+}
+
+Vec2 Ent::GetRenderVel() const {
+    return sim::ToRenderVec2(vel);
+}
+
+Vec2 Ent::GetRenderAcc() const {
+    return sim::ToRenderVec2(acc);
+}
+
+void Ent::SetRenderPos(const Vec2& value) {
+    pos = sim::ToSimVec2(value);
+}
+
+void Ent::SetRenderVel(const Vec2& value) {
+    vel = sim::ToSimVec2(value);
+}
+
+void Ent::SetRenderAcc(const Vec2& value) {
+    acc = sim::ToSimVec2(value);
+}
+
+sim::AABB Ent::GetSimAABB() const {
+    return sim::AABB::from_pos_size(pos, size - sim::Vec2::from_pixels(1, 1));
+}
+
+sim::Vec2 Ent::GetSimCenter() const {
+    return pos + size / sim::Scalar::from_int(2);
+}
+
+void Ent::SetSimCenter(sim::Vec2 center) {
+    pos = center - (size / sim::Scalar::from_int(2));
 }
 
 std::tuple<Vec2, Vec2> Ent::GetBounds() const {
-    const Vec2 render_size = GetSize();
-    return {pos, pos + render_size - Vec2::New(1.0F, 1.0F)};
+    const sim::AABB bounds = GetSimAABB();
+    return {sim::ToRenderVec2(bounds.tl), sim::ToRenderVec2(bounds.br)};
 }
 
 AABB Ent::GetAABB() const {
-    const Vec2 render_size = GetSize();
-    return AABB::New(pos, pos + render_size - Vec2::New(1.0F, 1.0F));
+    return ToRenderAABB(GetSimAABB());
 }
 
 Vec2 Ent::GetCenter() const {
-    return pos + GetSize() / 2.0F;
+    return sim::ToRenderVec2(GetSimCenter());
 }
 
 void Ent::SetCenter(const Vec2& center) {
-    pos = center - GetSize() / 2.0F;
+    SetSimCenter(sim::ToSimVec2(center));
 }
 
 Vec2 Ent::GetSize() const {
@@ -307,7 +342,7 @@ bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
         return false;
     }
 
-    pos.y = static_cast<float>(RoundToInt(static_cast<float>(stage.GetHeight()) - GetSize().y));
+    pos.y = sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetHeight())) - size.y;
     return true;
 }
 
@@ -329,7 +364,7 @@ void Ent::SetGrounded(const Stage& stage) {
 }
 
 std::tuple<Vec2, Vec2> Ent::GetTlAndTrCorners() const {
-    return {Vec2::New(pos.x, pos.y), Vec2::New(pos.x + GetSize().x, pos.y)};
+    return {GetRenderPos(), sim::ToRenderVec2(pos + sim::Vec2{size.x, sim::Scalar::zero()})};
 }
 
 HangHands Ent::GetHangHands() const {

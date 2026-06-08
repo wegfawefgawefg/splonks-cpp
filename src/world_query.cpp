@@ -35,6 +35,26 @@ float GetNearestWrappedDelta(float from, float to, float span, bool wraps) {
     return delta;
 }
 
+sim::Scalar GetNearestWrappedDelta(sim::Scalar from,
+                                   sim::Scalar to,
+                                   sim::Scalar span,
+                                   bool wraps) {
+    sim::Scalar delta = to - from;
+    if (!wraps || span <= sim::Scalar::zero()) {
+        return delta;
+    }
+
+    const int copy = delta.trunc_int() / span.trunc_int();
+    delta -= span * copy;
+    if (delta > span / 2) {
+        delta -= span;
+    }
+    if (delta < -(span / 2)) {
+        delta += span;
+    }
+    return delta;
+}
+
 AABB ShiftAabb(const AABB& aabb, const Vec2& delta) {
     return AABB{
         .tl = aabb.tl + delta,
@@ -42,8 +62,17 @@ AABB ShiftAabb(const AABB& aabb, const Vec2& delta) {
     };
 }
 
+sim::AABB ShiftAabb(sim::AABB aabb, sim::Vec2 delta) {
+    aabb.translate(delta);
+    return aabb;
+}
+
 Vec2 GetAabbCenter(const AABB& aabb) {
     return (aabb.tl + aabb.br) / 2.0F;
+}
+
+sim::Vec2 GetAabbCenter(sim::AABB aabb) {
+    return aabb.center();
 }
 
 int FloorDivBySpan(float value, float span) {
@@ -108,7 +137,24 @@ Vec2 GetNearestWorldDelta(const Stage& stage, const Vec2& from, const Vec2& to) 
     );
 }
 
+sim::Vec2 GetNearestWorldDelta(const Stage& stage, sim::Vec2 from, sim::Vec2 to) {
+    return sim::Vec2{
+        GetNearestWrappedDelta(from.x,
+                               to.x,
+                               sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetWidth())),
+                               stage.WrapsX()),
+        GetNearestWrappedDelta(from.y,
+                               to.y,
+                               sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetHeight())),
+                               stage.WrapsY()),
+    };
+}
+
 Vec2 GetNearestWorldPoint(const Stage& stage, const Vec2& anchor, const Vec2& point) {
+    return anchor + GetNearestWorldDelta(stage, anchor, point);
+}
+
+sim::Vec2 GetNearestWorldPoint(const Stage& stage, sim::Vec2 anchor, sim::Vec2 point) {
     return anchor + GetNearestWorldDelta(stage, anchor, point);
 }
 
@@ -139,8 +185,20 @@ AABB GetNearestWorldAabb(const Stage& stage, const Vec2& anchor, const AABB& aab
     return ShiftAabb(aabb, nearest_center - center);
 }
 
+sim::AABB GetNearestWorldAabb(const Stage& stage, sim::Vec2 anchor, sim::AABB aabb) {
+    const sim::Vec2 center = GetAabbCenter(aabb);
+    const sim::Vec2 nearest_center = GetNearestWorldPoint(stage, anchor, center);
+    return ShiftAabb(aabb, nearest_center - center);
+}
+
 bool WorldAabbContainsPoint(const Stage& stage, const AABB& area, const Vec2& point) {
     const AABB nearest_area = GetNearestWorldAabb(stage, point, area);
+    return point.x >= nearest_area.tl.x && point.x <= nearest_area.br.x &&
+           point.y >= nearest_area.tl.y && point.y <= nearest_area.br.y;
+}
+
+bool WorldAabbContainsPoint(const Stage& stage, sim::AABB area, sim::Vec2 point) {
+    const sim::AABB nearest_area = GetNearestWorldAabb(stage, point, area);
     return point.x >= nearest_area.tl.x && point.x <= nearest_area.br.x &&
            point.y >= nearest_area.tl.y && point.y <= nearest_area.br.y;
 }
@@ -149,6 +207,12 @@ bool WorldAabbsIntersect(const Stage& stage, const AABB& area, const AABB& other
     const Vec2 anchor = GetAabbCenter(area);
     const AABB nearest_other = GetNearestWorldAabb(stage, anchor, other);
     return AabbsIntersect(area, nearest_other);
+}
+
+bool WorldAabbsIntersect(const Stage& stage, sim::AABB area, sim::AABB other) {
+    const sim::Vec2 anchor = GetAabbCenter(area);
+    const sim::AABB nearest_other = GetNearestWorldAabb(stage, anchor, other);
+    return gfxp::aabbs_intersect(area, nearest_other);
 }
 
 std::vector<IVec2> GetTileCoordsInRect(const Stage& stage, const IVec2& tl, const IVec2& br) {
@@ -218,6 +282,14 @@ std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, const AAB
     return QueryTilesInWorldRect(stage, ToIVec2(area.tl), ToIVec2(area.br));
 }
 
+std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, sim::AABB area) {
+    return QueryTilesInWorldRect(stage,
+                                 IVec2::New(area.tl.x.to_pixels_floor(),
+                                            area.tl.y.to_pixels_floor()),
+                                 IVec2::New(area.br.x.to_pixels_floor(),
+                                            area.br.y.to_pixels_floor()));
+}
+
 bool IsOneWayTopTileSupportingAabb(
     const Stage& stage,
     const WorldTileQueryResult& tile_query,
@@ -242,6 +314,30 @@ bool IsOneWayTopTileSupportingAabb(
     return area.tl.y < tile_aabb.tl.y;
 }
 
+bool IsOneWayTopTileSupportingAabb(
+    const Stage& stage,
+    const WorldTileQueryResult& tile_query,
+    sim::AABB area
+) {
+    if (tile_query.tile == nullptr || !IsTileOneWayTopSolid(*tile_query.tile)) {
+        return false;
+    }
+
+    const sim::Vec2 tile_tl =
+        sim::Vec2::from_pixels(tile_query.tile_pos.x * static_cast<int>(kTileSize),
+                               tile_query.tile_pos.y * static_cast<int>(kTileSize));
+    const sim::AABB tile_aabb = GetNearestWorldAabb(
+        stage,
+        area.center(),
+        sim::AABB::from_corners(
+            tile_tl,
+            tile_tl + sim::Vec2::from_pixels(static_cast<int>(kTileSize - 1),
+                                             static_cast<int>(kTileSize - 1))
+        )
+    );
+    return area.tl.y < tile_aabb.tl.y;
+}
+
 bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area) {
     if (area.tl.x < 0.0F && stage.IsBorderSideBlocking(StageBorderSideKind::Left)) {
         return true;
@@ -260,6 +356,26 @@ bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area) {
     return false;
 }
 
+bool AabbTouchesBlockingStageBounds(const Stage& stage, sim::AABB area) {
+    if (area.tl.x < sim::Scalar::zero() &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Left)) {
+        return true;
+    }
+    if (area.tl.y < sim::Scalar::zero() &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Top)) {
+        return true;
+    }
+    if (area.br.x > sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetWidth() - 1)) &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Right)) {
+        return true;
+    }
+    if (area.br.y > sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetHeight() - 1)) &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
+        return true;
+    }
+    return false;
+}
+
 bool AabbHitsBlockingTiles(const Stage& stage, const AABB& area) {
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(stage, area)) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
@@ -269,7 +385,20 @@ bool AabbHitsBlockingTiles(const Stage& stage, const AABB& area) {
     return false;
 }
 
+bool AabbHitsBlockingTiles(const Stage& stage, sim::AABB area) {
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(stage, area)) {
+        if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool AabbHitsBlockingWorldGeometry(const Stage& stage, const AABB& area) {
+    return AabbTouchesBlockingStageBounds(stage, area) || AabbHitsBlockingTiles(stage, area);
+}
+
+bool AabbHitsBlockingWorldGeometry(const Stage& stage, sim::AABB area) {
     return AabbTouchesBlockingStageBounds(stage, area) || AabbHitsBlockingTiles(stage, area);
 }
 

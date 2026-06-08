@@ -75,12 +75,8 @@ std::int32_t IntSqrtRound(std::uint64_t value) {
     return static_cast<std::int32_t>(high_delta < low_delta ? next : floor);
 }
 
-float FixedRawToFloat(std::int32_t raw) {
-    return static_cast<float>(raw) / static_cast<float>(kFixedScale);
-}
-
-Vec2 FixedDeltaToVec2(std::int32_t x_raw, std::int32_t y_raw) {
-    return Vec2::New(FixedRawToFloat(x_raw), FixedRawToFloat(y_raw));
+sim::Vec2 FixedDeltaToSimVec2(std::int32_t x_raw, std::int32_t y_raw) {
+    return sim::Vec2::from_raw(x_raw, y_raw);
 }
 
 } // namespace
@@ -168,7 +164,7 @@ void StepEntLogicAsBallAndChainBall(
         RoundRatio(static_cast<std::int64_t>(dir_x_raw) * kBallCatchupAccelerationRaw, kFixedScale);
     const std::int32_t catchup_y_raw =
         RoundRatio(static_cast<std::int64_t>(dir_y_raw) * kBallCatchupAccelerationRaw, kFixedScale);
-    ball.acc = ball.acc - FixedDeltaToVec2(catchup_x_raw, catchup_y_raw);
+    ball.acc = ball.acc - FixedDeltaToSimVec2(catchup_x_raw, catchup_y_raw);
     if (distance_raw <= kChainLengthRaw) {
         return;
     }
@@ -180,10 +176,10 @@ void StepEntLogicAsBallAndChainBall(
         RoundRatio(static_cast<std::int64_t>(dir_x_raw) * pull_acceleration_raw, kFixedScale);
     const std::int32_t pull_y_raw =
         RoundRatio(static_cast<std::int64_t>(dir_y_raw) * pull_acceleration_raw, kFixedScale);
-    ball.acc = ball.acc - FixedDeltaToVec2(pull_x_raw, pull_y_raw);
+    ball.acc = ball.acc - FixedDeltaToSimVec2(pull_x_raw, pull_y_raw);
 
-    const std::int32_t player_vel_x_raw = RoundFloatToFixedRaw(player->vel.x);
-    const std::int32_t player_vel_y_raw = RoundFloatToFixedRaw(player->vel.y);
+    const std::int32_t player_vel_x_raw = player->vel.x.raw_value();
+    const std::int32_t player_vel_y_raw = player->vel.y.raw_value();
     const std::int32_t player_away_speed_raw = RoundRatio(
         (static_cast<std::int64_t>(player_vel_x_raw) * dir_x_raw) +
         (static_cast<std::int64_t>(player_vel_y_raw) * dir_y_raw),
@@ -202,7 +198,7 @@ void StepEntLogicAsBallAndChainBall(
             RoundRatio(static_cast<std::int64_t>(dir_x_raw) * damped_speed_raw, kFixedScale);
         const std::int32_t pullback_y_raw =
             RoundRatio(static_cast<std::int64_t>(dir_y_raw) * damped_speed_raw, kFixedScale);
-        player->vel = player->vel - FixedDeltaToVec2(pullback_x_raw, pullback_y_raw);
+        player->vel = player->vel - FixedDeltaToSimVec2(pullback_x_raw, pullback_y_raw);
     }
 }
 

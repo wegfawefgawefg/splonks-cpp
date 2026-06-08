@@ -10,8 +10,13 @@ namespace splonks {
 Vec2 GetNearestWorldDelta(const Stage& stage, const Vec2& from, const Vec2& to);
 Vec2 GetNearestWorldPoint(const Stage& stage, const Vec2& anchor, const Vec2& point);
 AABB GetNearestWorldAabb(const Stage& stage, const Vec2& anchor, const AABB& aabb);
+sim::Vec2 GetNearestWorldDelta(const Stage& stage, sim::Vec2 from, sim::Vec2 to);
+sim::Vec2 GetNearestWorldPoint(const Stage& stage, sim::Vec2 anchor, sim::Vec2 point);
+sim::AABB GetNearestWorldAabb(const Stage& stage, sim::Vec2 anchor, sim::AABB aabb);
 bool WorldAabbContainsPoint(const Stage& stage, const AABB& area, const Vec2& point);
 bool WorldAabbsIntersect(const Stage& stage, const AABB& area, const AABB& other);
+bool WorldAabbContainsPoint(const Stage& stage, sim::AABB area, sim::Vec2 point);
+bool WorldAabbsIntersect(const Stage& stage, sim::AABB area, sim::AABB other);
 std::vector<IVec2> GetTileCoordsInRect(const Stage& stage, const IVec2& tl, const IVec2& br);
 
 struct WorldTileQueryResult {
@@ -33,14 +38,23 @@ std::vector<WorldTileQueryResult> QueryTilesInWorldRect(
     const IVec2& br
 );
 std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, const AABB& area);
+std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, sim::AABB area);
 bool IsOneWayTopTileSupportingAabb(
     const Stage& stage,
     const WorldTileQueryResult& tile_query,
     const AABB& area
 );
+bool IsOneWayTopTileSupportingAabb(
+    const Stage& stage,
+    const WorldTileQueryResult& tile_query,
+    sim::AABB area
+);
 bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area);
 bool AabbHitsBlockingTiles(const Stage& stage, const AABB& area);
 bool AabbHitsBlockingWorldGeometry(const Stage& stage, const AABB& area);
+bool AabbTouchesBlockingStageBounds(const Stage& stage, sim::AABB area);
+bool AabbHitsBlockingTiles(const Stage& stage, sim::AABB area);
+bool AabbHitsBlockingWorldGeometry(const Stage& stage, sim::AABB area);
 bool AabbHitsImpassableEnts(
     const State& state,
     const Graphics& graphics,

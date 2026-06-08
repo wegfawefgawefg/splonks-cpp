@@ -76,8 +76,8 @@ void UnlockPrize(Ent& prize) {
     prize.can_be_picked_up = spec.can_be_picked_up;
     prize.can_be_hit = spec.can_be_hit;
     prize.alpha = spec.alpha;
-    prize.vel = Vec2::New(0.0F, -2.25F);
-    prize.acc = Vec2::New(0.0F, 0.0F);
+    prize.vel = sim::ToSimVec2(Vec2::New(0.0F, -2.25F));
+    prize.acc = sim::Vec2::zero();
 }
 
 Ent* SpawnWonPrize(Ent& table, const Ent& display_prize, State& state) {
@@ -87,8 +87,8 @@ Ent* SpawnWonPrize(Ent& table, const Ent& display_prize, State& state) {
         [&](Ent& ent) {
             ClearEntBuyableState(ent);
             ent.SetCenter(table.GetCenter() + Vec2::New(0.0F, -18.0F));
-            ent.vel = Vec2::New(0.0F, -2.25F);
-            ent.acc = Vec2::New(0.0F, 0.0F);
+            ent.vel = sim::ToSimVec2(Vec2::New(0.0F, -2.25F));
+            ent.acc = sim::Vec2::zero();
             ent.grounded = false;
         }
     );
@@ -115,13 +115,13 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
 
     const Vec2 table_center = table.GetCenter();
     dice.SetCenter(table_center + Vec2::New(0.0F, -10.0F));
-    dice.vel = Vec2::New(static_cast<float>(state.drng.RandomIntInclusive(-2, 2)), -5.0F);
-    dice.acc = Vec2::New(0.0F, 0.0F);
+    dice.vel = sim::ToSimVec2(Vec2::New(static_cast<float>(state.drng.RandomIntInclusive(-2, 2)), -5.0F));
+    dice.acc = sim::Vec2::zero();
 }
 
 bool DiceHasSettled(const Ent& dice) {
-    return dice.grounded && std::abs(dice.vel.x) <= kDiceSettleSpeed &&
-           std::abs(dice.vel.y) <= kDiceSettleSpeed && dice.counter_b <= 0.0F;
+    return dice.grounded && dice.vel.x.abs() <= sim::ToSimScalar(kDiceSettleSpeed) &&
+           dice.vel.y.abs() <= sim::ToSimScalar(kDiceSettleSpeed) && dice.counter_b <= 0.0F;
 }
 
 void PayCrapsResult(

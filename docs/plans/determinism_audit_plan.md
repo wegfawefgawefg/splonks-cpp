@@ -127,6 +127,28 @@ The expected end state is:
   because runtime entity motion storage has not moved yet. The next required
   step remains the actual storage/math migration so gameplay branches stop
   depending on float thresholds before serialization or hashing.
+- Audit checkpoint 2026-06-08: runtime `Ent::pos`, `vel`, `acc`, and `size`
+  now store Fixed12 `sim::Vec2` values, core entity accessors expose explicit
+  sim/render adapters, snapshots and fingerprints consume raw fixed vectors,
+  and the release build passes with this storage migration in place. Collision,
+  movement, stage wrap/rotation/spawning, retained players, and common contact
+  damage have been moved far enough to compile against fixed entity state.
+  This is still not the final geometry end state: render-space `AABB` overloads
+  remain available, several gameplay call sites still bridge through
+  `ToRenderVec2` / `ToSimVec2`, and stage-fluid math still uses float
+  vector helpers internally before writing fixed values back. The next pass
+  should retire render AABB from authoritative collision/query decisions and
+  narrow conversions to render/debug/UI/audio boundaries only.
+- Validation 2026-06-08: after the Fixed12 runtime entity motion storage
+  migration, `./scripts/build.sh`,
+  `./build/splonks-cpp --check-state-fingerprint-smoke --project-root "$PWD"`,
+  `./build/splonks-cpp --check-state-equality-smoke --project-root "$PWD"`,
+  `./build/splonks-cpp --check-det-replay-smoke --project-root "$PWD"`,
+  `./build/splonks-cpp --check-join-barrier-protocol-smoke --project-root "$PWD"`,
+  and
+  `./build/splonks-cpp --check-join-barrier-next-stage-restart-smoke --project-root "$PWD"`
+  passed. Broad `--check-input-lockstep-smoke` and live two-client manual
+  validation remain outstanding for this larger migration.
 
 ## Math Function Audit
 

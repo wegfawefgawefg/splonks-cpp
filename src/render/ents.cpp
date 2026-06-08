@@ -121,12 +121,13 @@ Vec2 GetSmoothedEntRenderPos(State& state, Graphics& graphics, const Ent& ent) {
     constexpr float kCorrectionResponse = 0.42F;
     constexpr float kSettledDistance = 0.20F;
     constexpr float kSnapDistance = 32.0F;
+    const Vec2 ent_render_pos = ent.GetRenderPos();
 
     if (state.stage_frame <= 1) {
         if (!graphics.ent_render_smoothing.empty() && state.stage_frame <= 1) {
             graphics.ent_render_smoothing.clear();
         }
-        return ent.pos;
+        return ent_render_pos;
     }
 
     const bool rollback_this_frame =
@@ -137,35 +138,35 @@ Vec2 GetSmoothedEntRenderPos(State& state, Graphics& graphics, const Ent& ent) {
     entry.last_seen_frame = state.frame;
 
     if (!entry.active) {
-        entry.render_pos = ent.pos;
+        entry.render_pos = ent_render_pos;
         entry.active = true;
-        return ent.pos;
+        return ent_render_pos;
     }
 
-    const Vec2 previous = GetNearestWorldPoint(state.stage, ent.pos, entry.render_pos);
-    const Vec2 delta = ent.pos - previous;
+    const Vec2 previous = GetNearestWorldPoint(state.stage, ent_render_pos, entry.render_pos);
+    const Vec2 delta = ent_render_pos - previous;
     const float distance = Length(delta);
     if (!rollback_this_frame && !entry.smoothing_active) {
-        entry.render_pos = ent.pos;
+        entry.render_pos = ent_render_pos;
         PruneStaleEntRenderSmoothing(graphics, state.frame);
-        return ent.pos;
+        return ent_render_pos;
     }
     if (distance > kSnapDistance) {
-        entry.render_pos = ent.pos;
+        entry.render_pos = ent_render_pos;
         entry.smoothing_active = false;
-        return ent.pos;
+        return ent_render_pos;
     }
     if (distance <= kSettledDistance) {
-        entry.render_pos = ent.pos;
+        entry.render_pos = ent_render_pos;
         entry.smoothing_active = false;
-        return ent.pos;
+        return ent_render_pos;
     }
     if (rollback_this_frame) {
         entry.smoothing_active = true;
     }
     if (!entry.smoothing_active) {
-        entry.render_pos = ent.pos;
-        return ent.pos;
+        entry.render_pos = ent_render_pos;
+        return ent_render_pos;
     }
 
     entry.render_pos = previous + (delta * kCorrectionResponse);
@@ -217,7 +218,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
             const Vec2 sprite_scaled_size =
                 sprite_world_size * sim::ToRenderScalar(ent.aframe_animator.scale);
             Ent render_ent = ent;
-            render_ent.pos = GetSmoothedEntRenderPos(state, graphics, ent);
+            render_ent.pos = sim::ToSimVec2(GetSmoothedEntRenderPos(state, graphics, ent));
             const Vec2 render_position =
                 ents::common::GetSpriteTopLeftForEnt(render_ent, *aframe);
 

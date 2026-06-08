@@ -130,8 +130,9 @@ void MaybeWallHopWhileIdle(Ent& caveman, const State& state, const Graphics& gra
         return;
     }
 
-    caveman.vel.y = kCavemanWallHopSpeedY;
-    caveman.vel.x = caveman.facing == Side::Left ? -kCavemanWallHopSpeedX : kCavemanWallHopSpeedX;
+    caveman.vel.y = sim::ToSimScalar(kCavemanWallHopSpeedY);
+    caveman.vel.x = caveman.facing == Side::Left ? -sim::ToSimScalar(kCavemanWallHopSpeedX)
+                                                 : sim::ToSimScalar(kCavemanWallHopSpeedX);
     caveman.counter_a = std::max(0.0F, caveman.counter_a - 10.0F);
 }
 
@@ -162,7 +163,7 @@ void StepEntLogicAsCaveman(
             FaceTowards(caveman, player->GetCenter(), state.stage);
         }
         if (caveman.grounded) {
-            caveman.vel.y = kCavemanAlertHopSpeedY;
+            caveman.vel.y = sim::ToSimScalar(kCavemanAlertHopSpeedY);
             caveman.grounded = false;
         }
         (void)PlayEntSoundEmitter(state, caveman, audio_asset_ids::CavemanNotice);

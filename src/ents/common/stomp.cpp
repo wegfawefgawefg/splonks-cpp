@@ -26,7 +26,7 @@ bool CanEntAttemptStomp(const Ent& stomper, const State& state) {
     if (stomper.condition != EntCondition::Normal) {
         return false;
     }
-    if (stomper.vel.y <= 0.0F) {
+    if (stomper.vel.y <= sim::Scalar::zero()) {
         return false;
     }
     if (stomper.held_by_vid.has_value()) {
@@ -67,7 +67,7 @@ void ApplyStompBounce(Ent& stomper, State& state) {
         : -kStompShortBounceVelocityY;
     const float bounce_impulse =
         GetModifiedEffectValue(stomper, EffectModifierTarget::StompBounceImpulse, base_bounce_impulse, &state);
-    stomper.vel.y = -bounce_impulse;
+    stomper.vel.y = -sim::ToSimScalar(bounce_impulse);
 }
 
 } // namespace
@@ -149,7 +149,7 @@ bool TryApplyStompContactToEnt(
     const float stomp_knockback_x =
         stomp_delta.x < 0.0F ? -kStompVictimKnockbackVelocityX : kStompVictimKnockbackVelocityX;
     const KnockbackSpec knockback{
-        .velocity = Vec2::New(stomp_knockback_x, kStompVictimKnockbackVelocityY),
+        .velocity = sim::ToSimVec2(stomp_knockback_x, kStompVictimKnockbackVelocityY),
         .clear_velocity = true,
         .clear_acceleration = true,
         .thrown_by = stomper.vid,

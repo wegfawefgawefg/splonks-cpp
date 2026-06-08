@@ -135,7 +135,7 @@ void InitBoulderTestStage(State& state) {
         const Ent* const idol = state.ents.GetEnt(*idol_vid);
         if (head != nullptr && idol != nullptr) {
             head->ent_a = *idol_vid;
-            head->point_a = ToIVec2(idol->pos);
+            head->point_a = ToIVec2(idol->GetRenderPos());
             head->point_label_a = PointLabel::Target;
         }
     }
@@ -210,8 +210,8 @@ void SpawnSacAltarTestCorpsePile(State& state) {
             }
             caveman->health = 0;
             caveman->condition = EntCondition::Dead;
-            caveman->vel = Vec2::New(0.0F, 0.0F);
-            caveman->acc = Vec2::New(0.0F, 0.0F);
+            caveman->vel = sim::Vec2::zero();
+            caveman->acc = sim::Vec2::zero();
             TrySetAnim(*caveman, EntDisplayState::Dead);
         }
     }
@@ -251,8 +251,8 @@ void SpawnSacAltarTestLivingDamsels(State& state) {
         damsel->stun_timer = 6000;
         damsel->stun_recovers_on_ground = false;
         damsel->stun_recovers_while_held = false;
-        damsel->vel = Vec2::New(0.0F, 0.0F);
-        damsel->acc = Vec2::New(0.0F, 0.0F);
+        damsel->vel = sim::Vec2::zero();
+        damsel->acc = sim::Vec2::zero();
         TrySetAnim(*damsel, EntDisplayState::Stunned);
     }
 }

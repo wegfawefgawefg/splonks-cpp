@@ -35,9 +35,11 @@ void PlacePlayerAtEntrance(State& state) {
                     continue;
                 }
                 if (Ent* const player = state.ents.GetEntMut(*slot.ent_vid)) {
-                    player->pos = spawn_pos + Vec2::New(static_cast<float>(local_player_index) * 8.0F, 0.0F);
-                    player->vel = Vec2::New(0.0F, 0.0F);
-                    player->acc = Vec2::New(0.0F, 0.0F);
+                    player->pos = sim::ToSimVec2(
+                        spawn_pos + Vec2::New(static_cast<float>(local_player_index) * 8.0F, 0.0F)
+                    );
+                    player->vel = sim::Vec2::zero();
+                    player->acc = sim::Vec2::zero();
                 }
                 ++local_player_index;
             }
@@ -105,7 +107,7 @@ void InitStage(State& state, bool preserve_player_state) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const ent = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*ent, EntType::JetPack);
-                        ent->pos = ToVec2(*random_available_position);
+                        ent->pos = sim::PixelVec2(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -120,7 +122,7 @@ void InitStage(State& state, bool preserve_player_state) {
                         const EntType money_type =
                             RandomMoneyType(state.stagegen_drng) == 0 ? EntType::Gold : EntType::GoldStack;
                         SetEntAs(*money, money_type);
-                        money->pos = ToVec2(*random_available_position);
+                        money->pos = sim::PixelVec2(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -133,7 +135,7 @@ void InitStage(State& state, bool preserve_player_state) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const bat = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*bat, EntType::Bat);
-                        bat->pos = ToVec2(*random_available_position);
+                        bat->pos = sim::PixelVec2(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -153,7 +155,7 @@ void InitStage(State& state, bool preserve_player_state) {
                         } else {
                             SetEntAs(*ent, EntType::Rock);
                         }
-                        ent->pos = ToVec2(*random_available_position);
+                        ent->pos = sim::PixelVec2(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -166,7 +168,7 @@ void InitStage(State& state, bool preserve_player_state) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const block = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*block, EntType::Block);
-                        block->pos = ToVec2(*random_available_position);
+                        block->pos = sim::PixelVec2(random_available_position->x, random_available_position->y);
                     }
                 }
             }

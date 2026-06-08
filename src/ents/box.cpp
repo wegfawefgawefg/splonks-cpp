@@ -23,8 +23,8 @@ constexpr float kBoxBreakawayImpactSpeed = 2.0F;
 
 Ent* SpawnEntAtTopLeft(EntType type_, const Vec2& pos, State& state) {
     return world_ops::SpawnEnt(state, type_, [pos](Ent& ent) {
-        ent.pos = pos;
-        ent.vel = Vec2::New(0.0F, 0.0F);
+        ent.SetRenderPos(pos);
+        ent.vel = sim::Vec2::zero();
     });
 }
 
@@ -35,25 +35,28 @@ EntType RandomTeleporterVariant(State& state) {
 }
 
 void StepControlledBox(Ent& box, const controls::ControlIntent& control) {
+    const sim::Scalar move_acc =
+        sim::ToSimScalar(box.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
     if (box.attack_delay_countdown > 0) {
         box.attack_delay_countdown -= 1;
     }
 
     if (control.left && !control.right) {
-        box.acc.x -= box.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
+        box.acc.x -= move_acc;
         box.facing = Side::Left;
     } else if (control.right && !control.left) {
-        box.acc.x += box.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
+        box.acc.x += move_acc;
         box.facing = Side::Right;
     }
 
     if (control.jump_pressed && box.grounded) {
-        box.vel.y = -kControlledJumpVel;
+        box.vel.y = -sim::ToSimScalar(kControlledJumpVel);
         box.grounded = false;
     }
 
     if (control.attack_pressed && box.grounded && box.attack_delay_countdown == 0) {
-        box.vel.x = box.facing == Side::Left ? -kControlledSlideVel : kControlledSlideVel;
+        box.vel.x = box.facing == Side::Left ? -sim::ToSimScalar(kControlledSlideVel)
+                                             : sim::ToSimScalar(kControlledSlideVel);
         box.attack_delay_countdown = kControlledSlideCooldownFrames;
     }
 }
@@ -164,7 +167,7 @@ void OnDeathAsBox(std::size_t ent_idx, State& state, Audio& audio) {
 
     const Ent& box = state.ents.ents[ent_idx];
 
-    const Vec2 spawn_pos = box.pos;
+    const Vec2 spawn_pos = box.GetRenderPos();
     SpawnBreakawayContainerShards(box.GetCenter(), state);
 
     // Matches ClassicHD's actual open-crate roll order, with unimplemented Shotgun

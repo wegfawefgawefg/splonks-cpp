@@ -74,7 +74,7 @@ bool TrySpawnAndThrowEntForToolUse(
             throw_velocity_override.value_or(
                 velocity_builder(control) * sim::ToRenderScalar(thrower.throw_velocity_scale)
             );
-        spawned.acc += throw_velocity;
+        spawned.acc += sim::ToSimVec2(throw_velocity);
         if (spawned.on_use != nullptr) {
             spawned.on_use(spawned.vid.id, state, graphics, audio);
         }

@@ -48,8 +48,8 @@ void ConvertHangEntToLiveSpider(std::size_t ent_idx, State& state, EntType live_
     }
 
     Ent& hang_spider = state.ents.ents[ent_idx];
-    const Vec2 pos = hang_spider.pos;
-    const Vec2 vel = hang_spider.vel;
+    const sim::Vec2 pos = hang_spider.pos;
+    const sim::Vec2 vel = hang_spider.vel;
     const std::uint32_t health = hang_spider.health;
     const std::optional<VID> thrown_by = hang_spider.thrown_by;
 

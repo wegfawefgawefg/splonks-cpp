@@ -26,7 +26,7 @@ bool HasContactHarmAlignment(const Ent& source, const Ent& target) {
 
 bool CanApplyProjContact(const Ent& ent) {
     return ent.can_apply_proj_contact && ent.proj_contact_timer > 0 &&
-           LengthSquared(ent.vel) >= kProjContactMinVelocitySq;
+           gfxp::length_sq(ent.vel) >= sim::ToSimScalar(kProjContactMinVelocitySq);
 }
 
 void ApplyTileOverlapEffects(std::size_t ent_idx, State& state) {
@@ -129,17 +129,17 @@ bool HasAuthoredTileCbox(const TileContactData& tile_contact_data) {
 }
 
 bool EntIsMovingIntoSpike(const Ent& ent, TileRotation spike_rotation) {
-    constexpr float kMinSpikeImpactSpeed = 0.01F;
+    const sim::Scalar min_spike_impact_speed = sim::ToSimScalar(0.01F);
     switch (spike_rotation) {
     case kTileRotation90:
-        return ent.vel.x < -kMinSpikeImpactSpeed;
+        return ent.vel.x < -min_spike_impact_speed;
     case kTileRotation180:
-        return ent.vel.y < -kMinSpikeImpactSpeed;
+        return ent.vel.y < -min_spike_impact_speed;
     case kTileRotation270:
-        return ent.vel.x > kMinSpikeImpactSpeed;
+        return ent.vel.x > min_spike_impact_speed;
     case kTileRotation0:
     default:
-        return ent.vel.y > kMinSpikeImpactSpeed;
+        return ent.vel.y > min_spike_impact_speed;
     }
 }
 
@@ -148,7 +148,7 @@ KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, co
     const float direction = delta.x < 0.0F ? -1.0F : 1.0F;
     (void)target;
     return KnockbackSpec{
-        .velocity = Vec2::New(1.0F * direction, -1.0F),
+        .velocity = sim::ToSimVec2(direction, -1.0F),
         .clear_velocity = true,
         .clear_acceleration = true,
     };
@@ -157,7 +157,7 @@ KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, co
 KnockbackSpec BuildProjContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
     (void)target;
     (void)stage;
-    const Vec2 velocity = source.vel * kProjContactVelocityScale;
+    const sim::Vec2 velocity = source.vel * sim::ToSimScalar(kProjContactVelocityScale);
 
     return KnockbackSpec{
         .velocity = velocity,
@@ -180,7 +180,7 @@ void MaybeHurtAndStunOnContact(
     const Ent& ent = state.ents.ents[ent_idx];
     const VID ent_vid = ent.vid;
     const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
-    const Vec2 ent_pos = ent.pos;
+    const Vec2 ent_pos = ent.GetRenderPos();
     const EntCondition condition = ent.condition;
     const bool hurt_on_contact = ent.hurt_on_contact;
     const std::optional<VID> thrown_by = ent.thrown_by;
@@ -284,7 +284,8 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
     {
         const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
         const IAABB iaabb = ent_aabb.AsIAABB();
-        const bool override_tile_portion_check = LengthSquared(ent.vel) > kSpikeOverrideVelocitySq;
+        const bool override_tile_portion_check =
+            gfxp::length_sq(ent.vel) > sim::ToSimScalar(kSpikeOverrideVelocitySq);
         const bool in_top_portion_of_tile = (iaabb.br.y % static_cast<int>(kTileSize)) < 4;
         for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, iaabb.tl, iaabb.br)) {
             if (tile_query.tile == nullptr || *tile_query.tile != Tile::Spikes) {
@@ -322,7 +323,7 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
         switch (damage_result) {
         case DamageResult::Hurt:
         case DamageResult::Died:
-            ent.vel.x = 0.0F;
+            ent.vel.x = sim::Scalar::zero();
             (void)PlayEntCenterSoundEmitter(state, ent, audio_asset_ids::AnimalCrush2);
             break;
         case DamageResult::None:

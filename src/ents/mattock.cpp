@@ -324,7 +324,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
                 common::HitOptions{
                     .source_vid = mattock.vid,
                     .knockback = common::KnockbackSpec{
-                        .velocity = Vec2::New(knockback_x, -2.0F),
+                        .velocity = sim::ToSimVec2(knockback_x, -2.0F),
                         .clear_velocity = !other_ent_const->impassable,
                         .clear_acceleration = !other_ent_const->impassable,
                         .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,

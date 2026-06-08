@@ -283,9 +283,9 @@ void WriteEntJson(std::ostringstream& out, const State& state, const Ent& ent) {
         << ",\"coyote_time\":" << ent.coyote_time
         << ",\"fall_timer\":" << ent.fall_timer
         << ",\"pos\":";
-    WriteVec2(out, ent.pos);
+    WriteVec2(out, ent.GetRenderPos());
     out << ",\"vel\":";
-    WriteVec2(out, ent.vel);
+    WriteVec2(out, ent.GetRenderVel());
     out << ",\"size\":";
     WriteVec2(out, ent.GetSize());
     out << ",\"holding\":";

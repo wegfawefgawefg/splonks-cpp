@@ -21,10 +21,10 @@ constexpr float kControlledSlideVel = 3.0F;
 constexpr std::uint32_t kControlledSlideCooldownFrames = 120;
 constexpr float kPotBreakawayImpactSpeed = 1.0F;
 
-Ent* SpawnEntAtTopLeft(EntType type_, const Vec2& pos, State& state) {
+Ent* SpawnEntAtTopLeft(EntType type_, sim::Vec2 pos, State& state) {
     return world_ops::SpawnEnt(state, type_, [pos](Ent& ent) {
         ent.pos = pos;
-        ent.vel = Vec2::New(0.0F, 0.0F);
+        ent.vel = sim::Vec2::zero();
     });
 }
 
@@ -34,20 +34,21 @@ void StepControlledPot(Ent& pot, const controls::ControlIntent& control) {
     }
 
     if (control.left && !control.right) {
-        pot.acc.x -= pot.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
+        pot.acc.x -= sim::ToSimScalar(pot.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
         pot.facing = Side::Left;
     } else if (control.right && !control.left) {
-        pot.acc.x += pot.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
+        pot.acc.x += sim::ToSimScalar(pot.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
         pot.facing = Side::Right;
     }
 
     if (control.jump_pressed && pot.grounded) {
-        pot.vel.y = -kControlledJumpVel;
+        pot.vel.y = -sim::ToSimScalar(kControlledJumpVel);
         pot.grounded = false;
     }
 
     if (control.attack_pressed && pot.grounded && pot.attack_delay_countdown == 0) {
-        pot.vel.x = pot.facing == Side::Left ? -kControlledSlideVel : kControlledSlideVel;
+        pot.vel.x = pot.facing == Side::Left ? -sim::ToSimScalar(kControlledSlideVel)
+                                             : sim::ToSimScalar(kControlledSlideVel);
         pot.attack_delay_countdown = kControlledSlideCooldownFrames;
     }
 }
@@ -157,15 +158,15 @@ void OnDeathAsPot(std::size_t ent_idx, State& state, Audio& audio) {
 
     const Ent& pot = state.ents.ents[ent_idx];
 
-    const Vec2 spawn_pos = pot.pos;
+    const sim::Vec2 spawn_pos = pot.pos;
     SpawnBreakawayContainerShards(pot.GetCenter(), state);
-    const Vec2 spider_spawn_pos = pot.pos + Vec2::New(-8.0F, -8.0F);
+    const sim::Vec2 spider_spawn_pos = pot.pos + sim::PixelVec2(-8, -8);
 
-    Vec2 snake_spawn_pos = pot.pos + Vec2::New(-8.0F, -8.0F);
+    sim::Vec2 snake_spawn_pos = pot.pos + sim::PixelVec2(-8, -8);
     if (pot.point_a.x < 0) {
-        snake_spawn_pos = pot.pos + Vec2::New(0.0F, -8.0F);
+        snake_spawn_pos = pot.pos + sim::PixelVec2(0, -8);
     } else if (pot.point_a.x > 0) {
-        snake_spawn_pos = pot.pos + Vec2::New(-16.0F, -8.0F);
+        snake_spawn_pos = pot.pos + sim::PixelVec2(-16, -8);
     }
 
     if (state.drng.RandomIntInclusive(1, 3) == 1) {

@@ -242,7 +242,8 @@ void UpdateDamselAnim(Ent& damsel) {
         damsel.aframe_animator.loop = true;
     }
 
-    const bool walking = damsel.grounded && std::abs(damsel.vel.x) >= kDamselWalkMinSpeed;
+    const bool walking = damsel.grounded &&
+                         damsel.vel.x.abs() >= sim::ToSimScalar(kDamselWalkMinSpeed);
     TrySetAnim(damsel, walking ? EntDisplayState::Walk : EntDisplayState::Neutral);
 }
 

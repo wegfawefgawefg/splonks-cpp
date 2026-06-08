@@ -190,7 +190,7 @@ std::optional<IVec2> GetCobwebGrowthTile(const Ent& web_ball, const Ent& hit_cob
 
     push_candidate(SnapWorldPointToTile(web_ball.GetCenter(), state.stage));
 
-    Vec2 incoming_dir = web_ball.vel * -1.0F;
+    Vec2 incoming_dir = web_ball.GetRenderVel() * -1.0F;
     if (incoming_dir == Vec2::New(0.0F, 0.0F)) {
         incoming_dir = web_ball.facing == Side::Left ? Vec2::New(1.0F, 0.0F) : Vec2::New(-1.0F, 0.0F);
     }
@@ -403,8 +403,7 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
         (void)PlayWorldSoundEmitter(state, holder->GetCenter(), audio_asset_ids::PistolShoot);
         SpawnWebSpray(state, holder->GetCenter(), aim.direction);
         if (holder != nullptr) {
-            holder->vel.x -= aim.direction.x * 0.12F;
-            holder->vel.y -= aim.direction.y * 0.12F;
+            holder->vel -= sim::ToSimVec2(aim.direction * 0.12F);
         }
         return;
     }
@@ -412,9 +411,11 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
     (void)world_ops::SpawnEnt(state, EntType::WebBall, [&](Ent& spawned_web_ball) {
         spawned_web_ball.SetCenter(spawn_pos);
         spawned_web_ball.facing = aim.facing;
-        spawned_web_ball.vel = (aim.direction * kWebBallSpeedX) +
-                               (holder != nullptr ? holder->vel * 0.35F : Vec2::New(0.0F, 0.0F));
-        spawned_web_ball.acc = Vec2::New(0.0F, 0.0F);
+        spawned_web_ball.vel = sim::ToSimVec2(aim.direction * kWebBallSpeedX) +
+                               (holder != nullptr
+                                    ? holder->vel * sim::ToSimScalar(0.35F)
+                                    : sim::Vec2::zero());
+        spawned_web_ball.acc = sim::Vec2::zero();
         spawned_web_ball.thrown_by =
             holder != nullptr ? std::optional<VID>(holder->vid) : weapon.use_state.user_vid;
         spawned_web_ball.thrown_immunity_timer = common::kThrownByImmunityDuration;
@@ -426,8 +427,7 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
     (void)PlayWorldSoundEmitter(state, muzzle_pos, audio_asset_ids::PistolShoot);
     SpawnWebSpray(state, muzzle_pos, aim.direction);
     if (holder != nullptr) {
-        holder->vel.x -= aim.direction.x * 0.12F;
-        holder->vel.y -= aim.direction.y * 0.12F;
+        holder->vel -= sim::ToSimVec2(aim.direction * 0.12F);
     }
 }
 
@@ -441,15 +441,15 @@ bool ApplyCobwebToEnt(std::size_t cobweb_idx, Ent& other, State& state) {
         return false;
     }
 
-    other.vel.x *= kCobwebHorizontalDamping;
-    other.vel.y *= kCobwebVerticalDamping;
-    other.acc.x *= kCobwebAccelerationDamping;
-    other.acc.y *= kCobwebAccelerationDamping;
-    if (std::abs(other.vel.x) < kCobwebOccupantSpeedThreshold) {
-        other.vel.x = 0.0F;
+    other.vel.x *= sim::ToSimScalar(kCobwebHorizontalDamping);
+    other.vel.y *= sim::ToSimScalar(kCobwebVerticalDamping);
+    other.acc.x *= sim::ToSimScalar(kCobwebAccelerationDamping);
+    other.acc.y *= sim::ToSimScalar(kCobwebAccelerationDamping);
+    if (other.vel.x.abs() < sim::ToSimScalar(kCobwebOccupantSpeedThreshold)) {
+        other.vel.x = sim::Scalar::zero();
     }
-    if (std::abs(other.vel.y) < kCobwebOccupantSpeedThreshold) {
-        other.vel.y = 0.0F;
+    if (other.vel.y.abs() < sim::ToSimScalar(kCobwebOccupantSpeedThreshold)) {
+        other.vel.y = sim::Scalar::zero();
     }
     other.fall_timer = 0;
 
@@ -461,8 +461,8 @@ bool ApplyCobwebToEnt(std::size_t cobweb_idx, Ent& other, State& state) {
     }
 
     const controls::ControlIntent intent = controls::GetControlIntentForEnt(other, state);
-    if (intent.jump_pressed && other.vel.y > kCobwebJumpEscapeVelocity) {
-        other.vel.y = kCobwebJumpEscapeVelocity;
+    if (intent.jump_pressed && other.vel.y > sim::ToSimScalar(kCobwebJumpEscapeVelocity)) {
+        other.vel.y = sim::ToSimScalar(kCobwebJumpEscapeVelocity);
     }
 
     return true;
@@ -517,8 +517,8 @@ common::ContactResult OnEntContactAsWebBall(
 
     if (other.type_ != EntType::Cobweb) {
         if (Ent* const other_mut = state.ents.GetEntMut(other.vid)) {
-            other_mut->vel = Vec2::New(0.0F, 0.0F);
-            other_mut->acc = Vec2::New(0.0F, 0.0F);
+            other_mut->vel = sim::Vec2::zero();
+            other_mut->acc = sim::Vec2::zero();
             other_mut->fall_timer = 0;
         }
         TriggerWebBallBurst(ent_idx, state, true);
@@ -721,7 +721,7 @@ void StepEntLogicAsWebBall(
 
     web_ball.counter_b -= 1.0F;
     if (web_ball.counter_b <= 0.0F) {
-        SpawnWebTrail(state, web_ball.GetCenter(), web_ball.vel);
+        SpawnWebTrail(state, web_ball.GetCenter(), web_ball.GetRenderVel());
         web_ball.counter_b = kWebBallTrailIntervalFrames;
     }
 }
@@ -802,8 +802,9 @@ void StepEntLogicAsCobweb(
         }
 
         const controls::ControlIntent intent = controls::GetControlIntentForEnt(*other, state);
-        const bool moving_in_web = LengthSquared(other->vel) > kCobwebOccupantSpeedThresholdSq ||
-                                   LengthSquared(other->acc) > 0.0F ||
+        const bool moving_in_web =
+            gfxp::length_sq(other->vel) > sim::ToSimScalar(kCobwebOccupantSpeedThresholdSq) ||
+            gfxp::length_sq(other->acc) > sim::Scalar::zero() ||
                                    intent.jump_pressed;
         occupied = true;
         if (moving_in_web && cobweb.health > 0) {

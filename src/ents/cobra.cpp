@@ -183,11 +183,11 @@ void FireCobraSpit(std::size_t ent_idx, State& state, Graphics& graphics) {
     Ent* const spit = world_ops::SpawnEnt(state, EntType::CobraSpit, [&](Ent& spawned_spit) {
         spawned_spit.SetCenter(spit_origin);
         spawned_spit.facing = cobra.facing;
-        spawned_spit.vel = Vec2::New(
+        spawned_spit.vel = sim::ToSimVec2(Vec2::New(
             static_cast<float>(direction) * kCobraSpitVelocityX,
             kCobraSpitVelocityY
-        );
-        spawned_spit.acc = Vec2::New(0.0F, 0.0F);
+        ));
+        spawned_spit.acc = sim::Vec2::zero();
         spawned_spit.thrown_by = cobra.vid;
         spawned_spit.thrown_immunity_timer = common::kThrownByImmunityDuration;
         spawned_spit.proj_contact_damage_type = DamageType::Attack;
@@ -316,7 +316,7 @@ void StepEntLogicAsCobraSpit(
 
     spit.counter_b -= 1.0F;
     if (spit.counter_b <= 0.0F) {
-        SpawnSpitTrail(state, spit.GetCenter(), spit.vel);
+        SpawnSpitTrail(state, spit.GetCenter(), spit.GetRenderVel());
         spit.counter_b = kCobraSpitTrailIntervalFrames;
     }
 }

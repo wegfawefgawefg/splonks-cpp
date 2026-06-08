@@ -161,14 +161,14 @@ void UpdateClimbAnimPlayback(Ent& player, const Graphics& graphics) {
     animator.ResetSpeed();
     animator.finished = false;
 
-    if (std::abs(player.vel.y) <= kClimbAnimVelocityEpsilon) {
+    if (player.vel.y.abs() <= sim::ToSimScalar(kClimbAnimVelocityEpsilon)) {
         animator.animate = false;
         return;
     }
 
     animator.animate = true;
     const AnimPlaybackMode desired_mode =
-        player.vel.y < 0.0F ? AnimPlaybackMode::Forward : AnimPlaybackMode::Reverse;
+        player.vel.y < sim::Scalar::zero() ? AnimPlaybackMode::Forward : AnimPlaybackMode::Reverse;
     if (animator.playback_mode == desired_mode) {
         return;
     }
@@ -194,7 +194,7 @@ void StepPlayerFallTimer(Ent& player, const State& state) {
         player.fall_timer = 0;
         return;
     }
-    if (player.vel.y > 0.0F && !player.IsClimbing() && !player.IsHanging()) {
+    if (player.vel.y > sim::Scalar::zero() && !player.IsClimbing() && !player.IsHanging()) {
         if (fall_timer_rate >= 1.0F) {
             player.fall_timer += static_cast<std::uint32_t>(RoundToInt(fall_timer_rate));
             return;
@@ -275,10 +275,10 @@ void ApplyClassicFallDamageOnLanding(
 
     Ent& mutable_player = state.ents.ents[ent_idx];
     if (was_holding_player) {
-        mutable_player.vel.y = 0.0F;
+        mutable_player.vel.y = sim::Scalar::zero();
         mutable_player.grounded = true;
     } else {
-        mutable_player.vel.y = kFallDamageBounceVelocityY;
+        mutable_player.vel.y = sim::ToSimScalar(kFallDamageBounceVelocityY);
         mutable_player.grounded = false;
     }
     SpawnFallDamagePoofs(mutable_player, state);
@@ -308,28 +308,28 @@ void ControlEntAsPlayerWithTuning(
 
     const bool climbing = player.IsClimbing();
     if (climbing) {
-        player.acc.x = 0.0F;
-        player.vel.x = 0.0F;
+        player.acc.x = sim::Scalar::zero();
+        player.vel.x = sim::Scalar::zero();
     } else if (!(intent.left && intent.right)) {
         if (intent.run) {
             if (intent.left) {
-                player.acc.x = -tuning.run_acc;
+                player.acc.x = -sim::ToSimScalar(tuning.run_acc);
             }
             if (intent.right) {
-                player.acc.x = tuning.run_acc;
+                player.acc.x = sim::ToSimScalar(tuning.run_acc);
             }
         } else {
             if (intent.left) {
-                player.acc.x = -tuning.move_acc;
+                player.acc.x = -sim::ToSimScalar(tuning.move_acc);
             }
             if (intent.right) {
-                player.acc.x = tuning.move_acc;
+                player.acc.x = sim::ToSimScalar(tuning.move_acc);
             }
         }
     }
     if (intent.stop) {
-        player.acc = Vec2::New(0.0F, 0.0F);
-        player.vel = Vec2::New(0.0F, 0.0F);
+        player.acc = sim::Vec2::zero();
+        player.vel = sim::Vec2::zero();
     }
 }
 
@@ -443,10 +443,10 @@ void StepEntLogicAsPlayer(
     // SET ANIMATIONS AND DISPLAY STATES
     {
         Ent& player = state.ents.ents[ent_idx];
-        if (player.vel.x < 0.0F) {
+        if (player.vel.x < sim::Scalar::zero()) {
             player.facing = Side::Left;
         }
-        if (player.vel.x > 0.0F) {
+        if (player.vel.x > sim::Scalar::zero()) {
             player.facing = Side::Right;
         }
 
@@ -478,8 +478,8 @@ void StepEntLogicAsPlayer(
                     player.facing = control.left ? Side::Left : Side::Right;
                 }
                 const bool moving_with_input =
-                    (control.left && player.vel.x < -kPlayerWalkAnimVelocityEpsilon) ||
-                    (control.right && player.vel.x > kPlayerWalkAnimVelocityEpsilon);
+                    (control.left && player.vel.x < -sim::ToSimScalar(kPlayerWalkAnimVelocityEpsilon)) ||
+                    (control.right && player.vel.x > sim::ToSimScalar(kPlayerWalkAnimVelocityEpsilon));
                 const bool walking_horizontally =
                     player.grounded &&
                     moving_with_input &&
@@ -490,7 +490,7 @@ void StepEntLogicAsPlayer(
                     has_horizontal_input &&
                     !walking_horizontally;
 
-                if (!player.grounded && player.vel.y > 0.0F) {
+                if (!player.grounded && player.vel.y > sim::Scalar::zero()) {
                     TrySetAnim(player, EntDisplayState::Falling);
                     player.aframe_animator.ResetSpeed();
                 } else if (walking_horizontally) {
@@ -536,7 +536,7 @@ void StepEntLogicAsPlayer(
     }
     if (!loss_of_control) {
         const Ent& player = state.ents.ents[ent_idx];
-        const Vec2 player_pos = player.pos;
+        const sim::Vec2 player_pos = player.pos;
         const bool trying_to_attack = control.attack_pressed;
         const VID player_vid = player.vid;
         const unsigned int attack_delay_countdown = player.attack_delay_countdown;
@@ -593,7 +593,7 @@ void StepEntPhysicsAsPlayerWithTuning(
     const bool has_punish_ball = PlayerHasPunishBall(ent, state);
     const bool holding_punish_ball = PlayerIsHoldingPunishBall(ent, state);
     if (has_punish_ball && !holding_punish_ball && !ent.IsClimbing()) {
-        ent.acc.y += kPunishBallDraggedExtraGravity;
+        ent.acc.y += sim::ToSimScalar(kPunishBallDraggedExtraGravity);
     }
 
     if (ent.IsClimbing()) {
@@ -602,8 +602,8 @@ void StepEntPhysicsAsPlayerWithTuning(
 
     ent.vel += ent.acc;
     if (has_punish_ball && !holding_punish_ball && ent.jumped_this_frame &&
-        ent.vel.y < -kPunishBallDraggedJumpImpulse) {
-        ent.vel.y = -kPunishBallDraggedJumpImpulse;
+        ent.vel.y < -sim::ToSimScalar(kPunishBallDraggedJumpImpulse)) {
+        ent.vel.y = -sim::ToSimScalar(kPunishBallDraggedJumpImpulse);
     }
     const controls::ControlIntent control =
         controls::GetControlIntentForEnt(ent, state);
@@ -619,22 +619,23 @@ void StepEntPhysicsAsPlayerWithTuning(
     );
     if (!externally_launched_player) {
         if (control.run) {
-            ent.vel.x = std::clamp(ent.vel.x, -max_run_speed * move_speed_scale, max_run_speed * move_speed_scale);
+            const sim::Scalar max_speed = sim::ToSimScalar(max_run_speed * move_speed_scale);
+            ent.vel.x = std::clamp(ent.vel.x, -max_speed, max_speed);
         } else {
-            ent.vel.x =
-                std::clamp(ent.vel.x, -max_walk_speed * move_speed_scale, max_walk_speed * move_speed_scale);
+            const sim::Scalar max_speed = sim::ToSimScalar(max_walk_speed * move_speed_scale);
+            ent.vel.x = std::clamp(ent.vel.x, -max_speed, max_speed);
         }
     }
     const float max_fall_speed =
         GetModifiedEffectValue(ent, EffectModifierTarget::MaxFallSpeed, tuning.max_speed, &state);
-    ent.vel.y = std::min(ent.vel.y, max_fall_speed);
+    ent.vel.y = std::min(ent.vel.y, sim::ToSimScalar(max_fall_speed));
     StepPlayerFallTimer(ent, state);
     gear_items::StepEquippedPassiveItems(ent_idx, state, graphics);
 
     common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     common::ApplySpecGroundFriction(ent_idx, state, tuning.ground_friction_scale);
     if (!ent.grounded && !externally_launched_player) {
-        ent.vel.x *= tuning.air_friction;
+        ent.vel.x *= sim::ToSimScalar(tuning.air_friction);
     }
     ApplyClassicFallDamageOnLanding(ent_idx, state, audio, tuning);
     common::PostPartialEulerStep(ent_idx, state, dt);

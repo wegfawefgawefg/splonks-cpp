@@ -356,8 +356,8 @@ void StartWindup(Ent& block, std::uint32_t direction_idx, State& state) {
     StoreMoveDirection(block, tile_dir);
     block.ai_state = EntAiState::Pursuing;
     block.counter_b = kWindupFrames;
-    block.vel = Vec2::New(0.0F, 0.0F);
-    block.acc = Vec2::New(0.0F, 0.0F);
+    block.vel = sim::Vec2::zero();
+    block.acc = sim::Vec2::zero();
     block.shake = std::max(block.shake, sim::ToSimScalar(kWindupShake));
     block.aframe_animator.PlayLoop(aframe_ids::SquisherBlock);
     (void)PlayEntCenterSoundEmitter(state, block, audio_asset_ids::BoulderLatch);
@@ -366,8 +366,8 @@ void StartWindup(Ent& block, std::uint32_t direction_idx, State& state) {
 void StartMove(Ent& block) {
     const IVec2 tile_dir = GetMoveDirection(block);
     block.ai_state = EntAiState::Disturbed;
-    block.vel = ToVec2(tile_dir) * kMoveSpeed;
-    block.acc = Vec2::New(0.0F, 0.0F);
+    block.vel = sim::ToSimVec2(ToVec2(tile_dir) * kMoveSpeed);
+    block.acc = sim::Vec2::zero();
     block.shake = std::max(block.shake, sim::ToSimScalar(kStartShake));
 }
 
@@ -380,8 +380,8 @@ void StopMove(Ent& block, State& state) {
         block.ai_state = EntAiState::Returning;
         block.counter_a = kAfterImpactCooldownFrames;
     }
-    block.vel = Vec2::New(0.0F, 0.0F);
-    block.acc = Vec2::New(0.0F, 0.0F);
+    block.vel = sim::Vec2::zero();
+    block.acc = sim::Vec2::zero();
     block.shake = std::max(block.shake, sim::ToSimScalar(kImpactShake));
     InvalidateOpenSensorCache(block);
     ShowSleepingFrame(block);
@@ -426,8 +426,8 @@ void StepEntLogicAsTrapBlock(
 
     if (IsOneShot(block) && HasFiredOneShot(block)) {
         ShowSleepingFrame(block);
-        block.vel = Vec2::New(0.0F, 0.0F);
-        block.acc = Vec2::New(0.0F, 0.0F);
+        block.vel = sim::Vec2::zero();
+        block.acc = sim::Vec2::zero();
         return;
     }
 
@@ -443,8 +443,8 @@ void StepEntLogicAsTrapBlock(
 
     if (IsWindingUp(block)) {
         ShowAwakeAnim(block);
-        block.vel = Vec2::New(0.0F, 0.0F);
-        block.acc = Vec2::New(0.0F, 0.0F);
+        block.vel = sim::Vec2::zero();
+        block.acc = sim::Vec2::zero();
         block.shake = std::max(block.shake, sim::ToSimScalar(kWindupShake));
         block.counter_b -= 1.0F;
         if (block.counter_b <= 0.0F) {
@@ -459,8 +459,8 @@ void StepEntLogicAsTrapBlock(
     }
 
     ShowSleepingFrame(block);
-    block.vel = Vec2::New(0.0F, 0.0F);
-    block.acc = Vec2::New(0.0F, 0.0F);
+    block.vel = sim::Vec2::zero();
+    block.acc = sim::Vec2::zero();
     const std::optional<std::uint32_t> direction_idx =
         FindTriggerDirection(block, state, graphics);
     if (direction_idx.has_value()) {
@@ -489,16 +489,16 @@ void StepEntPhysicsAsTrapBlock(
     }
 
     const IVec2 move_dir = GetMoveDirection(block);
-    block.vel = ToVec2(move_dir) * kMoveSpeed;
-    block.acc = Vec2::New(0.0F, 0.0F);
+    block.vel = sim::ToSimVec2(ToVec2(move_dir) * kMoveSpeed);
+    block.acc = sim::Vec2::zero();
 
     common::PrePartialEulerStep(ent_idx, state, dt);
-    block.vel = ToVec2(move_dir) * kMoveSpeed;
+    block.vel = sim::ToSimVec2(ToVec2(move_dir) * kMoveSpeed);
     common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     common::PostPartialEulerStep(ent_idx, state, dt);
 
-    const bool stopped_x = move_dir.x != 0 && std::abs(block.vel.x) <= 0.0F;
-    const bool stopped_y = move_dir.y != 0 && std::abs(block.vel.y) <= 0.0F;
+    const bool stopped_x = move_dir.x != 0 && block.vel.x.abs() <= sim::Scalar::zero();
+    const bool stopped_y = move_dir.y != 0 && block.vel.y.abs() <= sim::Scalar::zero();
     if (block.collided && (stopped_x || stopped_y)) {
         StopMove(block, state);
         (void)PlayEntCenterSoundEmitter(state, block, audio_asset_ids::BoulderHitGround);

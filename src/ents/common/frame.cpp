@@ -71,7 +71,7 @@ Vec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe) {
     );
 
     if (ent.facing == Side::Left) {
-        return ent.pos - pbox_offset + draw_offset;
+        return ent.GetRenderPos() - pbox_offset + draw_offset;
     }
 
     const float mirrored_pbox_x =
@@ -80,7 +80,7 @@ Vec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe) {
     if (ent.type_ == EntType::BaseballBat) {
         facing_adjusted_draw_offset = Vec2::New(-draw_offset.x, draw_offset.y);
     }
-    return ent.pos - Vec2::New(mirrored_pbox_x, static_cast<float>(aframe.pbox.y)) +
+    return ent.GetRenderPos() - Vec2::New(mirrored_pbox_x, static_cast<float>(aframe.pbox.y)) +
            facing_adjusted_draw_offset;
 }
 
@@ -116,7 +116,7 @@ void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, const Vec2& cente
     const Vec2 pbox_center_offset = (pbox_size - Vec2::New(1.0F, 1.0F)) * 0.5F;
 
     if (ent.facing == Side::Left) {
-        ent.pos = center - draw_offset - pbox_center_offset;
+        ent.SetRenderPos(center - draw_offset - pbox_center_offset);
         return;
     }
 
@@ -124,7 +124,7 @@ void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, const Vec2& cente
     if (ent.type_ == EntType::BaseballBat) {
         facing_adjusted_draw_offset = Vec2::New(-draw_offset.x, draw_offset.y);
     }
-    ent.pos = center - facing_adjusted_draw_offset - pbox_center_offset;
+    ent.SetRenderPos(center - facing_adjusted_draw_offset - pbox_center_offset);
 }
 
 Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback) {

@@ -105,8 +105,8 @@ void SpawnIcyPlatformParticles(const Ent& platform, State& state) {
 }
 
 void StepHorizontalPingPong(Ent& platform) {
-    const float min_x = static_cast<float>(platform.point_a.x);
-    const float max_x = static_cast<float>(platform.point_b.x);
+    const sim::Scalar min_x = sim::Scalar::from_int(platform.point_a.x);
+    const sim::Scalar max_x = sim::Scalar::from_int(platform.point_b.x);
     if (platform.counter_b == 0.0F) {
         platform.counter_b = 1.0F;
     }
@@ -119,12 +119,12 @@ void StepHorizontalPingPong(Ent& platform) {
         platform.counter_b = 1.0F;
     }
 
-    platform.vel = Vec2::New(platform.counter_b * kPlatformSpeed, 0.0F);
+    platform.vel = sim::ToSimVec2(Vec2::New(platform.counter_b * kPlatformSpeed, 0.0F));
 }
 
 void StepVerticalPingPong(Ent& platform) {
-    const float min_y = static_cast<float>(platform.point_a.y);
-    const float max_y = static_cast<float>(platform.point_b.y);
+    const sim::Scalar min_y = sim::Scalar::from_int(platform.point_a.y);
+    const sim::Scalar max_y = sim::Scalar::from_int(platform.point_b.y);
     if (platform.counter_b == 0.0F) {
         platform.counter_b = 1.0F;
     }
@@ -137,7 +137,7 @@ void StepVerticalPingPong(Ent& platform) {
         platform.counter_b = 1.0F;
     }
 
-    platform.vel = Vec2::New(0.0F, platform.counter_b * kPlatformSpeed);
+    platform.vel = sim::ToSimVec2(Vec2::New(0.0F, platform.counter_b * kPlatformSpeed));
 }
 
 void StepCircle(Ent& platform) {
@@ -148,10 +148,10 @@ void StepCircle(Ent& platform) {
         static_cast<int>(kCirclePath.size())
     );
     const CircleUnit unit = kCirclePath[static_cast<std::size_t>(path_idx)];
-    const Vec2 desired_pos = center + Vec2::New(
+    const sim::Vec2 desired_pos = sim::ToSimVec2(center + Vec2::New(
         static_cast<float>(RoundRatio(static_cast<std::int64_t>(unit.x) * radius, kCircleUnitScale)),
         static_cast<float>(RoundRatio(static_cast<std::int64_t>(unit.y) * radius, kCircleUnitScale))
-    );
+    ));
     platform.vel = desired_pos - platform.pos;
     platform.counter_a += 1.0F;
     if (platform.counter_a >= static_cast<float>(kCirclePath.size())) {
@@ -212,7 +212,7 @@ void StepEntLogicAsMovingPlatform(
         break;
     case EntAiState::Pursuing:
     case EntAiState::Returning:
-        platform.vel = Vec2::New(0.0F, 0.0F);
+        platform.vel = sim::Vec2::zero();
         break;
     }
 

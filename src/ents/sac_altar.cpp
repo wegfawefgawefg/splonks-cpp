@@ -72,9 +72,10 @@ bool BelongsToOwnerAltar(const Ent& ent, const Ent& owner) {
 }
 
 AABB GetSacrificeArea(const Ent& altar) {
+    const Vec2 altar_pos = altar.GetRenderPos();
     return AABB::New(
-        altar.pos + Vec2::New(-1.0F, -kSacrificeSurfaceTopOffset),
-        altar.pos + Vec2::New(31.0F, kSacrificeSurfaceBottomOffset)
+        altar_pos + Vec2::New(-1.0F, -kSacrificeSurfaceTopOffset),
+        altar_pos + Vec2::New(31.0F, kSacrificeSurfaceBottomOffset)
     );
 }
 
@@ -105,7 +106,7 @@ void SpawnBallAndChainPunishment(State& state, const Ent* altar_context) {
             spawned_ball.SetCenter(player->GetCenter() + Vec2::New(0.0F, kBallAndChainSpawnOffsetY));
             spawned_ball.ent_a = player->vid;
             spawned_ball.vel = player->vel;
-            spawned_ball.acc = Vec2::New(0.0F, 0.0F);
+            spawned_ball.acc = sim::Vec2::zero();
         }
     );
     if (ball == nullptr) {
@@ -234,7 +235,7 @@ Vec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics& gra
     return common::GetEmitPointForEnt(
         altar,
         graphics,
-        altar.pos + Vec2::New(16.0F, -8.0F)
+        altar.GetRenderPos() + Vec2::New(16.0F, -8.0F)
     );
 }
 
@@ -248,7 +249,7 @@ Vec2 GetAltarSoundPos(const Ent& altar, const State& state, const Graphics& grap
     return common::GetVisualCenterForEnt(
         altar,
         graphics,
-        altar.pos + Vec2::New(16.0F, -8.0F)
+        altar.GetRenderPos() + Vec2::New(16.0F, -8.0F)
     );
 }
 
@@ -463,8 +464,8 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
         const EntType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
         Ent* const reward = world_ops::SpawnEnt(state, reward_type, [&](Ent& spawned_reward) {
             spawned_reward.SetCenter(emit_pos + Vec2::New(0.0F, -3.0F));
-            spawned_reward.vel = Vec2::New(state.drng.RandomFloat(-0.55F, 0.55F), -1.7F);
-            spawned_reward.acc = Vec2::New(0.0F, 0.0F);
+            spawned_reward.vel = sim::ToSimVec2(Vec2::New(state.drng.RandomFloat(-0.55F, 0.55F), -1.7F));
+            spawned_reward.acc = sim::Vec2::zero();
         });
         if (reward == nullptr) {
             return false;
@@ -480,8 +481,8 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
             spawned_reward.SetCenter(emit_pos + Vec2::New(0.0F, -2.0F));
             spawned_reward.ent_a = altar.vid;
             spawned_reward.draw_layer = DrawLayer::Middle;
-            spawned_reward.vel = Vec2::New(0.0F, 0.0F);
-            spawned_reward.acc = Vec2::New(0.0F, 0.0F);
+            spawned_reward.vel = sim::Vec2::zero();
+            spawned_reward.acc = sim::Vec2::zero();
         });
         if (reward == nullptr) {
             return false;

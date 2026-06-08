@@ -244,10 +244,9 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
             continue;
         }
         ent.SetCenter(RotatePoint(ent.GetCenter(), old_dims, quarter_turns));
-        ent.pos = Vec2::New(static_cast<float>(RoundToInt(ent.pos.x)),
-                            static_cast<float>(RoundToInt(ent.pos.y)));
-        ent.vel = Vec2::New(0.0F, 0.0F);
-        ent.acc = Vec2::New(0.0F, 0.0F);
+        ent.pos = sim::PixelVec2(ent.pos.x.to_pixels_round(), ent.pos.y.to_pixels_round());
+        ent.vel = sim::Vec2::zero();
+        ent.acc = sim::Vec2::zero();
         ent.grounded = false;
         ent.SetGrounded(stage);
     }

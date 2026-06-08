@@ -158,7 +158,7 @@ void SpawnBoulderTrailPebbles(State& state, const Vec2& pos, Side facing) {
 void UpdateBoulderAnim(Ent& boulder) {
     const bool is_rolling =
         boulder.ai_state == EntAiState::Disturbed &&
-        std::abs(boulder.vel.x) > kBoulderRollingSpeedThreshold;
+        boulder.vel.x.abs() > sim::ToSimScalar(kBoulderRollingSpeedThreshold);
     SetAnim(boulder, is_rolling ? kBoulderRollAnimId : kBoulderAnimId);
 }
 
@@ -380,7 +380,7 @@ void StepEntLogicAsBoulder(
     if (boulder.ai_state == EntAiState::Idle && boulder.grounded) {
         boulder.ai_state = EntAiState::Disturbed;
         boulder.travel_sound_countdown = sim::Scalar::zero();
-        boulder.point_a = ToIVec2(boulder.pos);
+        boulder.point_a = ToIVec2(boulder.GetRenderPos());
         boulder.counter_b = 0.0F;
         boulder.counter_c = 0.0F;
         boulder.counter_d = 0.0F;
@@ -391,7 +391,8 @@ void StepEntLogicAsBoulder(
         return;
     }
 
-    boulder.vel.x = boulder.facing == Side::Right ? kBoulderRollVelocity : -kBoulderRollVelocity;
+    boulder.vel.x = boulder.facing == Side::Right ? sim::ToSimScalar(kBoulderRollVelocity)
+                                                  : -sim::ToSimScalar(kBoulderRollVelocity);
     UpdateBoulderAnim(boulder);
 }
 
@@ -404,7 +405,7 @@ void StepEntPhysicsAsBoulder(
 ) {
     Ent& boulder = state.ents.ents[ent_idx];
     const bool was_grounded = boulder.grounded;
-    const float pre_physics_vel_x = boulder.vel.x;
+    const sim::Scalar pre_physics_vel_x = boulder.vel.x;
     if (boulder.counter_a > 0.0F) {
         boulder.counter_a -= 1.0F;
         if (boulder.counter_a < 0.0F) {
@@ -438,8 +439,8 @@ void StepEntPhysicsAsBoulder(
 
     if (boulder.ai_state == EntAiState::Disturbed) {
         const bool hard_stopped_this_frame =
-            std::abs(pre_physics_vel_x) > kBoulderRollingSpeedThreshold &&
-            std::abs(boulder.vel.x) <= kBoulderRollingSpeedThreshold &&
+            pre_physics_vel_x.abs() > sim::ToSimScalar(kBoulderRollingSpeedThreshold) &&
+            boulder.vel.x.abs() <= sim::ToSimScalar(kBoulderRollingSpeedThreshold) &&
             boulder.grounded &&
             boulder.dist_traveled_this_frame <= sim::Scalar::zero();
         if (hard_stopped_this_frame) {
@@ -471,7 +472,7 @@ void StepEntPhysicsAsBoulder(
             }
         }
 
-        const IVec2 current_pos = ToIVec2(boulder.pos);
+        const IVec2 current_pos = sim::ToPixelIVec2Round(boulder.pos);
         if (current_pos == boulder.point_a) {
             boulder.counter_b += 1.0F;
         } else {
@@ -481,7 +482,7 @@ void StepEntPhysicsAsBoulder(
 
         if (boulder.counter_b >= kBoulderRestFrames) {
                 boulder.ai_state = EntAiState::Returning;
-            boulder.vel.x = 0.0F;
+            boulder.vel.x = sim::Scalar::zero();
         }
     }
 

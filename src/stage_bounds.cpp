@@ -200,14 +200,15 @@ IVec2 Stage::WrapWorldPos(const IVec2& wc) const {
 void Stage::NormalizeEntPositionForWrap(Ent& ent) const {
     if (WrapsX()) {
         const float stage_width = static_cast<float>(GetWidth());
+        const sim::Scalar stage_width_fixed = sim::ToSimScalar(stage_width);
         while (true) {
             const auto [tl, br] = ent.GetBounds();
             if (br.x < 0.0F) {
-                ent.pos.x += stage_width;
+                ent.pos.x += stage_width_fixed;
                 continue;
             }
             if (tl.x >= stage_width) {
-                ent.pos.x -= stage_width;
+                ent.pos.x -= stage_width_fixed;
                 continue;
             }
             break;
@@ -216,14 +217,15 @@ void Stage::NormalizeEntPositionForWrap(Ent& ent) const {
 
     if (WrapsY()) {
         const float stage_height = static_cast<float>(GetHeight());
+        const sim::Scalar stage_height_fixed = sim::ToSimScalar(stage_height);
         while (true) {
             const auto [tl, br] = ent.GetBounds();
             if (br.y < 0.0F) {
-                ent.pos.y += stage_height;
+                ent.pos.y += stage_height_fixed;
                 continue;
             }
             if (tl.y >= stage_height) {
-                ent.pos.y -= stage_height;
+                ent.pos.y -= stage_height_fixed;
                 continue;
             }
             break;

@@ -745,6 +745,14 @@ std::string Vec2DebugString(Vec2 value) {
     return out.str();
 }
 
+std::string SimVec2DebugString(sim::Vec2 value) {
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(4)
+        << "(" << value.x.to_float() << "," << value.y.to_float()
+        << "; raw " << value.x.raw_value() << "," << value.y.raw_value() << ")";
+    return out.str();
+}
+
 std::string IVec2DebugString(IVec2 value) {
     return "(" + std::to_string(value.x) + "," + std::to_string(value.y) + ")";
 }
@@ -893,9 +901,9 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintFieldDiff("holding", left->holding, right->holding);
     PrintFieldDiff("wanted", left->wanted, right->wanted);
     PrintNumericFieldDiff("type", static_cast<int>(left->type_), static_cast<int>(right->type_));
-    PrintFieldDiff("pos", Vec2DebugString(left->pos), Vec2DebugString(right->pos));
-    PrintFieldDiff("vel", Vec2DebugString(left->vel), Vec2DebugString(right->vel));
-    PrintFieldDiff("acc", Vec2DebugString(left->acc), Vec2DebugString(right->acc));
+    PrintFieldDiff("pos", SimVec2DebugString(left->pos), SimVec2DebugString(right->pos));
+    PrintFieldDiff("vel", SimVec2DebugString(left->vel), SimVec2DebugString(right->vel));
+    PrintFieldDiff("acc", SimVec2DebugString(left->acc), SimVec2DebugString(right->acc));
     PrintFieldDiff("size", Vec2DebugString(left->GetSize()), Vec2DebugString(right->GetSize()));
     if (left->rotation != right->rotation) {
         std::cout << "    rotation: " << sim::ToRenderScalar(left->rotation)

@@ -41,7 +41,7 @@ AABB GetShopArea(const Ent& shop) {
 }
 
 void SetShopArea(Ent& shop, const AABB& area) {
-    shop.pos = area.tl;
+    shop.pos = sim::ToSimVec2(area.tl);
     shop.size = sim::ToSimVec2(area.br - area.tl + Vec2::New(1.0F, 1.0F));
     shop.point_a = IVec2::New(0, 0);
     shop.point_b = IVec2::New(0, 0);

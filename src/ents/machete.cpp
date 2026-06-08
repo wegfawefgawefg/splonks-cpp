@@ -184,7 +184,7 @@ void TryApplyMacheteStrike(std::size_t ent_idx, State& state, const Graphics& gr
                 common::HitOptions{
                     .source_vid = machete.vid,
                     .knockback = common::KnockbackSpec{
-                        .velocity = Vec2::New(knockback_x, -1.5F),
+                        .velocity = sim::ToSimVec2(knockback_x, -1.5F),
                         .clear_velocity = true,
                         .clear_acceleration = true,
                         .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,

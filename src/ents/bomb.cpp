@@ -32,8 +32,8 @@ AFrameId GetBombLiveAnim(const Ent& bomb) {
 }
 
 void StickBombInPlace(Ent& bomb) {
-    bomb.vel = Vec2::New(0.0F, 0.0F);
-    bomb.acc = Vec2::New(0.0F, 0.0F);
+    bomb.vel = sim::Vec2::zero();
+    bomb.acc = sim::Vec2::zero();
     bomb.has_physics = false;
     bomb.thrown_by.reset();
     bomb.thrown_immunity_timer = 0;
@@ -53,23 +53,21 @@ void UpdateStickyBombAttach(Ent& bomb, State& state) {
         return;
     }
 
-    bomb.pos = attached->pos + Vec2::New(
-        static_cast<float>(bomb.point_a.x),
-        static_cast<float>(bomb.point_a.y)
-    );
-    bomb.vel = Vec2::New(0.0F, 0.0F);
-    bomb.acc = Vec2::New(0.0F, 0.0F);
+    bomb.pos = attached->pos + sim::PixelVec2(bomb.point_a.x, bomb.point_a.y);
+    bomb.vel = sim::Vec2::zero();
+    bomb.acc = sim::Vec2::zero();
 }
 
 void UpdateBombRotation(Ent& bomb) {
     if (bomb.held_by_vid.has_value() || bomb.attach_mode != AttachMode::None) {
         return;
     }
-    if (std::abs(bomb.vel.x) < 0.01F) {
+    if (bomb.vel.x.abs() < sim::ToSimScalar(0.01F)) {
         return;
     }
 
-    float rotation = sim::ToRenderScalar(bomb.rotation) + bomb.vel.x * kBombRotationDegreesPerPixel;
+    float rotation = sim::ToRenderScalar(bomb.rotation) +
+                     sim::ToRenderScalar(bomb.vel.x) * kBombRotationDegreesPerPixel;
     while (rotation >= 360.0F) {
         rotation -= 360.0F;
     }
@@ -206,8 +204,8 @@ common::ContactResult OnEntContactAsBomb(
 
     bomb.ent_a = other.vid;
     bomb.point_a = IVec2::New(
-        RoundToInt(bomb.pos.x - other.pos.x),
-        RoundToInt(bomb.pos.y - other.pos.y)
+        (bomb.pos.x - other.pos.x).round_int(),
+        (bomb.pos.y - other.pos.y).round_int()
     );
     StickBombInPlace(bomb);
     return {};

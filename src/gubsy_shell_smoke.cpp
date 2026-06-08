@@ -1674,7 +1674,7 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
         }
         if (requested_play && local_ent != nullptr && guest_state.mode == Mode::Playing) {
             last_local_player_id = local_slot != nullptr ? local_slot->player_id : kInvalidPlayerId;
-            last_x = local_ent->pos.x;
+            last_x = sim::ToRenderScalar(local_ent->pos.x);
             last_local_input_right = guest_state.playing_input_snapshot.right;
             if (local_slot != nullptr && local_slot->player_id != kInvalidPlayerId &&
                 guest_state.net_session.lockstep_next_local_input_frame > 0) {
@@ -1689,8 +1689,8 @@ bool CheckRealnetLanClient(const char* server_url, const char* room_code, int ma
                 }
             }
             if (!start_x.has_value())
-                start_x = local_ent->pos.x;
-            const float delta_x = local_ent->pos.x - *start_x;
+                start_x = sim::ToRenderScalar(local_ent->pos.x);
+            const float delta_x = sim::ToRenderScalar(local_ent->pos.x) - *start_x;
             if (delta_x > 0.25F || delta_x < -0.25F)
                 moved_under_input = true;
         }

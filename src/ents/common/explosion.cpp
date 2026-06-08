@@ -174,7 +174,7 @@ void DoExplosion(
                 HitOptions{
                     .source_vid = this_vid,
                     .knockback = KnockbackSpec{
-                        .velocity = knockback_dir * push_magnitude,
+                        .velocity = sim::ToSimVec2(knockback_dir * push_magnitude),
                         .clear_velocity = true,
                         .clear_acceleration = true,
                         .thrown_by = this_vid,

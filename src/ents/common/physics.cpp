@@ -21,17 +21,17 @@ bool VidLess(const VID& left, const VID& right) {
     return left.version < right.version;
 }
 
-AABB GetAabbAtPosition(const Ent& ent, const Vec2& pos) {
-    return AABB::New(pos, pos + ent.GetSize() - Vec2::New(1.0F, 1.0F));
+sim::AABB GetAabbAtPosition(const Ent& ent, sim::Vec2 pos) {
+    return sim::AABB::from_pos_size(pos, ent.size - sim::Vec2::from_pixels(1, 1));
 }
 
-void StoreDistanceTraveled(std::size_t ent_idx, State& state, const Vec2& start_pos) {
+void StoreDistanceTraveled(std::size_t ent_idx, State& state, sim::Vec2 start_pos) {
     Ent& ent = state.ents.ents[ent_idx];
-    float dist_traveled = LengthDeterministic(ent.pos - start_pos);
-    if (dist_traveled < 1.0F) {
-        dist_traveled = 0.0F;
+    sim::Scalar dist_traveled = gfxp::manhattan_length(ent.pos - start_pos);
+    if (dist_traveled < sim::Scalar::from_int(1)) {
+        dist_traveled = sim::Scalar::zero();
     }
-    ent.dist_traveled_this_frame = sim::ToSimScalar(dist_traveled);
+    ent.dist_traveled_this_frame = dist_traveled;
 }
 
 void ResolveBlockingOverlap(
@@ -41,9 +41,9 @@ void ResolveBlockingOverlap(
     bool check_ents
 ) {
     Ent& ent = state.ents.ents[ent_idx];
-    const AABB current_aabb = ent.GetAABB();
+    const sim::AABB current_aabb = ent.GetSimAABB();
     const BlockingContactSet current_contacts =
-        GatherBlockingContactsForAabb(ent_idx, current_aabb, state, check_tiles, check_ents);
+        GatherBlockingContactsForAabb(ent_idx, ToRenderAABB(current_aabb), state, check_tiles, check_ents);
     if (!ResolveBlockingContactSet(ent_idx, current_contacts, state).blocks_movement) {
         return;
     }
@@ -58,10 +58,11 @@ void ResolveBlockingOverlap(
 
     for (int distance = 1; distance <= max_push; ++distance) {
         for (const IVec2& direction : candidates) {
-            const Vec2 candidate_pos = ent.pos + ToVec2(direction * distance);
-            const AABB candidate_aabb = GetAabbAtPosition(ent, candidate_pos);
+            const sim::Vec2 candidate_pos =
+                ent.pos + sim::Vec2::from_pixels(direction.x * distance, direction.y * distance);
+            const sim::AABB candidate_aabb = GetAabbAtPosition(ent, candidate_pos);
             const BlockingContactSet candidate_contacts = GatherBlockingContactsForAabb(
-                ent_idx, candidate_aabb, state, check_tiles, check_ents);
+                ent_idx, ToRenderAABB(candidate_aabb), state, check_tiles, check_ents);
             if (!ResolveBlockingContactSet(ent_idx, candidate_contacts, state).blocks_movement) {
                 ent.pos = candidate_pos;
                 return;
@@ -110,7 +111,7 @@ bool TrySnapToDownwardBlockingSurface(
     if (contacts.touches_stage_bounds &&
         stage.IsBorderSideBlocking(StageBorderSideKind::Bottom) &&
         next_bottom > static_cast<float>(stage.GetHeight() - 1)) {
-        ent.pos.y = static_cast<float>(RoundToInt(static_cast<float>(stage.GetHeight()) - ent.GetSize().y));
+        ent.pos.y = sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetHeight())) - ent.size.y;
         return true;
     }
 
@@ -138,7 +139,7 @@ bool TrySnapToDownwardBlockingSurface(
         return false;
     }
 
-    ent.pos.y = static_cast<float>(RoundToInt(*nearest_floor_top - ent.GetSize().y));
+    ent.pos.y = sim::ToSimScalar(*nearest_floor_top) - ent.size.y;
     return true;
 }
 
@@ -197,17 +198,20 @@ BlockingContactSet GatherBlockingContactsForMovement(
     return contacts;
 }
 
-int GetIntegerStepDistance(float distance, unsigned int time) {
-    const float abs_distance = std::abs(distance);
-    int integer_distance = FloorToInt(abs_distance);
-    const float fractional_distance = abs_distance - static_cast<float>(integer_distance);
-    if (fractional_distance != 0.0F) {
-        const int fractional_period = RoundToInt(1.0F / fractional_distance);
-        if (fractional_period != 0 && (time % static_cast<unsigned int>(fractional_period)) == 0U) {
+int GetIntegerStepDistance(sim::Scalar distance, unsigned int time) {
+    const sim::Scalar abs_distance = distance.abs();
+    int integer_distance = abs_distance.floor_int();
+    const sim::Scalar fractional_distance =
+        abs_distance - sim::Scalar::from_int(integer_distance);
+    if (fractional_distance != sim::Scalar::zero()) {
+        const sim::Scalar reciprocal = sim::Scalar::from_int(1) / fractional_distance;
+        const int fractional_period = reciprocal.round_int();
+        if (fractional_period != 0 &&
+            (time % static_cast<unsigned int>(fractional_period)) == 0U) {
             integer_distance += 1;
         }
     }
-    if (distance < 0.0F) {
+    if (distance < sim::Scalar::zero()) {
         integer_distance *= -1;
     }
     return integer_distance;
@@ -505,7 +509,7 @@ void MoveEntPixelStep(
     Audio* audio
 ) {
     Ent& ent = state.ents.ents[ent_idx];
-    const Vec2 start_pos = ent.pos;
+    const sim::Vec2 start_pos = ent.pos;
 
     ResolveBlockingOverlap(ent_idx, state, check_tiles, check_ents);
 
@@ -521,9 +525,9 @@ void MoveEntPixelStep(
                 state,
                 hanging_carry_vids
             );
-            const Vec2 next_pos = ent.pos + Vec2::New(1.0F, 0.0F);
+            const sim::Vec2 next_pos = ent.pos + sim::Vec2::from_pixels(1, 0);
             const AABB current_aabb = ent.GetAABB();
-            const AABB next_aabb = GetAabbAtPosition(ent, next_pos);
+            const AABB next_aabb = ToRenderAABB(GetAabbAtPosition(ent, next_pos));
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
                 ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Horizontal, 1);
@@ -539,7 +543,7 @@ void MoveEntPixelStep(
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Horizontal,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = ent.vel.x,
+                    .impact_velocity = sim::ToRenderScalar(ent.vel.x),
                     .direction = 1,
                     .mover_vid = ent.vid,
                 };
@@ -553,7 +557,7 @@ void MoveEntPixelStep(
                 );
                 if (ent_resolution.stop_sweep) {
                     ent.collided = true;
-                    ent.vel.x = 0.0F;
+                    ent.vel.x = sim::Scalar::zero();
                     StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
@@ -561,11 +565,11 @@ void MoveEntPixelStep(
                     TryDispatchEntTileContacts(ent_idx, contacts, blocked_context, state, audio);
                 if (tile_resolution.stop_sweep || ent_resolution.stop_sweep) {
                     ent.collided = true;
-                    ent.vel.x = 0.0F;
+                    ent.vel.x = sim::Scalar::zero();
                     StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                ent.vel.x = 0.0F;
+                ent.vel.x = sim::Scalar::zero();
                 ent.collided = true;
                 break;
             }
@@ -612,9 +616,9 @@ void MoveEntPixelStep(
                 state,
                 hanging_carry_vids
             );
-            const Vec2 next_pos = ent.pos + Vec2::New(-1.0F, 0.0F);
+            const sim::Vec2 next_pos = ent.pos + sim::Vec2::from_pixels(-1, 0);
             const AABB current_aabb = ent.GetAABB();
-            const AABB next_aabb = GetAabbAtPosition(ent, next_pos);
+            const AABB next_aabb = ToRenderAABB(GetAabbAtPosition(ent, next_pos));
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
                 ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Horizontal, -1);
@@ -630,7 +634,7 @@ void MoveEntPixelStep(
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Horizontal,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = ent.vel.x,
+                    .impact_velocity = sim::ToRenderScalar(ent.vel.x),
                     .direction = -1,
                     .mover_vid = ent.vid,
                 };
@@ -644,7 +648,7 @@ void MoveEntPixelStep(
                 );
                 if (ent_resolution.stop_sweep) {
                     ent.collided = true;
-                    ent.vel.x = 0.0F;
+                    ent.vel.x = sim::Scalar::zero();
                     StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
@@ -652,11 +656,11 @@ void MoveEntPixelStep(
                     TryDispatchEntTileContacts(ent_idx, contacts, blocked_context, state, audio);
                 if (tile_resolution.stop_sweep || ent_resolution.stop_sweep) {
                     ent.collided = true;
-                    ent.vel.x = 0.0F;
+                    ent.vel.x = sim::Scalar::zero();
                     StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                ent.vel.x = 0.0F;
+                ent.vel.x = sim::Scalar::zero();
                 ent.collided = true;
                 break;
             }
@@ -711,9 +715,9 @@ void MoveEntPixelStep(
                 state,
                 hanging_carry_vids
             );
-            const Vec2 next_pos = ent.pos + Vec2::New(0.0F, 1.0F);
+            const sim::Vec2 next_pos = ent.pos + sim::Vec2::from_pixels(0, 1);
             const AABB current_aabb = ent.GetAABB();
-            const AABB next_aabb = GetAabbAtPosition(ent, next_pos);
+            const AABB next_aabb = ToRenderAABB(GetAabbAtPosition(ent, next_pos));
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
                 ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Vertical, 1);
@@ -729,7 +733,7 @@ void MoveEntPixelStep(
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Vertical,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = ent.vel.y,
+                    .impact_velocity = sim::ToRenderScalar(ent.vel.y),
                     .direction = 1,
                     .mover_vid = ent.vid,
                 };
@@ -743,7 +747,7 @@ void MoveEntPixelStep(
                 );
                 if (ent_resolution.stop_sweep) {
                     ent.collided = true;
-                    ent.vel.y = 0.0F;
+                    ent.vel.y = sim::Scalar::zero();
                     (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage);
                     StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
@@ -752,13 +756,13 @@ void MoveEntPixelStep(
                     TryDispatchEntTileContacts(ent_idx, contacts, blocked_context, state, audio);
                 if (tile_resolution.stop_sweep || ent_resolution.stop_sweep) {
                     ent.collided = true;
-                    ent.vel.y = 0.0F;
+                    ent.vel.y = sim::Scalar::zero();
                     (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage);
                     StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
                 (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage);
-                ent.vel.y = 0.0F;
+                ent.vel.y = sim::Scalar::zero();
                 ent.collided = true;
                 break;
             }
@@ -811,9 +815,9 @@ void MoveEntPixelStep(
                 state,
                 hanging_carry_vids
             );
-            const Vec2 next_pos = ent.pos + Vec2::New(0.0F, -1.0F);
+            const sim::Vec2 next_pos = ent.pos + sim::Vec2::from_pixels(0, -1);
             const AABB current_aabb = ent.GetAABB();
-            const AABB next_aabb = GetAabbAtPosition(ent, next_pos);
+            const AABB next_aabb = ToRenderAABB(GetAabbAtPosition(ent, next_pos));
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
                 ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Vertical, -1);
@@ -829,7 +833,7 @@ void MoveEntPixelStep(
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Vertical,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = ent.vel.y,
+                    .impact_velocity = sim::ToRenderScalar(ent.vel.y),
                     .direction = -1,
                     .mover_vid = ent.vid,
                 };
@@ -843,7 +847,7 @@ void MoveEntPixelStep(
                 );
                 if (ent_resolution.stop_sweep) {
                     ent.collided = true;
-                    ent.vel.y = 0.0F;
+                    ent.vel.y = sim::Scalar::zero();
                     StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
@@ -851,11 +855,11 @@ void MoveEntPixelStep(
                     TryDispatchEntTileContacts(ent_idx, contacts, blocked_context, state, audio);
                 if (tile_resolution.stop_sweep || ent_resolution.stop_sweep) {
                     ent.collided = true;
-                    ent.vel.y = 0.0F;
+                    ent.vel.y = sim::Scalar::zero();
                     StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                ent.vel.y = 0.0F;
+                ent.vel.y = sim::Scalar::zero();
                 ent.collided = true;
                 break;
             }
@@ -939,8 +943,8 @@ void ApplyGravity(std::size_t ent_idx, State& state, float dt) {
     Ent& ent = state.ents.ents[ent_idx];
     if (ent.grounded) {
         ApplyEffectHookToEnt(ent, state, nullptr, EffectHookContext{.type = EffectHookType::Grounded});
-        if (ent.vel.y > 0.0F) {
-            ent.vel.y = 0.0F;
+        if (ent.vel.y > sim::Scalar::zero()) {
+            ent.vel.y = sim::Scalar::zero();
         }
         return;
     }
@@ -949,15 +953,14 @@ void ApplyGravity(std::size_t ent_idx, State& state, float dt) {
     }
     const float gravity_scale =
         GetModifiedEffectValue(ent, EffectModifierTarget::GravityScale, 1.0F, &state);
-    const float stage_gravity = sim::ToRenderScalar(state.stage.gravity);
     if (gravity_scale != 0.0F) {
-        ent.acc.y += stage_gravity * gravity_scale;
+        ent.acc.y += state.stage.gravity * sim::ToSimScalar(gravity_scale);
     }
     const float buoyancy_strength =
         GetModifiedEffectValue(ent, EffectModifierTarget::BuoyancyStrength, 0.0F, &state);
     const float buoyancy = sim::ToRenderScalar(ent.buoyancy);
     if (buoyancy > 0.0F && buoyancy_strength > 0.0F) {
-        ent.acc.y -= stage_gravity * buoyancy * buoyancy_strength;
+        ent.acc.y -= state.stage.gravity * ent.buoyancy * sim::ToSimScalar(buoyancy_strength);
     }
 }
 
@@ -966,8 +969,8 @@ void ApplyEffectVelocityModifiers(Ent& ent, const State& state) {
         GetModifiedEffectValue(ent, EffectModifierTarget::VelocityDampingX, 1.0F, &state);
     const float damping_y =
         GetModifiedEffectValue(ent, EffectModifierTarget::VelocityDampingY, 1.0F, &state);
-    ent.vel.x *= std::clamp(damping_x, 0.0F, 1.0F);
-    ent.vel.y *= std::clamp(damping_y, 0.0F, 1.0F);
+    ent.vel.x *= sim::ToSimScalar(std::clamp(damping_x, 0.0F, 1.0F));
+    ent.vel.y *= sim::ToSimScalar(std::clamp(damping_y, 0.0F, 1.0F));
 
     const float max_fall_speed =
         GetModifiedEffectValue(
@@ -976,17 +979,16 @@ void ApplyEffectVelocityModifiers(Ent& ent, const State& state) {
             sim::ToRenderScalar(ent.max_speed),
             &state
         );
-    ent.vel.y = std::min(ent.vel.y, max_fall_speed);
+    ent.vel.y = std::min(ent.vel.y, sim::ToSimScalar(max_fall_speed));
 }
 
 void PostPartialEulerStep(std::size_t ent_idx, State& state, float dt) {
     (void)dt;
     Ent& ent = state.ents.ents[ent_idx];
     ApplyEffectVelocityModifiers(ent, state);
-    const float max_speed = sim::ToRenderScalar(ent.max_speed);
-    ent.vel.x = std::clamp(ent.vel.x, -max_speed, max_speed);
-    ent.vel.y = std::clamp(ent.vel.y, -max_speed, max_speed);
-    ent.acc = Vec2::New(0.0F, 0.0F);
+    ent.vel.x = gfxp::clamp(ent.vel.x, -ent.max_speed, ent.max_speed);
+    ent.vel.y = gfxp::clamp(ent.vel.y, -ent.max_speed, ent.max_speed);
+    ent.acc = sim::Vec2::zero();
 }
 
 void ApplyGroundFriction(std::size_t ent_idx, State& state) {
@@ -1005,11 +1007,11 @@ void ApplyGroundFriction(std::size_t ent_idx, State& state, float friction_scale
     Ent& ent = state.ents.ents[ent_idx];
     ent.SetGrounded(state.stage);
     if (ent.grounded) {
-        ent.vel.x *= std::clamp(
+        ent.vel.x *= sim::ToSimScalar(std::clamp(
             GetGroundFrictionMultiplier(ent_idx, state) * friction_scale,
             0.0F,
             1.0F
-        );
+        ));
     }
 }
 
@@ -1060,8 +1062,8 @@ void GroundedCheck(
 
     ent.grounded = grounded;
     if (ent.grounded) {
-        if (ent.vel.y > 0.0F) {
-            ent.vel.y = 0.0F;
+        if (ent.vel.y > sim::Scalar::zero()) {
+            ent.vel.y = sim::Scalar::zero();
         }
         ent.coyote_time = coyote_time_frames;
     } else if (ent.coyote_time > 0) {
