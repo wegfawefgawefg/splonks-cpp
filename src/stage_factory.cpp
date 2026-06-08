@@ -100,13 +100,13 @@ std::vector<std::vector<float>> MakeEmptyFluidAmountGrid(
     return fluid_amount;
 }
 
-std::vector<std::vector<float>> MakeEmptyFluidDisplayAmountGrid(
+std::vector<std::vector<sim::Scalar>> MakeEmptyFluidDisplayAmountGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<float>> fluid_display_amount;
+    std::vector<std::vector<sim::Scalar>> fluid_display_amount;
     fluid_display_amount.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        fluid_display_amount.push_back(std::vector<float>(row.size(), 0.0F));
+        fluid_display_amount.push_back(std::vector<sim::Scalar>(row.size(), sim::Scalar::zero()));
     }
     return fluid_display_amount;
 }

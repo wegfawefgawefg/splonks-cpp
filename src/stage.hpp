@@ -179,7 +179,7 @@ struct Stage {
     std::vector<std::vector<TileRotation>> tile_rotations;
     std::vector<std::vector<Tile>> fluid_tiles;
     std::vector<std::vector<float>> fluid_amount;
-    std::vector<std::vector<float>> fluid_display_amount;
+    std::vector<std::vector<sim::Scalar>> fluid_display_amount;
     std::vector<std::vector<Vec2>> fluid_velocity;
     std::vector<std::vector<Vec2>> fluid_gravity;
     std::vector<std::vector<float>> fluid_gravity_strength;

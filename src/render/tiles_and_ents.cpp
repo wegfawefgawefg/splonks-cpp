@@ -1207,9 +1207,10 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             cell.has_liquid =
                 GetTileSpec(fluid_tile).simulated_fluid &&
                 amount > kMinVisibleDisplayLevel;
-            float& display_amount =
+            sim::Scalar& stored_display_amount =
                 state.stage.fluid_display_amount[static_cast<std::size_t>(y)]
                                                 [static_cast<std::size_t>(x)];
+            float display_amount = sim::ToRenderScalar(stored_display_amount);
             if (!cell.has_liquid) {
                 if (fluid.temporal_smoothing_enabled) {
                     const float response = std::clamp(
@@ -1222,7 +1223,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     display_amount = 0.0F;
                 }
                 if (display_amount <= effective_display_cutoff || cell.terrain_solid) {
-                    display_amount = 0.0F;
+                    stored_display_amount = sim::Scalar::zero();
                     continue;
                 }
 
@@ -1243,6 +1244,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
 
                 cell.visible_tile = residual_visible_tile;
                 cell.visible_level = std::clamp(display_amount, 0.0F, 1.0F);
+                stored_display_amount = sim::ToSimScalar(cell.visible_level);
                 cell.display_level = cell.visible_level;
                 cell.has_visible_liquid = true;
                 cell.render_candidate = true;
@@ -1261,6 +1263,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 display_amount = cell.liquid_level;
             }
             cell.visible_level = std::clamp(display_amount, 0.0F, 1.0F);
+            stored_display_amount = sim::ToSimScalar(cell.visible_level);
             cell.display_level = cell.visible_level;
             cell.has_visible_liquid = true;
             cell.render_candidate = true;

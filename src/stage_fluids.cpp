@@ -263,7 +263,7 @@ std::vector<IVec2> NormalizeAuthoredFluidTiles(Stage& stage) {
             stage.fluid_amount[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 kMaxFluidAmount;
             stage.fluid_display_amount[static_cast<std::size_t>(y)]
-                                      [static_cast<std::size_t>(x)] = 1.0F;
+                                      [static_cast<std::size_t>(x)] = sim::Scalar::from_int(1);
             stage.fluid_velocity[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 Vec2::New(0.0F, 0.0F);
             terrain_tile = Tile::Air;

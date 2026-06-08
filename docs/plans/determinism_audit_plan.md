@@ -314,6 +314,12 @@ The expected end state is:
   gameplay snapshots, and stage wrap/rotation transforms no longer carry raw
   IEEE float payloads for this presentation state. Recording format version is
   now 110.
+- Fixed in snapshot-preserved fluid presentation state:
+  `Stage::fluid_display_amount` is now stored as a Fixed12 grid and recorded as
+  raw fixed values. This field is render smoothing/presentation state; the
+  authoritative fluid simulation still uses `fluid_amount`, `fluid_velocity`,
+  gravity overrides, and gameplay fluid settings, which remain deferred for the
+  broader fluid determinism pass. Recording format version is now 111.
 - Fixed in runtime fingerprints: `FingerprintWriter::AddPod` no longer feeds
   raw host scalar memory into FNV. Integer, enum, bool, and fixed-point raw
   values now hash as explicit little-endian bytes. `AddPod` now rejects
