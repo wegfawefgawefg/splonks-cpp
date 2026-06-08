@@ -9,6 +9,7 @@
 #include "on_damage_effects.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
+#include "utils.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
@@ -177,10 +178,10 @@ void SpawnSkeletonDeathEffects(const Vec2& center, State& state) {
 void DropLooseSkull(const Vec2& center, State& state) {
     (void)world_ops::SpawnEnt(state, EntType::Skull, [&](Ent& skull) {
         skull.SetRenderCenter(center);
-        skull.vel = sim::ToSimVec2(Vec2::New(
-            state.drng.RandomFloat(-1.0F, 1.0F),
-            state.drng.RandomFloat(-1.8F, -0.8F)
-        ));
+        skull.vel = sim::Vec2{
+            RandomSimScalar(state.drng, sim::Scalar::from_int(-1), sim::Scalar::from_int(1)),
+            RandomSimScalar(state.drng, sim::ToSimScalar(-1.8F), sim::ToSimScalar(-0.8F)),
+        };
         skull.acc = sim::Vec2::zero();
     });
 }

@@ -17,6 +17,8 @@ struct DetRng {
     float RandomFloat(float minimum, float maximum);
 };
 
+sim::Scalar RandomSimScalar(DetRng& rng, sim::Scalar minimum, sim::Scalar maximum);
+
 struct RenderAABB {
     Vec2 tl;
     Vec2 br;

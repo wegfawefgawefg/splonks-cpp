@@ -39,6 +39,14 @@ float DetRng::RandomFloat(float minimum, float maximum) {
     return minimum + (maximum - minimum) * std::clamp(unit, 0.0F, 1.0F);
 }
 
+sim::Scalar RandomSimScalar(DetRng& rng, sim::Scalar minimum, sim::Scalar maximum) {
+    assert(minimum <= maximum);
+    return sim::Scalar::from_raw(rng.RandomIntInclusive(
+        minimum.raw_value(),
+        maximum.raw_value()
+    ));
+}
+
 RenderAABB RenderAABB::New(const Vec2& top_left, const Vec2& bottom_right) {
     RenderAABB result;
     result.tl = top_left;

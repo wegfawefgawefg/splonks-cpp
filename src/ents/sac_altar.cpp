@@ -464,7 +464,10 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
         const EntType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
         Ent* const reward = world_ops::SpawnEnt(state, reward_type, [&](Ent& spawned_reward) {
             spawned_reward.SetRenderCenter(emit_pos + Vec2::New(0.0F, -3.0F));
-            spawned_reward.vel = sim::ToSimVec2(Vec2::New(state.drng.RandomFloat(-0.55F, 0.55F), -1.7F));
+            spawned_reward.vel = sim::Vec2{
+                RandomSimScalar(state.drng, sim::ToSimScalar(-0.55F), sim::ToSimScalar(0.55F)),
+                sim::ToSimScalar(-1.7F),
+            };
             spawned_reward.acc = sim::Vec2::zero();
         });
         if (reward == nullptr) {

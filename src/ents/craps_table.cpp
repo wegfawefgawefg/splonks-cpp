@@ -37,6 +37,20 @@ TableState GetTableState(const Ent& table) {
     return static_cast<TableState>(table.counter_a.trunc_int());
 }
 
+sim::Vec2 PrizeLaunchVelocity() {
+    return sim::Vec2{
+        sim::Scalar::zero(),
+        sim::ToSimScalar(-2.25F),
+    };
+}
+
+sim::Vec2 DiceLaunchVelocity(State& state) {
+    return sim::Vec2{
+        sim::Scalar::from_int(state.drng.RandomIntInclusive(-2, 2)),
+        sim::Scalar::from_int(-5),
+    };
+}
+
 void SetTableState(Ent& table, TableState state) {
     table.counter_a = sim::Scalar::from_int(static_cast<int>(state));
 }
@@ -76,7 +90,7 @@ void UnlockPrize(Ent& prize) {
     prize.can_be_picked_up = spec.can_be_picked_up;
     prize.can_be_hit = spec.can_be_hit;
     prize.alpha = spec.alpha;
-    prize.vel = sim::ToSimVec2(Vec2::New(0.0F, -2.25F));
+    prize.vel = PrizeLaunchVelocity();
     prize.acc = sim::Vec2::zero();
 }
 
@@ -87,7 +101,7 @@ Ent* SpawnWonPrize(Ent& table, const Ent& display_prize, State& state) {
         [&](Ent& ent) {
             ClearEntBuyableState(ent);
             ent.SetRenderCenter(table.GetRenderCenter() + Vec2::New(0.0F, -18.0F));
-            ent.vel = sim::ToSimVec2(Vec2::New(0.0F, -2.25F));
+            ent.vel = PrizeLaunchVelocity();
             ent.acc = sim::Vec2::zero();
             ent.grounded = false;
         }
@@ -115,7 +129,7 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
 
     const Vec2 table_center = table.GetRenderCenter();
     dice.SetRenderCenter(table_center + Vec2::New(0.0F, -10.0F));
-    dice.vel = sim::ToSimVec2(Vec2::New(static_cast<float>(state.drng.RandomIntInclusive(-2, 2)), -5.0F));
+    dice.vel = DiceLaunchVelocity(state);
     dice.acc = sim::Vec2::zero();
 }
 
