@@ -334,6 +334,9 @@ Current state:
   and giant-tiki-head closest-player/facing decisions now use fixed
   positions/deltas. Their remaining render-center calls are presentation or
   spawn-placement boundaries.
+- Completed 2026-06-08: bat target detection, target ranking, and chase
+  acceleration now stay in fixed positions/deltas instead of selecting a render
+  target and converting it back to sim space.
 
 Cleanup:
 

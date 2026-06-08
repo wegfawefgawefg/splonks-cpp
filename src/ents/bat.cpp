@@ -11,7 +11,6 @@
 #include "world_query.hpp"
 
 #include <algorithm>
-#include <limits>
 #include <vector>
 
 namespace splonks::ents::bat {
@@ -39,13 +38,15 @@ bool IsAtPerchOrRoof(const Ent& bat, const State& state) {
     return false;
 }
 
-std::optional<Vec2> FindBatTargetPosition(const Ent& bat, const State& state) {
+std::optional<sim::Vec2> FindBatTargetPosition(const Ent& bat, const State& state) {
     constexpr int kVerticalDetectDist = 8 * static_cast<int>(kTileSize);
     constexpr int kHorizontalChaseDist = 4 * static_cast<int>(kTileSize);
+    const sim::Scalar vertical_detect_dist = sim::Scalar::from_pixels(kVerticalDetectDist);
+    const sim::Scalar horizontal_chase_dist = sim::Scalar::from_pixels(kHorizontalChaseDist);
 
-    std::optional<Vec2> best_target;
-    float best_dist_sq = std::numeric_limits<float>::max();
-    const Vec2 bat_pos = bat.GetRenderPos();
+    std::optional<sim::Vec2> best_target;
+    sim::Scalar best_dist_sq{};
+    const sim::Vec2 bat_pos = bat.GetSimPos();
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -56,15 +57,16 @@ std::optional<Vec2> FindBatTargetPosition(const Ent& bat, const State& state) {
             continue;
         }
 
-        const Vec2 player_delta = GetNearestWorldDelta(state.stage, bat_pos, player->GetRenderPos());
-        if (player_delta.y <= 0.0F ||
-            std::abs(player_delta.y) >= static_cast<float>(kVerticalDetectDist) ||
-            std::abs(player_delta.x) >= static_cast<float>(kHorizontalChaseDist)) {
+        const sim::Vec2 player_delta =
+            GetNearestWorldDelta(state.stage, bat_pos, player->GetSimPos());
+        if (player_delta.y <= sim::Scalar::zero() ||
+            player_delta.y.abs() >= vertical_detect_dist ||
+            player_delta.x.abs() >= horizontal_chase_dist) {
             continue;
         }
 
-        const float dist_sq = player_delta.x * player_delta.x + player_delta.y * player_delta.y;
-        if (dist_sq < best_dist_sq) {
+        const sim::Scalar dist_sq = gfxp::length_sq(player_delta);
+        if (!best_target.has_value() || dist_sq < best_dist_sq) {
             best_dist_sq = dist_sq;
             best_target = bat_pos + player_delta;
         }
@@ -202,7 +204,7 @@ void StepEntLogicAsBat(
     const EntCondition bat_condition = bat.condition;
 
     if (bat_condition == EntCondition::Normal) {
-        const std::optional<Vec2> target_position = FindBatTargetPosition(bat, state);
+        const std::optional<sim::Vec2> target_position = FindBatTargetPosition(bat, state);
 
         //  State Machine
         Ent& mutable_bat = state.ents.ents[ent_idx];
@@ -218,8 +220,7 @@ void StepEntLogicAsBat(
             }
             //  go to the target
             mutable_bat.ai_state = EntAiState::Pursuing;
-            mutable_bat.acc += sim::NormalizeOrZero(sim::ToSimVec2(*target_position) -
-                                                     mutable_bat.pos) *
+            mutable_bat.acc += sim::NormalizeOrZero(*target_position - mutable_bat.pos) *
                                sim::ToSimScalar(kChaseSpeed);
             SetAnim(mutable_bat, aframe_ids::FlyingBat);
         } else {
