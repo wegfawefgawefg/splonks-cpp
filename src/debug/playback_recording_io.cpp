@@ -15,7 +15,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 114;
+constexpr std::uint32_t kRecordingVersion = 115;
 
 enum class BuyableCallbackKind : std::uint8_t {
     None = 0,
@@ -1918,35 +1918,35 @@ bool ReadPostProcessSettings(std::istream& in, PostProcessSettings& settings) {
 void WriteFluidSettings(std::ostream& out, const FluidSettings& settings) {
     WriteBoolByte(out, settings.simulation_enabled);
     WriteInt32(out, settings.simulation_interval_frames);
-    WriteFloat(out, settings.transfer_per_step);
-    WriteFloat(out, settings.gravity_x);
-    WriteFloat(out, settings.gravity_y);
-    WriteFloat(out, settings.pressure_strength);
-    WriteFloat(out, settings.velocity_damping);
-    WriteFloat(out, settings.temp_gravity_decay);
+    WriteSimScalar(out, settings.transfer_per_step);
+    WriteSimScalar(out, settings.gravity_x);
+    WriteSimScalar(out, settings.gravity_y);
+    WriteSimScalar(out, settings.pressure_strength);
+    WriteSimScalar(out, settings.velocity_damping);
+    WriteSimScalar(out, settings.temp_gravity_decay);
     WriteBoolByte(out, settings.temporal_smoothing_enabled);
-    WriteFloat(out, settings.temporal_smoothing_response);
-    WriteFloat(out, settings.render_cutoff_amount);
-    WriteFloat(out, settings.water_alpha);
+    WriteSimScalar(out, settings.temporal_smoothing_response);
+    WriteSimScalar(out, settings.render_cutoff_amount);
+    WriteSimScalar(out, settings.water_alpha);
     WriteBoolByte(out, settings.lighting_enabled);
-    WriteFloat(out, settings.lighting_strength);
+    WriteSimScalar(out, settings.lighting_strength);
 }
 
 bool ReadFluidSettings(std::istream& in, FluidSettings& settings) {
     return ReadBoolByte(in, settings.simulation_enabled) &&
            ReadInt32(in, settings.simulation_interval_frames) &&
-           ReadFloat(in, settings.transfer_per_step) &&
-           ReadFloat(in, settings.gravity_x) &&
-           ReadFloat(in, settings.gravity_y) &&
-           ReadFloat(in, settings.pressure_strength) &&
-           ReadFloat(in, settings.velocity_damping) &&
-           ReadFloat(in, settings.temp_gravity_decay) &&
+           ReadSimScalar(in, settings.transfer_per_step) &&
+           ReadSimScalar(in, settings.gravity_x) &&
+           ReadSimScalar(in, settings.gravity_y) &&
+           ReadSimScalar(in, settings.pressure_strength) &&
+           ReadSimScalar(in, settings.velocity_damping) &&
+           ReadSimScalar(in, settings.temp_gravity_decay) &&
            ReadBoolByte(in, settings.temporal_smoothing_enabled) &&
-           ReadFloat(in, settings.temporal_smoothing_response) &&
-           ReadFloat(in, settings.render_cutoff_amount) &&
-           ReadFloat(in, settings.water_alpha) &&
+           ReadSimScalar(in, settings.temporal_smoothing_response) &&
+           ReadSimScalar(in, settings.render_cutoff_amount) &&
+           ReadSimScalar(in, settings.water_alpha) &&
            ReadBoolByte(in, settings.lighting_enabled) &&
-           ReadFloat(in, settings.lighting_strength);
+           ReadSimScalar(in, settings.lighting_strength);
 }
 
 void WriteWaterEffectSettings(std::ostream& out, const WaterEffectSettings& settings) {

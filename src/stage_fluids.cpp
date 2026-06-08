@@ -314,18 +314,21 @@ void StepStageFluids(State& state) {
     const std::vector<std::vector<Vec2>>& source_temp_gravity = stage.fluid_temp_gravity;
 
     const float transfer_cap =
-        std::clamp(fluid.transfer_per_step, 0.0F, kMaxFluidAmount);
+        std::clamp(sim::ToRenderScalar(fluid.transfer_per_step), 0.0F, kMaxFluidAmount);
     const float pressure_strength = std::clamp(
-        fluid.pressure_strength,
+        sim::ToRenderScalar(fluid.pressure_strength),
         0.0F,
         4.0F
     );
     const float velocity_damping = std::clamp(
-        fluid.velocity_damping,
+        sim::ToRenderScalar(fluid.velocity_damping),
         0.0F,
         1.0F
     );
-    const Vec2 gravity = Vec2::New(fluid.gravity_x, fluid.gravity_y);
+    const Vec2 gravity = Vec2::New(
+        sim::ToRenderScalar(fluid.gravity_x),
+        sim::ToRenderScalar(fluid.gravity_y)
+    );
 
     std::vector<FluidTransferProposal> proposals;
     proposals.reserve(static_cast<std::size_t>(stage.GetTileWidth() * stage.GetTileHeight()));
@@ -375,7 +378,7 @@ void StepStageFluids(State& state) {
         for (std::size_t x = 0; x < next_velocities[y].size(); ++x) {
             next_temp_gravity[y][x] =
                 next_temp_gravity[y][x] *
-                std::clamp(fluid.temp_gravity_decay, 0.0F, 1.0F);
+                std::clamp(sim::ToRenderScalar(fluid.temp_gravity_decay), 0.0F, 1.0F);
             if (source_amounts[y][x] <= kMinFluidAmount) {
                 next_velocities[y][x] = Vec2::New(0.0F, 0.0F);
                 continue;

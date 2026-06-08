@@ -1289,8 +1289,8 @@ void RenderFluidGravityOverlay(
     }
 
     const Vec2 global_gravity = Vec2::New(
-        state.settings.fluid.gravity_x,
-        state.settings.fluid.gravity_y
+        sim::ToRenderScalar(state.settings.fluid.gravity_x),
+        sim::ToRenderScalar(state.settings.fluid.gravity_y)
     );
     char global_label[64];
     std::snprintf(

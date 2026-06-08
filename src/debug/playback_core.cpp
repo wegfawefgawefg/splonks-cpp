@@ -183,8 +183,8 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
             const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
             const Vec2 gravity =
                 (mouse_world - StageCenterWorld(state.stage)) / kGravityPickerScalePx;
-            state.settings.fluid.gravity_x = std::clamp(gravity.x, -4.0F, 4.0F);
-            state.settings.fluid.gravity_y = std::clamp(gravity.y, -4.0F, 4.0F);
+            state.settings.fluid.gravity_x = sim::ToSimScalar(std::clamp(gravity.x, -4.0F, 4.0F));
+            state.settings.fluid.gravity_y = sim::ToSimScalar(std::clamp(gravity.y, -4.0F, 4.0F));
         }
         return;
     }

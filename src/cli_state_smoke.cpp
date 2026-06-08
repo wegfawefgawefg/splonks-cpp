@@ -613,11 +613,11 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
 
     state.settings.fluid.simulation_enabled = true;
     state.settings.fluid.simulation_interval_frames = 1;
-    state.settings.fluid.transfer_per_step = 0.55F;
-    state.settings.fluid.pressure_strength = 0.65F;
-    state.settings.fluid.velocity_damping = 0.86F;
-    state.settings.fluid.gravity_x = 0.0F;
-    state.settings.fluid.gravity_y = 1.0F;
+    state.settings.fluid.transfer_per_step = sim::ToSimScalar(0.55F);
+    state.settings.fluid.pressure_strength = sim::ToSimScalar(0.65F);
+    state.settings.fluid.velocity_damping = sim::ToSimScalar(0.86F);
+    state.settings.fluid.gravity_x = sim::Scalar::zero();
+    state.settings.fluid.gravity_y = sim::Scalar::from_int(1);
 
     for (int x = 6; x <= 18; ++x) {
         if (!SetScenarioForegroundTile(state, IVec2::New(x, 18), Tile::CaveBlock)) {

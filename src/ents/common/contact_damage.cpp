@@ -59,7 +59,7 @@ void ApplyTileOverlapEffects(std::size_t ent_idx, State& state) {
         if (state.stage.GetFluidAmount(
                 static_cast<unsigned int>(tile_query.tile_pos.x),
                 static_cast<unsigned int>(tile_query.tile_pos.y)
-            ) < state.settings.fluid.render_cutoff_amount) {
+            ) < sim::ToRenderScalar(state.settings.fluid.render_cutoff_amount)) {
             continue;
         }
         const TileSpec& fluid_spec = GetTileSpec(fluid_tile);

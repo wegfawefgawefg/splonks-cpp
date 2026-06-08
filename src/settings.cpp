@@ -154,18 +154,18 @@ FluidSettings FluidSettings::New() {
     FluidSettings result;
     result.simulation_enabled = true;
     result.simulation_interval_frames = 6;
-    result.transfer_per_step = 1.0F;
-    result.gravity_x = 0.0F;
-    result.gravity_y = 1.0F;
-    result.pressure_strength = 0.35F;
-    result.velocity_damping = 0.88F;
-    result.temp_gravity_decay = 0.92F;
+    result.transfer_per_step = sim::Scalar::from_int(1);
+    result.gravity_x = sim::Scalar::zero();
+    result.gravity_y = sim::Scalar::from_int(1);
+    result.pressure_strength = sim::ToSimScalar(0.35F);
+    result.velocity_damping = sim::ToSimScalar(0.88F);
+    result.temp_gravity_decay = sim::ToSimScalar(0.92F);
     result.temporal_smoothing_enabled = false;
-    result.temporal_smoothing_response = 0.35F;
-    result.render_cutoff_amount = 0.004F;
-    result.water_alpha = 0.69F;
+    result.temporal_smoothing_response = sim::ToSimScalar(0.35F);
+    result.render_cutoff_amount = sim::ToSimScalar(0.004F);
+    result.water_alpha = sim::ToSimScalar(0.69F);
     result.lighting_enabled = true;
-    result.lighting_strength = 1.0F;
+    result.lighting_strength = sim::Scalar::from_int(1);
     return result;
 }
 
@@ -462,23 +462,23 @@ Settings LoadSettings() {
         } else if (key == "fluid.transfer_per_step" ||
                    key == "debug_ui.fluid_brush_transfer_per_step") {
             settings.fluid.transfer_per_step =
-                ParseFloat(value, settings.fluid.transfer_per_step);
+                ParseSimScalar(value, settings.fluid.transfer_per_step);
         } else if (key == "fluid.gravity_x" || key == "debug_ui.fluid_brush_gravity_x") {
-            settings.fluid.gravity_x = ParseFloat(value, settings.fluid.gravity_x);
+            settings.fluid.gravity_x = ParseSimScalar(value, settings.fluid.gravity_x);
         } else if (key == "fluid.gravity_y" || key == "debug_ui.fluid_brush_gravity_y") {
-            settings.fluid.gravity_y = ParseFloat(value, settings.fluid.gravity_y);
+            settings.fluid.gravity_y = ParseSimScalar(value, settings.fluid.gravity_y);
         } else if (key == "fluid.pressure_strength" ||
                    key == "debug_ui.fluid_brush_pressure_strength") {
             settings.fluid.pressure_strength =
-                ParseFloat(value, settings.fluid.pressure_strength);
+                ParseSimScalar(value, settings.fluid.pressure_strength);
         } else if (key == "fluid.velocity_damping" ||
                    key == "debug_ui.fluid_brush_velocity_damping") {
             settings.fluid.velocity_damping =
-                ParseFloat(value, settings.fluid.velocity_damping);
+                ParseSimScalar(value, settings.fluid.velocity_damping);
         } else if (key == "fluid.temp_gravity_decay" ||
                    key == "debug_ui.fluid_brush_temp_gravity_decay") {
             settings.fluid.temp_gravity_decay =
-                ParseFloat(value, settings.fluid.temp_gravity_decay);
+                ParseSimScalar(value, settings.fluid.temp_gravity_decay);
         } else if (key == "fluid.temporal_smoothing_enabled" ||
                    key == "debug_ui.fluid_brush_temporal_smoothing_enabled") {
             settings.fluid.temporal_smoothing_enabled =
@@ -486,13 +486,13 @@ Settings LoadSettings() {
         } else if (key == "fluid.temporal_smoothing_response" ||
                    key == "debug_ui.fluid_brush_temporal_smoothing_response") {
             settings.fluid.temporal_smoothing_response =
-                ParseFloat(value, settings.fluid.temporal_smoothing_response);
+                ParseSimScalar(value, settings.fluid.temporal_smoothing_response);
         } else if (key == "fluid.render_cutoff_amount" ||
                    key == "debug_ui.fluid_brush_render_cutoff_amount") {
             settings.fluid.render_cutoff_amount =
-                ParseFloat(value, settings.fluid.render_cutoff_amount);
+                ParseSimScalar(value, settings.fluid.render_cutoff_amount);
         } else if (key == "fluid.water_alpha" || key == "debug_ui.fluid_brush_water_alpha") {
-            settings.fluid.water_alpha = ParseFloat(value, settings.fluid.water_alpha);
+            settings.fluid.water_alpha = ParseSimScalar(value, settings.fluid.water_alpha);
         } else if (key == "fluid.lighting_enabled" ||
                    key == "debug_ui.fluid_brush_lighting_enabled") {
             settings.fluid.lighting_enabled =
@@ -500,7 +500,7 @@ Settings LoadSettings() {
         } else if (key == "fluid.lighting_strength" ||
                    key == "debug_ui.fluid_brush_lighting_strength") {
             settings.fluid.lighting_strength =
-                ParseFloat(value, settings.fluid.lighting_strength);
+                ParseSimScalar(value, settings.fluid.lighting_strength);
         } else if (key == "water_effect.gravity_scale") {
             settings.water_effect.gravity_scale =
                 ParseSimScalar(value, settings.water_effect.gravity_scale);
@@ -830,20 +830,22 @@ bool SaveSettings(const Settings& settings) {
            << (settings.fluid.simulation_enabled ? 1 : 0) << "\n";
     output << "fluid.simulation_interval_frames="
            << settings.fluid.simulation_interval_frames << "\n";
-    output << "fluid.transfer_per_step=" << settings.fluid.transfer_per_step << "\n";
-    output << "fluid.gravity_x=" << settings.fluid.gravity_x << "\n";
-    output << "fluid.gravity_y=" << settings.fluid.gravity_y << "\n";
-    output << "fluid.pressure_strength=" << settings.fluid.pressure_strength << "\n";
-    output << "fluid.velocity_damping=" << settings.fluid.velocity_damping << "\n";
-    output << "fluid.temp_gravity_decay=" << settings.fluid.temp_gravity_decay << "\n";
+    write_sim_scalar("fluid.transfer_per_step", settings.fluid.transfer_per_step);
+    write_sim_scalar("fluid.gravity_x", settings.fluid.gravity_x);
+    write_sim_scalar("fluid.gravity_y", settings.fluid.gravity_y);
+    write_sim_scalar("fluid.pressure_strength", settings.fluid.pressure_strength);
+    write_sim_scalar("fluid.velocity_damping", settings.fluid.velocity_damping);
+    write_sim_scalar("fluid.temp_gravity_decay", settings.fluid.temp_gravity_decay);
     output << "fluid.temporal_smoothing_enabled="
            << (settings.fluid.temporal_smoothing_enabled ? 1 : 0) << "\n";
-    output << "fluid.temporal_smoothing_response="
-           << settings.fluid.temporal_smoothing_response << "\n";
-    output << "fluid.render_cutoff_amount=" << settings.fluid.render_cutoff_amount << "\n";
-    output << "fluid.water_alpha=" << settings.fluid.water_alpha << "\n";
+    write_sim_scalar(
+        "fluid.temporal_smoothing_response",
+        settings.fluid.temporal_smoothing_response
+    );
+    write_sim_scalar("fluid.render_cutoff_amount", settings.fluid.render_cutoff_amount);
+    write_sim_scalar("fluid.water_alpha", settings.fluid.water_alpha);
     output << "fluid.lighting_enabled=" << (settings.fluid.lighting_enabled ? 1 : 0) << "\n";
-    output << "fluid.lighting_strength=" << settings.fluid.lighting_strength << "\n";
+    write_sim_scalar("fluid.lighting_strength", settings.fluid.lighting_strength);
     write_sim_scalar("water_effect.gravity_scale", settings.water_effect.gravity_scale);
     write_sim_scalar("water_effect.velocity_damping_x", settings.water_effect.velocity_damping_x);
     write_sim_scalar("water_effect.velocity_damping_y", settings.water_effect.velocity_damping_y);

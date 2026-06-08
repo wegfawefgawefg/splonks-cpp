@@ -116,18 +116,18 @@ struct PostProcessSettings {
 struct FluidSettings {
     bool simulation_enabled = true;
     int simulation_interval_frames = 6;
-    float transfer_per_step = 1.0F;
-    float gravity_x = 0.0F;
-    float gravity_y = 1.0F;
-    float pressure_strength = 0.35F;
-    float velocity_damping = 0.88F;
-    float temp_gravity_decay = 0.92F;
+    sim::Scalar transfer_per_step = sim::Scalar::from_int(1);
+    sim::Scalar gravity_x = sim::Scalar::zero();
+    sim::Scalar gravity_y = sim::Scalar::from_int(1);
+    sim::Scalar pressure_strength = sim::ToSimScalar(0.35F);
+    sim::Scalar velocity_damping = sim::ToSimScalar(0.88F);
+    sim::Scalar temp_gravity_decay = sim::ToSimScalar(0.92F);
     bool temporal_smoothing_enabled = false;
-    float temporal_smoothing_response = 0.35F;
-    float render_cutoff_amount = 0.004F;
-    float water_alpha = 0.69F;
+    sim::Scalar temporal_smoothing_response = sim::ToSimScalar(0.35F);
+    sim::Scalar render_cutoff_amount = sim::ToSimScalar(0.004F);
+    sim::Scalar water_alpha = sim::ToSimScalar(0.69F);
     bool lighting_enabled = true;
-    float lighting_strength = 1.0F;
+    sim::Scalar lighting_strength = sim::Scalar::from_int(1);
 
     static FluidSettings New();
 };

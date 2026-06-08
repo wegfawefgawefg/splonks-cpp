@@ -31,7 +31,7 @@ constexpr float kPiranhaBiteDistanceSq = kPiranhaBiteDistance * kPiranhaBiteDist
 
 bool IsPiranhaInWater(const Ent& piranha, const State& state) {
     const Vec2 center = piranha.GetCenter();
-    const float cutoff = state.settings.fluid.render_cutoff_amount;
+    const float cutoff = sim::ToRenderScalar(state.settings.fluid.render_cutoff_amount);
     return IsWaterAtWorldPos(state.stage, center, cutoff) ||
            IsWaterAtWorldPos(state.stage, center + Vec2::New(0.0F, piranha.size.y * 0.35F), cutoff);
 }
@@ -74,7 +74,7 @@ struct SwimProbeResult {
 SwimProbeResult QuerySwimProbes(const Ent& piranha, const State& state) {
     const AABB aabb = piranha.GetAABB();
     const Vec2 center = piranha.GetCenter();
-    const float cutoff = state.settings.fluid.render_cutoff_amount;
+    const float cutoff = sim::ToRenderScalar(state.settings.fluid.render_cutoff_amount);
     return SwimProbeResult{
         .center = IsWaterAtWorldPos(state.stage, center, cutoff),
         .bottom = IsWaterAtWorldPos(state.stage, Vec2::New(center.x, aabb.br.y), cutoff),

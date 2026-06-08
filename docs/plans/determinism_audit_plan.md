@@ -285,6 +285,12 @@ The expected end state is:
   floats, so tuning converts back at the existing player boundary until the
   broader player movement and `Ent::pos` / `vel` / `acc` migration. Recording
   format version is now 114.
+- Fixed in synchronized fluid settings: float-valued `FluidSettings` scalar
+  knobs are now stored as Fixed12, settings-file parsing/UI editing convert at
+  local presentation boundaries, and debug playback records them as raw fixed
+  values. The current fluid simulation and render paths still operate on floats,
+  so settings convert back at those existing boundaries until the broader stage
+  fluid-grid migration. Recording format version is now 115.
 - Fixed in stale entity scalar state: unused `Ent::attack_weight` and
   `Ent::weight` were removed instead of converted. A current code/data scan
   found no gameplay readers and no authored data writers; the fields were only
