@@ -418,6 +418,11 @@ Current state:
   punishment placement, reward spawn placement, and altar break effects now use
   fixed centers/emit points for gameplay placement and convert to render
   coordinates only for smoke, sounds, and shake presentation.
+- Completed 2026-06-09: web-cannon cobweb occupancy/growth placement, web-ball
+  impact tile selection, muzzle collision probes, cobweb spawn placement, and
+  web-ball spawn placement now use fixed centers and fixed tile snapping. Web
+  spray, burst, trail, and sound presentation convert fixed positions to render
+  coordinates at the boundary.
 
 Cleanup:
 

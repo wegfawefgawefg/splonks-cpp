@@ -150,17 +150,25 @@ WebGunAim GetWebGunAim(const Ent& weapon, const Ent* holder, const State& state)
     };
 }
 
-IVec2 SnapWorldPointToTile(const Vec2& point, const Stage& stage) {
-    const int tile_x = FloorToInt(point.x / static_cast<float>(kTileSize));
-    const int tile_y = FloorToInt(point.y / static_cast<float>(kTileSize));
+int FloorDiv(int numerator, int denominator) {
+    int quotient = numerator / denominator;
+    const int remainder = numerator % denominator;
+    if (remainder != 0 && ((remainder < 0) != (denominator < 0))) {
+        --quotient;
+    }
+    return quotient;
+}
+
+IVec2 SnapWorldPointToTile(sim::Vec2 point, const Stage& stage) {
+    const int tile_size = static_cast<int>(kTileSize);
+    const int tile_x = FloorDiv(point.x.to_pixels_floor(), tile_size);
+    const int tile_y = FloorDiv(point.y.to_pixels_floor(), tile_size);
     return stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
 }
 
-Vec2 TileCenterToWorld(const IVec2& tile_pos) {
-    return Vec2::New(
-        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
-        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
-    );
+sim::Vec2 TileCenterToWorld(const IVec2& tile_pos) {
+    const int tile_size = static_cast<int>(kTileSize);
+    return sim::PixelVec2(tile_pos.x * tile_size + 8, tile_pos.y * tile_size + 8);
 }
 
 bool HasCobwebAtTile(const IVec2& tile_pos, const State& state) {
@@ -169,7 +177,7 @@ bool HasCobwebAtTile(const IVec2& tile_pos, const State& state) {
         if (!ent.active || ent.type_ != EntType::Cobweb) {
             continue;
         }
-        if (SnapWorldPointToTile(ent.GetRenderCenter(), state.stage) == wrapped_tile_pos) {
+        if (SnapWorldPointToTile(ent.GetSimCenter(), state.stage) == wrapped_tile_pos) {
             return true;
         }
     }
@@ -184,13 +192,13 @@ bool CanSpawnCobwebAtTile(const IVec2& tile_pos, const State& state) {
     return !IsTileCollidable(*tile_query->tile) && !HasCobwebAtTile(tile_query->tile_pos, state);
 }
 
-bool IsWorldPointInsideSolidTile(const Vec2& point, const State& state) {
-    const std::optional<WorldTileQueryResult> tile_query = QueryTileAtWorldPos(state.stage, ToIVec2(point));
+bool IsWorldPointInsideSolidTile(sim::Vec2 point, const State& state) {
+    const std::optional<WorldTileQueryResult> tile_query = QueryTileAtWorldPos(state.stage, point);
     return tile_query.has_value() && tile_query->tile != nullptr && IsTileCollidable(*tile_query->tile);
 }
 
 std::optional<IVec2> GetCobwebGrowthTile(const Ent& web_ball, const Ent& hit_cobweb, const State& state) {
-    const IVec2 hit_tile = SnapWorldPointToTile(hit_cobweb.GetRenderCenter(), state.stage);
+    const IVec2 hit_tile = SnapWorldPointToTile(hit_cobweb.GetSimCenter(), state.stage);
     std::array<IVec2, 4> candidates{};
     std::size_t candidate_count = 0;
 
@@ -209,16 +217,22 @@ std::optional<IVec2> GetCobwebGrowthTile(const Ent& web_ball, const Ent& hit_cob
         }
     };
 
-    push_candidate(SnapWorldPointToTile(web_ball.GetRenderCenter(), state.stage));
+    push_candidate(SnapWorldPointToTile(web_ball.GetSimCenter(), state.stage));
 
-    Vec2 incoming_dir = web_ball.GetRenderVel() * -1.0F;
-    if (incoming_dir == Vec2::New(0.0F, 0.0F)) {
-        incoming_dir = web_ball.facing == Side::Left ? Vec2::New(1.0F, 0.0F) : Vec2::New(-1.0F, 0.0F);
+    sim::Vec2 incoming_dir = web_ball.vel * sim::Scalar::from_int(-1);
+    if (incoming_dir == sim::Vec2::zero()) {
+        incoming_dir = web_ball.facing == Side::Left
+            ? sim::Vec2{sim::Scalar::from_int(1), sim::Scalar::zero()}
+            : sim::Vec2{sim::Scalar::from_int(-1), sim::Scalar::zero()};
     }
 
-    const int step_x = incoming_dir.x > 0.0F ? 1 : (incoming_dir.x < 0.0F ? -1 : 0);
-    const int step_y = incoming_dir.y > 0.0F ? 1 : (incoming_dir.y < 0.0F ? -1 : 0);
-    const bool x_dominant = std::abs(incoming_dir.x) >= std::abs(incoming_dir.y);
+    const int step_x = incoming_dir.x > sim::Scalar::zero()
+        ? 1
+        : (incoming_dir.x < sim::Scalar::zero() ? -1 : 0);
+    const int step_y = incoming_dir.y > sim::Scalar::zero()
+        ? 1
+        : (incoming_dir.y < sim::Scalar::zero() ? -1 : 0);
+    const bool x_dominant = incoming_dir.x.abs() >= incoming_dir.y.abs();
 
     if (x_dominant) {
         if (step_x != 0) {
@@ -319,9 +333,9 @@ void SpawnCobwebBurst(State& state, const Vec2& origin) {
     }
 }
 
-Ent* SpawnCobwebEnt(State& state, const Vec2& center, bool temporary) {
+Ent* SpawnCobwebEnt(State& state, sim::Vec2 center, bool temporary) {
     return world_ops::SpawnEnt(state, EntType::Cobweb, [&](Ent& cobweb) {
-        cobweb.SetRenderCenter(center);
+        cobweb.SetSimCenter(center);
         cobweb.counter_a = temporary ? sim::ToSimScalar(kTemporaryCobwebLifetimeFrames)
                                      : sim::Scalar::zero();
         cobweb.counter_d = sim::ToSimScalar(kCobwebWearIntervalFrames);
@@ -339,7 +353,7 @@ void DestroyCobweb(std::size_t ent_idx, State& state) {
         return;
     }
 
-    SpawnCobwebBurst(state, cobweb.GetRenderCenter());
+    SpawnCobwebBurst(state, sim::ToRenderVec2(cobweb.GetSimCenter()));
     (void)world_ops::DeactivateEnt(state, cobweb.vid);
 }
 
@@ -353,14 +367,14 @@ void TriggerWebBallBurst(std::size_t ent_idx, State& state, bool spawn_cobweb) {
         return;
     }
 
-    const Vec2 impact_center = web_ball.GetRenderCenter();
+    const sim::Vec2 impact_center = web_ball.GetSimCenter();
     if (spawn_cobweb) {
         const IVec2 tile_pos = SnapWorldPointToTile(impact_center, state.stage);
         if (CanSpawnCobwebAtTile(tile_pos, state)) {
             (void)SpawnCobwebEnt(state, TileCenterToWorld(tile_pos), true);
         }
     }
-    SpawnCobwebBurst(state, impact_center);
+    SpawnCobwebBurst(state, sim::ToRenderVec2(impact_center));
     (void)world_ops::DeactivateEnt(state, web_ball.vid);
 }
 
@@ -374,11 +388,11 @@ void TriggerWebBallBurstAtTile(std::size_t ent_idx, State& state, const IVec2& t
         return;
     }
 
-    const Vec2 impact_center = web_ball.GetRenderCenter();
+    const sim::Vec2 impact_center = web_ball.GetSimCenter();
     if (CanSpawnCobwebAtTile(tile_pos, state)) {
         (void)SpawnCobwebEnt(state, TileCenterToWorld(tile_pos), true);
     }
-    SpawnCobwebBurst(state, impact_center);
+    SpawnCobwebBurst(state, sim::ToRenderVec2(impact_center));
     (void)world_ops::DeactivateEnt(state, web_ball.vid);
 }
 
@@ -395,16 +409,18 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
     weapon.facing = aim.facing;
     weapon.rotation = aim.rotation;
 
-    const Vec2 muzzle_pos = weapon.GetRenderCenter() + (aim.direction * 8.0F);
-    const Vec2 spawn_pos = muzzle_pos + (aim.direction * 4.0F);
+    const sim::Vec2 muzzle_pos = weapon.GetSimCenter() + (aim.sim_direction * sim::Scalar::from_int(8));
+    const sim::Vec2 spawn_pos = muzzle_pos + (aim.sim_direction * sim::Scalar::from_int(4));
+    const Vec2 render_muzzle_pos = sim::ToRenderVec2(muzzle_pos);
 
     if (holder != nullptr && IsWorldPointInsideSolidTile(muzzle_pos, state)) {
-        const IVec2 holder_tile = SnapWorldPointToTile(holder->GetRenderCenter(), state.stage);
+        const IVec2 holder_tile = SnapWorldPointToTile(holder->GetSimCenter(), state.stage);
         if (CanSpawnCobwebAtTile(holder_tile, state)) {
             (void)SpawnCobwebEnt(state, TileCenterToWorld(holder_tile), true);
         }
-        (void)PlayWorldSoundEmitter(state, holder->GetRenderCenter(), audio_asset_ids::PistolShoot);
-        SpawnWebSpray(state, holder->GetRenderCenter(), aim.direction);
+        const Vec2 holder_center = sim::ToRenderVec2(holder->GetSimCenter());
+        (void)PlayWorldSoundEmitter(state, holder_center, audio_asset_ids::PistolShoot);
+        SpawnWebSpray(state, holder_center, aim.direction);
         if (holder != nullptr) {
             holder->vel -= aim.sim_direction * sim::ToSimScalar(0.12F);
         }
@@ -412,7 +428,7 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
     }
 
     (void)world_ops::SpawnEnt(state, EntType::WebBall, [&](Ent& spawned_web_ball) {
-        spawned_web_ball.SetRenderCenter(spawn_pos);
+        spawned_web_ball.SetSimCenter(spawn_pos);
         spawned_web_ball.facing = aim.facing;
         spawned_web_ball.vel = aim.sim_direction * sim::ToSimScalar(kWebBallSpeedX) +
                                (holder != nullptr
@@ -427,8 +443,8 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
         spawned_web_ball.counter_c = sim::ToSimScalar(kWebBallEntArmDelayFrames);
     });
 
-    (void)PlayWorldSoundEmitter(state, muzzle_pos, audio_asset_ids::PistolShoot);
-    SpawnWebSpray(state, muzzle_pos, aim.direction);
+    (void)PlayWorldSoundEmitter(state, render_muzzle_pos, audio_asset_ids::PistolShoot);
+    SpawnWebSpray(state, render_muzzle_pos, aim.direction);
     if (holder != nullptr) {
         holder->vel -= aim.sim_direction * sim::ToSimScalar(0.12F);
     }
@@ -726,7 +742,7 @@ void StepEntLogicAsWebBall(
 
     web_ball.counter_b -= sim::Scalar::from_int(1);
     if (web_ball.counter_b <= sim::Scalar::zero()) {
-        SpawnWebTrail(state, web_ball.GetRenderCenter(), web_ball.GetRenderVel());
+        SpawnWebTrail(state, sim::ToRenderVec2(web_ball.GetSimCenter()), sim::ToRenderVec2(web_ball.vel));
         web_ball.counter_b = sim::ToSimScalar(kWebBallTrailIntervalFrames);
     }
 }
