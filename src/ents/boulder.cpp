@@ -380,7 +380,7 @@ void StepEntLogicAsBoulder(
     if (boulder.ai_state == EntAiState::Idle && boulder.grounded) {
         boulder.ai_state = EntAiState::Disturbed;
         boulder.travel_sound_countdown = FxScalar::zero();
-        boulder.point_a = ToIVec2(ToFVec2(boulder.pos));
+        boulder.point_a = ToPixelIVec2Trunc(boulder.pos);
         boulder.counter_b = FxScalar::zero();
         boulder.counter_c = FxScalar::zero();
         boulder.counter_d = FxScalar::zero();

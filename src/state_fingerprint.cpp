@@ -188,15 +188,15 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
                 }
                 return stage.tile_rotations[row_y][col_x];
             };
-            const auto read_sim_scalar_grid = [](const std::vector<std::vector<FxScalar>>& grid,
-                                                 std::size_t y_, std::size_t x_) {
+            const auto read_fx_scalar_grid = [](const std::vector<std::vector<FxScalar>>& grid,
+                                                std::size_t y_, std::size_t x_) {
                 if (y_ >= grid.size() || x_ >= grid[y_].size()) {
                     return FxScalar::zero();
                 }
                 return grid[y_][x_];
             };
-            const auto read_sim_vec2_grid = [](const std::vector<std::vector<FxVec2>>& grid,
-                                               std::size_t y_, std::size_t x_) {
+            const auto read_fx_vec2_grid = [](const std::vector<std::vector<FxVec2>>& grid,
+                                              std::size_t y_, std::size_t x_) {
                 if (y_ >= grid.size() || x_ >= grid[y_].size()) {
                     return FxVec2::zero();
                 }
@@ -208,10 +208,10 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
             writer.AddPod(
                 static_cast<std::uint16_t>(read_tile_grid(stage.backwall_tiles, Tile::Air)));
             writer.AddPod(static_cast<std::uint16_t>(read_tile_grid(stage.fluid_tiles, Tile::Air)));
-            writer.AddFixedScalar(read_sim_scalar_grid(stage.fluid_amount, row_y, col_x));
-            writer.AddFixedVec2(read_sim_vec2_grid(stage.fluid_velocity, row_y, col_x));
-            writer.AddFixedVec2(read_sim_vec2_grid(stage.fluid_gravity, row_y, col_x));
-            writer.AddFixedVec2(read_sim_vec2_grid(stage.fluid_temp_gravity, row_y, col_x));
+            writer.AddFixedScalar(read_fx_scalar_grid(stage.fluid_amount, row_y, col_x));
+            writer.AddFixedVec2(read_fx_vec2_grid(stage.fluid_velocity, row_y, col_x));
+            writer.AddFixedVec2(read_fx_vec2_grid(stage.fluid_gravity, row_y, col_x));
+            writer.AddFixedVec2(read_fx_vec2_grid(stage.fluid_temp_gravity, row_y, col_x));
 
             EmbeddedTreasure embedded{};
             if (row_y < stage.embedded_treasures.size() &&

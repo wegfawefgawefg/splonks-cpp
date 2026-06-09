@@ -99,10 +99,6 @@ inline FxVec2 EntSpecSize(const FVec2& size) {
     return ToFxVec2(size);
 }
 
-inline FxScalar EntSpecCounter(float value) {
-    return ToFxScalar(value);
-}
-
 const EntSpec& GetEntSpec(EntType type_);
 const char* GetEntTypeName(EntType type_);
 void PopulateEntSpecsTable();

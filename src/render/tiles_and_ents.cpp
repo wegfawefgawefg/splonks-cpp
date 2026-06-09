@@ -4,6 +4,7 @@
 #include "ent.hpp"
 #include "aframe_id.hpp"
 #include "graphics.hpp"
+#include "render/color.hpp"
 #include "render/tile_lighting.hpp"
 #include "render/world_wrap.hpp"
 #include "render/world_texture.hpp"
@@ -39,17 +40,6 @@ enum class ForegroundTileRenderPass {
     PreEnt,
     PostEnt,
 };
-
-int WrapCoordinate(int value, int size) {
-    if (size <= 0) {
-        return 0;
-    }
-    int wrapped = value % size;
-    if (wrapped < 0) {
-        wrapped += size;
-    }
-    return wrapped;
-}
 
 std::optional<IVec2> ResolveWrappedTileCoord(const Stage& stage, int tile_x, int tile_y) {
     const IVec2 wrapped = stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
@@ -118,12 +108,12 @@ float GetBorderTileShake(const Stage& stage, int tile_x, int tile_y) {
     int resolved_x = tile_x;
     int resolved_y = tile_y;
     if (stage.WrapsX()) {
-        resolved_x = WrapCoordinate(resolved_x, width);
+        resolved_x = PositiveModulo(resolved_x, width);
     } else {
         resolved_x = std::clamp(resolved_x, 0, width - 1);
     }
     if (stage.WrapsY()) {
-        resolved_y = WrapCoordinate(resolved_y, height);
+        resolved_y = PositiveModulo(resolved_y, height);
     } else {
         resolved_y = std::clamp(resolved_y, 0, height - 1);
     }
@@ -230,30 +220,6 @@ FVec2 WorldPointToScreenForGeometry(const Graphics& graphics, const FVec2& world
         static_cast<float>((static_cast<double>(delta.x) * s) + (static_cast<double>(delta.y) * c))
     );
     return screen;
-}
-
-Color3 ClampRenderColor(Color3 color, float min_value = 0.0F, float max_value = 2.0F) {
-    return Color3::New(
-        std::clamp(color.r, min_value, max_value),
-        std::clamp(color.g, min_value, max_value),
-        std::clamp(color.b, min_value, max_value)
-    );
-}
-
-Color3 MaxRenderColor(Color3 left, Color3 right) {
-    return Color3::New(
-        std::max(left.r, right.r),
-        std::max(left.g, right.g),
-        std::max(left.b, right.b)
-    );
-}
-
-Color3 LerpRenderColor(Color3 left, Color3 right, float amount) {
-    return Color3::New(
-        std::lerp(left.r, right.r, amount),
-        std::lerp(left.g, right.g, amount),
-        std::lerp(left.b, right.b, amount)
-    );
 }
 
 SDL_FColor MakeFluidVertexColor(Color3 brightness, std::uint8_t alpha) {

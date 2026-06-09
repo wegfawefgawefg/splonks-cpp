@@ -136,7 +136,7 @@ void SetMenuInputSnapshot(State& state) {
     state.menu_input_snapshot = new_inputs;
 }
 
-PlayingInputSnapshot PollLegacyPlayingInputSnapshot() {
+PlayingInputSnapshot PollDirectPlayingInputSnapshot() {
     const bool* keys = SDL_GetKeyboardState(nullptr);
     PlayingInputSnapshot new_inputs = PlayingInputSnapshot::New();
     new_inputs.left = keys[SDL_SCANCODE_A] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
@@ -184,7 +184,7 @@ PlayingInputSnapshot ExternalPrimaryPlayingInputSnapshot(const State& state) {
 void SetPlayingInputSnapshot(State& state) {
     PlayingInputSnapshot new_inputs = state.use_external_local_input_frames
                                           ? ExternalPrimaryPlayingInputSnapshot(state)
-                                          : PollLegacyPlayingInputSnapshot();
+                                          : PollDirectPlayingInputSnapshot();
     float mx = 0.0F;
     float my = 0.0F;
     SDL_GetMouseState(&mx, &my);

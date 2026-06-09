@@ -50,26 +50,6 @@ constexpr std::array<CircleUnit, 80> kCirclePath{{
     CircleUnit::New(3896, -1266), CircleUnit::New(3983, -956), CircleUnit::New(4046, -641), CircleUnit::New(4083, -321)
 }};
 
-int RoundFloatToInt(float value) {
-    return static_cast<int>(value + (value >= 0.0F ? 0.5F : -0.5F));
-}
-
-int RoundRatio(std::int64_t numerator, std::int64_t denominator) {
-    if (denominator == 0) {
-        return 0;
-    }
-    const std::int64_t half = denominator / 2;
-    if (numerator >= 0) {
-        return static_cast<int>((numerator + half) / denominator);
-    }
-    return static_cast<int>((numerator - half) / denominator);
-}
-
-int PositiveModulo(int value, int divisor) {
-    const int result = value % divisor;
-    return result < 0 ? result + divisor : result;
-}
-
 bool IsIcyPlatform(const Ent& platform) {
     return platform.impassable &&
            !platform.can_be_hung_on &&
@@ -151,8 +131,10 @@ void StepCircle(Ent& platform) {
     );
     const CircleUnit unit = kCirclePath[static_cast<std::size_t>(path_idx)];
     const FxVec2 desired_pos = center + PixelVec2(
-        RoundRatio(static_cast<std::int64_t>(unit.x) * radius, kCircleUnitScale),
-        RoundRatio(static_cast<std::int64_t>(unit.y) * radius, kCircleUnitScale)
+        static_cast<int>(DivRoundNearest(static_cast<std::int64_t>(unit.x) * radius,
+                                         kCircleUnitScale)),
+        static_cast<int>(DivRoundNearest(static_cast<std::int64_t>(unit.y) * radius,
+                                         kCircleUnitScale))
     );
     platform.vel = desired_pos - platform.pos;
     platform.counter_a += FxScalar::from_int(1);

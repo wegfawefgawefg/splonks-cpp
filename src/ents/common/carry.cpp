@@ -54,9 +54,7 @@ void RestoreDetachedCarryEnt(Ent& ent) {
     ent.held_by_vid.reset();
     ent.attach_mode = AttachMode::None;
     StopUsingEnt(ent);
-    RestoreEntHasPhysicsFromSpec(ent);
-    RestoreEntCanCollideFromSpec(ent);
-    RestoreEntDrawLayerFromSpec(ent);
+    RestoreEntDetachedCarryStateFromSpec(ent);
     ent.grounded = false;
     RemoveEffect(ent, EffectId::NoGravityUntilContact);
 }
@@ -336,9 +334,7 @@ void ReleaseEntFromHolder(Ent& ent, State& state) {
     ent.held_by_vid.reset();
     ent.attach_mode = AttachMode::None;
     StopUsingEnt(ent);
-    RestoreEntHasPhysicsFromSpec(ent);
-    RestoreEntCanCollideFromSpec(ent);
-    RestoreEntDrawLayerFromSpec(ent);
+    RestoreEntDetachedCarryStateFromSpec(ent);
     ent.grounded = false;
     RemoveEffect(ent, EffectId::NoGravityUntilContact);
 }
@@ -504,9 +500,7 @@ void DropHeldItemFromEnt(Ent& ent, State& state) {
     held->held_by_vid.reset();
     held->attach_mode = AttachMode::None;
     StopUsingEnt(*held);
-    RestoreEntHasPhysicsFromSpec(*held);
-    RestoreEntCanCollideFromSpec(*held);
-    RestoreEntDrawLayerFromSpec(*held);
+    RestoreEntDetachedCarryStateFromSpec(*held);
     held->grounded = false;
     held->thrown_by = ent.vid;
     held->thrown_immunity_timer = kThrownByImmunityDuration;

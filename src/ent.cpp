@@ -387,9 +387,7 @@ void EnableStone(Ent& ent) {
 
 void DisableStone(Ent& ent) {
     ent.stone = false;
-    RestoreEntCrusherPusherFromSpec(ent);
-    RestoreEntImpassableFromSpec(ent);
-    RestoreEntDamageVulnFromSpec(ent);
+    RestoreEntStoneStateFromSpec(ent);
 }
 
 } // namespace splonks

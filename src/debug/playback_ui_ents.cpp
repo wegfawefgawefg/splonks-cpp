@@ -270,9 +270,7 @@ void DetachEntsAttachedToVid(State& state, const VID& owner_vid, const Graphics&
         attached.held_by_vid.reset();
         attached.attach_mode = AttachMode::None;
         StopUsingEnt(attached);
-        RestoreEntHasPhysicsFromSpec(attached);
-        RestoreEntCanCollideFromSpec(attached);
-        RestoreEntDrawLayerFromSpec(attached);
+        RestoreEntDetachedCarryStateFromSpec(attached);
         attached.grounded = false;
         state.UpdateSidForEnt(attached.vid.id, graphics);
     }
@@ -540,7 +538,7 @@ bool SpawnDebugEnt(
             spawned->has_physics = false;
             spawned->can_collide = false;
             spawned->facing = player->facing;
-            spawned->SetCenter(ToFxVec2(ToFVec2(player->GetCenter())));
+            spawned->SetCenter(player->GetCenter());
             debug.spawn_status =
                 std::string("Spawned and attached ") + GetEntTypeName(type_) + ".";
         }

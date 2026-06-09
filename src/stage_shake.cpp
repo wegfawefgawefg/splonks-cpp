@@ -15,18 +15,6 @@ int AbsInt(int value) {
     return value < 0 ? -value : value;
 }
 
-int WrapCoordinate(int value, int size) {
-    if (size <= 0) {
-        return value;
-    }
-
-    int wrapped = value % size;
-    if (wrapped < 0) {
-        wrapped += size;
-    }
-    return wrapped;
-}
-
 std::vector<std::vector<FxScalar>> MakeEmptyTileShakeGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
@@ -65,12 +53,12 @@ std::optional<IVec2> ResolveTileShakeCoord(const Stage& stage, const IVec2& pos)
     }
 
     if (stage.WrapsX()) {
-        resolved.x = WrapCoordinate(resolved.x, width);
+        resolved.x = PositiveModulo(resolved.x, width);
     } else {
         resolved.x = std::clamp(resolved.x, 0, width - 1);
     }
     if (stage.WrapsY()) {
-        resolved.y = WrapCoordinate(resolved.y, height);
+        resolved.y = PositiveModulo(resolved.y, height);
     } else {
         resolved.y = std::clamp(resolved.y, 0, height - 1);
     }

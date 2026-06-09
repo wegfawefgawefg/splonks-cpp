@@ -473,7 +473,7 @@ extern const EntSpec kMattockSpec{
     .facing = Side::Left,
     .condition = EntCondition::Normal,
     .display_state = EntDisplayState::Neutral,
-    .counter_b = EntSpecCounter(kMattockGuaranteedDigs),
+    .counter_b = ToFxScalar(kMattockGuaranteedDigs),
     .damage_vuln = DamageVuln::Immune,
     .on_use = OnUseAsMattock,
     .step_logic = StepEntLogicAsMattock,

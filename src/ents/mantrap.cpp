@@ -186,7 +186,7 @@ extern const EntSpec kMantrapSpec{
     .condition = EntCondition::Normal,
     .ai_state = EntAiState::Idle,
     .display_state = EntDisplayState::Neutral,
-    .counter_a = EntSpecCounter(static_cast<float>(kMantrapIdleMinFrames)),
+    .counter_a = ToFxScalar(static_cast<float>(kMantrapIdleMinFrames)),
     .damage_vuln = DamageVuln::Vulnerable,
     .damage_anim = aframe_ids::BloodBall,
     .damage_sound = audio_asset_ids::CavemanHurt,

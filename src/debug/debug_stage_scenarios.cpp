@@ -99,7 +99,7 @@ void GiveHeldRockToEnt(State& state, VID holder_vid) {
     rock->proj_contact_timer = 0;
     rock->vel = FxVec2::zero();
     rock->acc = FxVec2::zero();
-    rock->SetCenter(ToFxVec2(ToFVec2(holder->GetCenter()) + FVec2::New(4.0F, 1.0F)));
+    rock->SetCenter(holder->GetCenter() + PixelVec2(4, 1));
     holder->holding_vid = rock->vid;
     holder->holding = true;
 }
@@ -127,7 +127,7 @@ void GiveHeldMattockToEnt(State& state, VID holder_vid) {
     mattock->can_collide = false;
     mattock->vel = FxVec2::zero();
     mattock->acc = FxVec2::zero();
-    mattock->SetCenter(ToFxVec2(ToFVec2(holder->GetCenter()) + FVec2::New(4.0F, 1.0F)));
+    mattock->SetCenter(holder->GetCenter() + PixelVec2(4, 1));
     holder->holding_vid = mattock->vid;
     holder->holding = true;
 }

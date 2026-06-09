@@ -3,6 +3,7 @@
 #include "ent.hpp"
 #include "ents/common/common.hpp"
 #include "graphics.hpp"
+#include "render/color.hpp"
 #include "render/particles.hpp"
 #include "render/stone_overlay.hpp"
 #include "render/tile_lighting.hpp"
@@ -32,13 +33,6 @@ FVec2 GetShakeOffset(float shake_pixels) {
         rng::RandomFloat(-shake_pixels, shake_pixels),
         rng::RandomFloat(-shake_pixels, shake_pixels)
     );
-}
-
-Color3 ClampRenderColor(Color3 color, float min_value = 0.0F, float max_value = 2.0F) {
-    color.r = std::clamp(color.r, min_value, max_value);
-    color.g = std::clamp(color.g, min_value, max_value);
-    color.b = std::clamp(color.b, min_value, max_value);
-    return color;
 }
 
 Color3 GetEntLightingColor(State& state, const Ent& ent, Graphics& graphics) {

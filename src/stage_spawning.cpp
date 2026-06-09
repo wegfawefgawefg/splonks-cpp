@@ -105,13 +105,7 @@ void PrepareEntForStageEntry(Ent& ent) {
 
 void PreparePlayerForStageEntry(Ent& player) {
     PrepareEntForStageEntry(player);
-    RestoreEntConditionFromSpec(player);
-    RestoreEntSizeFromSpec(player);
-    RestoreEntHasPhysicsFromSpec(player);
-    RestoreEntCanCollideFromSpec(player);
-    RestoreEntDrawLayerFromSpec(player);
-    RestoreEntRenderEnabledFromSpec(player);
-    RestoreEntAFrameAnimatorFromSpec(player);
+    RestoreEntStageEntryStateFromSpec(player);
 }
 
 } // namespace

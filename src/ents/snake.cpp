@@ -108,7 +108,7 @@ extern const EntSpec kSnakeSpec{
     .condition = EntCondition::Normal,
     .ai_state = EntAiState::Idle,
     .display_state = EntDisplayState::Neutral,
-    .counter_a = EntSpecCounter(static_cast<float>(kSnakeIdleMinFrames)),
+    .counter_a = ToFxScalar(static_cast<float>(kSnakeIdleMinFrames)),
     .damage_vuln = DamageVuln::Vulnerable,
     .damage_anim = aframe_ids::BloodBall,
     .collide_sound = audio_asset_ids::Thud,

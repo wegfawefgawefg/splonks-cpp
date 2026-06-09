@@ -54,6 +54,14 @@ inline int FloorDiv(int value, int divisor) {
     return result;
 }
 
+inline int PositiveModulo(int value, int divisor) {
+    if (divisor <= 0) {
+        return 0;
+    }
+    const int result = value % divisor;
+    return result < 0 ? result + divisor : result;
+}
+
 struct Color3 {
     float r = 1.0F;
     float g = 1.0F;

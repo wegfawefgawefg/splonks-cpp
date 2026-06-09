@@ -6,18 +6,6 @@ namespace splonks {
 
 namespace {
 
-int WrapCoordinate(int value, int size) {
-    if (size <= 0) {
-        return value;
-    }
-
-    int wrapped = value % size;
-    if (wrapped < 0) {
-        wrapped += size;
-    }
-    return wrapped;
-}
-
 std::uint32_t GetTileRowWidth(const std::vector<std::vector<Tile>>& tiles) {
     if (tiles.empty()) {
         return 0;
@@ -165,10 +153,10 @@ const StageExit* Stage::GetExit(StageExitId id) const {
 IVec2 Stage::WrapTileCoord(const IVec2& tile_coord) const {
     IVec2 wrapped = tile_coord;
     if (WrapsX()) {
-        wrapped.x = WrapCoordinate(wrapped.x, static_cast<int>(GetTileWidth()));
+        wrapped.x = PositiveModulo(wrapped.x, static_cast<int>(GetTileWidth()));
     }
     if (WrapsY()) {
-        wrapped.y = WrapCoordinate(wrapped.y, static_cast<int>(GetTileHeight()));
+        wrapped.y = PositiveModulo(wrapped.y, static_cast<int>(GetTileHeight()));
     }
     return wrapped;
 }
@@ -176,10 +164,10 @@ IVec2 Stage::WrapTileCoord(const IVec2& tile_coord) const {
 IVec2 Stage::WrapWorldPos(const IVec2& wc) const {
     IVec2 wrapped = wc;
     if (WrapsX()) {
-        wrapped.x = WrapCoordinate(wrapped.x, static_cast<int>(GetWidth()));
+        wrapped.x = PositiveModulo(wrapped.x, static_cast<int>(GetWidth()));
     }
     if (WrapsY()) {
-        wrapped.y = WrapCoordinate(wrapped.y, static_cast<int>(GetHeight()));
+        wrapped.y = PositiveModulo(wrapped.y, static_cast<int>(GetHeight()));
     }
     return wrapped;
 }

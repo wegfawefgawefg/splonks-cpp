@@ -208,7 +208,7 @@ extern const EntSpec kPistolSpec{
     .facing = Side::Left,
     .condition = EntCondition::Normal,
     .display_state = EntDisplayState::Neutral,
-    .counter_b = EntSpecCounter(kPistolAmmo),
+    .counter_b = ToFxScalar(kPistolAmmo),
     .damage_vuln = DamageVuln::Vulnerable,
     .on_use = OnUseAsPistol,
     .step_logic = StepEntLogicAsPistol,
