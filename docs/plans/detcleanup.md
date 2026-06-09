@@ -411,6 +411,9 @@ Current state:
 - Completed 2026-06-08: giant-spider gem and paste death drops now use fixed
   spawn centers. Blood burst presentation converts that fixed center to render
   coordinates only for the effect.
+- Completed 2026-06-09: box, pot, bones, block, boulder, and icy-platform
+  break/shard particle placement now derives from fixed entity centers and
+  converts to render coordinates only at particle presentation boundaries.
 
 Cleanup:
 

@@ -226,7 +226,11 @@ void OnDeathAsBlock(std::size_t ent_idx, State& state, Audio& audio) {
         return;
     }
     Ent& block = state.ents.ents[ent_idx];
-    SpawnBlockDeathParticles(block.GetRenderCenter(), state.stage.block_anim_id, state);
+    SpawnBlockDeathParticles(
+        sim::ToRenderVec2(block.GetSimCenter()),
+        state.stage.block_anim_id,
+        state
+    );
 }
 
 /** generalize this to all square or rectangular ents somehow */

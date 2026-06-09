@@ -168,7 +168,7 @@ void OnDeathAsBox(std::size_t ent_idx, State& state, Audio& audio) {
     const Ent& box = state.ents.ents[ent_idx];
 
     const Vec2 spawn_pos = box.GetRenderPos();
-    SpawnBreakawayContainerShards(box.GetRenderCenter(), state);
+    SpawnBreakawayContainerShards(sim::ToRenderVec2(box.GetSimCenter()), state);
 
     // Matches ClassicHD's actual open-crate roll order, with unimplemented Shotgun
     // intentionally substituted by Pistol for now. HD/2 use the same common
