@@ -45,11 +45,11 @@ void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount
     }
 
     const float radius_world = radius_tiles * static_cast<float>(kTileSize);
-    const sim::Scalar radius_world_sim = ToFxScalar(radius_world);
-    const sim::FxVec2 world_pos_sim = ToFxVec2(world_pos);
-    const sim::FxAABB area = sim::FxAABB::from_corners(
-        world_pos_sim - sim::FxVec2{radius_world_sim, radius_world_sim},
-        world_pos_sim + sim::FxVec2{radius_world_sim, radius_world_sim}
+    const FxScalar radius_world_sim = ToFxScalar(radius_world);
+    const FxVec2 world_pos_sim = ToFxVec2(world_pos);
+    const FxAABB area = FxAABB::from_corners(
+        world_pos_sim - FxVec2{radius_world_sim, radius_world_sim},
+        world_pos_sim + FxVec2{radius_world_sim, radius_world_sim}
     );
     for (const VID& vid : QueryEntsInAabb(state, area, exclude_ent_vid)) {
         Ent* const ent = state.ents.GetEntMut(vid);
@@ -57,7 +57,7 @@ void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount
             continue;
         }
 
-        const sim::FxVec2 nearest_center =
+        const FxVec2 nearest_center =
             GetNearestWorldPoint(state.stage, world_pos_sim, ent->GetCenter());
         const FVec2 delta = ToFVec2(nearest_center - world_pos_sim);
         if (radius_world > 0.0F) {
@@ -229,7 +229,7 @@ void State::UpdateSidForEnt(std::size_t ent_id, const Graphics& graphics) {
         return;
     }
 
-    const sim::FxAABB broadphase_aabb = ents::common::GetEntBroadphaseAabb(ent, graphics);
+    const FxAABB broadphase_aabb = ents::common::GetEntBroadphaseAabb(ent, graphics);
     sid.Upsert(ent.vid, broadphase_aabb);
 }
 

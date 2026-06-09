@@ -64,8 +64,8 @@ void StepStunTimer(std::size_t ent_idx, State& state) {
 }
 
 void AccelerateHorizontallyTowardSpeed(Ent& ent, float target_speed, float max_acceleration) {
-    const sim::Scalar delta = ToFxScalar(target_speed) - ent.vel.x;
-    const sim::Scalar max_acc = ToFxScalar(max_acceleration);
+    const FxScalar delta = ToFxScalar(target_speed) - ent.vel.x;
+    const FxScalar max_acc = ToFxScalar(max_acceleration);
     ent.acc.x += gfxp::clamp(delta, -max_acc, max_acc);
 }
 
@@ -84,7 +84,7 @@ void AccelerateHorizontallyTowardSpeed(
 
 void DecelerateHorizontallyToStop(Ent& ent, float max_acceleration, float snap_speed) {
     if (ent.vel.x.abs() <= ToFxScalar(snap_speed)) {
-        ent.vel.x = sim::Scalar::zero();
+        ent.vel.x = FxScalar::zero();
         return;
     }
     AccelerateHorizontallyTowardSpeed(ent, 0.0F, max_acceleration);
@@ -101,16 +101,16 @@ void StepTravelSoundWalkerClimber(std::size_t ent_idx, State& state, Audio& audi
         return;
     }
 
-    if (ent.travel_sound_countdown < sim::Scalar::zero()) {
+    if (ent.travel_sound_countdown < FxScalar::zero()) {
         ent.travel_sound_countdown = ent.IsClimbing()
-                                            ? sim::Scalar::from_int(static_cast<std::int32_t>(
+                                            ? FxScalar::from_int(static_cast<std::int32_t>(
                                                   kClimberTravelSoundDistInterval))
-                                            : sim::Scalar::from_int(static_cast<std::int32_t>(
+                                            : FxScalar::from_int(static_cast<std::int32_t>(
                                                   kWalkerClimberTravelSoundDistInterval));
 
         AudioAssetId which_step_sound;
         if (ent.IsClimbing()) {
-            const sim::FxAABB ent_aabb = ent.GetAABB();
+            const FxAABB ent_aabb = ent.GetAABB();
             bool its_rope = false;
             bool its_ladder = false;
             for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent_aabb)) {

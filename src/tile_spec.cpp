@@ -15,22 +15,22 @@ constexpr std::size_t TileIndex(Tile tile) {
     return static_cast<std::size_t>(tile);
 }
 
-Ent* SpawnEntAtCenter(EntType type_, sim::FxVec2 center, State& state) {
+Ent* SpawnEntAtCenter(EntType type_, FxVec2 center, State& state) {
     return world_ops::SpawnEnt(state, type_, [center](Ent& ent) {
         ent.SetCenter(center);
-        ent.vel = sim::FxVec2::zero();
+        ent.vel = FxVec2::zero();
     });
 }
 
 void OnBreakAsBigGoldMaterial(const IVec2& tile_pos, State& state, Audio& audio) {
     (void)audio;
-    const sim::FxVec2 center = sim::PixelVec2(
+    const FxVec2 center = PixelVec2(
         tile_pos.x * static_cast<int>(kTileSize) + 8,
         tile_pos.y * static_cast<int>(kTileSize) + 8
     );
-    SpawnEntAtCenter(EntType::GoldChunk, center + sim::PixelVec2(-4, -1), state);
-    SpawnEntAtCenter(EntType::GoldChunk, center + sim::PixelVec2(0, 1), state);
-    SpawnEntAtCenter(EntType::GoldChunk, center + sim::PixelVec2(4, -1), state);
+    SpawnEntAtCenter(EntType::GoldChunk, center + PixelVec2(-4, -1), state);
+    SpawnEntAtCenter(EntType::GoldChunk, center + PixelVec2(0, 1), state);
+    SpawnEntAtCenter(EntType::GoldChunk, center + PixelVec2(4, -1), state);
     SpawnEntAtCenter(EntType::GoldNugget, center, state);
 }
 

@@ -17,8 +17,8 @@ std::uint32_t SanitizePlayCount(std::uint32_t play_count_value) {
     return std::max(1u, play_count_value);
 }
 
-sim::Scalar DurationScalar(const AFrame& aframe) {
-    return sim::Scalar::from_int(static_cast<std::int32_t>(aframe.duration));
+FxScalar DurationScalar(const AFrame& aframe) {
+    return FxScalar::from_int(static_cast<std::int32_t>(aframe.duration));
 }
 
 void InitializePlayback(
@@ -36,7 +36,7 @@ void InitializePlayback(
 
     if (anim.frame_indices.empty()) {
         animator.current_frame = 0;
-        animator.current_time = sim::Scalar::zero();
+        animator.current_time = FxScalar::zero();
         return;
     }
 
@@ -44,7 +44,7 @@ void InitializePlayback(
     case AnimPlaybackMode::Forward:
     case AnimPlaybackMode::PingPong:
         animator.current_frame = 0;
-        animator.current_time = sim::Scalar::zero();
+        animator.current_time = FxScalar::zero();
         break;
     case AnimPlaybackMode::Reverse:
         animator.current_frame = static_cast<std::uint32_t>(anim.frame_indices.size() - 1);
@@ -68,7 +68,7 @@ bool FinishOrRestart(
     AFrameAnimator& animator,
     const AFrameAnim& anim,
     const AFrameDb& aframe_db,
-    sim::Scalar finished_time
+    FxScalar finished_time
 ) {
     if (animator.loop) {
         RestartPlayback(animator, anim, aframe_db);
@@ -100,7 +100,7 @@ void StepForward(
 
     if (static_cast<std::size_t>(animator.current_frame) + 1 < anim.frame_indices.size()) {
         animator.current_frame += 1;
-        animator.current_time = sim::Scalar::zero();
+        animator.current_time = FxScalar::zero();
         return;
     }
 
@@ -118,7 +118,7 @@ void StepReverse(
     const AFrameDb& aframe_db
 ) {
     animator.current_time -= animator.speed;
-    if (animator.current_time > sim::Scalar::zero()) {
+    if (animator.current_time > FxScalar::zero()) {
         return;
     }
 
@@ -130,7 +130,7 @@ void StepReverse(
         return;
     }
 
-    (void)FinishOrRestart(animator, anim, aframe_db, sim::Scalar::zero());
+    (void)FinishOrRestart(animator, anim, aframe_db, FxScalar::zero());
 }
 
 void StepPingPong(
@@ -153,7 +153,7 @@ void StepPingPong(
 
         if (static_cast<std::size_t>(animator.current_frame) + 1 < anim.frame_indices.size()) {
             animator.current_frame += 1;
-            animator.current_time = sim::Scalar::zero();
+            animator.current_time = FxScalar::zero();
             return;
         }
 
@@ -163,7 +163,7 @@ void StepPingPong(
     }
 
     animator.current_time -= animator.speed;
-    if (animator.current_time > sim::Scalar::zero()) {
+    if (animator.current_time > FxScalar::zero()) {
         return;
     }
 
@@ -186,7 +186,7 @@ void StepPingPong(
         return;
     }
 
-    animator.current_time = sim::Scalar::zero();
+    animator.current_time = FxScalar::zero();
     animator.finished = true;
 }
 
@@ -212,14 +212,14 @@ void AFrameAnimator::SetAnim(AFrameId anim_id_value) {
     }
 
     current_frame = 0;
-    current_time = sim::Scalar::zero();
+    current_time = FxScalar::zero();
     anim_id = anim_id_value;
     ResetPlaybackState(*this);
 }
 
 void AFrameAnimator::SetForcedFrame(std::uint32_t frame_index) {
     current_frame = frame_index;
-    current_time = sim::Scalar::zero();
+    current_time = FxScalar::zero();
     finished = false;
     playback_dirty = false;
     ping_pong_forward = playback_mode != AnimPlaybackMode::Reverse;
@@ -230,7 +230,7 @@ void AFrameAnimator::SetSpeed(float speed_value) {
 }
 
 void AFrameAnimator::ResetSpeed() {
-    speed = sim::Scalar::from_int(1);
+    speed = FxScalar::from_int(1);
 }
 
 void AFrameAnimator::SetPlaybackMode(AnimPlaybackMode playback_mode_value) {
@@ -251,7 +251,7 @@ void AFrameAnimator::Play(
 ) {
     anim_id = anim_id_value;
     current_frame = 0;
-    current_time = sim::Scalar::zero();
+    current_time = FxScalar::zero();
     animate = true;
     loop = loop_value;
     playback_mode = playback_mode_value;

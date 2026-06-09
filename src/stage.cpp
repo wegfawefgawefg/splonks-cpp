@@ -20,24 +20,24 @@ std::vector<std::vector<TileRotation>> MakeEmptyTileRotationGrid(
     return tile_rotations;
 }
 
-std::vector<std::vector<sim::FxVec2>> MakeEmptyFluidVelocityGrid(
+std::vector<std::vector<FxVec2>> MakeEmptyFluidVelocityGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::FxVec2>> fluid_velocity;
+    std::vector<std::vector<FxVec2>> fluid_velocity;
     fluid_velocity.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        fluid_velocity.push_back(std::vector<sim::FxVec2>(row.size(), sim::FxVec2::zero()));
+        fluid_velocity.push_back(std::vector<FxVec2>(row.size(), FxVec2::zero()));
     }
     return fluid_velocity;
 }
 
-std::vector<std::vector<sim::FxVec2>> MakeEmptyFluidVec2Grid(
+std::vector<std::vector<FxVec2>> MakeEmptyFluidVec2Grid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::FxVec2>> grid;
+    std::vector<std::vector<FxVec2>> grid;
     grid.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        grid.push_back(std::vector<sim::FxVec2>(row.size(), sim::FxVec2::zero()));
+        grid.push_back(std::vector<FxVec2>(row.size(), FxVec2::zero()));
     }
     return grid;
 }
@@ -75,24 +75,24 @@ std::vector<std::vector<Tile>> MakeEmptyFluidTileGrid(
     return fluid_tiles;
 }
 
-std::vector<std::vector<sim::Scalar>> MakeEmptyFluidAmountGrid(
+std::vector<std::vector<FxScalar>> MakeEmptyFluidAmountGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::Scalar>> fluid_amount;
+    std::vector<std::vector<FxScalar>> fluid_amount;
     fluid_amount.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        fluid_amount.push_back(std::vector<sim::Scalar>(row.size(), sim::Scalar::zero()));
+        fluid_amount.push_back(std::vector<FxScalar>(row.size(), FxScalar::zero()));
     }
     return fluid_amount;
 }
 
-std::vector<std::vector<sim::Scalar>> MakeEmptyFluidDisplayAmountGrid(
+std::vector<std::vector<FxScalar>> MakeEmptyFluidDisplayAmountGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::Scalar>> fluid_display_amount;
+    std::vector<std::vector<FxScalar>> fluid_display_amount;
     fluid_display_amount.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        fluid_display_amount.push_back(std::vector<sim::Scalar>(row.size(), sim::Scalar::zero()));
+        fluid_display_amount.push_back(std::vector<FxScalar>(row.size(), FxScalar::zero()));
     }
     return fluid_display_amount;
 }
@@ -129,7 +129,7 @@ void SyncTileRotationGridToTiles(
 }
 
 void SyncFluidVelocityGridToTiles(
-    std::vector<std::vector<sim::FxVec2>>& grid,
+    std::vector<std::vector<FxVec2>>& grid,
     const std::vector<std::vector<Tile>>& tiles
 ) {
     if (grid.size() != tiles.size()) {
@@ -146,7 +146,7 @@ void SyncFluidVelocityGridToTiles(
 }
 
 void SyncFluidVec2GridToTiles(
-    std::vector<std::vector<sim::FxVec2>>& grid,
+    std::vector<std::vector<FxVec2>>& grid,
     const std::vector<std::vector<Tile>>& tiles
 ) {
     if (grid.size() != tiles.size()) {
@@ -197,7 +197,7 @@ void SyncFluidByteGridToTiles(
 }
 
 void SyncFluidDisplayAmountGridToTiles(
-    std::vector<std::vector<sim::Scalar>>& grid,
+    std::vector<std::vector<FxScalar>>& grid,
     const std::vector<std::vector<Tile>>& tiles
 ) {
     if (grid.size() != tiles.size()) {
@@ -231,7 +231,7 @@ void SyncFluidTileGridToTiles(
 }
 
 void SyncFluidAmountGridToTiles(
-    std::vector<std::vector<sim::Scalar>>& grid,
+    std::vector<std::vector<FxScalar>>& grid,
     const std::vector<std::vector<Tile>>& tiles
 ) {
     if (grid.size() != tiles.size()) {
@@ -330,7 +330,7 @@ void Stage::SyncFluidVelocityGrid() {
     SyncFluidVelocityGridToTiles(fluid_velocity, tiles);
 }
 
-void Stage::SetFluidGravityOverride(const IVec2& pos, sim::FxVec2 gravity_value) {
+void Stage::SetFluidGravityOverride(const IVec2& pos, FxVec2 gravity_value) {
     SyncTileInstanceMetadataGrid();
     const IVec2 tile_pos = WrapTileCoord(pos);
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
@@ -349,12 +349,12 @@ void Stage::ClearFluidGravityOverride(const IVec2& pos) {
         return;
     }
     fluid_gravity[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
-        sim::FxVec2::zero();
+        FxVec2::zero();
     fluid_gravity_strength[static_cast<std::size_t>(tile_pos.y)]
                           [static_cast<std::size_t>(tile_pos.x)] = 0;
 }
 
-void Stage::AddFluidTempGravity(const IVec2& pos, sim::FxVec2 gravity_value) {
+void Stage::AddFluidTempGravity(const IVec2& pos, FxVec2 gravity_value) {
     SyncTileInstanceMetadataGrid();
     const IVec2 tile_pos = WrapTileCoord(pos);
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
@@ -371,7 +371,7 @@ void Stage::ClearFluidTempGravity(const IVec2& pos) {
         return;
     }
     fluid_temp_gravity[static_cast<std::size_t>(tile_pos.y)]
-                      [static_cast<std::size_t>(tile_pos.x)] = sim::FxVec2::zero();
+                      [static_cast<std::size_t>(tile_pos.x)] = FxVec2::zero();
 }
 
 void Stage::SetTile(const IVec2& pos, Tile tile) {
@@ -403,12 +403,12 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
         fluid_tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
             Tile::Air;
         fluid_amount[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
-            sim::Scalar::zero();
+            FxScalar::zero();
         fluid_display_amount[static_cast<std::size_t>(tile_pos.y)]
-                            [static_cast<std::size_t>(tile_pos.x)] = sim::Scalar::zero();
+                            [static_cast<std::size_t>(tile_pos.x)] = FxScalar::zero();
     }
     fluid_velocity[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
-        sim::FxVec2::zero();
+        FxVec2::zero();
     tile_change_generation += 1;
 }
 
@@ -420,10 +420,10 @@ void Stage::SetFluidTile(const IVec2& pos, Tile tile) {
     }
     Tile& stored = fluid_tiles[static_cast<std::size_t>(tile_pos.y)]
                               [static_cast<std::size_t>(tile_pos.x)];
-    sim::Scalar& amount = fluid_amount[static_cast<std::size_t>(tile_pos.y)]
+    FxScalar& amount = fluid_amount[static_cast<std::size_t>(tile_pos.y)]
                                       [static_cast<std::size_t>(tile_pos.x)];
-    const sim::Scalar new_amount =
-        GetTileSpec(tile).simulated_fluid ? sim::Scalar::from_int(1) : sim::Scalar::zero();
+    const FxScalar new_amount =
+        GetTileSpec(tile).simulated_fluid ? FxScalar::from_int(1) : FxScalar::zero();
     if (stored == tile && amount == new_amount) {
         return;
     }
@@ -433,7 +433,7 @@ void Stage::SetFluidTile(const IVec2& pos, Tile tile) {
                         [static_cast<std::size_t>(tile_pos.x)] =
                             new_amount;
     fluid_velocity[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
-        sim::FxVec2::zero();
+        FxVec2::zero();
     tile_change_generation += 1;
 }
 
@@ -536,8 +536,8 @@ const StageLight* Stage::GetLight(VID vid) const {
     return nullptr;
 }
 
-void Stage::SetTilesInRectWc(sim::FxAABB area, Tile tile_type) {
-    const sim::Scalar tile_size = sim::Scalar::from_int(static_cast<int>(kTileSize));
+void Stage::SetTilesInRectWc(FxAABB area, Tile tile_type) {
+    const FxScalar tile_size = FxScalar::from_int(static_cast<int>(kTileSize));
     SetTilesInRect(
         IAABB::New(
             IVec2::New((area.tl.x / tile_size).floor_int(),

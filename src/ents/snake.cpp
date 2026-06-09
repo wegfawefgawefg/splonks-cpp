@@ -22,7 +22,7 @@ constexpr int kSnakeIdleChance = 100;
 
 void StartIdle(Ent& snake, State& state) {
     snake.ai_state = EntAiState::Idle;
-    snake.counter_a = sim::Scalar::from_int(
+    snake.counter_a = FxScalar::from_int(
         state.drng.RandomIntInclusive(kSnakeIdleMinFrames, kSnakeIdleMaxFrames));
     common::DecelerateHorizontallyToStop(snake, kSnakeWalkAcceleration);
     TrySetAnim(snake, EntDisplayState::Neutral);
@@ -59,8 +59,8 @@ void StepEntLogicAsSnake(
     if (snake.ai_state == EntAiState::Idle) {
         common::DecelerateHorizontallyToStop(snake, kSnakeWalkAcceleration);
         TrySetAnim(snake, EntDisplayState::Neutral);
-        if (snake.counter_a > sim::Scalar::zero()) {
-            snake.counter_a -= sim::Scalar::from_int(1);
+        if (snake.counter_a > FxScalar::zero()) {
+            snake.counter_a -= FxScalar::from_int(1);
             return;
         }
 

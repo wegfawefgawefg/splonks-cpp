@@ -17,7 +17,7 @@
 #include "network/net_lobby.hpp"
 #include "quest_stage_loader.hpp"
 #include "raw_aframe.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "simulation_snapshot.hpp"
 #include "stage_spawning.hpp"
 #include "stage_progression.hpp"
@@ -425,7 +425,7 @@ bool ApplyDetWorldOpsSmokeMutations(State& state, const char*& failed_step) {
         [](Ent& ent) {
             ent.pos = ToFxVec2(FVec2::New(96.0F, 64.0F));
             ent.vel = ToFxVec2(FVec2::New(1.0F, -2.0F));
-            ent.acc = sim::FxVec2::zero();
+            ent.acc = FxVec2::zero();
         }
     );
     if (rock == nullptr) {
@@ -580,8 +580,8 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
     }
 
     player->pos = ToFxVec2(FVec2::New(4.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - ToFVec2(player->size).y));
-    player->vel = sim::FxVec2::zero();
-    player->acc = sim::FxVec2::zero();
+    player->vel = FxVec2::zero();
+    player->acc = FxVec2::zero();
     player->grounded = false;
     player->condition = EntCondition::Normal;
     player->stun_timer = 0;
@@ -591,8 +591,8 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
     const auto spawn = [&](EntType type, FVec2 pos) -> bool {
         Ent* const ent = world_ops::SpawnEnt(state, type, [&](Ent& spawned) {
             spawned.pos = ToFxVec2(pos);
-            spawned.vel = sim::FxVec2::zero();
-            spawned.acc = sim::FxVec2::zero();
+            spawned.vel = FxVec2::zero();
+            spawned.acc = FxVec2::zero();
         });
         return ent != nullptr;
     };
@@ -622,8 +622,8 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
     state.settings.fluid.transfer_per_step = ToFxScalar(0.55F);
     state.settings.fluid.pressure_strength = ToFxScalar(0.65F);
     state.settings.fluid.velocity_damping = ToFxScalar(0.86F);
-    state.settings.fluid.gravity_x = sim::Scalar::zero();
-    state.settings.fluid.gravity_y = sim::Scalar::from_int(1);
+    state.settings.fluid.gravity_x = FxScalar::zero();
+    state.settings.fluid.gravity_y = FxScalar::from_int(1);
 
     for (int x = 6; x <= 18; ++x) {
         if (!SetScenarioForegroundTile(state, IVec2::New(x, 18), Tile::CaveBlock)) {
@@ -649,7 +649,7 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
     Ent* const box = world_ops::SpawnEnt(state, EntType::Box, [](Ent& ent) {
         ent.pos = ToFxVec2(FVec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize)));
         ent.vel = ToFxVec2(FVec2::New(0.0F, 0.0F));
-        ent.acc = sim::FxVec2::zero();
+        ent.acc = FxVec2::zero();
     });
     if (box == nullptr) {
         failed_step = "spawn fluid scenario box";
@@ -660,8 +660,8 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
         22.0F * static_cast<float>(kTileSize),
         20.0F * static_cast<float>(kTileSize) - ToFVec2(player->size).y
     ));
-    player->vel = sim::FxVec2::zero();
-    player->acc = sim::FxVec2::zero();
+    player->vel = FxVec2::zero();
+    player->acc = FxVec2::zero();
     return true;
 }
 
@@ -687,8 +687,8 @@ bool PrepareShopDetReplayScenario(State& state, const char*& failed_step) {
         16.0F * static_cast<float>(kTileSize),
         10.0F * static_cast<float>(kTileSize) - ToFVec2(player->size).y
     ));
-    player->vel = sim::FxVec2::zero();
-    player->acc = sim::FxVec2::zero();
+    player->vel = FxVec2::zero();
+    player->acc = FxVec2::zero();
     player->grounded = false;
     state.mode = Mode::Playing;
     return true;
@@ -850,8 +850,8 @@ bool PlaceCarryTransitionSmokePlayers(State& state, Graphics& graphics, const ch
     p1->pos = ToFxVec2(FVec2::New(8.0F * tile, floor_y - ToFVec2(p1->size).y));
     p2->pos = ToFxVec2(FVec2::New(9.0F * tile, floor_y - ToFVec2(p2->size).y));
     for (Ent* const player : {p1, p2}) {
-        player->vel = sim::FxVec2::zero();
-        player->acc = sim::FxVec2::zero();
+        player->vel = FxVec2::zero();
+        player->acc = FxVec2::zero();
         player->condition = EntCondition::Normal;
         player->stun_timer = 0;
         player->grounded = true;
@@ -1800,7 +1800,7 @@ bool RunJoinBarrierProtocolSmoke() {
     topology.barrier_frame = host.net_session.lockstep_next_frame_to_step;
     topology.player_count = 1;
     topology.player_ids[0] = 6;
-    const sim::FxVec2 topology_pos = ToFxVec2(FVec2::New(128.0F, 64.0F));
+    const FxVec2 topology_pos = ToFxVec2(FVec2::New(128.0F, 64.0F));
     topology.player_pos_x_raw[0] = topology_pos.x.raw_value();
     topology.player_pos_y_raw[0] = topology_pos.y.raw_value();
     topology.removed_player_count = 1;
@@ -2755,11 +2755,11 @@ bool RunRetainedReconnectSmoke() {
     Ent* const held = world_ops::SpawnEnt(state, EntType::Rock, [](Ent& ent) {
         ent.pos = ToFxVec2(FVec2::New(136.0F, 192.0F));
         ent.vel = ToFxVec2(FVec2::New(1.0F, -2.0F));
-        ent.counter_a = sim::Scalar::from_int(3);
+        ent.counter_a = FxScalar::from_int(3);
     });
     Ent* const back = world_ops::SpawnEnt(state, EntType::Cape, [](Ent& ent) {
         ent.pos = ToFxVec2(FVec2::New(120.0F, 192.0F));
-        ent.counter_b = sim::Scalar::from_int(4);
+        ent.counter_b = FxScalar::from_int(4);
     });
     if (held == nullptr || back == nullptr) {
         std::cerr << "retained reconnect smoke failed: attached ent spawn failed\n";
@@ -2813,8 +2813,8 @@ bool RunRetainedReconnectSmoke() {
     }
 
     state.net_session.reconnect_spawn_mode = network::NetReconnectSpawnMode::RetainedAtLastPosition;
-    const sim::FxVec2 spawn_pos = network::ResolveReconnectSpawnPos(state, retained, 1);
-    if (spawn_pos != sim::PixelVec2(128, 192)) {
+    const FxVec2 spawn_pos = network::ResolveReconnectSpawnPos(state, retained, 1);
+    if (spawn_pos != PixelVec2(128, 192)) {
         std::cerr << "retained reconnect smoke failed: retained spawn pos mismatch\n";
         return false;
     }
@@ -4721,9 +4721,9 @@ bool CheckInputLockstepSmoke() {
                 std::cerr << "input lockstep carry-transition smoke failed: peer-owned player could not re-pickup host-owned player\n";
                 return false;
             }
-            const sim::FxVec2 throw_velocity{
-                sim::Scalar::from_int(2),
-                sim::Scalar::from_int(-2),
+            const FxVec2 throw_velocity{
+                FxScalar::from_int(2),
+                FxScalar::from_int(-2),
             };
             if (!ents::common::TryThrowEntByVid(
                     *peer0_p2,

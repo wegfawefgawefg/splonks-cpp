@@ -28,18 +28,18 @@ constexpr float kRageSpiderHopSpeedX = 2.5F;
 constexpr float kGiantSpiderHopSpeedX = 2.5F;
 constexpr float kSpiderIdleSpeedThreshold = 0.1F;
 
-std::optional<sim::FxVec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
+std::optional<FxVec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
     const Ent* const player = FindNearestPlayer(state, ent.GetCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const sim::FxVec2 ent_center = ent.GetCenter();
-    const sim::FxVec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetCenter());
+    const FxVec2 ent_center = ent.GetCenter();
+    const FxVec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetCenter());
     return player_center - ent_center;
 }
 
-void SpawnGiantSpiderLoot(sim::FxVec2 center, State& state) {
+void SpawnGiantSpiderLoot(FxVec2 center, State& state) {
     const int gem_count = state.drng.RandomIntInclusive(1, 3);
     for (int i = 0; i < gem_count; ++i) {
         EntType gem_type = EntType::EmeraldBig;
@@ -57,9 +57,9 @@ void SpawnGiantSpiderLoot(sim::FxVec2 center, State& state) {
 
         if (world_ops::SpawnEnt(state, gem_type, [&](Ent& gem) {
                 gem.SetCenter(center);
-                gem.vel = sim::FxVec2{
-                    RandomSimScalar(state.drng, sim::Scalar::from_int(-2), sim::Scalar::from_int(2)),
-                    sim::Scalar::from_int(-2),
+                gem.vel = FxVec2{
+                    RandomSimScalar(state.drng, FxScalar::from_int(-2), FxScalar::from_int(2)),
+                    FxScalar::from_int(-2),
                 };
             }) == nullptr) {
             continue;
@@ -68,7 +68,7 @@ void SpawnGiantSpiderLoot(sim::FxVec2 center, State& state) {
 
     (void)world_ops::SpawnEnt(state, EntType::Paste, [&](Ent& paste) {
         paste.SetCenter(center);
-        paste.vel = sim::FxVec2::zero();
+        paste.vel = FxVec2::zero();
     });
 }
 
@@ -80,20 +80,20 @@ void HandleGiantSpiderDeath(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& giant_spider = state.ents.ents[ent_idx];
-    const sim::FxVec2 center = giant_spider.GetCenter();
+    const FxVec2 center = giant_spider.GetCenter();
     SpawnDamageEffectAnimBurst(aframe_ids::BloodBall, ToFVec2(center), state);
     SpawnGiantSpiderLoot(center, state);
 }
 
 void FaceTowardNearestPlayer(Ent& ent, const State& state) {
-    const std::optional<sim::FxVec2> player_delta = GetNearestPlayerDelta(ent, state);
+    const std::optional<FxVec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value()) {
         return;
     }
 
-    if (player_delta->x < sim::Scalar::zero()) {
+    if (player_delta->x < FxScalar::zero()) {
         ent.facing = Side::Left;
-    } else if (player_delta->x > sim::Scalar::zero()) {
+    } else if (player_delta->x > FxScalar::zero()) {
         ent.facing = Side::Right;
     }
 }
@@ -108,10 +108,10 @@ void StepPassiveSpider(Ent& ent, State& state) {
         return;
     }
 
-    if (ent.counter_a > sim::Scalar::zero()) {
-        ent.counter_a -= sim::Scalar::from_int(1);
+    if (ent.counter_a > FxScalar::zero()) {
+        ent.counter_a -= FxScalar::from_int(1);
         if (ent.vel.x.abs() < ToFxScalar(kSpiderIdleSpeedThreshold)) {
-            ent.vel.x = sim::Scalar::zero();
+            ent.vel.x = FxScalar::zero();
         }
         return;
     }
@@ -120,11 +120,11 @@ void StepPassiveSpider(Ent& ent, State& state) {
         ent.facing = ent.facing == Side::Left ? Side::Right : Side::Left;
     }
 
-    ent.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(2, 4));
+    ent.vel.y = -FxScalar::from_int(state.drng.RandomIntInclusive(2, 4));
     ent.vel.x = ToFxScalar(
         ent.facing == Side::Left ? -kPassiveSpiderHopSpeedX : kPassiveSpiderHopSpeedX
     );
-    ent.counter_a = sim::Scalar::from_int(state.drng.RandomIntInclusive(
+    ent.counter_a = FxScalar::from_int(state.drng.RandomIntInclusive(
         kPassiveSpiderCooldownMinFrames,
         kPassiveSpiderCooldownMaxFrames
     ));
@@ -138,10 +138,10 @@ void TryHopTowardPlayer(
     int hop_speed_y_min,
     int hop_speed_y_max
 ) {
-    const std::optional<sim::FxVec2> player_delta = GetNearestPlayerDelta(ent, state);
+    const std::optional<FxVec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value() ||
-        gfxp::length_sq(*player_delta) > sim::Scalar::from_int(aggro_distance * aggro_distance)) {
-        ent.counter_a = sim::Scalar::from_int(state.drng.RandomIntInclusive(
+        gfxp::length_sq(*player_delta) > FxScalar::from_int(aggro_distance * aggro_distance)) {
+        ent.counter_a = FxScalar::from_int(state.drng.RandomIntInclusive(
             kAggroSpiderCooldownMinFrames,
             kAggroSpiderCooldownMaxFrames
         ));
@@ -149,9 +149,9 @@ void TryHopTowardPlayer(
     }
 
     FaceTowardNearestPlayer(ent, state);
-    ent.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(hop_speed_y_min, hop_speed_y_max));
+    ent.vel.y = -FxScalar::from_int(state.drng.RandomIntInclusive(hop_speed_y_min, hop_speed_y_max));
     ent.vel.x = ToFxScalar(ent.facing == Side::Left ? -hop_speed_x : hop_speed_x);
-    ent.counter_a = sim::Scalar::from_int(state.drng.RandomIntInclusive(
+    ent.counter_a = FxScalar::from_int(state.drng.RandomIntInclusive(
         kAggroSpiderCooldownMinFrames,
         kAggroSpiderCooldownMaxFrames
     ));
@@ -174,10 +174,10 @@ void StepAggroSpider(
         return;
     }
 
-    if (ent.counter_a > sim::Scalar::zero()) {
-        ent.counter_a -= sim::Scalar::from_int(1);
+    if (ent.counter_a > FxScalar::zero()) {
+        ent.counter_a -= FxScalar::from_int(1);
         if (ent.vel.x.abs() < ToFxScalar(kSpiderIdleSpeedThreshold)) {
-            ent.vel.x = sim::Scalar::zero();
+            ent.vel.x = FxScalar::zero();
         }
         return;
     }

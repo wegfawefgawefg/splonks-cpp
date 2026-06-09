@@ -3,7 +3,7 @@
 #include "audio.hpp"
 #include "aframe_id.hpp"
 #include "math_types.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 
 namespace splonks::ents::store_light {
@@ -53,7 +53,7 @@ EntDamageEffectResult OnDamageAsStoreLight(
     light.can_collide = true;
     light.damage_vuln = DamageVuln::Immune;
     light.collide_sound = audio_asset_ids::LightBreak;
-    light.light_strength = sim::Scalar::zero();
+    light.light_strength = FxScalar::zero();
     light.light_radius = 0;
     (void)PlayEntCenterSoundEmitter(state, light, audio_asset_ids::LightBreak);
     return EntDamageEffectResult::Consumed;

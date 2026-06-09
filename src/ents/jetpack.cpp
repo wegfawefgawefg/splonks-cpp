@@ -123,13 +123,13 @@ void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio
     if (refill_fuel) {
         jetpack.counter_a = ToFxScalar(kFuel);
     }
-    if (jetpack.counter_a <= sim::Scalar::zero()) {
+    if (jetpack.counter_a <= FxScalar::zero()) {
         return;
     }
 
     if (held_by_vid.has_value()) {
         if (Ent* const holder = state.ents.GetEntMut(*held_by_vid)) {
-            const sim::Scalar jetpack_max_upspeed = ToFxScalar(-2.0F);
+            const FxScalar jetpack_max_upspeed = ToFxScalar(-2.0F);
             if (holder->vel.y > jetpack_max_upspeed) {
                 holder->acc.y = ToFxScalar(-0.6F);
                 holder->vel.y = std::min(holder->vel.y, jetpack_max_upspeed);
@@ -140,17 +140,17 @@ void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio
         }
     }
 
-    jetpack.travel_sound_countdown -= sim::Scalar::from_int(1);
-    if (jetpack.travel_sound_countdown < sim::Scalar::zero()) {
+    jetpack.travel_sound_countdown -= FxScalar::from_int(1);
+    if (jetpack.travel_sound_countdown < FxScalar::zero()) {
         jetpack.travel_sound_countdown =
-            sim::Scalar::from_int(static_cast<std::int32_t>(kTravelSoundDistInterval));
+            FxScalar::from_int(static_cast<std::int32_t>(kTravelSoundDistInterval));
         const AudioAssetId sound_effect =
             jetpack.travel_sound == TravelSound::One ? audio_asset_ids::Jetpack1
                                                      : audio_asset_ids::Jetpack2;
         (void)PlayEntSoundEmitter(state, jetpack, sound_effect);
         jetpack.IncTravelSound();
     }
-    jetpack.counter_a -= sim::Scalar::from_int(1);
+    jetpack.counter_a -= FxScalar::from_int(1);
 
     const FVec2 center = ToFVec2(jetpack.GetCenter());
     SpawnJetpackSmoke(state, center + FVec2::New(3.0F, 3.0F));
@@ -193,7 +193,7 @@ void StepEntLogicAsJetpack(
     }
 
     if (jetpack.use_state.down == false) {
-        jetpack.travel_sound_countdown = sim::Scalar::zero();
+        jetpack.travel_sound_countdown = FxScalar::zero();
     }
 }
 

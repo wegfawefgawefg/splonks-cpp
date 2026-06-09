@@ -8,7 +8,7 @@
 #include "aframe_id.hpp"
 #include "particles/particle_specs.hpp"
 #include "particles/scripted_particle.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 #include "tile_spec.hpp"
@@ -76,7 +76,7 @@ IVec2 WorldPosToUnwrappedTileCoord(const FVec2& world_pos) {
     return IVec2::New(FloorToTileCoord(world_pos.x), FloorToTileCoord(world_pos.y));
 }
 
-IVec2 WorldPosToUnwrappedTileCoord(sim::FxVec2 world_pos) {
+IVec2 WorldPosToUnwrappedTileCoord(FxVec2 world_pos) {
     return IVec2::New(
         FloorDiv(world_pos.x.floor_int(), static_cast<int>(kTileSize)),
         FloorDiv(world_pos.y.floor_int(), static_cast<int>(kTileSize))
@@ -148,7 +148,7 @@ std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurfaceAtWorldPos(
 
 std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurfaceAtWorldPos(
     const Stage& stage,
-    sim::FxVec2 world_pos
+    FxVec2 world_pos
 ) {
     return QueryCollidableTileOrBorderSurface(stage, WorldPosToUnwrappedTileCoord(world_pos));
 }
@@ -159,22 +159,22 @@ bool IsClimbableTileQuery(const std::optional<WorldTileQueryResult>& tile_query)
 }
 
 std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
-    const sim::FxVec2 center = ent.GetCenter();
-    constexpr sim::Scalar kMaxHorizontalOffset =
-        sim::Scalar::from_raw((sim::Scalar::scale * 5) / 2);
-    const sim::Scalar horizontal_offset = std::min(
+    const FxVec2 center = ent.GetCenter();
+    constexpr FxScalar kMaxHorizontalOffset =
+        FxScalar::from_raw((FxScalar::scale * 5) / 2);
+    const FxScalar horizontal_offset = std::min(
         kMaxHorizontalOffset,
-        std::max(sim::Scalar::zero(), (ent.size.x / sim::Scalar::from_int(2)) - sim::Scalar::from_int(1))
+        std::max(FxScalar::zero(), (ent.size.x / FxScalar::from_int(2)) - FxScalar::from_int(1))
     );
-    const std::array<sim::FxVec2, 3> probes = {{
-        sim::FxVec2{center.x - horizontal_offset, center.y},
+    const std::array<FxVec2, 3> probes = {{
+        FxVec2{center.x - horizontal_offset, center.y},
         center,
-        sim::FxVec2{center.x + horizontal_offset, center.y},
+        FxVec2{center.x + horizontal_offset, center.y},
     }};
 
-    for (const sim::FxVec2& probe : probes) {
+    for (const FxVec2& probe : probes) {
         const std::optional<WorldTileQueryResult> tile_query =
-            QueryTileAtWorldPos(state.stage, sim::ToPixelIVec2Round(probe));
+            QueryTileAtWorldPos(state.stage, ToPixelIVec2Round(probe));
         if (IsClimbableTileQuery(tile_query)) {
             return tile_query->tile_pos;
         }
@@ -183,13 +183,13 @@ std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
 }
 
 void SnapToClimbTile(Ent& ent, const IVec2& tile_pos) {
-    sim::FxVec2 center = ent.GetCenter();
-    const sim::Scalar target_x =
-        sim::Scalar::from_int(tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2));
-    const sim::Scalar delta = std::clamp(
+    FxVec2 center = ent.GetCenter();
+    const FxScalar target_x =
+        FxScalar::from_int(tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2));
+    const FxScalar delta = std::clamp(
         target_x - center.x,
-        sim::Scalar::from_int(-kClimbSnapSpeedPixels),
-        sim::Scalar::from_int(kClimbSnapSpeedPixels)
+        FxScalar::from_int(-kClimbSnapSpeedPixels),
+        FxScalar::from_int(kClimbSnapSpeedPixels)
     );
     center.x += delta;
     ent.SetCenter(center);
@@ -205,15 +205,15 @@ std::optional<Side> GetWallSlideSide(
         return std::nullopt;
     }
 
-    const sim::FxAABB aabb = ent.GetAABB();
+    const FxAABB aabb = ent.GetAABB();
     const auto side_blocked = [&](Side side) {
         const bool left = side == Side::Left;
-        const sim::Scalar probe_x = left
-            ? aabb.tl.x - sim::Scalar::from_int(1)
-            : aabb.br.x + sim::Scalar::from_int(1);
-        const sim::FxAABB probe = sim::FxAABB::from_corners(
-            sim::FxVec2{probe_x, aabb.tl.y + sim::Scalar::from_int(1)},
-            sim::FxVec2{probe_x, aabb.br.y - sim::Scalar::from_int(1)}
+        const FxScalar probe_x = left
+            ? aabb.tl.x - FxScalar::from_int(1)
+            : aabb.br.x + FxScalar::from_int(1);
+        const FxAABB probe = FxAABB::from_corners(
+            FxVec2{probe_x, aabb.tl.y + FxScalar::from_int(1)},
+            FxVec2{probe_x, aabb.br.y - FxScalar::from_int(1)}
         );
         return AabbHitsBlockingWorldGeometryOrImpassableEnts(state, graphics, probe, ent.vid);
     };
@@ -232,10 +232,10 @@ std::optional<MeatSlimeSurface> GetGroundSurface(const Ent& ent, const State& st
         return std::nullopt;
     }
 
-    const sim::FxAABB aabb = ent.GetAABB();
-    const sim::FxVec2 center_support_world{
+    const FxAABB aabb = ent.GetAABB();
+    const FxVec2 center_support_world{
         ent.GetCenter().x,
-        aabb.br.y + sim::Scalar::from_int(1),
+        aabb.br.y + FxScalar::from_int(1),
     };
     if (const std::optional<MeatSlimeSurface> center_surface =
             QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_support_world)) {
@@ -320,11 +320,11 @@ void MaybeSpawnTopMeatSlime(Ent& ent, State& state) {
 }
 
 std::optional<MeatSlimeSurface> GetCeilingSurface(const Ent& ent, const State& state) {
-    const sim::FxAABB aabb = ent.GetAABB();
-    const sim::Scalar probe_y = aabb.tl.y - sim::Scalar::from_int(1);
-    const sim::FxAABB probe = sim::FxAABB::from_corners(
-        sim::FxVec2{aabb.tl.x + sim::Scalar::from_int(1), probe_y},
-        sim::FxVec2{aabb.br.x - sim::Scalar::from_int(1), probe_y}
+    const FxAABB aabb = ent.GetAABB();
+    const FxScalar probe_y = aabb.tl.y - FxScalar::from_int(1);
+    const FxAABB probe = FxAABB::from_corners(
+        FxVec2{aabb.tl.x + FxScalar::from_int(1), probe_y},
+        FxVec2{aabb.br.x - FxScalar::from_int(1), probe_y}
     );
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, probe)) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
@@ -336,7 +336,7 @@ std::optional<MeatSlimeSurface> GetCeilingSurface(const Ent& ent, const State& s
         }
     }
 
-    const sim::FxVec2 center_probe{ent.GetCenter().x, probe_y};
+    const FxVec2 center_probe{ent.GetCenter().x, probe_y};
     return QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_probe);
 }
 
@@ -357,13 +357,13 @@ void MaybeSpawnBottomMeatSlime(Ent& ent, State& state) {
 }
 
 std::optional<MeatSlimeSurface> GetSideSurface(const Ent& ent, const State& state, Side side) {
-    const sim::FxAABB aabb = ent.GetAABB();
-    const sim::Scalar probe_x = side == Side::Left
-        ? aabb.tl.x - sim::Scalar::from_int(1)
-        : aabb.br.x + sim::Scalar::from_int(1);
-    const sim::FxAABB probe = sim::FxAABB::from_corners(
-        sim::FxVec2{probe_x, aabb.tl.y + sim::Scalar::from_int(1)},
-        sim::FxVec2{probe_x, aabb.br.y - sim::Scalar::from_int(1)}
+    const FxAABB aabb = ent.GetAABB();
+    const FxScalar probe_x = side == Side::Left
+        ? aabb.tl.x - FxScalar::from_int(1)
+        : aabb.br.x + FxScalar::from_int(1);
+    const FxAABB probe = FxAABB::from_corners(
+        FxVec2{probe_x, aabb.tl.y + FxScalar::from_int(1)},
+        FxVec2{probe_x, aabb.br.y - FxScalar::from_int(1)}
     );
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, probe)) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
@@ -375,7 +375,7 @@ std::optional<MeatSlimeSurface> GetSideSurface(const Ent& ent, const State& stat
         }
     }
 
-    const sim::FxVec2 center_probe{probe_x, ent.GetCenter().y};
+    const FxVec2 center_probe{probe_x, ent.GetCenter().y};
     return QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_probe);
 }
 
@@ -474,13 +474,13 @@ void StepTravelSoundFleshGuy(std::size_t ent_idx, State& state) {
     ent.travel_sound_countdown -= ent.dist_traveled_this_frame;
 
     if ((!ent.grounded && !ent.IsClimbing()) ||
-        ent.dist_traveled_this_frame <= sim::Scalar::zero()) {
+        ent.dist_traveled_this_frame <= FxScalar::zero()) {
         return;
     }
 
-    if (ent.travel_sound_countdown < sim::Scalar::zero()) {
+    if (ent.travel_sound_countdown < FxScalar::zero()) {
         ent.travel_sound_countdown =
-            sim::Scalar::from_int(static_cast<std::int32_t>(kWalkerClimberTravelSoundDistInterval));
+            FxScalar::from_int(static_cast<std::int32_t>(kWalkerClimberTravelSoundDistInterval));
         const AudioAssetId sound = ent.travel_sound == TravelSound::One
                                        ? audio_asset_ids::FleshGuyStep0
                                        : audio_asset_ids::FleshGuyStep1;
@@ -562,8 +562,8 @@ void ControlEntAsFleshGuy(
 
     const bool climbing = flesh_guy.IsClimbing();
     if (climbing) {
-        flesh_guy.acc.x = sim::Scalar::zero();
-        flesh_guy.vel.x = sim::Scalar::zero();
+        flesh_guy.acc.x = FxScalar::zero();
+        flesh_guy.vel.x = FxScalar::zero();
     } else if (control.left && !control.right) {
         common::AccelerateHorizontallyTowardSpeed(
             flesh_guy,
@@ -587,8 +587,8 @@ void ControlEntAsFleshGuy(
     }
 
     if (control.stop) {
-        flesh_guy.acc = sim::FxVec2::zero();
-        flesh_guy.vel = sim::FxVec2::zero();
+        flesh_guy.acc = FxVec2::zero();
+        flesh_guy.vel = FxVec2::zero();
     }
 }
 
@@ -653,27 +653,27 @@ void StepEntPhysicsAsFleshGuy(
     } else if (!flesh_guy.IsClimbing() && (control.up || control.down)) {
         SetMovementFlag(flesh_guy, EntMovementFlag::Climbing, true);
         flesh_guy.grounded = false;
-        flesh_guy.vel = sim::FxVec2::zero();
-        flesh_guy.acc = sim::FxVec2::zero();
+        flesh_guy.vel = FxVec2::zero();
+        flesh_guy.acc = FxVec2::zero();
     }
 
     bool jumped_this_frame = false;
     if (flesh_guy.IsClimbing() && climb_tile.has_value()) {
         SnapToClimbTile(flesh_guy, *climb_tile);
         flesh_guy.grounded = false;
-        flesh_guy.vel.x = sim::Scalar::zero();
-        flesh_guy.acc.x = sim::Scalar::zero();
-        flesh_guy.acc.y = sim::Scalar::zero();
+        flesh_guy.vel.x = FxScalar::zero();
+        flesh_guy.acc.x = FxScalar::zero();
+        flesh_guy.acc.y = FxScalar::zero();
         if (control.up && !control.down) {
             flesh_guy.vel.y = -ToFxScalar(kClimbSpeed);
         } else if (control.down && !control.up) {
             flesh_guy.vel.y = ToFxScalar(kClimbSpeed);
         } else {
-            flesh_guy.vel.y = sim::Scalar::zero();
+            flesh_guy.vel.y = FxScalar::zero();
         }
         if (control.jump_pressed) {
             SetMovementFlag(flesh_guy, EntMovementFlag::Climbing, false);
-            flesh_guy.vel.y = control.down ? sim::Scalar::zero() : -ToFxScalar(kJumpImpulse);
+            flesh_guy.vel.y = control.down ? FxScalar::zero() : -ToFxScalar(kJumpImpulse);
             flesh_guy.grounded = false;
             flesh_guy.coyote_time = 0;
             jumped_this_frame = !control.down;

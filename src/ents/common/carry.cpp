@@ -4,7 +4,7 @@
 #include "ent/spec.hpp"
 #include "ent/spec_restore.hpp"
 #include "controls.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
@@ -26,10 +26,10 @@ void ApplyHeldState(Ent& ent, bool reset_anim = true) {
     ent.proj_contact_damage_type = spec.proj_contact_damage_type;
     ent.proj_contact_damage_amount = spec.proj_contact_damage_amount;
     ent.proj_contact_timer = 0;
-    ent.vel = sim::FxVec2::zero();
-    ent.acc = sim::FxVec2::zero();
+    ent.vel = FxVec2::zero();
+    ent.acc = FxVec2::zero();
     RemoveEffect(ent, EffectId::NoGravityUntilContact);
-    ent.rotation = sim::Scalar::zero();
+    ent.rotation = FxScalar::zero();
     ent.hang_side.reset();
     ent.hang_count = 0;
     ent.climb_detach_cooldown = 0;
@@ -62,7 +62,7 @@ void RestoreDetachedCarryEnt(Ent& ent) {
 }
 
 void SnapPlacedAttachToPixels(Ent& ent) {
-    ent.pos = sim::PixelVec2(ent.pos.x.round_int(),
+    ent.pos = PixelVec2(ent.pos.x.round_int(),
                              ent.pos.y.round_int());
 }
 
@@ -145,12 +145,12 @@ void SyncHeldAttachForHolder(
     const EntSpec& holding_spec = GetEntSpec(holding->type_);
     const bool preserve_held_aim = holding_spec.preserve_held_aim;
     const Side aimed_facing = holding->facing;
-    const sim::Scalar aimed_rotation = holding->rotation;
+    const FxScalar aimed_rotation = holding->rotation;
 
     holding->has_physics = false;
     holding->can_collide = false;
-    holding->vel = sim::FxVec2::zero();
-    holding->acc = sim::FxVec2::zero();
+    holding->vel = FxVec2::zero();
+    holding->acc = FxVec2::zero();
     holding->held_by_vid = holder.vid;
     holding->attach_mode = AttachMode::Held;
     ApplyHeldState(*holding, false);
@@ -162,11 +162,11 @@ void SyncHeldAttachForHolder(
                               ? DrawLayer::Background
                               : DrawLayer::Foreground;
 
-    const sim::FxVec2 hold_offset = sim::FxVec2::from_pixels(4, 0);
-    const sim::FxVec2 holder_center = holder.GetCenter() + sim::FxVec2::from_pixels(0, 1);
-    const sim::FxVec2 held_pos_target =
+    const FxVec2 hold_offset = FxVec2::from_pixels(4, 0);
+    const FxVec2 holder_center = holder.GetCenter() + FxVec2::from_pixels(0, 1);
+    const FxVec2 held_pos_target =
         holder.facing == Side::Left
-            ? holder_center + sim::FxVec2{-hold_offset.x, hold_offset.y}
+            ? holder_center + FxVec2{-hold_offset.x, hold_offset.y}
             : holder_center + hold_offset;
     SetVisualCenterForEnt(*holding, graphics, held_pos_target);
     SnapPlacedAttachToPixels(*holding);
@@ -190,8 +190,8 @@ void SyncBackAttachForHolder(
 
     back_item->has_physics = false;
     back_item->can_collide = false;
-    back_item->vel = sim::FxVec2::zero();
-    back_item->acc = sim::FxVec2::zero();
+    back_item->vel = FxVec2::zero();
+    back_item->acc = FxVec2::zero();
     back_item->facing = holder.facing;
     back_item->held_by_vid = holder.vid;
     back_item->attach_mode = AttachMode::Back;
@@ -199,13 +199,13 @@ void SyncBackAttachForHolder(
     const bool holder_climbing = HasMovementFlag(holder, EntMovementFlag::Climbing);
     const bool holder_hanging = HasMovementFlag(holder, EntMovementFlag::Hanging);
 
-    sim::FxVec2 back_offset{sim::Scalar::from_int(-3), sim::Scalar::zero()};
+    FxVec2 back_offset{FxScalar::from_int(-3), FxScalar::zero()};
     if (holder_climbing) {
-        back_offset = sim::FxVec2{sim::Scalar::from_int(-2), sim::Scalar::zero()};
+        back_offset = FxVec2{FxScalar::from_int(-2), FxScalar::zero()};
         TrySetAnim(*back_item, EntDisplayState::Climbing);
         back_item->draw_layer = DrawLayer::Foreground;
     } else if (holder_hanging) {
-        back_offset = sim::FxVec2{sim::Scalar::from_int(-7), sim::Scalar::from_int(4)};
+        back_offset = FxVec2{FxScalar::from_int(-7), FxScalar::from_int(4)};
         TrySetAnim(*back_item, EntDisplayState::Hanging);
         back_item->draw_layer = DrawLayer::Foreground;
     } else {
@@ -213,10 +213,10 @@ void SyncBackAttachForHolder(
         TrySetAnim(*back_item, EntDisplayState::Neutral);
     }
 
-    const sim::FxVec2 holder_center = holder.GetCenter();
-    const sim::FxVec2 held_pos_target =
+    const FxVec2 holder_center = holder.GetCenter();
+    const FxVec2 held_pos_target =
         holder.facing == Side::Left
-            ? holder_center + sim::FxVec2{-back_offset.x, back_offset.y}
+            ? holder_center + FxVec2{-back_offset.x, back_offset.y}
             : holder_center + back_offset;
     back_item->SetCenter(held_pos_target);
     SnapPlacedAttachToPixels(*back_item);
@@ -227,7 +227,7 @@ void SyncBackAttachForHolder(
 void ApplyThrowState(
     Ent& thrower,
     Ent& thrown,
-    sim::FxVec2 throw_velocity,
+    FxVec2 throw_velocity,
     State& state,
     const Graphics& graphics,
     Audio& audio
@@ -258,19 +258,19 @@ void ApplyThrowState(
         RemoveEffect(thrown, EffectId::NoGravityUntilContact);
     }
 
-    const sim::FxVec2 thrower_center = thrower.GetCenter();
+    const FxVec2 thrower_center = thrower.GetCenter();
     if (thrower.size.y <= thrown.size.y) {
-        const sim::Scalar delta = (thrown.size.y - thrower.size.y) / sim::Scalar::from_int(2);
-        thrown.SetCenter(thrower_center - sim::FxVec2{sim::Scalar::zero(), delta});
+        const FxScalar delta = (thrown.size.y - thrower.size.y) / FxScalar::from_int(2);
+        thrown.SetCenter(thrower_center - FxVec2{FxScalar::zero(), delta});
     } else {
         thrown.SetCenter(thrower_center);
     }
 
     if (IsPlayerEnt(thrown, state)) {
         thrown.vel = throw_velocity;
-        thrown.acc = sim::FxVec2::zero();
+        thrown.acc = FxVec2::zero();
     } else {
-        thrown.vel = sim::FxVec2::zero();
+        thrown.vel = FxVec2::zero();
         thrown.acc = throw_velocity;
     }
     state.UpdateSidForEnt(thrown.vid.id, graphics);
@@ -479,8 +479,8 @@ void DropHeldItemFromEnt(Ent& ent, State& state) {
     if (IsPlayerEnt(*held, state)) {
         const VID dropped_by_vid = ent.vid;
         ReleaseEntFromHolder(*held, state);
-        held->vel = sim::FxVec2::zero();
-        held->acc = sim::FxVec2::zero();
+        held->vel = FxVec2::zero();
+        held->acc = FxVec2::zero();
         state.contact.AddInteractionCooldown(
             ent.vid,
             held->vid,
@@ -499,8 +499,8 @@ void DropHeldItemFromEnt(Ent& ent, State& state) {
         return;
     }
 
-    const sim::Scalar throw_x =
-        sim::Scalar::from_int(ent.facing == Side::Left ? -3 : 3);
+    const FxScalar throw_x =
+        FxScalar::from_int(ent.facing == Side::Left ? -3 : 3);
     held->held_by_vid.reset();
     held->attach_mode = AttachMode::None;
     StopUsingEnt(*held);
@@ -515,8 +515,8 @@ void DropHeldItemFromEnt(Ent& ent, State& state) {
     held->proj_contact_damage_type = held_spec.proj_contact_damage_type;
     held->proj_contact_damage_amount = held_spec.proj_contact_damage_amount;
     held->proj_contact_timer = kProjContactDuration;
-    held->vel = sim::FxVec2{throw_x, sim::Scalar::from_int(-1)};
-    held->acc = sim::FxVec2::zero();
+    held->vel = FxVec2{throw_x, FxScalar::from_int(-1)};
+    held->acc = FxVec2::zero();
     RemoveEffect(*held, EffectId::NoGravityUntilContact);
 }
 
@@ -561,8 +561,8 @@ bool TryDropEntByVid(
     }
 
     ReleaseEntFromHolder(*held, state);
-    held->vel = sim::FxVec2::zero();
-    held->acc = sim::FxVec2::zero();
+    held->vel = FxVec2::zero();
+    held->acc = FxVec2::zero();
     state.UpdateSidForEnt(held->vid.id, graphics);
     return true;
 }
@@ -570,7 +570,7 @@ bool TryDropEntByVid(
 bool TryThrowEntByVid(
     VID thrower_vid,
     VID thrown_vid,
-    sim::FxVec2 throw_velocity,
+    FxVec2 throw_velocity,
     State& state,
     const Graphics& graphics,
     Audio& audio
@@ -710,7 +710,7 @@ void UpdateCarryAndBackItems(
                     } else {
                     if (!ent.IsHanging() && !ent.IsClimbing() && ent.holding_timer == 0) {
                         ent.holding_timer = kDefaultHoldingTimer;
-                        const sim::FxAABB aabb = GetContactAabbForEnt(ent, graphics);
+                        const FxAABB aabb = GetContactAabbForEnt(ent, graphics);
                         trying_to_pick_up_these =
                             QueryEntsInAabb(state, aabb, ent.vid);
                     }
@@ -762,37 +762,37 @@ void UpdateCarryAndBackItems(
 
             if (thrown_vid.has_value()) {
                 if (Ent* const thrown = state.ents.GetEntMut(*thrown_vid)) {
-                    sim::FxVec2 throw_vel = sim::FxVec2::zero();
+                    FxVec2 throw_vel = FxVec2::zero();
                     if (trying_to_go_left) {
-                        throw_vel.x = sim::Scalar::from_int(-10);
+                        throw_vel.x = FxScalar::from_int(-10);
                     } else if (trying_to_go_right) {
-                        throw_vel.x = sim::Scalar::from_int(10);
+                        throw_vel.x = FxScalar::from_int(10);
                     }
                     if (trying_to_go_up) {
-                        throw_vel.y = sim::Scalar::from_int(-10);
+                        throw_vel.y = FxScalar::from_int(-10);
                     }
                     if (trying_to_go_down) {
-                        throw_vel.y = sim::Scalar::from_int(10);
+                        throw_vel.y = FxScalar::from_int(10);
                     }
                     if (!trying_to_go_up && !trying_to_go_down &&
                         (trying_to_go_left || trying_to_go_right)) {
-                        throw_vel.y = sim::Scalar::from_int(-2);
+                        throw_vel.y = FxScalar::from_int(-2);
                     }
                     if (mitt_throw) {
                         const int throw_direction =
-                            throw_vel.x < sim::Scalar::zero() ? -1 :
-                            throw_vel.x > sim::Scalar::zero() ? 1 :
+                            throw_vel.x < FxScalar::zero() ? -1 :
+                            throw_vel.x > FxScalar::zero() ? 1 :
                             ent.facing == Side::Left ? -1 : 1;
-                        throw_vel.x += sim::Scalar::from_int(throw_direction) *
+                        throw_vel.x += FxScalar::from_int(throw_direction) *
                                        ToFxScalar(mitt_throw_boost);
                         if (!trying_to_go_up && !trying_to_go_down) {
                             throw_vel.y = ToFxScalar(-0.4F);
                         } else if (trying_to_go_down) {
-                            throw_vel.y = sim::Scalar::from_int(6);
+                            throw_vel.y = FxScalar::from_int(6);
                         }
                     }
 
-                    const sim::FxVec2 scaled_throw_vel =
+                    const FxVec2 scaled_throw_vel =
                         throw_vel * ent.throw_velocity_scale;
                     (void)TryThrowEntByVid(
                         ent.vid,

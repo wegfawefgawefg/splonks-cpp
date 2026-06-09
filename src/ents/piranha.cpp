@@ -28,23 +28,23 @@ constexpr float kPiranhaTargetDistance = 96.0F;
 constexpr float kPiranhaBiteDistance = 12.0F;
 
 bool IsPiranhaInWater(const Ent& piranha, const State& state) {
-    const sim::FxVec2 center = piranha.GetCenter();
+    const FxVec2 center = piranha.GetCenter();
     const float cutoff = ToFloat(state.settings.fluid.render_cutoff_amount);
     return IsWaterAtWorldPos(state.stage, center, cutoff) ||
            IsWaterAtWorldPos(
                state.stage,
-               center + sim::FxVec2{sim::Scalar::zero(), piranha.size.y * ToFxScalar(0.35F)},
+               center + FxVec2{FxScalar::zero(), piranha.size.y * ToFxScalar(0.35F)},
                cutoff
            );
 }
 
-std::optional<sim::FxVec2> FindPiranhaTarget(const Ent& piranha, const State& state) {
+std::optional<FxVec2> FindPiranhaTarget(const Ent& piranha, const State& state) {
     const Ent* const player = FindNearestPlayer(state, piranha.GetCenter());
     if (player == nullptr) {
         return std::nullopt;
     }
 
-    const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, piranha.GetCenter(), player->GetCenter());
+    const FxVec2 delta = GetNearestWorldDelta(state.stage, piranha.GetCenter(), player->GetCenter());
     if (gfxp::length_sq(delta) >
         ToFxScalar(kPiranhaTargetDistance * kPiranhaTargetDistance)) {
         return std::nullopt;
@@ -53,21 +53,21 @@ std::optional<sim::FxVec2> FindPiranhaTarget(const Ent& piranha, const State& st
 }
 
 void PatrolWater(Ent& piranha) {
-    const sim::Scalar swim_acc = ToFxScalar(kPiranhaSwimAcceleration);
-    const sim::Scalar target_x = piranha.facing == Side::Left
+    const FxScalar swim_acc = ToFxScalar(kPiranhaSwimAcceleration);
+    const FxScalar target_x = piranha.facing == Side::Left
                                      ? -ToFxScalar(kPiranhaMaxSwimSpeed)
                                      : ToFxScalar(kPiranhaMaxSwimSpeed);
     piranha.acc.x += gfxp::clamp(target_x - piranha.vel.x, -swim_acc, swim_acc);
     piranha.acc.y += gfxp::clamp(-piranha.vel.y, -swim_acc, swim_acc);
 }
 
-void ChaseTarget(Ent& piranha, sim::FxVec2 target, const Stage& stage) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(stage, piranha.GetCenter(), target);
-    const sim::FxVec2 direction = sim::NormalizeOrZero(delta);
+void ChaseTarget(Ent& piranha, FxVec2 target, const Stage& stage) {
+    const FxVec2 delta = GetNearestWorldDelta(stage, piranha.GetCenter(), target);
+    const FxVec2 direction = FxNormalizeOrZero(delta);
     piranha.acc += direction * ToFxScalar(kPiranhaChaseAcceleration);
-    if (delta.x < sim::Scalar::zero()) {
+    if (delta.x < FxScalar::zero()) {
         piranha.facing = Side::Left;
-    } else if (delta.x > sim::Scalar::zero()) {
+    } else if (delta.x > FxScalar::zero()) {
         piranha.facing = Side::Right;
     }
 }
@@ -78,12 +78,12 @@ struct SwimProbeResult {
 };
 
 SwimProbeResult QuerySwimProbes(const Ent& piranha, const State& state) {
-    const sim::FxAABB aabb = piranha.GetAABB();
-    const sim::FxVec2 center = piranha.GetCenter();
+    const FxAABB aabb = piranha.GetAABB();
+    const FxVec2 center = piranha.GetCenter();
     const float cutoff = ToFloat(state.settings.fluid.render_cutoff_amount);
     return SwimProbeResult{
         .center = IsWaterAtWorldPos(state.stage, center, cutoff),
-        .bottom = IsWaterAtWorldPos(state.stage, sim::FxVec2{center.x, aabb.br.y}, cutoff),
+        .bottom = IsWaterAtWorldPos(state.stage, FxVec2{center.x, aabb.br.y}, cutoff),
     };
 }
 
@@ -113,7 +113,7 @@ void StepEntLogicAsPiranha(
     }
 
     bool biting = false;
-    if (const std::optional<sim::FxVec2> target = FindPiranhaTarget(piranha, state)) {
+    if (const std::optional<FxVec2> target = FindPiranhaTarget(piranha, state)) {
         biting = gfxp::length_sq(GetNearestWorldDelta(state.stage, piranha.GetCenter(), *target)) <=
                  ToFxScalar(kPiranhaBiteDistance * kPiranhaBiteDistance);
         ChaseTarget(piranha, *target, state.stage);
@@ -145,10 +145,10 @@ void StepEntPhysicsAsPiranha(
         return;
     }
 
-    const sim::FxVec2 old_pos = piranha.pos;
+    const FxVec2 old_pos = piranha.pos;
     common::PrePartialEulerStep(ent_idx, state, dt);
     piranha.vel = piranha.vel * ToFxScalar(kPiranhaWaterDamping);
-    const sim::Scalar max_swim_speed = ToFxScalar(kPiranhaMaxSwimSpeed);
+    const FxScalar max_swim_speed = ToFxScalar(kPiranhaMaxSwimSpeed);
     piranha.vel.x = gfxp::clamp(piranha.vel.x, -max_swim_speed, max_swim_speed);
     piranha.vel.y = gfxp::clamp(piranha.vel.y, -max_swim_speed, max_swim_speed);
 

@@ -450,7 +450,7 @@ Add a thin Splonks-owned header that gives gameplay code domain names instead of
 using upstream aliases everywhere:
 
 ```text
-src/sim/fxp.hpp
+src/fxp.hpp
 ```
 
 Proposed contents:
@@ -468,11 +468,11 @@ different scalar or add game-specific helpers without editing the vendored copy.
 
 Tasks:
 
-- [x] Add `src/sim/fxp.hpp`.
-- [x] Define `splonks::sim::Scalar`, `splonks::sim::FxVec2`, and
-      `splonks::sim::FxAABB`.
+- [x] Add `src/fxp.hpp`.
+- [x] Define `splonks::FxScalar`, `splonks::FxVec2`, and
+      `splonks::FxAABB`.
 - [x] Add conversion helpers between current `splonks::Vec2` and
-      `splonks::sim::FxVec2`.
+      `splonks::FxVec2`.
 - [x] Keep conversion names explicit, such as `ToFxVec2` and `ToFVec2`,
       so render-boundary float conversion is visible.
 
@@ -575,8 +575,8 @@ but the bridge must be explicit and temporary.
 
 Tasks:
 
-- [x] Add helpers for quantizing float `Vec2` and scalar floats to `sim::FxVec2`
-      / `sim::Scalar`.
+- [x] Add helpers for quantizing float `Vec2` and scalar floats to `FxVec2`
+      / `FxScalar`.
 - [x] Replace raw `AddFloat` hashing for authoritative fields with fixed raw
       integer hashing.
 - [ ] Prefer migrating storage to fixed-point for P0 gameplay fields over
@@ -601,8 +601,8 @@ Current implementation status:
 
 - `src/vendor/gfxp/include/gfxp` contains the vendored header-only library from
   upstream commit `fb10177`.
-- `src/sim/fxp.hpp` defines `splonks::sim::Scalar` as `gfxp::Fixed12`,
-  `splonks::sim::FxVec2`, `ToFxScalar`, `ToFxVec2`, and `ToFVec2`.
+- `src/fxp.hpp` defines `splonks::FxScalar` as `gfxp::Fixed12`,
+  `splonks::FxVec2`, `ToFxScalar`, `ToFxVec2`, and `ToFVec2`.
 - `src/state_fingerprint.cpp` no longer hashes raw IEEE float bits. All
   previously audited float inputs now hash the raw `Fixed12` value produced by
   the explicit Splonks conversion boundary.
@@ -663,7 +663,7 @@ Do not start with these unless they block the hashed authoritative domain:
 ### Success Condition
 
 - Splonks contains a traceable vendored `gfxp` copy.
-- Splonks has a local `sim::Scalar` / `sim::FxVec2` vocabulary.
+- Splonks has a local `FxScalar` / `FxVec2` vocabulary.
 - Every current raw float hash input is either migrated to fixed-point/integer
   state, hashed through an explicit fixed-point quantization, or documented as
   non-authoritative and removed from the relevant gameplay/network hash.

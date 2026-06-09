@@ -1207,7 +1207,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             cell.has_liquid =
                 GetTileSpec(fluid_tile).simulated_fluid &&
                 amount > kMinVisibleDisplayLevel;
-            sim::Scalar& stored_display_amount =
+            FxScalar& stored_display_amount =
                 state.stage.fluid_display_amount[static_cast<std::size_t>(y)]
                                                 [static_cast<std::size_t>(x)];
             float display_amount = ToFloat(stored_display_amount);
@@ -1223,7 +1223,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     display_amount = 0.0F;
                 }
                 if (display_amount <= effective_display_cutoff || cell.terrain_solid) {
-                    stored_display_amount = sim::Scalar::zero();
+                    stored_display_amount = FxScalar::zero();
                     continue;
                 }
 

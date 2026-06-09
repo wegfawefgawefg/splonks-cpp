@@ -4,7 +4,7 @@
 #include "aframe_id.hpp"
 #include "hud/types.hpp"
 #include "math_types.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "utils.hpp"
 #include "vid.hpp"
 
@@ -77,7 +77,7 @@ enum class EffectHookType : std::uint8_t {
 struct EffectInstance {
     EffectId id = EffectId::None;
     std::int32_t count = 0;
-    sim::Scalar value = sim::Scalar::zero();
+    FxScalar value = FxScalar::zero();
     std::uint32_t frames_remaining = 0;
 };
 
@@ -124,7 +124,7 @@ struct BoxedEntEffects {
 struct EffectModifier {
     EffectModifierTarget target = EffectModifierTarget::GravityScale;
     EffectModifierOp op = EffectModifierOp::Add;
-    sim::Scalar value = sim::Scalar::zero();
+    FxScalar value = FxScalar::zero();
 };
 
 struct EffectHookContext {

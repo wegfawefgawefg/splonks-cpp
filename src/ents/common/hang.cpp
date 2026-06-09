@@ -1,7 +1,7 @@
 #include "ents/common/common.hpp"
 
 #include "controls.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "tile.hpp"
 #include "tile_spec.hpp"
 #include "world_query.hpp"
@@ -40,13 +40,13 @@ int GetRequiredClimbProbeHits(const JumpAndClimbTuning& tuning) {
     return static_cast<int>(std::clamp<std::uint32_t>(tuning.climb_required_probe_hits, 1, 3));
 }
 
-sim::FxAABB SimPointAabb(sim::Scalar x, sim::Scalar y) {
-    const sim::FxVec2 point{x, y};
-    return sim::FxAABB::from_corners(point, point);
+FxAABB SimPointAabb(FxScalar x, FxScalar y) {
+    const FxVec2 point{x, y};
+    return FxAABB::from_corners(point, point);
 }
 
-sim::Scalar HalfWidthFloor(const Ent& ent) {
-    return sim::Scalar::from_pixels((ent.size.x / 2).floor_int());
+FxScalar HalfWidthFloor(const Ent& ent) {
+    return FxScalar::from_pixels((ent.size.x / 2).floor_int());
 }
 
 void AddClimbDebugLabel(State& state, const FVec2& world_pos, const char* text) {
@@ -164,8 +164,8 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
 ) {
     std::optional<IVec2> best_tile = std::nullopt;
     int best_hits = 0;
-    sim::Scalar best_score = sim::Scalar::zero();
-    const sim::FxVec2 ent_center = ent.GetCenter();
+    FxScalar best_score = FxScalar::zero();
+    const FxVec2 ent_center = ent.GetCenter();
 
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
@@ -188,13 +188,13 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
             continue;
         }
 
-        const sim::FxVec2 tile_center = sim::FxVec2::from_pixels(
+        const FxVec2 tile_center = FxVec2::from_pixels(
             tile_query->tile_pos.x * static_cast<int>(kTileSize) + 8,
             tile_query->tile_pos.y * static_cast<int>(kTileSize) + 8
         );
-        const sim::Scalar dx = (tile_center.x - ent_center.x).abs();
-        const sim::Scalar dy = (tile_center.y - ent_center.y).abs();
-        const sim::Scalar score = dx + (dy / sim::Scalar::from_int(4));
+        const FxScalar dx = (tile_center.x - ent_center.x).abs();
+        const FxScalar dy = (tile_center.y - ent_center.y).abs();
+        const FxScalar score = dx + (dy / FxScalar::from_int(4));
         if (!best_tile.has_value() || hits > best_hits || (hits == best_hits && score < best_score)) {
             best_tile = tile_query->tile_pos;
             best_hits = hits;
@@ -223,13 +223,13 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
     const JumpAndClimbTuning& tuning
 ) {
     const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, ToFVec2(ent.pos), tuning);
-    const sim::FxAABB aabb = ent.GetAABB();
+    const FxAABB aabb = ent.GetAABB();
     const std::array<IVec2, 3> normal_probe_points = {
         ToIVec2(probes.left),
         ToIVec2(probes.center),
         ToIVec2(probes.right),
     };
-    const int probe_y = (aabb.br.y + sim::Scalar::from_pixels(1)).floor_int();
+    const int probe_y = (aabb.br.y + FxScalar::from_pixels(1)).floor_int();
     const std::array<IVec2, 3> probe_points = {
         IVec2::New(FloorToInt(probes.left.x), probe_y),
         IVec2::New(FloorToInt(probes.center.x), probe_y),
@@ -246,8 +246,8 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
     }
 
     const std::array<IVec2, 2> edge_probe_points = {
-        IVec2::New((aabb.tl.x - sim::Scalar::from_pixels(1)).floor_int(), probe_y),
-        IVec2::New((aabb.br.x + sim::Scalar::from_pixels(1)).floor_int(), probe_y),
+        IVec2::New((aabb.tl.x - FxScalar::from_pixels(1)).floor_int(), probe_y),
+        IVec2::New((aabb.br.x + FxScalar::from_pixels(1)).floor_int(), probe_y),
     };
     for (const IVec2& edge_probe_point : edge_probe_points) {
         AddClimbDebugRect(state, ToVec2(edge_probe_point), DebugAnnotationColor{255, 240, 64, 255});
@@ -291,14 +291,14 @@ bool CanAttachDownToClimbAnchor(const ClimbAnchor& climb_anchor, const State& st
 }
 
 void SnapEntToClimbTileCenterline(Ent& ent, const IVec2& tile_pos) {
-    sim::FxVec2 center = ent.GetCenter();
-    center.x = sim::Scalar::from_int(tile_pos.x * static_cast<int>(kTileSize) + 8);
+    FxVec2 center = ent.GetCenter();
+    center.x = FxScalar::from_int(tile_pos.x * static_cast<int>(kTileSize) + 8);
     ent.SetCenter(center);
 }
 
 void SnapEntHangYToTile(Ent& ent) {
-    const int tile_y = (ent.pos.y / sim::Scalar::from_int(static_cast<std::int32_t>(kTileSize))).round_int();
-    ent.pos.y = sim::Scalar::from_int(tile_y * static_cast<int>(kTileSize));
+    const int tile_y = (ent.pos.y / FxScalar::from_int(static_cast<std::int32_t>(kTileSize))).round_int();
+    ent.pos.y = FxScalar::from_int(tile_y * static_cast<int>(kTileSize));
 }
 
 bool HasClimbableTileAtPosition(
@@ -358,8 +358,8 @@ void AddClimbDebugAnnotations(const Ent& ent, State& state, const JumpAndClimbTu
     }
 }
 
-bool IsHangableImpassableInRect(sim::FxAABB area, const State& state, VID self_vid) {
-    const sim::FxVec2 anchor = area.center();
+bool IsHangableImpassableInRect(FxAABB area, const State& state, VID self_vid) {
+    const FxVec2 anchor = area.center();
     for (const VID& other_vid : QueryEntsInAabb(state, area, self_vid)) {
         const Ent* const other = state.ents.GetEnt(other_vid);
         if (other == nullptr || !other->active || !other->impassable || !other->can_be_hung_on) {
@@ -375,7 +375,7 @@ bool IsHangableImpassableInRect(sim::FxAABB area, const State& state, VID self_v
 }
 
 bool IsBlockedForHangProbe(
-    sim::FxAABB area,
+    FxAABB area,
     const State& state,
     bool check_tiles,
     bool check_ents,
@@ -465,7 +465,7 @@ void ApplyAirGravity(
 ) {
     float gravity = ToFloat(state.stage.gravity) * tuning.gravity_scale;
     if (tuning.jump_hold_gravity_frames > 0 && ent.jump_hold_gravity_frames_remaining > 0 &&
-        control.jump && ent.vel.y < sim::Scalar::zero()) {
+        control.jump && ent.vel.y < FxScalar::zero()) {
         gravity = 0.0F;
         ent.jump_hold_gravity_frames_remaining -= 1;
     } else {
@@ -493,15 +493,15 @@ bool IsSideBlockedForHang(
     bool check_tiles,
     bool check_ents
 ) {
-    const sim::FxAABB aabb = ent.GetAABB();
-    const sim::FxAABB wall_area =
+    const FxAABB aabb = ent.GetAABB();
+    const FxAABB wall_area =
         left_side
-            ? sim::FxAABB::from_corners(
-                  sim::FxVec2{aabb.tl.x - sim::Scalar::from_pixels(1), aabb.tl.y},
-                  sim::FxVec2{aabb.tl.x, aabb.br.y})
-            : sim::FxAABB::from_corners(
-                  sim::FxVec2{aabb.br.x, aabb.tl.y},
-                  sim::FxVec2{aabb.br.x + sim::Scalar::from_pixels(1), aabb.br.y});
+            ? FxAABB::from_corners(
+                  FxVec2{aabb.tl.x - FxScalar::from_pixels(1), aabb.tl.y},
+                  FxVec2{aabb.tl.x, aabb.br.y})
+            : FxAABB::from_corners(
+                  FxVec2{aabb.br.x, aabb.tl.y},
+                  FxVec2{aabb.br.x + FxScalar::from_pixels(1), aabb.br.y});
     return IsBlockedForHangProbe(
         wall_area,
         state,
@@ -515,8 +515,8 @@ bool IsSideBlockedForHang(
 bool IsHdHangProbeBlocked(
     const Ent& ent,
     State& state,
-    sim::Scalar x,
-    sim::Scalar y,
+    FxScalar x,
+    FxScalar y,
     bool check_tiles,
     bool check_ents,
     bool use_hangable_tiles
@@ -538,14 +538,14 @@ bool CanCornerHangOnSide(
     bool check_tiles,
     bool check_ents
 ) {
-    const sim::FxAABB aabb = ent.GetAABB();
-    const sim::Scalar side_x =
-        left_side ? aabb.tl.x - sim::Scalar::from_pixels(1)
-                  : aabb.br.x + sim::Scalar::from_pixels(1);
-    const sim::Scalar upper_probe_y_a = aabb.tl.y + sim::Scalar::from_pixels(2);
-    const sim::Scalar upper_probe_y_b = aabb.tl.y + sim::Scalar::from_pixels(3);
-    const sim::Scalar center_x = aabb.tl.x + HalfWidthFloor(ent);
-    const sim::Scalar below_probe_y = aabb.br.y + sim::Scalar::from_pixels(1);
+    const FxAABB aabb = ent.GetAABB();
+    const FxScalar side_x =
+        left_side ? aabb.tl.x - FxScalar::from_pixels(1)
+                  : aabb.br.x + FxScalar::from_pixels(1);
+    const FxScalar upper_probe_y_a = aabb.tl.y + FxScalar::from_pixels(2);
+    const FxScalar upper_probe_y_b = aabb.tl.y + FxScalar::from_pixels(3);
+    const FxScalar center_x = aabb.tl.x + HalfWidthFloor(ent);
+    const FxScalar below_probe_y = aabb.br.y + FxScalar::from_pixels(1);
 
     const bool upper_probe_blocked =
         IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_a, check_tiles, check_ents, true) ||
@@ -555,7 +555,7 @@ bool CanCornerHangOnSide(
             ent,
             state,
             side_x,
-            aabb.tl.y - sim::Scalar::from_pixels(1),
+            aabb.tl.y - FxScalar::from_pixels(1),
             check_tiles,
             check_ents,
             false
@@ -573,10 +573,10 @@ bool CanGloveHangBelowCorner(
     bool check_tiles,
     bool check_ents
 ) {
-    const sim::FxAABB aabb = ent.GetAABB();
-    const sim::Scalar side_x =
-        left_side ? aabb.tl.x - sim::Scalar::from_pixels(1)
-                  : aabb.br.x + sim::Scalar::from_pixels(1);
+    const FxAABB aabb = ent.GetAABB();
+    const FxScalar side_x =
+        left_side ? aabb.tl.x - FxScalar::from_pixels(1)
+                  : aabb.br.x + FxScalar::from_pixels(1);
     const int start_y = aabb.tl.y.floor_int() - 1;
     const int end_y = aabb.br.y.floor_int();
 
@@ -585,12 +585,12 @@ bool CanGloveHangBelowCorner(
                 ent,
                 state,
                 side_x,
-                sim::Scalar::from_pixels(y),
+                FxScalar::from_pixels(y),
                 check_tiles,
                 check_ents,
                 true
             )) {
-            return aabb.tl.y >= sim::Scalar::from_pixels(y);
+            return aabb.tl.y >= FxScalar::from_pixels(y);
         }
     }
 
@@ -602,8 +602,8 @@ bool MovementFlagsHave(std::uint32_t movement_flags, EntMovementFlag movement_fl
     return (movement_flags & bit) != 0;
 }
 
-bool IsClaimCloseEnough(const Ent& ent, sim::FxVec2 claimed_pos) {
-    const sim::FxVec2 delta = claimed_pos - ent.pos;
+bool IsClaimCloseEnough(const Ent& ent, FxVec2 claimed_pos) {
+    const FxVec2 delta = claimed_pos - ent.pos;
     return gfxp::length_sq(delta) <= ToFxScalar(
                kLocomotionClaimMaxDistancePx * kLocomotionClaimMaxDistancePx);
 }
@@ -623,7 +623,7 @@ bool IsClaimVelocityPlausible(const Ent& candidate) {
 }
 
 bool IsCandidateAabbFreeOfSolidTiles(const Ent& candidate, const State& state) {
-    const sim::FxAABB aabb = candidate.GetAABB();
+    const FxAABB aabb = candidate.GetAABB();
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, aabb)) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
             return false;
@@ -689,11 +689,11 @@ bool IsPlausibleHangCandidate(
     }
 
     const bool left_side = *claimed_hang_side == Side::Left;
-    const sim::FxAABB aabb = candidate.GetAABB();
+    const FxAABB aabb = candidate.GetAABB();
     const bool top_blocked = IsBlockedForHangProbe(
-        sim::FxAABB::from_corners(
-            sim::FxVec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
-            sim::FxVec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_pixels(1)}),
+        FxAABB::from_corners(
+            FxVec2{aabb.tl.x, aabb.tl.y - FxScalar::from_pixels(1)},
+            FxVec2{aabb.br.x, aabb.tl.y - FxScalar::from_pixels(1)}),
         state,
         true,
         true,
@@ -787,7 +787,7 @@ bool TryCaptureHdHang(
     if (ent.condition != EntCondition::Normal) {
         return false;
     }
-    if (ent.vel.y <= sim::Scalar::zero()) {
+    if (ent.vel.y <= FxScalar::zero()) {
         return false;
     }
     if (ent.grounded || ent.IsClimbing() || ent.IsHanging()) {
@@ -802,11 +802,11 @@ bool TryCaptureHdHang(
         return false;
     }
 
-    const sim::FxAABB aabb = ent.GetAABB();
+    const FxAABB aabb = ent.GetAABB();
     const bool top_blocked = IsBlockedForHangProbe(
-        sim::FxAABB::from_corners(
-            sim::FxVec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
-            sim::FxVec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_pixels(1)}),
+        FxAABB::from_corners(
+            FxVec2{aabb.tl.x, aabb.tl.y - FxScalar::from_pixels(1)},
+            FxVec2{aabb.br.x, aabb.tl.y - FxScalar::from_pixels(1)}),
         state,
         check_tiles,
         check_ents,
@@ -818,21 +818,21 @@ bool TryCaptureHdHang(
     }
 
     const bool has_gloves = EntHasHangGloves(ent);
-    const sim::Scalar center_x = aabb.tl.x + HalfWidthFloor(ent);
-    const sim::Scalar upper_probe_y_a = aabb.tl.y + sim::Scalar::from_pixels(2);
-    const sim::Scalar upper_probe_y_b = aabb.tl.y + sim::Scalar::from_pixels(3);
-    const sim::Scalar below_probe_y = aabb.br.y + sim::Scalar::from_pixels(1);
+    const FxScalar center_x = aabb.tl.x + HalfWidthFloor(ent);
+    const FxScalar upper_probe_y_a = aabb.tl.y + FxScalar::from_pixels(2);
+    const FxScalar upper_probe_y_b = aabb.tl.y + FxScalar::from_pixels(3);
+    const FxScalar below_probe_y = aabb.br.y + FxScalar::from_pixels(1);
 
     if (try_left && IsSideBlockedForHang(ent, state, true, check_tiles, check_ents)) {
-        const sim::Scalar side_x = aabb.tl.x - sim::Scalar::from_pixels(1);
+        const FxScalar side_x = aabb.tl.x - FxScalar::from_pixels(1);
         if (has_gloves) {
             if (CanCornerHangOnSide(ent, state, true, check_tiles, check_ents)) {
                 SnapEntHangYToTile(ent);
                 ent.hang_side = Side::Left;
                 SetMovementFlag(ent, EntMovementFlag::Hanging, true);
                 ent.facing = Side::Left;
-                ent.vel.y = sim::Scalar::zero();
-                ent.acc.y = sim::Scalar::zero();
+                ent.vel.y = FxScalar::zero();
+                ent.acc.y = FxScalar::zero();
                 ent.grounded = false;
                 return true;
             }
@@ -845,8 +845,8 @@ bool TryCaptureHdHang(
             ent.hang_side = Side::Left;
             SetMovementFlag(ent, EntMovementFlag::Hanging, true);
             ent.facing = Side::Left;
-            ent.vel.y = sim::Scalar::zero();
-            ent.acc.y = sim::Scalar::zero();
+            ent.vel.y = FxScalar::zero();
+            ent.acc.y = FxScalar::zero();
             ent.grounded = false;
             return true;
         }
@@ -858,7 +858,7 @@ bool TryCaptureHdHang(
                 ent,
                 state,
                 side_x,
-                aabb.tl.y - sim::Scalar::from_pixels(1),
+                aabb.tl.y - FxScalar::from_pixels(1),
                 check_tiles,
                 check_ents,
                 false
@@ -876,22 +876,22 @@ bool TryCaptureHdHang(
         ent.hang_side = Side::Left;
         SetMovementFlag(ent, EntMovementFlag::Hanging, true);
         ent.facing = Side::Left;
-        ent.vel.y = sim::Scalar::zero();
-        ent.acc.y = sim::Scalar::zero();
+        ent.vel.y = FxScalar::zero();
+        ent.acc.y = FxScalar::zero();
         ent.grounded = false;
         return true;
     }
 
     if (try_right && IsSideBlockedForHang(ent, state, false, check_tiles, check_ents)) {
-        const sim::Scalar side_x = aabb.br.x + sim::Scalar::from_pixels(1);
+        const FxScalar side_x = aabb.br.x + FxScalar::from_pixels(1);
         if (has_gloves) {
             if (CanCornerHangOnSide(ent, state, false, check_tiles, check_ents)) {
                 SnapEntHangYToTile(ent);
                 ent.hang_side = Side::Right;
                 SetMovementFlag(ent, EntMovementFlag::Hanging, true);
                 ent.facing = Side::Right;
-                ent.vel.y = sim::Scalar::zero();
-                ent.acc.y = sim::Scalar::zero();
+                ent.vel.y = FxScalar::zero();
+                ent.acc.y = FxScalar::zero();
                 ent.grounded = false;
                 return true;
             }
@@ -904,8 +904,8 @@ bool TryCaptureHdHang(
             ent.hang_side = Side::Right;
             SetMovementFlag(ent, EntMovementFlag::Hanging, true);
             ent.facing = Side::Right;
-            ent.vel.y = sim::Scalar::zero();
-            ent.acc.y = sim::Scalar::zero();
+            ent.vel.y = FxScalar::zero();
+            ent.acc.y = FxScalar::zero();
             ent.grounded = false;
             return true;
         }
@@ -917,7 +917,7 @@ bool TryCaptureHdHang(
                 ent,
                 state,
                 side_x,
-                aabb.tl.y - sim::Scalar::from_pixels(1),
+                aabb.tl.y - FxScalar::from_pixels(1),
                 check_tiles,
                 check_ents,
                 false
@@ -935,8 +935,8 @@ bool TryCaptureHdHang(
         ent.hang_side = Side::Right;
         SetMovementFlag(ent, EntMovementFlag::Hanging, true);
         ent.facing = Side::Right;
-        ent.vel.y = sim::Scalar::zero();
-        ent.acc.y = sim::Scalar::zero();
+        ent.vel.y = FxScalar::zero();
+        ent.acc.y = FxScalar::zero();
         ent.grounded = false;
         return true;
     }
@@ -953,7 +953,7 @@ bool TryApplySwimImpulse(Ent& ent, State& state, Audio& audio) {
         return false;
     }
 
-    const sim::Scalar swim_impulse_fixed = ToFxScalar(swim_impulse);
+    const FxScalar swim_impulse_fixed = ToFxScalar(swim_impulse);
     const bool play_sound = ent.vel.y > -(swim_impulse_fixed * ToFxScalar(0.5F));
     ent.vel.y = std::min(ent.vel.y, -swim_impulse_fixed);
     ent.grounded = false;
@@ -972,9 +972,9 @@ bool TryApplyPlausibleLocomotionClaim(
     Ent& ent,
     State& state,
     const JumpAndClimbTuning& tuning,
-    sim::FxVec2 claimed_pos,
-    sim::FxVec2 claimed_vel,
-    sim::FxVec2 claimed_acc,
+    FxVec2 claimed_pos,
+    FxVec2 claimed_vel,
+    FxVec2 claimed_acc,
     std::uint32_t claimed_movement_flags,
     bool claimed_grounded,
     std::optional<Side> claimed_hang_side,
@@ -1010,8 +1010,8 @@ bool TryApplyPlausibleLocomotionClaim(
 
     if (claimed_hanging && IsPlausibleHangCandidate(ent, candidate, state, claimed_hang_side)) {
         ent.pos = claimed_pos;
-        ent.vel = sim::FxVec2{claimed_vel.x, sim::Scalar::zero()};
-        ent.acc = sim::FxVec2::zero();
+        ent.vel = FxVec2{claimed_vel.x, FxScalar::zero()};
+        ent.acc = FxVec2::zero();
         ent.grounded = false;
         ent.hang_side = claimed_hang_side;
         SetMovementFlag(ent, EntMovementFlag::Hanging, true);
@@ -1120,8 +1120,8 @@ void HangHandsStep(std::size_t ent_idx, State& state, const JumpAndClimbTuning& 
 
     if (mutable_ent.IsHanging()) {
         mutable_ent.proj_contact_timer = 0;
-        mutable_ent.vel.y = sim::Scalar::zero();
-        mutable_ent.acc.y = sim::Scalar::zero();
+        mutable_ent.vel.y = FxScalar::zero();
+        mutable_ent.acc.y = FxScalar::zero();
         mutable_ent.grounded = false;
         mutable_ent.coyote_time = kHangCoyoteTimeFrames;
     }
@@ -1166,8 +1166,8 @@ void JumpingAndClimbingStep(
         if (!ent.IsClimbing() && can_climb && ent.climb_detach_cooldown == 0 && wants_to_attach) {
             SetMovementFlag(ent, EntMovementFlag::Climbing, true);
             ent.grounded = false;
-            ent.vel = sim::FxVec2::zero();
-            ent.acc = sim::FxVec2::zero();
+            ent.vel = FxVec2::zero();
+            ent.acc = FxVec2::zero();
         }
 
         if (ent.IsClimbing()) {
@@ -1175,36 +1175,36 @@ void JumpingAndClimbingStep(
                 DetachFromClimb(ent, tuning);
             } else if (was_climbing && control.down && was_grounded) {
                 DetachFromClimb(ent, tuning);
-                ent.vel.y = sim::Scalar::zero();
-                ent.acc.y = sim::Scalar::zero();
+                ent.vel.y = FxScalar::zero();
+                ent.acc.y = FxScalar::zero();
                 ent.grounded = true;
             } else {
                 SnapEntToClimbTileCenterline(ent, active_climb_anchor->tile_pos);
                 ent.grounded = false;
-                ent.vel.x = sim::Scalar::zero();
-                ent.acc.x = sim::Scalar::zero();
+                ent.vel.x = FxScalar::zero();
+                ent.acc.x = FxScalar::zero();
 
                 if (control.up && !control.down) {
                     const int max_climb_pixels = CeilToInt(tuning.climb_speed);
                     const int allowed_up_pixels =
                         GetAllowedClimbUpPixels(ent, state, tuning, max_climb_pixels);
                     ent.vel.y = -gfxp::min(ToFxScalar(tuning.climb_speed),
-                                           sim::Scalar::from_int(allowed_up_pixels));
+                                           FxScalar::from_int(allowed_up_pixels));
                 } else if (control.down && !control.up) {
                     ent.vel.y = ToFxScalar(tuning.climb_speed);
                 } else {
-                    ent.vel.y = sim::Scalar::zero();
+                    ent.vel.y = FxScalar::zero();
                 }
 
                 if (control.jump_pressed) {
                     DetachFromClimb(ent, tuning);
                     ent.grounded = false;
-                    ent.vel.x = sim::Scalar::zero();
-                    ent.acc.y = sim::Scalar::zero();
+                    ent.vel.x = FxScalar::zero();
+                    ent.acc.y = FxScalar::zero();
                     ent.coyote_time = 0;
                     consume_jump_press = control.down;
                     if (consume_jump_press) {
-                        ent.vel.y = sim::Scalar::zero();
+                        ent.vel.y = FxScalar::zero();
                     } else {
                         if (control.left && !control.right) {
                             ent.vel.x = -ToFxScalar(tuning.climb_depart_horizontal_speed);

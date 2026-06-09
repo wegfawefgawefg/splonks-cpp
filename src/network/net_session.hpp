@@ -7,7 +7,7 @@
 #include "network/lockstep_config.hpp"
 #include "network/net_fuzzer.hpp"
 #include "network/net_ids.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "vid.hpp"
 #include "tools/tool_spec.hpp"
 
@@ -66,22 +66,22 @@ struct NetRetainedToolSlot {
 struct NetRetainedEffect {
     EffectId id = EffectId::None;
     std::int32_t count = 0;
-    sim::Scalar value = sim::Scalar::zero();
+    FxScalar value = FxScalar::zero();
     std::uint32_t frames_remaining = 0;
 };
 
 struct NetRetainedAttachedEntState {
     bool valid = false;
     EntType ent_type = EntType::None;
-    sim::FxVec2 pos = sim::FxVec2{sim::Scalar::zero(), sim::Scalar::zero()};
-    sim::FxVec2 vel = sim::FxVec2{sim::Scalar::zero(), sim::Scalar::zero()};
-    sim::FxVec2 acc = sim::FxVec2{sim::Scalar::zero(), sim::Scalar::zero()};
-    sim::FxVec2 size = sim::FxVec2{sim::Scalar::zero(), sim::Scalar::zero()};
-    sim::Scalar rotation = sim::Scalar::zero();
-    sim::Scalar counter_a = sim::Scalar::zero();
-    sim::Scalar counter_b = sim::Scalar::zero();
-    sim::Scalar counter_c = sim::Scalar::zero();
-    sim::Scalar counter_d = sim::Scalar::zero();
+    FxVec2 pos = FxVec2{FxScalar::zero(), FxScalar::zero()};
+    FxVec2 vel = FxVec2{FxScalar::zero(), FxScalar::zero()};
+    FxVec2 acc = FxVec2{FxScalar::zero(), FxScalar::zero()};
+    FxVec2 size = FxVec2{FxScalar::zero(), FxScalar::zero()};
+    FxScalar rotation = FxScalar::zero();
+    FxScalar counter_a = FxScalar::zero();
+    FxScalar counter_b = FxScalar::zero();
+    FxScalar counter_c = FxScalar::zero();
+    FxScalar counter_d = FxScalar::zero();
     std::uint32_t health = 0;
     std::uint32_t money = 0;
     std::uint8_t facing = 0;
@@ -96,7 +96,7 @@ struct NetRetainedPlayerState {
     std::string quest_id;
     std::string quest_stage_id;
     EntType ent_type = EntType::Player;
-    sim::FxVec2 last_pos = sim::FxVec2{sim::Scalar::zero(), sim::Scalar::zero()};
+    FxVec2 last_pos = FxVec2{FxScalar::zero(), FxScalar::zero()};
     std::uint32_t health = 0;
     std::uint32_t money = 0;
     std::uint64_t disconnected_frame = 0;

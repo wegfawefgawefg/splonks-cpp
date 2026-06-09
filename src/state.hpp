@@ -19,7 +19,7 @@
 #include "player_registry.hpp"
 #include "quest.hpp"
 #include "settings.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "sid.hpp"
 #include "stage.hpp"
 #include "stage_acoustics.hpp"
@@ -224,7 +224,7 @@ struct StageRotationState {
     int elapsed_frames = 0;
     int duration_frames = 180;
     int quarter_turns = 1;
-    sim::FxVec2 pivot = sim::FxVec2{sim::Scalar::zero(), sim::Scalar::zero()};
+    FxVec2 pivot = FxVec2{FxScalar::zero(), FxScalar::zero()};
     StageRotationWrapPolicy wrap_policy = StageRotationWrapPolicy::DoNotChangeWrap;
 };
 

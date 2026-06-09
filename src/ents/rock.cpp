@@ -37,7 +37,7 @@ void StepControlledRock(Ent& rock, const controls::ControlIntent& control) {
     }
 
     if (control.attack_pressed && rock.grounded && rock.attack_delay_countdown == 0) {
-        const sim::Scalar slide_vel =
+        const FxScalar slide_vel =
             ToFxScalar(rock.facing == Side::Left ? -kControlledSlideVel : kControlledSlideVel);
         rock.vel.x = slide_vel;
         rock.attack_delay_countdown = kControlledSlideCooldownFrames;

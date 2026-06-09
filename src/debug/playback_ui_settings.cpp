@@ -25,7 +25,7 @@ bool IsPeerAdminControlDisabled(const State& state) {
 
 bool SliderSimScalar(
     const char* label,
-    sim::Scalar& value,
+    FxScalar& value,
     float min_value,
     float max_value,
     const char* format
@@ -40,7 +40,7 @@ bool SliderSimScalar(
 
 bool DragSimScalar(
     const char* label,
-    sim::Scalar& value,
+    FxScalar& value,
     float speed,
     float min_value,
     float max_value,
@@ -376,18 +376,18 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     save_settings |= SliderSimScalar("Global Gravity X", fluid.gravity_x, -4.0F, 4.0F, "%.2f");
     ImGui::SameLine();
     if (ImGui::Button("0##FluidGravityX")) {
-        fluid.gravity_x = sim::Scalar::zero();
+        fluid.gravity_x = FxScalar::zero();
         save_settings = true;
     }
     save_settings |= SliderSimScalar("Global Gravity Y", fluid.gravity_y, -4.0F, 4.0F, "%.2f");
     ImGui::SameLine();
     if (ImGui::Button("0##FluidGravityY")) {
-        fluid.gravity_y = sim::Scalar::zero();
+        fluid.gravity_y = FxScalar::zero();
         save_settings = true;
     }
     if (ImGui::Button("Zero Gravity XY")) {
-        fluid.gravity_x = sim::Scalar::zero();
-        fluid.gravity_y = sim::Scalar::zero();
+        fluid.gravity_x = FxScalar::zero();
+        fluid.gravity_y = FxScalar::zero();
         save_settings = true;
     }
     ImGui::Text(

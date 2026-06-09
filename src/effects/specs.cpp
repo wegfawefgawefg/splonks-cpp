@@ -26,7 +26,7 @@ const EffectModifier kNoGravityUntilContactModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::GravityScale,
         .op = EffectModifierOp::Override,
-        .value = sim::Scalar::zero(),
+        .value = FxScalar::zero(),
     },
 };
 
@@ -34,7 +34,7 @@ const EffectModifier kSpectaclesModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::HiddenTreasureVisibility,
         .op = EffectModifierOp::Max,
-        .value = sim::Scalar::from_int(1),
+        .value = FxScalar::from_int(1),
     },
 };
 
@@ -42,7 +42,7 @@ const EffectModifier kUdjatEyeModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::HiddenTreasureVisibility,
         .op = EffectModifierOp::Max,
-        .value = sim::Scalar::from_int(1),
+        .value = FxScalar::from_int(1),
     },
 };
 
@@ -50,12 +50,12 @@ const EffectModifier kSpikeShoesModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::SpikeDamageTaken,
         .op = EffectModifierOp::Override,
-        .value = sim::Scalar::zero(),
+        .value = FxScalar::zero(),
     },
     EffectModifier{
         .target = EffectModifierTarget::StompDamage,
         .op = EffectModifierOp::Max,
-        .value = sim::Scalar::from_int(2),
+        .value = FxScalar::from_int(2),
     },
 };
 
@@ -63,12 +63,12 @@ const EffectModifier kSpringShoesModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::JumpImpulse,
         .op = EffectModifierOp::Add,
-        .value = sim::Scalar::from_int(1),
+        .value = FxScalar::from_int(1),
     },
     EffectModifier{
         .target = EffectModifierTarget::StompBounceImpulse,
         .op = EffectModifierOp::Add,
-        .value = sim::Scalar::from_int(1),
+        .value = FxScalar::from_int(1),
     },
 };
 
@@ -76,7 +76,7 @@ const EffectModifier kMittModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::ThrowHorizontalBoost,
         .op = EffectModifierOp::Add,
-        .value = sim::Scalar::from_int(6),
+        .value = FxScalar::from_int(6),
     },
 };
 
@@ -114,12 +114,12 @@ const EffectModifier kInWaterModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::FallTimerRate,
         .op = EffectModifierOp::Override,
-        .value = sim::Scalar::zero(),
+        .value = FxScalar::zero(),
     },
     EffectModifier{
         .target = EffectModifierTarget::StompDamageScale,
         .op = EffectModifierOp::Override,
-        .value = sim::Scalar::zero(),
+        .value = FxScalar::zero(),
     },
     EffectModifier{
         .target = EffectModifierTarget::SwimImpulse,
@@ -229,8 +229,8 @@ void OnAnkhEffectHook(
     owner.last_condition = EntCondition::Normal;
     owner.stun_timer = 0;
     owner.fall_timer = 0;
-    owner.vel = sim::FxVec2::zero();
-    owner.acc = sim::FxVec2::zero();
+    owner.vel = FxVec2::zero();
+    owner.acc = FxVec2::zero();
     owner.grounded = false;
     owner.marked_for_destruction = false;
     owner.has_physics = spec.has_physics;

@@ -31,12 +31,12 @@ float Smoothstep(float t) {
     return t * t * (3.0F - (2.0F * t));
 }
 
-sim::FxVec2 GetStagePixelDims(const Stage& stage) {
-    return sim::PixelVec2(static_cast<int>(stage.GetWidth()), static_cast<int>(stage.GetHeight()));
+FxVec2 GetStagePixelDims(const Stage& stage) {
+    return PixelVec2(static_cast<int>(stage.GetWidth()), static_cast<int>(stage.GetHeight()));
 }
 
-sim::FxVec2 Half(sim::FxVec2 value) {
-    return sim::FxVec2{value.x / 2, value.y / 2};
+FxVec2 Half(FxVec2 value) {
+    return FxVec2{value.x / 2, value.y / 2};
 }
 
 FVec2 RotatePointClockwise(const FVec2& point, const FVec2& old_dims) {
@@ -55,18 +55,18 @@ FVec2 RotatePoint(const FVec2& point, FVec2 dims, int quarter_turns) {
     return rotated;
 }
 
-sim::FxVec2 RotatePointClockwise(sim::FxVec2 point, sim::FxVec2 old_dims) {
-    const sim::FxVec2 old_center = Half(old_dims);
-    const sim::FxVec2 new_center = Half(sim::FxVec2{old_dims.y, old_dims.x});
-    const sim::FxVec2 delta = point - old_center;
-    return new_center + sim::FxVec2{-delta.y, delta.x};
+FxVec2 RotatePointClockwise(FxVec2 point, FxVec2 old_dims) {
+    const FxVec2 old_center = Half(old_dims);
+    const FxVec2 new_center = Half(FxVec2{old_dims.y, old_dims.x});
+    const FxVec2 delta = point - old_center;
+    return new_center + FxVec2{-delta.y, delta.x};
 }
 
-sim::FxVec2 RotatePoint(sim::FxVec2 point, sim::FxVec2 dims, int quarter_turns) {
-    sim::FxVec2 rotated = point;
+FxVec2 RotatePoint(FxVec2 point, FxVec2 dims, int quarter_turns) {
+    FxVec2 rotated = point;
     for (int i = 0; i < quarter_turns; ++i) {
         rotated = RotatePointClockwise(rotated, dims);
-        dims = sim::FxVec2{dims.y, dims.x};
+        dims = FxVec2{dims.y, dims.x};
     }
     return rotated;
 }
@@ -82,9 +82,9 @@ FVec2 RotateDirection(FVec2 direction, int quarter_turns) {
     return direction;
 }
 
-sim::FxVec2 RotateDirection(sim::FxVec2 direction, int quarter_turns) {
+FxVec2 RotateDirection(FxVec2 direction, int quarter_turns) {
     for (int i = 0; i < quarter_turns; ++i) {
-        direction = sim::FxVec2{-direction.y, direction.x};
+        direction = FxVec2{-direction.y, direction.x};
     }
     return direction;
 }
@@ -202,7 +202,7 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
     const int old_tile_width = static_cast<int>(stage.GetTileWidth());
     const int old_tile_height = static_cast<int>(stage.GetTileHeight());
     const FVec2 old_dims = ToFVec2(GetStagePixelDims(stage));
-    const sim::FxVec2 sim_old_dims = GetStagePixelDims(stage);
+    const FxVec2 sim_old_dims = GetStagePixelDims(stage);
 
     stage.SyncTileInstanceMetadataGrid();
     stage.tiles = RotateGrid(stage.tiles, quarter_turns);
@@ -215,18 +215,18 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
     stage.fluid_gravity = RotateGrid(stage.fluid_gravity, quarter_turns);
     stage.fluid_gravity_strength = RotateGrid(stage.fluid_gravity_strength, quarter_turns);
     stage.fluid_temp_gravity = RotateGrid(stage.fluid_temp_gravity, quarter_turns);
-    for (std::vector<sim::FxVec2>& row : stage.fluid_velocity) {
-        for (sim::FxVec2& velocity : row) {
+    for (std::vector<FxVec2>& row : stage.fluid_velocity) {
+        for (FxVec2& velocity : row) {
             velocity = RotateDirection(velocity, quarter_turns);
         }
     }
-    for (std::vector<sim::FxVec2>& row : stage.fluid_gravity) {
-        for (sim::FxVec2& gravity : row) {
+    for (std::vector<FxVec2>& row : stage.fluid_gravity) {
+        for (FxVec2& gravity : row) {
             gravity = RotateDirection(gravity, quarter_turns);
         }
     }
-    for (std::vector<sim::FxVec2>& row : stage.fluid_temp_gravity) {
-        for (sim::FxVec2& gravity : row) {
+    for (std::vector<FxVec2>& row : stage.fluid_temp_gravity) {
+        for (FxVec2& gravity : row) {
             gravity = RotateDirection(gravity, quarter_turns);
         }
     }
@@ -268,9 +268,9 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
             continue;
         }
         ent.SetCenter(RotatePoint(ent.GetCenter(), sim_old_dims, quarter_turns));
-        ent.pos = sim::PixelVec2(ent.pos.x.round_int(), ent.pos.y.round_int());
-        ent.vel = sim::FxVec2::zero();
-        ent.acc = sim::FxVec2::zero();
+        ent.pos = PixelVec2(ent.pos.x.round_int(), ent.pos.y.round_int());
+        ent.vel = FxVec2::zero();
+        ent.acc = FxVec2::zero();
         ent.grounded = false;
         ent.SetGrounded(stage);
     }

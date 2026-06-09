@@ -5,7 +5,7 @@
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
 #include "particles/ribbon_particle.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 #include "world_ops.hpp"
@@ -22,7 +22,7 @@ namespace {
 constexpr std::uint32_t kBatTrailLifetimeFrames = 6;
 constexpr float kBatTrailMinDistance = 2.0F;
 constexpr float kBatTrailMinDistanceSq = kBatTrailMinDistance * kBatTrailMinDistance;
-const sim::FxVec2 kBatHoldOffset = sim::PixelVec2(5, -10);
+const FxVec2 kBatHoldOffset = PixelVec2(5, -10);
 
 void SpawnBatTrailSegment(State& state, const FVec2& from, const FVec2& to) {
     const FVec2 wrapped_to = GetNearestWorldPoint(state.stage, from, to);
@@ -40,7 +40,7 @@ void SpawnBatTrailSegment(State& state, const FVec2& from, const FVec2& to) {
     state.particles.Add(std::move(ribbon));
 }
 
-IVec2 ToWorldPixelTrunc(sim::FxVec2 point) {
+IVec2 ToWorldPixelTrunc(FxVec2 point) {
     return IVec2::New(point.x.trunc_int(), point.y.trunc_int());
 }
 
@@ -105,9 +105,9 @@ extern const EntSpec kBaseballBatSpec{
     .aframe_animator = AFrameAnimator{
         .anim_id = aframe_ids::BaseballBatSwing,
         .current_frame = 0,
-        .current_time = sim::Scalar::zero(),
-        .scale = sim::Scalar::from_int(1),
-        .speed = sim::Scalar::from_int(1),
+        .current_time = FxScalar::zero(),
+        .scale = FxScalar::from_int(1),
+        .speed = FxScalar::from_int(1),
         .animate = true,
         .loop = false,
         .finished = false,
@@ -141,8 +141,8 @@ bool TryApplyBatContactToEnt(
         return false;
     }
 
-    const sim::FxAABB bat_aabb = common::GetContactAabbForEnt(bat_ent, graphics);
-    const sim::FxAABB other_aabb = GetNearestWorldAabb(
+    const FxAABB bat_aabb = common::GetContactAabbForEnt(bat_ent, graphics);
+    const FxAABB other_aabb = GetNearestWorldAabb(
         state.stage,
         bat_aabb.center(),
         common::GetContactAabbForEnt(other_ent_const, graphics)
@@ -156,34 +156,34 @@ bool TryApplyBatContactToEnt(
     const SwingStage swing_stage = GetSwingStage(bat_ent);
 
     if (Ent* const other_ent = state.ents.GetEntMut(other_ent_const.vid)) {
-        const sim::Scalar knock_back_impulse = sim::Scalar::from_int(10);
-        const sim::Scalar air_knock_back_lift = sim::Scalar::from_int(4);
+        const FxScalar knock_back_impulse = FxScalar::from_int(10);
+        const FxScalar air_knock_back_lift = FxScalar::from_int(4);
         const bool should_lift_target =
-            !other_ent->grounded || other_ent->vel.y > sim::Scalar::zero();
-        sim::FxVec2 knock_back_vel = other_ent->vel;
+            !other_ent->grounded || other_ent->vel.y > FxScalar::zero();
+        FxVec2 knock_back_vel = other_ent->vel;
         switch (swing_stage) {
         case SwingStage::Back:
             knock_back_vel = bat_facing == Side::Left
-                                 ? sim::FxVec2{knock_back_impulse,
+                                 ? FxVec2{knock_back_impulse,
                                              should_lift_target ? -air_knock_back_lift
-                                                                : sim::Scalar::zero()}
-                                 : sim::FxVec2{-knock_back_impulse,
+                                                                : FxScalar::zero()}
+                                 : FxVec2{-knock_back_impulse,
                                              should_lift_target ? -air_knock_back_lift
-                                                                : sim::Scalar::zero()};
+                                                                : FxScalar::zero()};
             break;
         case SwingStage::Above:
             knock_back_vel = bat_facing == Side::Left
-                                 ? sim::FxVec2{-(knock_back_impulse / 2), -knock_back_impulse}
-                                 : sim::FxVec2{knock_back_impulse / 2, -knock_back_impulse};
+                                 ? FxVec2{-(knock_back_impulse / 2), -knock_back_impulse}
+                                 : FxVec2{knock_back_impulse / 2, -knock_back_impulse};
             break;
         case SwingStage::Swing:
             knock_back_vel = bat_facing == Side::Left
-                                 ? sim::FxVec2{-knock_back_impulse,
+                                 ? FxVec2{-knock_back_impulse,
                                              should_lift_target ? -air_knock_back_lift
-                                                                : sim::Scalar::zero()}
-                                 : sim::FxVec2{knock_back_impulse,
+                                                                : FxScalar::zero()}
+                                 : FxVec2{knock_back_impulse,
                                              should_lift_target ? -air_knock_back_lift
-                                                                : sim::Scalar::zero()};
+                                                                : FxScalar::zero()};
             break;
         }
         const common::DamageResult damage_result = common::TryHitEnt(
@@ -264,7 +264,7 @@ void StepBaseballBat(
         return;
     }
 
-    sim::FxVec2 swinger_center = sim::FxVec2::zero();
+    FxVec2 swinger_center = FxVec2::zero();
     Side swinger_facing = Side::Left;
     if (held_by_vid.has_value()) {
         if (const Ent* const held_by = state.ents.GetEnt(*held_by_vid)) {
@@ -274,13 +274,13 @@ void StepBaseballBat(
     }
 
     baseball_bat.facing = swinger_facing;
-    const sim::FxVec2 mounted_center = swinger_facing == Side::Left
+    const FxVec2 mounted_center = swinger_facing == Side::Left
                                          ? swinger_center +
-                                               sim::FxVec2{-kBatHoldOffset.x, kBatHoldOffset.y}
+                                               FxVec2{-kBatHoldOffset.x, kBatHoldOffset.y}
                                          : swinger_center + kBatHoldOffset;
     baseball_bat.SetCenter(mounted_center);
 
-    const sim::FxVec2 bat_emit_point =
+    const FxVec2 bat_emit_point =
         common::GetEmitPointForEnt(baseball_bat, graphics, baseball_bat.GetCenter());
     const FVec2 render_bat_emit_point = ToFVec2(bat_emit_point);
     if (baseball_bat.point_label_a != PointLabel::Target) {
@@ -288,9 +288,9 @@ void StepBaseballBat(
         baseball_bat.point_a = ToWorldPixelTrunc(bat_emit_point);
     } else {
         SpawnBatTrailSegment(state, ToVec2(baseball_bat.point_a), render_bat_emit_point);
-        const sim::FxVec2 nearest_emit_point = GetNearestWorldPoint(
+        const FxVec2 nearest_emit_point = GetNearestWorldPoint(
             state.stage,
-            sim::PixelVec2(baseball_bat.point_a.x, baseball_bat.point_a.y),
+            PixelVec2(baseball_bat.point_a.x, baseball_bat.point_a.y),
             bat_emit_point
         );
         baseball_bat.point_a = ToWorldPixelTrunc(nearest_emit_point);

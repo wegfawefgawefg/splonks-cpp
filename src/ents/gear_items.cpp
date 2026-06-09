@@ -3,7 +3,7 @@
 #include "audio_emitters.hpp"
 #include "ent/spec.hpp"
 #include "aframe_id.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 
@@ -96,13 +96,13 @@ void UpdateOpenParachuteVisual(Ent& owner, State& state, const Graphics& graphic
         spawned_visual = true;
     }
 
-    const sim::FxVec2 owner_visual_center =
+    const FxVec2 owner_visual_center =
         common::GetVisualCenterForEnt(owner, graphics, owner.GetCenter());
     parachute->SetCenter(
-        owner_visual_center + sim::FxVec2::from_pixels(0, kParachuteVisualOffsetYPixels)
+        owner_visual_center + FxVec2::from_pixels(0, kParachuteVisualOffsetYPixels)
     );
-    parachute->vel = sim::FxVec2::zero();
-    parachute->acc = sim::FxVec2::zero();
+    parachute->vel = FxVec2::zero();
+    parachute->acc = FxVec2::zero();
     state.UpdateSidForEnt(parachute->vid.id, graphics);
     (void)spawned_visual;
 }
@@ -128,7 +128,7 @@ void StepEquippedParachute(Ent& owner, State& state, const Graphics& graphics) {
 }
 
 AFrameId GetCapeAnim(const Ent& cape, const State& state) {
-    const bool open = cape.counter_a > sim::Scalar::zero();
+    const bool open = cape.counter_a > FxScalar::zero();
     if (cape.attach_mode == AttachMode::Back && cape.held_by_vid.has_value()) {
         const Ent* const holder = state.ents.GetEnt(*cape.held_by_vid);
         if (holder != nullptr) {
@@ -156,7 +156,7 @@ void OnUseAsCape(std::size_t ent_idx, State& state, Graphics& graphics, Audio& a
     }
 
     Ent& cape = state.ents.ents[ent_idx];
-    cape.counter_a = sim::Scalar::zero();
+    cape.counter_a = FxScalar::zero();
     if (!cape.use_state.down ||
         !cape.use_state.user_vid.has_value()) {
         return;
@@ -171,8 +171,8 @@ void OnUseAsCape(std::size_t ent_idx, State& state, Graphics& graphics, Audio& a
         return;
     }
 
-    cape.counter_a = sim::Scalar::from_int(1);
-    if (!holder->grounded && holder->vel.y > sim::Scalar::zero()) {
+    cape.counter_a = FxScalar::from_int(1);
+    if (!holder->grounded && holder->vel.y > FxScalar::zero()) {
         holder->vel.y = std::min(holder->vel.y, ToFxScalar(kCapeMaxFallSpeed));
         holder->fall_timer = 0;
     }
@@ -194,7 +194,7 @@ void StepEntLogicAsCape(
 
     Ent& cape = state.ents.ents[ent_idx];
     if (!cape.use_state.down) {
-        cape.counter_a = sim::Scalar::zero();
+        cape.counter_a = FxScalar::zero();
     }
     SetAnim(cape, GetCapeAnim(cape, state));
 }

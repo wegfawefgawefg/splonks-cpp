@@ -74,7 +74,7 @@ void PlayBlockingCollisionSounds(
 
 bool HadRecentMovementForCollisionSound(const Ent& ent) {
     static_assert(kTileTouchSoundMinPriorTravelDistance == 0.0F);
-    return ent.dist_traveled_this_frame > sim::Scalar::zero();
+    return ent.dist_traveled_this_frame > FxScalar::zero();
 }
 
 void MaybePlayTileCollisionSounds(

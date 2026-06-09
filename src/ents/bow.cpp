@@ -6,7 +6,7 @@
 #include "ent/spec.hpp"
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 
@@ -26,13 +26,13 @@ constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct BowAim {
     FVec2 direction = FVec2::New(1.0F, 0.0F);
-    sim::FxVec2 sim_direction = sim::FxVec2{sim::Scalar::from_int(1), sim::Scalar::zero()};
+    FxVec2 sim_direction = FxVec2{FxScalar::from_int(1), FxScalar::zero()};
     Side facing = Side::Right;
-    sim::Scalar rotation = sim::Scalar::zero();
+    FxScalar rotation = FxScalar::zero();
 };
 
 bool HasAmmo(const Ent& bow) {
-    return bow.counter_b > sim::Scalar::zero();
+    return bow.counter_b > FxScalar::zero();
 }
 
 bool IsArmed(const Ent& bow) {
@@ -91,22 +91,22 @@ FVec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
     return FVec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
 }
 
-sim::FxVec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
+FxVec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
     if (aim_x == 0 && aim_y == 0) {
-        return sim::FxVec2{
-            sim::Scalar::from_int(facing == Side::Left ? -1 : 1),
-            sim::Scalar::zero(),
+        return FxVec2{
+            FxScalar::from_int(facing == Side::Left ? -1 : 1),
+            FxScalar::zero(),
         };
     }
     if (aim_x != 0 && aim_y != 0) {
-        return sim::FxVec2{
-            sim::Scalar::from_int(aim_x) * ToFxScalar(kDiagonalAimComponent),
-            sim::Scalar::from_int(aim_y) * ToFxScalar(kDiagonalAimComponent),
+        return FxVec2{
+            FxScalar::from_int(aim_x) * ToFxScalar(kDiagonalAimComponent),
+            FxScalar::from_int(aim_y) * ToFxScalar(kDiagonalAimComponent),
         };
     }
-    return sim::FxVec2{
-        sim::Scalar::from_int(aim_x),
-        sim::Scalar::from_int(aim_y),
+    return FxVec2{
+        FxScalar::from_int(aim_x),
+        FxScalar::from_int(aim_y),
     };
 }
 
@@ -174,7 +174,7 @@ BowAim GetBowAim(const Ent& bow, const State& state) {
 }
 
 void ArmBow(Ent& bow, State& state) {
-    if (bow.counter_a > sim::Scalar::zero() || !HasAmmo(bow)) {
+    if (bow.counter_a > FxScalar::zero() || !HasAmmo(bow)) {
         return;
     }
 
@@ -189,12 +189,12 @@ void ArmBow(Ent& bow, State& state) {
 
 void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
     (void)world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
-        const sim::FxVec2 spawn_center = bow.GetCenter() +
-                                       (aim.sim_direction * sim::Scalar::from_int(12));
-        arrow.SetCenter(sim::PixelVec2(spawn_center.x.round_int(),
+        const FxVec2 spawn_center = bow.GetCenter() +
+                                       (aim.sim_direction * FxScalar::from_int(12));
+        arrow.SetCenter(PixelVec2(spawn_center.x.round_int(),
                                           spawn_center.y.round_int()));
         arrow.vel = aim.sim_direction * ToFxScalar(kBowArrowSpeed);
-        arrow.acc = sim::FxVec2::zero();
+        arrow.acc = FxVec2::zero();
         arrow.facing = aim.facing;
         arrow.rotation = aim.rotation;
         arrow.thrown_by = bow.ent_a.has_value() ? bow.ent_a : bow.held_by_vid;
@@ -217,7 +217,7 @@ void FireBow(Ent& bow, State& state) {
     bow.facing = aim.facing;
     bow.rotation = aim.rotation;
     SpawnArrowFromBow(bow, state, aim);
-    bow.counter_b -= sim::Scalar::from_int(1);
+    bow.counter_b -= FxScalar::from_int(1);
     bow.ent_a.reset();
     SetAnim(bow, GetLooseAnimId(bow));
     (void)PlayWorldSoundEmitter(state, ToFVec2(bow.GetCenter()), audio_asset_ids::Throw);
@@ -262,9 +262,9 @@ void StepEntLogicAsBow(
     }
 
     Ent& bow = state.ents.ents[ent_idx];
-    if (bow.counter_a > sim::Scalar::zero()) {
+    if (bow.counter_a > FxScalar::zero()) {
         bow.counter_a =
-            gfxp::max(sim::Scalar::zero(), bow.counter_a - sim::Scalar::from_int(1));
+            gfxp::max(FxScalar::zero(), bow.counter_a - FxScalar::from_int(1));
     }
     if (bow.held_by_vid.has_value()) {
         const BowAim aim = GetBowAim(bow, state);

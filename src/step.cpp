@@ -15,7 +15,7 @@
 #include "network/net_lobby.hpp"
 #include "network/net_progression.hpp"
 #include "player_queries.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "utils.hpp"
 #include "world_ops.hpp"
 
@@ -305,7 +305,7 @@ void RefreshPlayableCharacterLamp(State& state) {
         const bool emits_lamp = slot != nullptr && slot->connected;
 
         if (!emits_lamp || ent.condition == EntCondition::Dead) {
-            ent.light_strength = sim::Scalar::zero();
+            ent.light_strength = FxScalar::zero();
             ent.light_radius = 0;
             ent.light_color = ToFxColor3(Color3::White());
             continue;

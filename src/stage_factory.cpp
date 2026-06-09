@@ -23,13 +23,13 @@ std::vector<std::vector<EmbeddedTreasure>> MakeEmptyEmbeddedTreasures(
     return embedded_treasures;
 }
 
-std::vector<std::vector<sim::Scalar>> MakeEmptyTileShakeGrid(
+std::vector<std::vector<FxScalar>> MakeEmptyTileShakeGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::Scalar>> tile_shake;
+    std::vector<std::vector<FxScalar>> tile_shake;
     tile_shake.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        tile_shake.push_back(std::vector<sim::Scalar>(row.size(), sim::Scalar::zero()));
+        tile_shake.push_back(std::vector<FxScalar>(row.size(), FxScalar::zero()));
     }
     return tile_shake;
 }
@@ -45,24 +45,24 @@ std::vector<std::vector<TileRotation>> MakeEmptyTileRotationGrid(
     return tile_rotations;
 }
 
-std::vector<std::vector<sim::FxVec2>> MakeEmptyFluidVelocityGrid(
+std::vector<std::vector<FxVec2>> MakeEmptyFluidVelocityGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::FxVec2>> fluid_velocity;
+    std::vector<std::vector<FxVec2>> fluid_velocity;
     fluid_velocity.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        fluid_velocity.push_back(std::vector<sim::FxVec2>(row.size(), sim::FxVec2::zero()));
+        fluid_velocity.push_back(std::vector<FxVec2>(row.size(), FxVec2::zero()));
     }
     return fluid_velocity;
 }
 
-std::vector<std::vector<sim::FxVec2>> MakeEmptyFluidVec2Grid(
+std::vector<std::vector<FxVec2>> MakeEmptyFluidVec2Grid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::FxVec2>> grid;
+    std::vector<std::vector<FxVec2>> grid;
     grid.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        grid.push_back(std::vector<sim::FxVec2>(row.size(), sim::FxVec2::zero()));
+        grid.push_back(std::vector<FxVec2>(row.size(), FxVec2::zero()));
     }
     return grid;
 }
@@ -89,13 +89,13 @@ std::vector<std::vector<Tile>> MakeEmptyFluidTileGrid(
     return fluid_tiles;
 }
 
-std::vector<std::vector<sim::Scalar>> MakeEmptyFluidAmountGrid(
+std::vector<std::vector<FxScalar>> MakeEmptyFluidAmountGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::Scalar>> fluid_amount;
+    std::vector<std::vector<FxScalar>> fluid_amount;
     fluid_amount.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        fluid_amount.push_back(std::vector<sim::Scalar>(row.size(), sim::Scalar::zero()));
+        fluid_amount.push_back(std::vector<FxScalar>(row.size(), FxScalar::zero()));
     }
     return fluid_amount;
 }
@@ -111,13 +111,13 @@ std::vector<std::vector<std::uint8_t>> MakeEmptyFluidByteGrid(
     return grid;
 }
 
-std::vector<std::vector<sim::Scalar>> MakeEmptyFluidDisplayAmountGrid(
+std::vector<std::vector<FxScalar>> MakeEmptyFluidDisplayAmountGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::Scalar>> fluid_display_amount;
+    std::vector<std::vector<FxScalar>> fluid_display_amount;
     fluid_display_amount.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        fluid_display_amount.push_back(std::vector<sim::Scalar>(row.size(), sim::Scalar::zero()));
+        fluid_display_amount.push_back(std::vector<FxScalar>(row.size(), FxScalar::zero()));
     }
     return fluid_display_amount;
 }

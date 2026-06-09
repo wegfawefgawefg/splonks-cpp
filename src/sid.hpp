@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "vid.hpp"
 
 #include <cstdint>
@@ -17,7 +17,7 @@ struct SIDCell {
 struct SIDRecord {
     bool active = false;
     VID vid;
-    sim::FxAABB aabb;
+    FxAABB aabb;
     std::vector<SIDCell> cells;
 };
 
@@ -26,10 +26,10 @@ class SID {
     static SID New();
 
     void Clear();
-    void Upsert(const VID& vid, sim::FxAABB aabb);
+    void Upsert(const VID& vid, FxAABB aabb);
     void Remove(const VID& vid);
-    std::vector<VID> Query(sim::FxAABB area) const;
-    std::vector<VID> QueryExclude(sim::FxAABB area, const VID& exclude_vid) const;
+    std::vector<VID> Query(FxAABB area) const;
+    std::vector<VID> QueryExclude(FxAABB area, const VID& exclude_vid) const;
 
   private:
     std::unordered_map<std::int64_t, std::vector<VID>> buckets_;

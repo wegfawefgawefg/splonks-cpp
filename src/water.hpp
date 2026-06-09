@@ -1,7 +1,7 @@
 #pragma once
 
 #include "stage.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "tile.hpp"
 
 namespace splonks {
@@ -10,7 +10,7 @@ bool IsWaterTile(Tile tile);
 bool IsWaterSurfaceTile(const Stage& stage, const IVec2& tile_coord);
 bool IsWaterAtWorldPos(const Stage& stage, const FVec2& world_pos);
 bool IsWaterAtWorldPos(const Stage& stage, const FVec2& world_pos, float amount_cutoff);
-bool IsWaterAtWorldPos(const Stage& stage, sim::FxVec2 world_pos);
-bool IsWaterAtWorldPos(const Stage& stage, sim::FxVec2 world_pos, float amount_cutoff);
+bool IsWaterAtWorldPos(const Stage& stage, FxVec2 world_pos);
+bool IsWaterAtWorldPos(const Stage& stage, FxVec2 world_pos, float amount_cutoff);
 
 } // namespace splonks

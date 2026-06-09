@@ -48,13 +48,13 @@ void StepEntLogicAsDice(
 
     Ent& dice = state.ents.ents[ent_idx];
     if (!dice.active || dice.type_ != EntType::Dice ||
-        dice.counter_b != sim::Scalar::from_int(kRollingState)) {
+        dice.counter_b != FxScalar::from_int(kRollingState)) {
         return;
     }
 
     if (!dice.grounded || dice.vel.x.abs() > ToFxScalar(kSettleSpeed) ||
         dice.vel.y.abs() > ToFxScalar(kSettleSpeed)) {
-        dice.counter_a = sim::Scalar::from_int(RollDicePairTotal(state));
+        dice.counter_a = FxScalar::from_int(RollDicePairTotal(state));
         dice.rotation = ToFxScalar(
             WrapRotationDegrees(ToFloat(dice.rotation) + 24.0F +
                                 ToFloat(dice.vel.x.abs()) * 8.0F)
@@ -62,9 +62,9 @@ void StepEntLogicAsDice(
         return;
     }
 
-    dice.counter_b = sim::Scalar::zero();
-    dice.rotation = sim::Scalar::zero();
-    dice.vel = sim::FxVec2::zero();
+    dice.counter_b = FxScalar::zero();
+    dice.rotation = FxScalar::zero();
+    dice.vel = FxVec2::zero();
 }
 
 } // namespace

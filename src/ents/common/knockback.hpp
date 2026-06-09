@@ -5,7 +5,7 @@
 namespace splonks::ents::common {
 
 struct KnockbackSpec {
-    sim::FxVec2 velocity = sim::FxVec2::zero();
+    FxVec2 velocity = FxVec2::zero();
     bool clear_velocity = true;
     bool clear_acceleration = true;
     std::optional<VID> thrown_by = std::nullopt;

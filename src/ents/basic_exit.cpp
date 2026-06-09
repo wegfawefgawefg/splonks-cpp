@@ -14,8 +14,8 @@ namespace splonks::ents::basic_exit {
 
 namespace {
 
-std::int64_t GetDistanceSq(sim::FxVec2 from, sim::FxVec2 to, const Stage& stage) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(stage, from, to);
+std::int64_t GetDistanceSq(FxVec2 from, FxVec2 to, const Stage& stage) {
+    const FxVec2 delta = GetNearestWorldDelta(stage, from, to);
     const std::int64_t dx = delta.x.raw_value();
     const std::int64_t dy = delta.y.raw_value();
     return (dx * dx) + (dy * dy);
@@ -79,8 +79,8 @@ std::optional<std::size_t> FindOverlappingBasicExitEntIdx(
         return std::nullopt;
     }
 
-    const sim::FxAABB ent_aabb = common::GetContactAabbForEnt(ent, graphics);
-    const sim::FxVec2 ent_center = ent_aabb.center();
+    const FxAABB ent_aabb = common::GetContactAabbForEnt(ent, graphics);
+    const FxVec2 ent_center = ent_aabb.center();
     const std::vector<VID> results = QueryEntsInAabb(state, ent_aabb, ent.vid);
 
     std::int64_t best_distance_sq = std::numeric_limits<std::int64_t>::max();
@@ -91,7 +91,7 @@ std::optional<std::size_t> FindOverlappingBasicExitEntIdx(
             continue;
         }
 
-        const sim::FxAABB other_aabb = GetNearestWorldAabb(
+        const FxAABB other_aabb = GetNearestWorldAabb(
             state.stage,
             ent_center,
             common::GetContactAabbForEnt(*other, graphics)
@@ -149,21 +149,21 @@ void StepEntLogicAsBasicExit(
         }
 
         state.ClaimInteractForEnt(*slot.ent_vid);
-        const sim::FxAABB player_aabb = common::GetContactAabbForEnt(*player, graphics);
-        const sim::FxVec2 player_center = player_aabb.center();
-        const sim::FxAABB nearest_exit_aabb = GetNearestWorldAabb(
+        const FxAABB player_aabb = common::GetContactAabbForEnt(*player, graphics);
+        const FxVec2 player_center = player_aabb.center();
+        const FxAABB nearest_exit_aabb = GetNearestWorldAabb(
             state.stage,
             player_center,
             common::GetContactAabbForEnt(exit_ent, graphics)
         );
-        const sim::FxVec2 prompt_base = GetNearestWorldPoint(
+        const FxVec2 prompt_base = GetNearestWorldPoint(
             state.stage,
             player_center,
-            sim::FxVec2{(nearest_exit_aabb.tl.x + nearest_exit_aabb.br.x) / 2,
+            FxVec2{(nearest_exit_aabb.tl.x + nearest_exit_aabb.br.x) / 2,
                       nearest_exit_aabb.tl.y}
         );
         state.AddWorldPrompt(WorldPrompt{
-            .world_pos = ToFVec2(prompt_base + sim::PixelVec2(0, -6)),
+            .world_pos = ToFVec2(prompt_base + PixelVec2(0, -6)),
             .action_text = player_prompt->action_text,
             .message_text = player_prompt->message_text,
             .show_down_arrow = player_prompt->show_down_arrow,

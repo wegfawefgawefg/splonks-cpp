@@ -39,9 +39,9 @@ float DetRng::RandomFloat(float minimum, float maximum) {
     return minimum + (maximum - minimum) * std::clamp(unit, 0.0F, 1.0F);
 }
 
-sim::Scalar RandomSimScalar(DetRng& rng, sim::Scalar minimum, sim::Scalar maximum) {
+FxScalar RandomSimScalar(DetRng& rng, FxScalar minimum, FxScalar maximum) {
     assert(minimum <= maximum);
-    return sim::Scalar::from_raw(rng.RandomIntInclusive(
+    return FxScalar::from_raw(rng.RandomIntInclusive(
         minimum.raw_value(),
         maximum.raw_value()
     ));
@@ -149,21 +149,21 @@ bool AabbsIntersect(const FAABB& left, const FAABB& right) {
     return true;
 }
 
-sim::FxAABB ToFxAABB(const FAABB& value, gfxp::Rounding rounding) {
-    return sim::FxAABB::from_corners(ToFxVec2(value.tl, rounding),
+FxAABB ToFxAABB(const FAABB& value, gfxp::Rounding rounding) {
+    return FxAABB::from_corners(ToFxVec2(value.tl, rounding),
                                    ToFxVec2(value.br, rounding));
 }
 
-FAABB ToFAABB(const sim::FxAABB& value) {
+FAABB ToFAABB(const FxAABB& value) {
     return FAABB::New(ToFVec2(value.tl), ToFVec2(value.br));
 }
 
-IAABB ToIAABBFloorCeil(const sim::FxAABB& value) {
+IAABB ToIAABBFloorCeil(const FxAABB& value) {
     return IAABB::New(IVec2::New(value.tl.x.floor_int(), value.tl.y.floor_int()),
                       IVec2::New(value.br.x.ceil_int(), value.br.y.ceil_int()));
 }
 
-FVec2 ToFMinDisplacement(sim::FxAABB aabb1, sim::FxAABB aabb2) {
+FVec2 ToFMinDisplacement(FxAABB aabb1, FxAABB aabb2) {
     return ToFVec2(gfxp::min_displacement(aabb1, aabb2));
 }
 

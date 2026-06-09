@@ -23,7 +23,7 @@ constexpr float kBlockTrailSmokeDistInterval = 14.0F;
 constexpr float kBlockPushAcc = 0.2F;
 
 void StepControlledBlock(Ent& block, const controls::ControlIntent& control) {
-    const sim::Scalar move_acc = ToFxScalar(kControlledBlockMoveAcc);
+    const FxScalar move_acc = ToFxScalar(kControlledBlockMoveAcc);
     if (block.attack_delay_countdown > 0) {
         block.attack_delay_countdown -= 1;
     }
@@ -124,10 +124,10 @@ void SpawnBlockTrailSmoke(State& state, const FVec2& pos, Side facing) {
 }
 
 FVec2 GetBlockTrailingBottomCorner(const Ent& block) {
-    const sim::FxAABB aabb = block.GetAABB();
+    const FxAABB aabb = block.GetAABB();
     return ToFVec2(block.facing == Side::Right
-                                 ? sim::FxVec2{aabb.tl.x, aabb.br.y}
-                                 : sim::FxVec2{aabb.br.x, aabb.br.y});
+                                 ? FxVec2{aabb.tl.x, aabb.br.y}
+                                 : FxVec2{aabb.br.x, aabb.br.y});
 }
 
 } // namespace
@@ -200,10 +200,10 @@ void StepEntLogicAsBlock(
     }
 
     // TODO: extract into grounded movement sounds
-    if (ent.grounded && ent.dist_traveled_this_frame > sim::Scalar::zero() &&
-        ent.travel_sound_countdown < sim::Scalar::zero()) {
+    if (ent.grounded && ent.dist_traveled_this_frame > FxScalar::zero() &&
+        ent.travel_sound_countdown < FxScalar::zero()) {
         ent.travel_sound_countdown =
-            sim::Scalar::from_int(static_cast<std::int32_t>(kWalkerClimberTravelSoundDistInterval));
+            FxScalar::from_int(static_cast<std::int32_t>(kWalkerClimberTravelSoundDistInterval));
         const AudioAssetId sound =
             ent.travel_sound == TravelSound::One ? audio_asset_ids::BlockDrag1
                                                     : audio_asset_ids::BlockDrag2;
@@ -211,9 +211,9 @@ void StepEntLogicAsBlock(
         ent.IncTravelSound();
     }
 
-    if (ent.grounded && ent.dist_traveled_this_frame > sim::Scalar::zero()) {
+    if (ent.grounded && ent.dist_traveled_this_frame > FxScalar::zero()) {
         ent.counter_c -= ent.dist_traveled_this_frame;
-        while (ent.counter_c <= sim::Scalar::zero()) {
+        while (ent.counter_c <= FxScalar::zero()) {
             ent.counter_c += ToFxScalar(kBlockTrailSmokeDistInterval);
             SpawnBlockTrailSmoke(state, GetBlockTrailingBottomCorner(ent), ent.facing);
         }

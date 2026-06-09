@@ -4,7 +4,7 @@
 #include "network/net_fuzzer.hpp"
 #include "network/net_lobby.hpp"
 #include "network/net_transport.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 #include "state_fingerprint.hpp"
 #include "stage_progression.hpp"
@@ -1179,8 +1179,8 @@ std::string HandleFingerprintCommand(const State& state) {
     const std::vector<NetworkEntFingerprint> ent_hashes =
         ComputeNetworkEntFingerprints(state);
     double fluid_sum = 0.0;
-    for (const std::vector<sim::Scalar>& row : state.stage.fluid_amount) {
-        for (const sim::Scalar amount : row) {
+    for (const std::vector<FxScalar>& row : state.stage.fluid_amount) {
+        for (const FxScalar amount : row) {
             fluid_sum += static_cast<double>(ToFloat(amount));
         }
     }

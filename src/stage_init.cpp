@@ -27,7 +27,7 @@ void PlacePlayerAtEntrance(State& state) {
                 continue;
             }
 
-            const sim::FxVec2 spawn_pos = sim::PixelVec2(
+            const FxVec2 spawn_pos = PixelVec2(
                 static_cast<int>(x * kTileSize),
                 static_cast<int>(y * kTileSize));
             unsigned int local_player_index = 0;
@@ -37,9 +37,9 @@ void PlacePlayerAtEntrance(State& state) {
                 }
                 if (Ent* const player = state.ents.GetEntMut(*slot.ent_vid)) {
                     player->pos =
-                        spawn_pos + sim::PixelVec2(static_cast<int>(local_player_index) * 8, 0);
-                    player->vel = sim::FxVec2::zero();
-                    player->acc = sim::FxVec2::zero();
+                        spawn_pos + PixelVec2(static_cast<int>(local_player_index) * 8, 0);
+                    player->vel = FxVec2::zero();
+                    player->acc = FxVec2::zero();
                 }
                 ++local_player_index;
             }
@@ -51,7 +51,7 @@ void PlacePlayerAtEntrance(State& state) {
         "No entrance tile found. You have a game breaking bug in the map generation code.");
 }
 
-void SpawnConnectedPlayers(State& state, sim::FxVec2 spawn_pos) {
+void SpawnConnectedPlayers(State& state, FxVec2 spawn_pos) {
     unsigned int player_index = 0;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || slot.player_id == kInvalidPlayerId) {
@@ -60,7 +60,7 @@ void SpawnConnectedPlayers(State& state, sim::FxVec2 spawn_pos) {
         const std::optional<VID> player_vid = SpawnPlayerForPlayerId(
             state,
             slot.player_id,
-            spawn_pos + sim::PixelVec2(static_cast<int>(player_index) * 8, 0)
+            spawn_pos + PixelVec2(static_cast<int>(player_index) * 8, 0)
         );
         if (player_vid.has_value() &&
             (slot.primary_local || !state.controlled_ent_vid.has_value())) {
@@ -94,7 +94,7 @@ void InitStage(State& state, bool preserve_player_state) {
     if (!carryover.players.empty()) {
         RestoreStageCarryover(state, carryover);
     } else {
-        SpawnConnectedPlayers(state, sim::FxVec2::zero());
+        SpawnConnectedPlayers(state, FxVec2::zero());
     }
     SpawnAuthoredStageEnts(state);
 
@@ -107,7 +107,7 @@ void InitStage(State& state, bool preserve_player_state) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const ent = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*ent, EntType::JetPack);
-                        ent->pos = sim::PixelVec2(random_available_position->x, random_available_position->y);
+                        ent->pos = PixelVec2(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -122,7 +122,7 @@ void InitStage(State& state, bool preserve_player_state) {
                         const EntType money_type =
                             RandomMoneyType(state.stagegen_drng) == 0 ? EntType::Gold : EntType::GoldStack;
                         SetEntAs(*money, money_type);
-                        money->pos = sim::PixelVec2(random_available_position->x, random_available_position->y);
+                        money->pos = PixelVec2(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -135,7 +135,7 @@ void InitStage(State& state, bool preserve_player_state) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const bat = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*bat, EntType::Bat);
-                        bat->pos = sim::PixelVec2(random_available_position->x, random_available_position->y);
+                        bat->pos = PixelVec2(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -155,7 +155,7 @@ void InitStage(State& state, bool preserve_player_state) {
                         } else {
                             SetEntAs(*ent, EntType::Rock);
                         }
-                        ent->pos = sim::PixelVec2(random_available_position->x, random_available_position->y);
+                        ent->pos = PixelVec2(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -168,7 +168,7 @@ void InitStage(State& state, bool preserve_player_state) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const block = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*block, EntType::Block);
-                        block->pos = sim::PixelVec2(random_available_position->x, random_available_position->y);
+                        block->pos = PixelVec2(random_available_position->x, random_available_position->y);
                     }
                 }
             }

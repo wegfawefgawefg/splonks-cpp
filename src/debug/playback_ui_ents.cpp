@@ -4,7 +4,7 @@
 #include "ent/spec_restore.hpp"
 #include "aframe.hpp"
 #include "player_queries.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "tools/tool_spec.hpp"
 #include "world_ops.hpp"
 
@@ -346,9 +346,9 @@ bool SwapControlledCharacter(
     }
 
     SetEntAs(*source_ent, target_type);
-    source_ent->vel = sim::FxVec2::zero();
-    source_ent->acc = sim::FxVec2::zero();
-    source_ent->rotation = sim::Scalar::zero();
+    source_ent->vel = FxVec2::zero();
+    source_ent->acc = FxVec2::zero();
+    source_ent->rotation = FxScalar::zero();
     source_ent->facing = facing;
     source_ent->SetCenter(ToFxVec2(spawn_center));
 
@@ -521,8 +521,8 @@ bool SpawnDebugEnt(
     }
 
     Ent* const spawned = world_ops::SpawnEnt(state, type_, [spawn_center](Ent& ent) {
-        ent.vel = sim::FxVec2::zero();
-        ent.acc = sim::FxVec2::zero();
+        ent.vel = FxVec2::zero();
+        ent.acc = FxVec2::zero();
         ent.SetCenter(ToFxVec2(spawn_center));
     });
     if (spawned == nullptr) {

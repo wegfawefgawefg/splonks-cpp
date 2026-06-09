@@ -16,7 +16,7 @@ namespace {
 
 constexpr std::uint32_t kMeatheadPreviewIntervalFrames = 300;
 constexpr std::int32_t kMeatheadPointsPerHeal = 10;
-const sim::Scalar kMeatheadPickupRange = sim::Scalar::from_int(16);
+const FxScalar kMeatheadPickupRange = FxScalar::from_int(16);
 constexpr float kMeatheadPopupSize = 9.0F;
 constexpr int kMeatheadPopupSearchTiles = 2;
 
@@ -53,12 +53,12 @@ std::optional<FVec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
         return std::nullopt;
     }
 
-    const sim::FxAABB player_aabb = player.GetAABB();
+    const FxAABB player_aabb = player.GetAABB();
     const int air_tile_y = state.stage.GetTileCoordAtWc(IVec2::New(
         player_aabb.br.x.trunc_int(),
-        (player_aabb.br.y - sim::Scalar::from_pixels(1)).trunc_int()
+        (player_aabb.br.y - FxScalar::from_pixels(1)).trunc_int()
     )).y;
-    const sim::FxVec2 player_center = player.GetCenter();
+    const FxVec2 player_center = player.GetCenter();
     const int center_tile_x = state.stage.GetTileCoordAtWc(IVec2::New(
         player_center.x.trunc_int(),
         player_center.y.trunc_int()
@@ -109,10 +109,10 @@ void PlayMeatheadHealFeedback(State& state, const Ent& player) {
     (void)PlayWorldSoundEmitter(state, sound_pos, audio_asset_ids::Smooch);
 }
 
-sim::FxAABB ExpandAabb(sim::FxAABB aabb, sim::Scalar amount) {
-    return sim::FxAABB::from_corners(
-        aabb.tl - sim::FxVec2{amount, amount},
-        aabb.br + sim::FxVec2{amount, amount}
+FxAABB ExpandAabb(FxAABB aabb, FxScalar amount) {
+    return FxAABB::from_corners(
+        aabb.tl - FxVec2{amount, amount},
+        aabb.br + FxVec2{amount, amount}
     );
 }
 
@@ -162,8 +162,8 @@ void StepEntLogicAsMeathead(
         return;
     }
 
-    meathead.vel = sim::FxVec2::zero();
-    meathead.acc = sim::FxVec2::zero();
+    meathead.vel = FxVec2::zero();
+    meathead.acc = FxVec2::zero();
 
     if (meathead.aframe_animator.anim_id == aframe_ids::MeatheadRise &&
         meathead.aframe_animator.IsFinished()) {
@@ -206,7 +206,7 @@ void OnMeatheadEffectHook(
         return;
     }
 
-    const sim::FxAABB collect_area = ExpandAabb(owner.GetAABB(), kMeatheadPickupRange);
+    const FxAABB collect_area = ExpandAabb(owner.GetAABB(), kMeatheadPickupRange);
     if (!WorldAabbsIntersect(state.stage, collect_area, victim->GetAABB())) {
         return;
     }

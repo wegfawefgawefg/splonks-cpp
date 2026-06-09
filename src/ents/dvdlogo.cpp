@@ -11,13 +11,13 @@ namespace splonks::ents::dvdlogo {
 
 namespace {
 
-sim::FxAABB TranslateAabb(sim::FxAABB aabb, sim::FxVec2 delta) {
-    return sim::FxAABB::from_corners(aabb.tl + delta, aabb.br + delta);
+FxAABB TranslateAabb(FxAABB aabb, FxVec2 delta) {
+    return FxAABB::from_corners(aabb.tl + delta, aabb.br + delta);
 }
 
 bool WouldBlockAt(
     std::size_t ent_idx,
-    sim::FxAABB target_aabb,
+    FxAABB target_aabb,
     const State& state,
     const Graphics& graphics
 ) {
@@ -29,18 +29,18 @@ bool WouldBlockAt(
     );
 }
 
-void StepBounceAxis(std::size_t ent_idx, State& state, const Graphics& graphics, sim::FxVec2 delta) {
-    if (delta.x == sim::Scalar::zero() && delta.y == sim::Scalar::zero()) {
+void StepBounceAxis(std::size_t ent_idx, State& state, const Graphics& graphics, FxVec2 delta) {
+    if (delta.x == FxScalar::zero() && delta.y == FxScalar::zero()) {
         return;
     }
 
     Ent& ent = state.ents.ents[ent_idx];
-    const sim::FxAABB moved_aabb = TranslateAabb(ent.GetAABB(), delta);
+    const FxAABB moved_aabb = TranslateAabb(ent.GetAABB(), delta);
     if (WouldBlockAt(ent_idx, moved_aabb, state, graphics)) {
-        if (delta.x != sim::Scalar::zero()) {
+        if (delta.x != FxScalar::zero()) {
             ent.vel.x = -ent.vel.x;
         }
-        if (delta.y != sim::Scalar::zero()) {
+        if (delta.y != FxScalar::zero()) {
             ent.vel.y = -ent.vel.y;
         }
         return;
@@ -68,8 +68,8 @@ void MaybeQueueTransitionOnPlayerContact(
         return;
     }
 
-    const sim::FxAABB door_aabb = common::GetContactAabbForEnt(ent, graphics);
-    const sim::FxAABB player_aabb = GetNearestWorldAabb(
+    const FxAABB door_aabb = common::GetContactAabbForEnt(ent, graphics);
+    const FxAABB player_aabb = GetNearestWorldAabb(
         state.stage,
         door_aabb.center(),
         common::GetContactAabbForEnt(*player, graphics)
@@ -117,13 +117,13 @@ void StepEntLogicAsDvdLogo(
         ent_idx,
         state,
         graphics,
-        sim::FxVec2{state.ents.ents[ent_idx].vel.x, sim::Scalar::zero()}
+        FxVec2{state.ents.ents[ent_idx].vel.x, FxScalar::zero()}
     );
     StepBounceAxis(
         ent_idx,
         state,
         graphics,
-        sim::FxVec2{sim::Scalar::zero(), state.ents.ents[ent_idx].vel.y}
+        FxVec2{FxScalar::zero(), state.ents.ents[ent_idx].vel.y}
     );
     MaybeQueueTransitionOnPlayerContact(ent_idx, state, graphics);
 }

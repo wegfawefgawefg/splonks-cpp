@@ -15,7 +15,7 @@ after the codebase has normalized transitional APIs.
 Gameplay should use gfxp-backed fixed geometry by default:
 
 - Use fixed-point scalar, vector, and AABB types for authoritative simulation.
-- Treat `sim::FxAABB` as the Splonks gameplay alias for gfxp's Fixed12 AABB.
+- Treat `FxAABB` as the Splonks gameplay alias for gfxp's Fixed12 AABB.
 - Convert to float/render geometry only at render, debug, UI, audio, tooling,
   and other presentation boundaries.
 - Do not make gameplay decisions using old float `AABB` or render `Vec2`.
@@ -39,7 +39,7 @@ using FxAABB = gfxp::Aabb_12;
 
 `gfxp::BasicAabb<FixedT>` is the generic template, while `gfxp::Aabb_12` is the
 concrete Fixed12 type Splonks wants. Splonks should prefer the concrete alias in
-`sim/fxp.hpp` so readers do not wonder whether `sim::FxAABB` is a separate box
+`fxp.hpp` so readers do not wonder whether `FxAABB` is a separate box
 type.
 
 ## AABB Naming Policy
@@ -54,10 +54,10 @@ authoritative coordinate systems:
 
 Cleanup target:
 
-- Keep `GetContactAabbForEnt(...) -> sim::FxAABB`.
-- Keep `ent.GetAABB() -> sim::FxAABB`.
+- Keep `GetContactAabbForEnt(...) -> FxAABB`.
+- Keep `ent.GetAABB() -> FxAABB`.
 - Remove gameplay/common access to old render contact wrappers.
-- Keep `GetEntBroadphaseAabb(...) -> sim::FxAABB`.
+- Keep `GetEntBroadphaseAabb(...) -> FxAABB`.
 - Remove old render broadphase wrappers. The spatial index should consume fixed
   `GetEntBroadphaseAabb(...)`.
 - Eventually old float `AABB` should not appear in authoritative gameplay
@@ -69,14 +69,14 @@ Cleanup target:
 
 Current state:
 
-- Completed 2026-06-08. `src/sim/fxp.hpp` now aliases `sim::FxVec2` to
-  `gfxp::Vec2_12` and `sim::FxAABB` to `gfxp::Aabb_12`.
+- Completed 2026-06-08. `src/fxp.hpp` now aliases `FxVec2` to
+  `gfxp::Vec2_12` and `FxAABB` to `gfxp::Aabb_12`.
 
 Cleanup:
 
 - [x] Replace those aliases with `gfxp::Vec2_12` and `gfxp::Aabb_12`.
-- [x] Keep `sim::Scalar = gfxp::Fixed12`.
-- [x] Document `sim::*` as "Splonks gameplay Fixed12 aliases over gfxp."
+- [x] Keep `FxScalar = gfxp::Fixed12`.
+- [x] Promote fixed aliases to top-level Splonks names over gfxp.
 - [x] Validate with `./scripts/build.sh`,
       `./build/splonks-cpp --check-state-fingerprint-smoke --project-root "$PWD"`,
       and
@@ -88,14 +88,14 @@ Current state:
 
 - Completed 2026-06-08. The old float/render rectangle type has been renamed
   from `AABB` to `FAABB`.
-- `sim::FxAABB` remains the only unqualified gameplay rectangle spelling.
+- `FxAABB` remains the only unqualified gameplay rectangle spelling.
 - Remaining `FAABB` call sites are render/debug annotations or other
   explicit presentation boundaries.
 
 Cleanup:
 
 - [x] Rename or quarantine the old type as `FAABB` / `FloatAABB`.
-- Keep conversion helpers at boundaries, e.g. `ToFAABB(sim::FxAABB)`.
+- Keep conversion helpers at boundaries, e.g. `ToFAABB(FxAABB)`.
 - Do not allow unqualified float `AABB` in authoritative gameplay after the
   migration.
 - Consider moving render-only AABB helpers out of `utils.hpp` into a
@@ -105,7 +105,7 @@ Cleanup:
 
 Current state:
 
-- `GetContactAabbForEnt(...)` now returns `sim::FxAABB`, which is correct.
+- `GetContactAabbForEnt(...)` now returns `FxAABB`, which is correct.
 - The old `GetRenderContactAabbForEnt(...)` and
   `GetRenderEntBroadphaseAabb(...)` wrappers have been removed.
 - Completed 2026-06-08: buying overlap/prompt selection now uses fixed contact
@@ -158,7 +158,7 @@ Current state:
   `AabbHitsBlockingWorldGeometry(...)`, and
   `AabbHitsBlockingWorldGeometryOrImpassableEnts(...)` overloads were removed
   after remaining flesh-guy wall-slide and DVD-logo bounce probes moved to fixed
-  `sim::FxAABB`.
+  `FxAABB`.
 - Completed 2026-06-08: world-query raycast target collection now stores fixed
   target AABBs and uses fixed contact cboxes.
 - Completed 2026-06-08: area-listener enter/exit overlap detection now uses
@@ -166,18 +166,18 @@ Current state:
 - Completed 2026-06-08: area-listener tile-change notification checks now use
   fixed tile-center points and fixed body AABBs.
 - Completed 2026-06-08: tile-overlap effect queries now use fixed body AABBs.
-- Completed 2026-06-08: fixed `QueryTileAtWorldPos(stage, sim::FxVec2)` was added,
+- Completed 2026-06-08: fixed `QueryTileAtWorldPos(stage, FxVec2)` was added,
   and hanging-spider ceiling support now samples from fixed body bounds.
-- Completed 2026-06-08: fixed `BreakStageTilesInRectWc(sim::FxAABB, ...)` was
+- Completed 2026-06-08: fixed `BreakStageTilesInRectWc(FxAABB, ...)` was
   added, and mattock tile breaking now uses the fixed rectangle path.
 - Completed 2026-06-08: boulder leading break-strip queries and tile breaking
   now use fixed body bounds and the fixed stage-break rectangle path.
-- Completed 2026-06-08: shop area accessors now use fixed `sim::FxAABB`. Shop
+- Completed 2026-06-08: shop area accessors now use fixed `FxAABB`. Shop
   child escape checks and gold-idol shop overlap use fixed AABBs, while debug
   overlay converts to render AABB at the rendering boundary.
 - Completed 2026-06-08: the old float `GatherBlockingContactsForAabb(...)`
   overload was removed; blocking contact gathering now exposes only the fixed
-  `sim::FxAABB` API.
+  `FxAABB` API.
 - Completed 2026-06-08: physics movement cleanup removed dead float tile-contact
   snap/one-way helpers, and moving-platform top/hang carry detection now uses
   fixed body/feet AABBs and fixed overlap comparisons.
@@ -280,12 +280,12 @@ Cleanup:
 
 Current state:
 
-- Completed 2026-06-08. `SID` stores fixed `sim::FxAABB` records, builds bucket
-  coverage from fixed pixel floor coordinates, and queries fixed `sim::FxAABB`
+- Completed 2026-06-08. `SID` stores fixed `FxAABB` records, builds bucket
+  coverage from fixed pixel floor coordinates, and queries fixed `FxAABB`
   areas directly.
 - `State::UpdateSidForEnt` now indexes
   `ents::common::GetEntBroadphaseAabb(...)` instead of the render wrapper.
-- `QueryEntsInAabb(state, sim::FxAABB, ...)` now queries `state.sid` directly.
+- `QueryEntsInAabb(state, FxAABB, ...)` now queries `state.sid` directly.
 - The old float `QueryEntsInAabb(state, AABB, ...)` overload remains as a
   temporary migration boundary and converts into the fixed query path.
 - Removed unused SID APIs that exposed float `AABB` records:
@@ -293,8 +293,8 @@ Current state:
 
 Cleanup:
 
-- [x] Decide whether `SID` should store fixed `sim::FxAABB` or integer pixel
-      cells: store fixed `sim::FxAABB` and derive integer bucket cells.
+- [x] Decide whether `SID` should store fixed `FxAABB` or integer pixel
+      cells: store fixed `FxAABB` and derive integer bucket cells.
 - [x] Migrate `SID` to a deterministic fixed/int broadphase so fixed gameplay
       queries do not need render conversions.
 - [x] Remove the spatial-index render bridge from `State::UpdateSidForEnt`.
@@ -330,7 +330,7 @@ Current state:
 - Completed 2026-06-09: fixed center helpers keep the neutral `GetCenter()` and
   `SetCenter()` names because fixed simulation state is the default lane.
   Float centers are produced by converting at render/debug boundaries.
-- Completed 2026-06-08: nearest-player queries gained fixed `sim::FxVec2`
+- Completed 2026-06-08: nearest-player queries gained fixed `FxVec2`
   overloads, and spider, hanging-spider, skeleton, piranha, caveman, cobra,
   shopkeeper, ghost-ball, DVD-logo, damsel, chest, gold-idol, and
   sacrifice-altar nearest-player or chase checks now use fixed positions/deltas
@@ -459,7 +459,7 @@ Cleanup:
 
 Current state:
 
-- `world_query.cpp` has both float `AABB` and fixed `sim::FxAABB` overloads for
+- `world_query.cpp` has both float `AABB` and fixed `FxAABB` overloads for
   nearest-world AABB, intersection, tile queries, blocking checks, and entity
   queries.
 - Presentation-only tile raycasts still use render `Vec2` inputs for audio and
@@ -467,7 +467,7 @@ Current state:
 - Completed 2026-06-08: unused non-raycast float `AABB` overloads were removed
   from nearest-world AABB, world AABB contains/intersect, tile AABB query,
   entity AABB query, and one-way-support query APIs.
-- Completed 2026-06-08: horizontal world raycasts gained a fixed `sim::FxVec2`
+- Completed 2026-06-08: horizontal world raycasts gained a fixed `FxVec2`
   start-position API with fixed ray broadphase collection. Caveman, cobra,
   shopkeeper sight checks, and pistol hitscan now use fixed starts/deltas and
   the fixed horizontal raycast path. The old render horizontal overload and the
@@ -493,11 +493,11 @@ Cleanup:
 
 Current state:
 
-- Completed 2026-06-08. `Stage::SetTilesInRectWc(sim::FxAABB, ...)` now accepts
+- Completed 2026-06-08. `Stage::SetTilesInRectWc(FxAABB, ...)` now accepts
   fixed world-space rectangles, and `Stage::SetTilesInRect(IAABB, ...)` now
   accepts integer tile rectangles. The old float rectangle setter surface was
   removed.
-- `BreakStageTilesInRectWc(sim::FxAABB, ...)` now exists for fixed gameplay
+- `BreakStageTilesInRectWc(FxAABB, ...)` now exists for fixed gameplay
   callers. Mattock and boulder tile breaking use it.
 - Stage break and any future gameplay mutation callers should stay on the fixed
   world-space or integer tile-space paths.
@@ -515,20 +515,20 @@ Current state:
 
 - Completed 2026-06-08. `stage_fluids.cpp` now keeps fluid velocity,
   gravity, temporary gravity, direction, damping, and incoming velocity vector
-  math in `sim::FxVec2`/`sim::Scalar` during internal simulation.
+  math in `FxVec2`/`FxScalar` during internal simulation.
 - Completed 2026-06-08. Fluid amount, capacity, scoring, budget, and changed
-  tile comparisons now use fixed `sim::Scalar` math during internal
+  tile comparisons now use fixed `FxScalar` math during internal
   simulation.
-- Completed 2026-06-08. Fluid gravity setter APIs now accept `sim::FxVec2`; the
+- Completed 2026-06-08. Fluid gravity setter APIs now accept `FxVec2`; the
   remaining float conversions are in debug brush/test authoring callers.
 - This was already called out in the determinism audit, but it is also API
   clutter because fixed state is being manipulated through float helpers.
 
 Cleanup:
 
-- [x] Move fluid velocity/gravity math to fixed `sim::FxVec2` helpers.
+- [x] Move fluid velocity/gravity math to fixed `FxVec2` helpers.
 - [x] Convert fluid amount/transfer scoring to fixed scalar math.
-- [x] Convert fluid gravity mutation APIs to fixed `sim::FxVec2`.
+- [x] Convert fluid gravity mutation APIs to fixed `FxVec2`.
 - Keep float only for rendering/debug visualization of fluid values.
 
 ### 9. Network and spawn code still converts through render `Vec2`
@@ -537,25 +537,25 @@ Current state:
 
 - Stage spawning, lobby retained players, join handoff, player lifecycle, and
   stage init frequently build spawn positions as render `Vec2` and then call
-  `sim::ToFxVec2`.
-- Completed 2026-06-08. Stage spawning now has fixed `sim::FxVec2` overloads for
+  `ToFxVec2`.
+- Completed 2026-06-08. Stage spawning now has fixed `FxVec2` overloads for
   player placement, player spawning, and top-left/center entity spawning; the
   render `Vec2` overloads are adapters for existing debug/tooling callers.
 - Completed 2026-06-08. Normal stage initialization now places connected
   players through fixed spawn positions and fixed integer-pixel spacing.
 - Completed 2026-06-08. Network player spawn/reconnect helpers now use fixed
-  `sim::FxVec2` positions for retained reconnects, join accept positions, join
+  `FxVec2` positions for retained reconnects, join accept positions, join
   barrier topology packets, synced stage reload placement, and player lifecycle
   respawns.
 - Completed 2026-06-08. Stage entrance spawn lookup now returns fixed
-  `sim::FxVec2`; network respawn/revive and reconnect spawn paths consume the
+  `FxVec2`; network respawn/revive and reconnect spawn paths consume the
   entrance position without render-vector round trips.
 - Completed 2026-06-08. Stage rotation now rotates entity centers, fluid
   velocity/gravity vectors, and the rotation pivot in fixed coordinates. Render
   vectors remain only for particles, audio emitters, camera presentation, and
   animation interpolation.
 - Completed 2026-06-08. The normal stage-spawning API names now accept only
-  fixed `sim::FxVec2` positions. Render-position adapters were renamed to
+  fixed `FxVec2` positions. Render-position adapters were renamed to
   `PlacePlayerAtRenderPosition(...)`, `SpawnPlayerAtRenderPosition(...)`,
   `SpawnPlayerForPlayerIdAtRenderPosition(...)`,
   `SpawnStageEntAtRenderTopLeft(...)`, and
@@ -578,7 +578,7 @@ Cleanup:
       spawn/topology paths.
 - [x] Keep render `Vec2` spawning only for explicitly named debug/test
       authoring adapters.
-- Prefer `sim::PixelVec2(...)` and fixed offsets for common integer-pixel spawn
+- Prefer `PixelVec2(...)` and fixed offsets for common integer-pixel spawn
   spacing.
 
 ### 10. Generic entity counters remain generic
@@ -586,7 +586,7 @@ Cleanup:
 Current state:
 
 - Completed 2026-06-08. `Ent::counter_a` through `counter_d` now store
-  `sim::Scalar` instead of raw floats.
+  `FxScalar` instead of raw floats.
 - Completed 2026-06-08. Counter fingerprinting and state-fingerprint debug
   comparison now hash/read fixed scalar values instead of quantized floats.
 - Completed 2026-06-08. Debug playback recording, playback loading, spec
@@ -601,7 +601,7 @@ Current state:
 
 Cleanup:
 
-- [x] Convert runtime generic counter storage from raw `float` to `sim::Scalar`.
+- [x] Convert runtime generic counter storage from raw `float` to `FxScalar`.
 - [x] Convert fingerprinting, replay I/O, spec restore, and lobby-retention
       code to preserve fixed counter values directly.
 - [x] Update runtime counter assignments and comparisons so frame counts,
@@ -610,7 +610,7 @@ Cleanup:
 - Split generic counters into typed fields where possible.
 - Convert frame counters and enum-like values to integer types where/when they
   become real named fields.
-- Keep distance/time scalar counters that truly need fractions as `sim::Scalar`.
+- Keep distance/time scalar counters that truly need fractions as `FxScalar`.
 
 ### 11. Fixed/float boundary helpers are useful but easy to overuse
 
@@ -626,7 +626,7 @@ Current state:
   instead of detouring through render vectors or deterministic float RNG.
 - Completed 2026-06-08: bow and web-cannon aim now carry fixed aim vectors for
   projectile/recoil velocities, and common tool/carry throw APIs accept fixed
-  `sim::FxVec2` velocities instead of render `Vec2`.
+  `FxVec2` velocities instead of render `Vec2`.
 - Remaining conversion hits are mostly explicit authoring/spawn boundaries,
   debug/render rectangles, test fixture setup, or a small number of
   visual-authoring-to-gameplay bridges.
@@ -636,7 +636,7 @@ Current state:
   boundaries; fixed spawn names are fixed-only for gameplay callers.
 - `world_query.cpp` keeps `RaycastRenderTiles(...)` as an explicit
   presentation-only tile ray for audio/debug occlusion visualization. Gameplay
-  horizontal raycasts use fixed `sim::FxVec2` starts.
+  horizontal raycasts use fixed `FxVec2` starts.
 - Completed 2026-06-08: ball-and-chain force logic now derives chain anchor,
   ball center, and delta in fixed sim coordinates. The local rounded
   length/ratio algorithm still uses raw fixed components internally, but no
@@ -653,8 +653,8 @@ Cleanup:
 
 - Treat conversions inside authoritative gameplay as migration debt unless the
   function is clearly authoring, debug, tooling, audio, or rendering code.
-- Prefer fixed constructors such as `sim::Scalar::from_int`,
-  `sim::FxVec2::from_pixels`, and `sim::PixelVec2` for gameplay constants.
+- Prefer fixed constructors such as `FxScalar::from_int`,
+  `FxVec2::from_pixels`, and `PixelVec2` for gameplay constants.
 - Keep `ToF*` / `ToFAABB` conversions near render/debug/audio/UI, not in collision, damage,
   topology, stage mutation, or gameplay query code.
 - [x] Remove deterministic `RandomFloat` from authoritative entity launch
@@ -670,7 +670,7 @@ Cleanup:
 
 ## Suggested Order
 
-1. Clarify `sim/fxp.hpp` aliases to use `gfxp::Vec2_12` and `gfxp::Aabb_12`.
+1. Clarify `fxp.hpp` aliases to use `gfxp::Vec2_12` and `gfxp::Aabb_12`.
 2. Migrate `GetRenderContactAabbForEnt` gameplay callers subsystem-by-subsystem.
 3. Convert `SID` to fixed/int broadphase or explicitly quarantine it as the only
    fixed-query-to-render adapter.

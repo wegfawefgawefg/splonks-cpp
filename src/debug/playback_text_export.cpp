@@ -2,7 +2,7 @@
 
 #include "ent/spec.hpp"
 #include "aframe.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 
 #include <cstdio>
 #include <cstring>

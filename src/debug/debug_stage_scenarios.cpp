@@ -4,7 +4,7 @@
 #include "ent/spec.hpp"
 #include "ents/common/common.hpp"
 #include "player_queries.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "stage_spawning.hpp"
 
 #include <array>
@@ -97,8 +97,8 @@ void GiveHeldRockToEnt(State& state, VID holder_vid) {
     rock->proj_contact_damage_type = DamageType::Attack;
     rock->proj_contact_damage_amount = 1;
     rock->proj_contact_timer = 0;
-    rock->vel = sim::FxVec2::zero();
-    rock->acc = sim::FxVec2::zero();
+    rock->vel = FxVec2::zero();
+    rock->acc = FxVec2::zero();
     rock->SetCenter(ToFxVec2(ToFVec2(holder->GetCenter()) + FVec2::New(4.0F, 1.0F)));
     holder->holding_vid = rock->vid;
     holder->holding = true;
@@ -125,8 +125,8 @@ void GiveHeldMattockToEnt(State& state, VID holder_vid) {
     mattock->attach_mode = AttachMode::Held;
     mattock->has_physics = false;
     mattock->can_collide = false;
-    mattock->vel = sim::FxVec2::zero();
-    mattock->acc = sim::FxVec2::zero();
+    mattock->vel = FxVec2::zero();
+    mattock->acc = FxVec2::zero();
     mattock->SetCenter(ToFxVec2(ToFVec2(holder->GetCenter()) + FVec2::New(4.0F, 1.0F)));
     holder->holding_vid = mattock->vid;
     holder->holding = true;

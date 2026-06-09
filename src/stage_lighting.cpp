@@ -3,7 +3,7 @@
 #include "state.hpp"
 #include "tile.hpp"
 #include "tile_spec.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 
 #include <algorithm>
 #include <cmath>

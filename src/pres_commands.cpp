@@ -7,7 +7,7 @@
 #include "graphics.hpp"
 #include "particles/ribbon_particle.hpp"
 #include "particles/sprite_particle.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "stage_lighting.hpp"
 #include "state.hpp"
 #include "world_query.hpp"

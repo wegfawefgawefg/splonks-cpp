@@ -26,7 +26,7 @@ bool CanEntAttemptStomp(const Ent& stomper, const State& state) {
     if (stomper.condition != EntCondition::Normal) {
         return false;
     }
-    if (stomper.vel.y <= sim::Scalar::zero()) {
+    if (stomper.vel.y <= FxScalar::zero()) {
         return false;
     }
     if (stomper.held_by_vid.has_value()) {
@@ -105,13 +105,13 @@ bool TryApplyStompContactToEnt(
         return false;
     }
 
-    const sim::FxAABB stomper_aabb = GetContactAabbForEnt(stomper, graphics);
-    const sim::FxAABB stomped_aabb = GetNearestWorldAabb(
+    const FxAABB stomper_aabb = GetContactAabbForEnt(stomper, graphics);
+    const FxAABB stomped_aabb = GetNearestWorldAabb(
         state.stage,
         stomper_aabb.center(),
         GetContactAabbForEnt(*stomped, graphics)
     );
-    const sim::Scalar stomped_head_band_bottom =
+    const FxScalar stomped_head_band_bottom =
         stomped_aabb.tl.y + ToFxScalar(kStompHeadHeight);
     if (stomper_aabb.br.y > stomped_head_band_bottom) {
         return false;
@@ -146,13 +146,13 @@ bool TryApplyStompContactToEnt(
     if (stomp_damage == 0) {
         return false;
     }
-    const sim::FxVec2 stomp_delta =
+    const FxVec2 stomp_delta =
         GetNearestWorldDelta(state.stage, stomper.GetAABB().center(), stomped->GetAABB().center());
-    const sim::Scalar stomp_knockback_x =
-        stomp_delta.x < sim::Scalar::zero() ? -ToFxScalar(kStompVictimKnockbackVelocityX)
+    const FxScalar stomp_knockback_x =
+        stomp_delta.x < FxScalar::zero() ? -ToFxScalar(kStompVictimKnockbackVelocityX)
                                             : ToFxScalar(kStompVictimKnockbackVelocityX);
     const KnockbackSpec knockback{
-        .velocity = sim::FxVec2{
+        .velocity = FxVec2{
             stomp_knockback_x,
             ToFxScalar(kStompVictimKnockbackVelocityY),
         },

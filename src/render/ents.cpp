@@ -7,7 +7,7 @@
 #include "render/stone_overlay.hpp"
 #include "render/tile_lighting.hpp"
 #include "render/world_texture.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "stage_lighting.hpp"
 #include "state.hpp"
 #include "world_query.hpp"

@@ -36,13 +36,13 @@ void ClearOwnedBuyableIfPresent(Ent& ent, VID shop_vid) {
 
 } // namespace
 
-sim::FxAABB GetShopArea(const Ent& shop) {
+FxAABB GetShopArea(const Ent& shop) {
     return shop.GetAABB();
 }
 
-void SetShopArea(Ent& shop, sim::FxAABB area) {
+void SetShopArea(Ent& shop, FxAABB area) {
     shop.pos = area.tl;
-    shop.size = area.br - area.tl + sim::PixelVec2(1, 1);
+    shop.size = area.br - area.tl + PixelVec2(1, 1);
     shop.point_a = IVec2::New(0, 0);
     shop.point_b = IVec2::New(0, 0);
     shop.point_label_a = PointLabel::None;
@@ -171,7 +171,7 @@ void StepEntLogicAsShop(
         return;
     }
 
-    const sim::FxAABB shop_area = GetShopArea(shop);
+    const FxAABB shop_area = GetShopArea(shop);
     for (const VID& child_vid : *shop.child_vids) {
         Ent* const child = state.ents.GetEntMut(child_vid);
         if (child == nullptr || !child->active) {
@@ -182,7 +182,7 @@ void StepEntLogicAsShop(
             continue;
         }
 
-        const sim::FxAABB child_aabb = child->GetAABB();
+        const FxAABB child_aabb = child->GetAABB();
         if (WorldAabbsIntersect(state.stage, child_aabb, shop_area)) {
             continue;
         }

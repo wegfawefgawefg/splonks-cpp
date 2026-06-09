@@ -23,7 +23,7 @@ void RemoveEffectAt(Ent& ent, std::size_t effect_index) {
     }
 }
 
-void ApplyModifier(sim::Scalar& value, const EffectModifier& modifier) {
+void ApplyModifier(FxScalar& value, const EffectModifier& modifier) {
     switch (modifier.op) {
     case EffectModifierOp::Add:
         value += modifier.value;
@@ -43,10 +43,10 @@ void ApplyModifier(sim::Scalar& value, const EffectModifier& modifier) {
     }
 }
 
-sim::Scalar GetWaterTunedModifierValue(
+FxScalar GetWaterTunedModifierValue(
     EffectModifierTarget target,
     const State& state,
-    sim::Scalar fallback
+    FxScalar fallback
 ) {
     const WaterEffectSettings& water = state.settings.water_effect;
     switch (target) {
@@ -220,7 +220,7 @@ float GetModifiedEffectValue(
     float base_value,
     const State* state
 ) {
-    sim::Scalar value = ToFxScalar(base_value);
+    FxScalar value = ToFxScalar(base_value);
     if (ent.effects.get() == nullptr) {
         return ToFloat(value);
     }

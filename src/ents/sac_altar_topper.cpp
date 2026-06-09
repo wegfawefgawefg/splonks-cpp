@@ -58,10 +58,10 @@ void StepEntLogicAsSacAltarTopper(
     }
 
     if (topper.aframe_animator.anim_id == aframe_ids::SacAltarSac) {
-        if (topper.counter_b > sim::Scalar::zero()) {
-            topper.counter_b -= sim::Scalar::from_int(1);
+        if (topper.counter_b > FxScalar::zero()) {
+            topper.counter_b -= FxScalar::from_int(1);
         }
-        if (topper.counter_b <= sim::Scalar::zero()) {
+        if (topper.counter_b <= FxScalar::zero()) {
             SetAnim(topper, aframe_ids::SacAltarTopper);
             topper.aframe_animator.loop = true;
             topper.aframe_animator.animate = true;
@@ -69,12 +69,12 @@ void StepEntLogicAsSacAltarTopper(
         }
     }
 
-    if (topper.counter_a > sim::Scalar::zero()) {
-        topper.counter_a -= sim::Scalar::from_int(1);
+    if (topper.counter_a > FxScalar::zero()) {
+        topper.counter_a -= FxScalar::from_int(1);
     }
-    if (topper.counter_a <= sim::Scalar::zero()) {
+    if (topper.counter_a <= FxScalar::zero()) {
         topper.counter_a = ToFxScalar(kIdleSmokeIntervalFrames);
-        const sim::FxVec2 emit_pos =
+        const FxVec2 emit_pos =
             ents::common::GetEmitPointForEnt(topper, graphics, topper.GetCenter());
         SpawnTopperSmoke(state, ToFVec2(emit_pos), 0.0F);
     }

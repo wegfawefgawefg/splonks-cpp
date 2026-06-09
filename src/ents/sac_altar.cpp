@@ -71,11 +71,11 @@ bool BelongsToOwnerAltar(const Ent& ent, const Ent& owner) {
     return false;
 }
 
-sim::FxAABB GetSacrificeArea(const Ent& altar) {
-    const sim::FxVec2 altar_pos = altar.pos;
-    return sim::FxAABB::from_corners(
-        altar_pos + sim::PixelVec2(-1, -kSacrificeSurfaceTopOffset),
-        altar_pos + sim::PixelVec2(31, kSacrificeSurfaceBottomOffset)
+FxAABB GetSacrificeArea(const Ent& altar) {
+    const FxVec2 altar_pos = altar.pos;
+    return FxAABB::from_corners(
+        altar_pos + PixelVec2(-1, -kSacrificeSurfaceTopOffset),
+        altar_pos + PixelVec2(31, kSacrificeSurfaceBottomOffset)
     );
 }
 
@@ -89,8 +89,8 @@ bool PlayerHasBallAndChainPunishment(const State& state, const Ent& player) {
 }
 
 void SpawnBallAndChainPunishment(State& state, const Ent* altar_context) {
-    const sim::FxVec2 search_pos = altar_context != nullptr ? altar_context->GetCenter()
-                                                          : sim::FxVec2::zero();
+    const FxVec2 search_pos = altar_context != nullptr ? altar_context->GetCenter()
+                                                          : FxVec2::zero();
     const std::optional<VID> player_vid = altar_context != nullptr
         ? FindNearestPlayerVid(state, search_pos, true)
         : FindFirstConnectedLivingPlayerVid(state);
@@ -106,11 +106,11 @@ void SpawnBallAndChainPunishment(State& state, const Ent* altar_context) {
         [&](Ent& spawned_ball) {
             spawned_ball.SetCenter(
                 player->GetCenter() +
-                sim::FxVec2{sim::Scalar::zero(), ToFxScalar(kBallAndChainSpawnOffsetY)}
+                FxVec2{FxScalar::zero(), ToFxScalar(kBallAndChainSpawnOffsetY)}
             );
             spawned_ball.ent_a = player->vid;
             spawned_ball.vel = player->vel;
-            spawned_ball.acc = sim::FxVec2::zero();
+            spawned_ball.acc = FxVec2::zero();
         }
     );
     if (ball == nullptr) {
@@ -229,7 +229,7 @@ std::optional<VID> GetRewardTargetVid(const State& state, const Ent& altar) {
     return FindNearestPlayerVid(state, altar.GetCenter(), true);
 }
 
-sim::FxVec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics& graphics) {
+FxVec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics& graphics) {
     if (altar.ent_a.has_value()) {
         if (const Ent* const topper = state.ents.GetEnt(*altar.ent_a)) {
             return common::GetEmitPointForEnt(*topper, graphics, topper->GetCenter());
@@ -239,7 +239,7 @@ sim::FxVec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphi
     return common::GetEmitPointForEnt(
         altar,
         graphics,
-        altar.pos + sim::PixelVec2(16, -8)
+        altar.pos + PixelVec2(16, -8)
     );
 }
 
@@ -256,7 +256,7 @@ FVec2 GetAltarSoundPos(const Ent& altar, const State& state, const Graphics& gra
         common::GetVisualCenterForEnt(
             altar,
             graphics,
-            altar.pos + sim::PixelVec2(16, -8)
+            altar.pos + PixelVec2(16, -8)
         )
     );
 }
@@ -466,18 +466,18 @@ void DeactivateLinkedAltarPieces(Ent& owner, State& state) {
 }
 
 bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
-    const sim::FxVec2 emit_pos = GetAltarEffectPos(altar, state, graphics);
+    const FxVec2 emit_pos = GetAltarEffectPos(altar, state, graphics);
     const FVec2 render_emit_pos = ToFVec2(emit_pos);
 
     if (state.sac_altar_reward_tier == 0 && state.sac_altar_favor >= kAccessoryRewardFavor) {
         const EntType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
         Ent* const reward = world_ops::SpawnEnt(state, reward_type, [&](Ent& spawned_reward) {
-            spawned_reward.SetCenter(emit_pos + sim::PixelVec2(0, -3));
-            spawned_reward.vel = sim::FxVec2{
+            spawned_reward.SetCenter(emit_pos + PixelVec2(0, -3));
+            spawned_reward.vel = FxVec2{
                 RandomSimScalar(state.drng, ToFxScalar(-0.55F), ToFxScalar(0.55F)),
                 ToFxScalar(-1.7F),
             };
-            spawned_reward.acc = sim::FxVec2::zero();
+            spawned_reward.acc = FxVec2::zero();
         });
         if (reward == nullptr) {
             return false;
@@ -490,11 +490,11 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
 
     if (state.sac_altar_reward_tier == 1 && state.sac_altar_favor >= kSecondRewardFavor) {
         Ent* const reward = world_ops::SpawnEnt(state, EntType::Meathead, [&](Ent& spawned_reward) {
-            spawned_reward.SetCenter(emit_pos + sim::PixelVec2(0, -2));
+            spawned_reward.SetCenter(emit_pos + PixelVec2(0, -2));
             spawned_reward.ent_a = altar.vid;
             spawned_reward.draw_layer = DrawLayer::Middle;
-            spawned_reward.vel = sim::FxVec2::zero();
-            spawned_reward.acc = sim::FxVec2::zero();
+            spawned_reward.vel = FxVec2::zero();
+            spawned_reward.acc = FxVec2::zero();
         });
         if (reward == nullptr) {
             return false;
@@ -663,7 +663,7 @@ void StepEntLogicAsSacAltar(
         return;
     }
 
-    const sim::FxAABB sacrifice_area = GetSacrificeArea(altar);
+    const FxAABB sacrifice_area = GetSacrificeArea(altar);
     const std::vector<VID> candidates = QueryEntsInAabb(state, sacrifice_area, altar.vid);
     for (const VID& candidate_vid : candidates) {
         Ent* const victim = state.ents.GetEntMut(candidate_vid);
@@ -684,7 +684,7 @@ void StepEntLogicAsSacAltar(
             continue;
         }
 
-        const sim::FxAABB victim_aabb = common::GetContactAabbForEnt(*victim, graphics);
+        const FxAABB victim_aabb = common::GetContactAabbForEnt(*victim, graphics);
         if (victim_aabb.br.y < sacrifice_area.tl.y || victim_aabb.br.y > sacrifice_area.br.y) {
             continue;
         }

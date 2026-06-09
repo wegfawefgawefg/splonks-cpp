@@ -1,7 +1,7 @@
 #include "ents/common/common.hpp"
 
 #include "aframe_id.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 
 #include <algorithm>
 
@@ -24,7 +24,7 @@ void ApplyAFrameGeometryToEnt(std::size_t ent_idx, State& state, const Graphics&
         return;
     }
 
-    ent.size = sim::FxVec2::from_pixels(aframe->pbox.w, aframe->pbox.h);
+    ent.size = FxVec2::from_pixels(aframe->pbox.w, aframe->pbox.h);
 }
 
 } // namespace
@@ -60,75 +60,75 @@ const AFrame* GetCurrentAFrameForEnt(const Ent& ent, const Graphics& graphics) {
     return &graphics.aframe_db.frames[anim->frame_indices[frame_index]];
 }
 
-sim::FxVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe) {
-    const sim::FxVec2 draw_offset =
-        sim::FxVec2::from_pixels(aframe.draw_offset.x, aframe.draw_offset.y);
-    const sim::FxVec2 pbox_offset = sim::FxVec2::from_pixels(aframe.pbox.x, aframe.pbox.y);
+FxVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe) {
+    const FxVec2 draw_offset =
+        FxVec2::from_pixels(aframe.draw_offset.x, aframe.draw_offset.y);
+    const FxVec2 pbox_offset = FxVec2::from_pixels(aframe.pbox.x, aframe.pbox.y);
 
     if (ent.facing == Side::Left) {
         return ent.pos - pbox_offset + draw_offset;
     }
 
     const int mirrored_pbox_x = aframe.sample_rect.w - aframe.pbox.x - aframe.pbox.w;
-    sim::FxVec2 facing_adjusted_draw_offset = draw_offset;
+    FxVec2 facing_adjusted_draw_offset = draw_offset;
     if (ent.type_ == EntType::BaseballBat) {
-        facing_adjusted_draw_offset = sim::FxVec2{-draw_offset.x, draw_offset.y};
+        facing_adjusted_draw_offset = FxVec2{-draw_offset.x, draw_offset.y};
     }
-    return ent.pos - sim::FxVec2::from_pixels(mirrored_pbox_x, aframe.pbox.y) +
+    return ent.pos - FxVec2::from_pixels(mirrored_pbox_x, aframe.pbox.y) +
            facing_adjusted_draw_offset;
 }
 
-sim::FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback) {
+FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, FxVec2 fallback) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
         return fallback;
     }
 
-    const sim::FxVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
-    const sim::FxVec2 sprite_world_size =
-        sim::FxVec2::from_pixels(aframe->sample_rect.w, aframe->sample_rect.h) *
+    const FxVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
+    const FxVec2 sprite_world_size =
+        FxVec2::from_pixels(aframe->sample_rect.w, aframe->sample_rect.h) *
         ent.aframe_animator.scale;
-    return sprite_tl + (sprite_world_size / sim::Scalar::from_int(2));
+    return sprite_tl + (sprite_world_size / FxScalar::from_int(2));
 }
 
-void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 center) {
+void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, FxVec2 center) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
         ent.SetCenter(center);
         return;
     }
 
-    const sim::FxVec2 draw_offset =
-        sim::FxVec2::from_pixels(aframe->draw_offset.x, aframe->draw_offset.y);
-    const sim::FxVec2 pbox_size = sim::FxVec2::from_pixels(aframe->pbox.w, aframe->pbox.h);
-    const sim::FxVec2 pbox_center_offset =
-        (pbox_size - sim::FxVec2::from_pixels(1, 1)) / sim::Scalar::from_int(2);
+    const FxVec2 draw_offset =
+        FxVec2::from_pixels(aframe->draw_offset.x, aframe->draw_offset.y);
+    const FxVec2 pbox_size = FxVec2::from_pixels(aframe->pbox.w, aframe->pbox.h);
+    const FxVec2 pbox_center_offset =
+        (pbox_size - FxVec2::from_pixels(1, 1)) / FxScalar::from_int(2);
 
     if (ent.facing == Side::Left) {
         ent.pos = center - draw_offset - pbox_center_offset;
         return;
     }
 
-    sim::FxVec2 facing_adjusted_draw_offset = draw_offset;
+    FxVec2 facing_adjusted_draw_offset = draw_offset;
     if (ent.type_ == EntType::BaseballBat) {
-        facing_adjusted_draw_offset = sim::FxVec2{-draw_offset.x, draw_offset.y};
+        facing_adjusted_draw_offset = FxVec2{-draw_offset.x, draw_offset.y};
     }
     ent.pos = center - facing_adjusted_draw_offset - pbox_center_offset;
 }
 
-sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback) {
+FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, FxVec2 fallback) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
         return fallback;
     }
 
-    const sim::FxVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
+    const FxVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
     int emit_x = aframe->emit_point.x;
     if (ent.facing == Side::Right) {
         emit_x = aframe->sample_rect.w - 1 - aframe->emit_point.x;
     }
 
-    const sim::FxVec2 emit_point = sprite_tl + sim::FxVec2::from_pixels(
+    const FxVec2 emit_point = sprite_tl + FxVec2::from_pixels(
                                                  emit_x,
                                                  aframe->emit_point.y
                                              );
@@ -138,7 +138,7 @@ sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::Fx
     return emit_point;
 }
 
-sim::FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
+FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
         return ent.GetAABB();
@@ -147,24 +147,24 @@ sim::FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
         return ent.GetAABB();
     }
 
-    const sim::FxVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
+    const FxVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
     int contact_x = aframe->cbox.x;
     if (ent.facing == Side::Right) {
         contact_x = aframe->sample_rect.w - aframe->cbox.x - aframe->cbox.w;
     }
 
-    const sim::FxVec2 contact_tl =
-        sprite_tl + sim::FxVec2::from_pixels(contact_x, aframe->cbox.y);
-    return sim::FxAABB::from_corners(
+    const FxVec2 contact_tl =
+        sprite_tl + FxVec2::from_pixels(contact_x, aframe->cbox.y);
+    return FxAABB::from_corners(
         contact_tl,
-        contact_tl + sim::FxVec2::from_pixels(aframe->cbox.w - 1, aframe->cbox.h - 1)
+        contact_tl + FxVec2::from_pixels(aframe->cbox.w - 1, aframe->cbox.h - 1)
     );
 }
 
-sim::FxAABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics) {
-    const sim::FxAABB pbox = ent.GetAABB();
-    const sim::FxAABB cbox = GetContactAabbForEnt(ent, graphics);
-    return sim::FxAABB::from_corners(gfxp::min(pbox.tl, cbox.tl), gfxp::max(pbox.br, cbox.br));
+FxAABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics) {
+    const FxAABB pbox = ent.GetAABB();
+    const FxAABB cbox = GetContactAabbForEnt(ent, graphics);
+    return FxAABB::from_corners(gfxp::min(pbox.tl, cbox.tl), gfxp::max(pbox.br, cbox.br));
 }
 
 void StepAnimTimer(std::size_t ent_idx, State& state, const Graphics& graphics, float dt) {

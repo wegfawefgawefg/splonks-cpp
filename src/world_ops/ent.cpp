@@ -21,8 +21,8 @@ bool AreEntsOverlappingForInteract(
     const State& state,
     const Graphics& graphics
 ) {
-    const sim::FxAABB source_aabb = ents::common::GetContactAabbForEnt(source, graphics);
-    const sim::FxAABB target_aabb = GetNearestWorldAabb(
+    const FxAABB source_aabb = ents::common::GetContactAabbForEnt(source, graphics);
+    const FxAABB target_aabb = GetNearestWorldAabb(
         state.stage,
         source_aabb.center(),
         ents::common::GetContactAabbForEnt(target, graphics)

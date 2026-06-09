@@ -28,7 +28,7 @@ constexpr int kShopkeeperSightVerticalTolerance = 20;
 constexpr float kShopkeeperJumpCooldownFrames = 20.0F;
 constexpr float kShopkeeperShootCooldownFrames = 45.0F;
 constexpr float kShopkeeperRecoverPistolJumpHeightThreshold = 8.0F;
-const sim::Scalar kSimShopkeeperRecoverPistolJumpHeightThreshold =
+const FxScalar kSimShopkeeperRecoverPistolJumpHeightThreshold =
     ToFxScalar(kShopkeeperRecoverPistolJumpHeightThreshold);
 
 std::optional<std::size_t> GetShopIdxForShopkeeper(const Ent& shopkeeper, const State& state) {
@@ -47,7 +47,7 @@ std::optional<std::size_t> GetShopIdxForShopkeeper(const Ent& shopkeeper, const 
 }
 
 bool CanSeePlayerAhead(const Ent& shopkeeper, const State& state, const Graphics& graphics) {
-    const sim::FxVec2 shopkeeper_center = shopkeeper.GetCenter();
+    const FxVec2 shopkeeper_center = shopkeeper.GetCenter();
     const int direction = shopkeeper.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -57,15 +57,15 @@ bool CanSeePlayerAhead(const Ent& shopkeeper, const State& state, const Graphics
         if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
             continue;
         }
-        const sim::FxVec2 player_center =
+        const FxVec2 player_center =
             GetNearestWorldPoint(state.stage, shopkeeper_center, player->GetCenter());
-        const sim::FxVec2 delta = player_center - shopkeeper_center;
-        if (delta.y.abs() > sim::Scalar::from_int(kShopkeeperSightVerticalTolerance) ||
-            delta.x.abs() > sim::Scalar::from_int(kShopkeeperShootDistance)) {
+        const FxVec2 delta = player_center - shopkeeper_center;
+        if (delta.y.abs() > FxScalar::from_int(kShopkeeperSightVerticalTolerance) ||
+            delta.x.abs() > FxScalar::from_int(kShopkeeperShootDistance)) {
             continue;
         }
-        if ((direction < 0 && delta.x >= sim::Scalar::zero()) ||
-            (direction > 0 && delta.x <= sim::Scalar::zero())) {
+        if ((direction < 0 && delta.x >= FxScalar::zero()) ||
+            (direction > 0 && delta.x <= FxScalar::zero())) {
             continue;
         }
         const WorldRayHit hit = RaycastHorizontal(
@@ -96,9 +96,9 @@ bool SpawnShopkeeperPistolIntoHands(std::size_t ent_idx, State& state, const Gra
         spawned_pistol.attach_mode = AttachMode::Held;
         spawned_pistol.has_physics = false;
         spawned_pistol.can_collide = false;
-        spawned_pistol.counter_b = sim::Scalar::from_int(9999);
+        spawned_pistol.counter_b = FxScalar::from_int(9999);
         spawned_pistol.facing = shopkeeper.facing;
-        spawned_pistol.SetCenter(shopkeeper.GetCenter() + sim::FxVec2::from_pixels(4, 1));
+        spawned_pistol.SetCenter(shopkeeper.GetCenter() + FxVec2::from_pixels(4, 1));
         shopkeeper.holding_vid = spawned_pistol.vid;
         shopkeeper.holding = true;
         shopkeeper.ent_b = spawned_pistol.vid;
@@ -131,11 +131,11 @@ void SyncHeldPistolToShopkeeper(Ent& shopkeeper, Ent& pistol, State& state, cons
     pistol.draw_layer = DrawLayer::Foreground;
     StopUsingEnt(pistol);
 
-    const sim::FxVec2 hold_offset = sim::FxVec2::from_pixels(4, 1);
-    const sim::FxVec2 shopkeeper_center = shopkeeper.GetCenter();
-    const sim::FxVec2 held_pos_target =
+    const FxVec2 hold_offset = FxVec2::from_pixels(4, 1);
+    const FxVec2 shopkeeper_center = shopkeeper.GetCenter();
+    const FxVec2 held_pos_target =
         shopkeeper.facing == Side::Left
-            ? shopkeeper_center + sim::FxVec2{-hold_offset.x, hold_offset.y}
+            ? shopkeeper_center + FxVec2{-hold_offset.x, hold_offset.y}
             : shopkeeper_center + hold_offset;
     pistol.SetCenter(held_pos_target);
     pistol.grounded = false;
@@ -152,8 +152,8 @@ bool IsShopkeeperBlockedMovingTowardPistol(
         return false;
     }
 
-    sim::FxAABB next_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
-    const sim::Scalar offset = sim::Scalar::from_int(move_direction);
+    FxAABB next_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
+    const FxScalar offset = FxScalar::from_int(move_direction);
     next_aabb.tl.x += offset;
     next_aabb.br.x += offset;
     return AabbHitsBlockingWorldGeometryOrImpassableEnts(
@@ -182,16 +182,16 @@ bool TryRecoverDroppedPistol(
         return false;
     }
 
-    const sim::FxVec2 delta =
+    const FxVec2 delta =
         GetNearestWorldDelta(state.stage, shopkeeper.GetCenter(), pistol->GetCenter());
-    if (delta.x < sim::Scalar::zero()) {
+    if (delta.x < FxScalar::zero()) {
         shopkeeper.facing = Side::Left;
-    } else if (delta.x > sim::Scalar::zero()) {
+    } else if (delta.x > FxScalar::zero()) {
         shopkeeper.facing = Side::Right;
     }
 
     const int move_direction =
-        delta.x < sim::Scalar::zero() ? -1 : (delta.x > sim::Scalar::zero() ? 1 : 0);
+        delta.x < FxScalar::zero() ? -1 : (delta.x > FxScalar::zero() ? 1 : 0);
     if (shopkeeper.grounded) {
         common::AccelerateHorizontallyTowardSpeed(
             shopkeeper,
@@ -205,13 +205,13 @@ bool TryRecoverDroppedPistol(
     const bool blocked_ahead =
         shopkeeper.grounded &&
         IsShopkeeperBlockedMovingTowardPistol(shopkeeper, move_direction, state, graphics);
-    if (shopkeeper.grounded && shopkeeper.counter_a <= sim::Scalar::zero() && (pistol_above || blocked_ahead)) {
+    if (shopkeeper.grounded && shopkeeper.counter_a <= FxScalar::zero() && (pistol_above || blocked_ahead)) {
         shopkeeper.vel.y = ToFxScalar(kShopkeeperJumpSpeedY);
         shopkeeper.counter_a = ToFxScalar(kShopkeeperJumpCooldownFrames);
     }
 
-    const sim::FxAABB shopkeeper_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
-    const sim::FxAABB pistol_aabb = GetNearestWorldAabb(
+    const FxAABB shopkeeper_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
+    const FxAABB pistol_aabb = GetNearestWorldAabb(
         state.stage,
         shopkeeper_aabb.center(),
         common::GetContactAabbForEnt(*pistol, graphics)
@@ -273,11 +273,11 @@ void StepEntLogicAsShopkeeper(
         return;
     }
 
-    if (shopkeeper.counter_a > sim::Scalar::zero()) {
-        shopkeeper.counter_a -= sim::Scalar::from_int(1);
+    if (shopkeeper.counter_a > FxScalar::zero()) {
+        shopkeeper.counter_a -= FxScalar::from_int(1);
     }
-    if (shopkeeper.counter_b > sim::Scalar::zero()) {
-        shopkeeper.counter_b -= sim::Scalar::from_int(1);
+    if (shopkeeper.counter_b > FxScalar::zero()) {
+        shopkeeper.counter_b -= FxScalar::from_int(1);
     }
 
     if (const std::optional<std::size_t> shop_idx = GetShopIdxForShopkeeper(shopkeeper, state)) {
@@ -308,17 +308,17 @@ void StepEntLogicAsShopkeeper(
         return;
     }
 
-    const sim::FxVec2 delta =
+    const FxVec2 delta =
         GetNearestWorldDelta(state.stage, shopkeeper.GetCenter(), player->GetCenter());
-    if (delta.x < sim::Scalar::zero()) {
+    if (delta.x < FxScalar::zero()) {
         shopkeeper.facing = Side::Left;
-    } else if (delta.x > sim::Scalar::zero()) {
+    } else if (delta.x > FxScalar::zero()) {
         shopkeeper.facing = Side::Right;
     }
     const float target_speed_x =
-        delta.x < sim::Scalar::zero() ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX;
+        delta.x < FxScalar::zero() ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX;
 
-    if (shopkeeper.grounded && shopkeeper.counter_a <= sim::Scalar::zero()) {
+    if (shopkeeper.grounded && shopkeeper.counter_a <= FxScalar::zero()) {
         shopkeeper.vel.y = ToFxScalar(kShopkeeperJumpSpeedY);
         common::AccelerateHorizontallyTowardSpeed(
             shopkeeper, state, target_speed_x, kShopkeeperMoveAcceleration
@@ -339,7 +339,7 @@ void StepEntLogicAsShopkeeper(
     if (shopkeeper.holding_vid.has_value()) {
         if (Ent* const pistol = state.ents.GetEntMut(*shopkeeper.holding_vid)) {
             SyncHeldPistolToShopkeeper(shopkeeper, *pistol, state, graphics);
-            if (shopkeeper.counter_b <= sim::Scalar::zero() && CanSeePlayerAhead(shopkeeper, state, graphics)) {
+            if (shopkeeper.counter_b <= FxScalar::zero() && CanSeePlayerAhead(shopkeeper, state, graphics)) {
                 UseEnt(*pistol, shopkeeper.vid, AttachMode::Held);
                 shopkeeper.counter_b = ToFxScalar(kShopkeeperShootCooldownFrames);
             }

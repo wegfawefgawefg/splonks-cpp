@@ -80,7 +80,7 @@ ContactResult TryDispatchEntEntContactForParticipant(
 
 std::vector<VID> GatherTouchedEntContactsForAabb(
     std::size_t ent_idx,
-    sim::FxAABB aabb,
+    FxAABB aabb,
     const Graphics& graphics,
     State& state
 ) {
@@ -94,7 +94,7 @@ std::vector<VID> GatherTouchedEntContactsForAabb(
     }
 
     std::vector<VID> touched_vids;
-    const sim::FxVec2 anchor = aabb.center();
+    const FxVec2 anchor = aabb.center();
     for (const VID& other_vid : QueryEntsInAabb(state, aabb, ent.vid)) {
         const Ent* const other_ent = state.ents.GetEnt(other_vid);
         if (other_ent == nullptr || !other_ent->active) {
@@ -104,7 +104,7 @@ std::vector<VID> GatherTouchedEntContactsForAabb(
             continue;
         }
 
-        const sim::FxAABB other_contact_aabb = GetNearestWorldAabb(
+        const FxAABB other_contact_aabb = GetNearestWorldAabb(
             state.stage,
             anchor,
             GetContactAabbForEnt(*other_ent, graphics)

@@ -68,8 +68,8 @@ bool Stage::HasVoidDeathY() const {
     return border.void_death_y.has_value();
 }
 
-sim::Scalar Stage::GetVoidDeathY() const {
-    return sim::Scalar::from_pixels(border.void_death_y.value_or(0));
+FxScalar Stage::GetVoidDeathY() const {
+    return FxScalar::from_pixels(border.void_death_y.value_or(0));
 }
 
 const StageBorderSide& Stage::GetBorderSide(StageBorderSideKind side) const {
@@ -199,10 +199,10 @@ IVec2 Stage::WrapWorldPos(const IVec2& wc) const {
 
 void Stage::NormalizeEntPositionForWrap(Ent& ent) const {
     if (WrapsX()) {
-        const sim::Scalar stage_width = sim::Scalar::from_pixels(static_cast<int>(GetWidth()));
+        const FxScalar stage_width = FxScalar::from_pixels(static_cast<int>(GetWidth()));
         while (true) {
-            const sim::FxAABB aabb = ent.GetAABB();
-            if (aabb.br.x < sim::Scalar::zero()) {
+            const FxAABB aabb = ent.GetAABB();
+            if (aabb.br.x < FxScalar::zero()) {
                 ent.pos.x += stage_width;
                 continue;
             }
@@ -215,10 +215,10 @@ void Stage::NormalizeEntPositionForWrap(Ent& ent) const {
     }
 
     if (WrapsY()) {
-        const sim::Scalar stage_height = sim::Scalar::from_pixels(static_cast<int>(GetHeight()));
+        const FxScalar stage_height = FxScalar::from_pixels(static_cast<int>(GetHeight()));
         while (true) {
-            const sim::FxAABB aabb = ent.GetAABB();
-            if (aabb.br.y < sim::Scalar::zero()) {
+            const FxAABB aabb = ent.GetAABB();
+            if (aabb.br.y < FxScalar::zero()) {
                 ent.pos.y += stage_height;
                 continue;
             }

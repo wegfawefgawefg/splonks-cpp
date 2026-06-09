@@ -79,8 +79,8 @@ bool CanProjImpactWithoutDamage(const Ent& target) {
            target.condition == EntCondition::Dead;
 }
 
-sim::FxAABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
-                                      const TileContactData& tile_contact_data, sim::FxVec2 anchor) {
+FxAABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
+                                      const TileContactData& tile_contact_data, FxVec2 anchor) {
     FrameRect cbox = tile_contact_data.cbox;
     const TileRotation rotation = GetTileRotationForQuery(stage, tile_query);
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
@@ -113,13 +113,13 @@ sim::FxAABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQuery
     default:
         break;
     }
-    const sim::FxVec2 tile_tl = sim::PixelVec2(
+    const FxVec2 tile_tl = PixelVec2(
         tile_query.tile_pos.x * static_cast<int>(kTileSize),
         tile_query.tile_pos.y * static_cast<int>(kTileSize)
     );
-    const sim::FxAABB cbox_aabb = sim::FxAABB::from_corners(
-        tile_tl + sim::PixelVec2(cbox.x, cbox.y),
-        tile_tl + sim::PixelVec2(cbox.x + cbox.w - 1, cbox.y + cbox.h - 1)
+    const FxAABB cbox_aabb = FxAABB::from_corners(
+        tile_tl + PixelVec2(cbox.x, cbox.y),
+        tile_tl + PixelVec2(cbox.x + cbox.w - 1, cbox.y + cbox.h - 1)
     );
     return GetNearestWorldAabb(stage, anchor, cbox_aabb);
 }
@@ -129,7 +129,7 @@ bool HasAuthoredTileCbox(const TileContactData& tile_contact_data) {
 }
 
 bool EntIsMovingIntoSpike(const Ent& ent, TileRotation spike_rotation) {
-    const sim::Scalar min_spike_impact_speed = ToFxScalar(0.01F);
+    const FxScalar min_spike_impact_speed = ToFxScalar(0.01F);
     switch (spike_rotation) {
     case kTileRotation90:
         return ent.vel.x < -min_spike_impact_speed;
@@ -144,12 +144,12 @@ bool EntIsMovingIntoSpike(const Ent& ent, TileRotation spike_rotation) {
 }
 
 KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(stage, source.GetCenter(), target.GetCenter());
-    const int direction = delta.x < sim::Scalar::zero() ? -1 : 1;
+    const FxVec2 delta = GetNearestWorldDelta(stage, source.GetCenter(), target.GetCenter());
+    const int direction = delta.x < FxScalar::zero() ? -1 : 1;
     return KnockbackSpec{
-        .velocity = sim::FxVec2{
-            sim::Scalar::from_int(direction),
-            sim::Scalar::from_int(-1),
+        .velocity = FxVec2{
+            FxScalar::from_int(direction),
+            FxScalar::from_int(-1),
         },
         .clear_velocity = true,
         .clear_acceleration = true,
@@ -159,7 +159,7 @@ KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, co
 KnockbackSpec BuildProjContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
     (void)target;
     (void)stage;
-    const sim::FxVec2 velocity = source.vel * ToFxScalar(kProjContactVelocityScale);
+    const FxVec2 velocity = source.vel * ToFxScalar(kProjContactVelocityScale);
 
     return KnockbackSpec{
         .velocity = velocity,
@@ -181,8 +181,8 @@ void MaybeHurtAndStunOnContact(
 ) {
     const Ent& ent = state.ents.ents[ent_idx];
     const VID ent_vid = ent.vid;
-    const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
-    const sim::FxVec2 ent_pos = ent.pos;
+    const FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const FxVec2 ent_pos = ent.pos;
     const EntCondition condition = ent.condition;
     const bool hurt_on_contact = ent.hurt_on_contact;
     const std::optional<VID> thrown_by = ent.thrown_by;
@@ -201,7 +201,7 @@ void MaybeHurtAndStunOnContact(
                 continue;
             }
             if (Ent* const other_ent = state.ents.GetEntMut(vid)) {
-                const sim::FxAABB other_aabb = GetNearestWorldAabb(
+                const FxAABB other_aabb = GetNearestWorldAabb(
                     state.stage,
                     ent_aabb.center(),
                     GetContactAabbForEnt(*other_ent, graphics)
@@ -210,11 +210,11 @@ void MaybeHurtAndStunOnContact(
                     continue;
                 }
                 if (IsPlayerLikeEntType(other_ent->type_)) {
-                    const sim::FxAABB player_aabb = other_aabb;
-                    const sim::FxAABB player_foot = {
-                        .tl = sim::FxVec2{
+                    const FxAABB player_aabb = other_aabb;
+                    const FxAABB player_foot = {
+                        .tl = FxVec2{
                             player_aabb.tl.x,
-                            player_aabb.br.y - sim::Scalar::from_int(4),
+                            player_aabb.br.y - FxScalar::from_int(4),
                         },
                         .br = player_aabb.br,
                     };
@@ -287,7 +287,7 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
 
     bool hit_spikes = false;
     {
-        const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+        const FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
         const int ent_bottom_y = ent_aabb.br.y.trunc_int();
         const bool override_tile_portion_check =
             gfxp::length_sq(ent.vel) > ToFxScalar(kSpikeOverrideVelocitySq);
@@ -311,7 +311,7 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
                 continue;
             }
 
-            const sim::FxAABB spike_cbox_aabb = GetTileContactCboxWorldAabb(
+            const FxAABB spike_cbox_aabb = GetTileContactCboxWorldAabb(
                 state.stage,
                 tile_query,
                 *tile_contact_data,
@@ -328,7 +328,7 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
         switch (damage_result) {
         case DamageResult::Hurt:
         case DamageResult::Died:
-            ent.vel.x = sim::Scalar::zero();
+            ent.vel.x = FxScalar::zero();
             (void)PlayEntCenterSoundEmitter(state, ent, audio_asset_ids::AnimalCrush2);
             break;
         case DamageResult::None:
@@ -378,8 +378,8 @@ bool TryApplyProjContactToEnt(
         return false;
     }
 
-    const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
-    const sim::FxAABB other_aabb = GetNearestWorldAabb(
+    const FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const FxAABB other_aabb = GetNearestWorldAabb(
         state.stage,
         ent_aabb.center(),
         GetContactAabbForEnt(other_ent, graphics)

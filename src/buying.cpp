@@ -3,7 +3,7 @@
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
 #include "player_queries.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
@@ -17,11 +17,11 @@ namespace splonks {
 namespace {
 
 std::int64_t GetBuyPromptDistanceSq(
-    sim::FxVec2 buyer_center,
-    sim::FxVec2 item_center,
+    FxVec2 buyer_center,
+    FxVec2 item_center,
     const Stage& stage
 ) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(stage, buyer_center, item_center);
+    const FxVec2 delta = GetNearestWorldDelta(stage, buyer_center, item_center);
     const std::int64_t dx = delta.x.raw_value();
     const std::int64_t dy = delta.y.raw_value();
     return (dx * dx) + (dy * dy);
@@ -30,7 +30,7 @@ std::int64_t GetBuyPromptDistanceSq(
 struct OverlappingBuyableEnt {
     std::size_t ent_idx = 0;
     std::int64_t distance_sq = 0;
-    sim::FxAABB nearest_aabb = sim::FxAABB::zero();
+    FxAABB nearest_aabb = FxAABB::zero();
 };
 
 std::vector<OverlappingBuyableEnt> FindOverlappingBuyableEnts(
@@ -47,8 +47,8 @@ std::vector<OverlappingBuyableEnt> FindOverlappingBuyableEnts(
         return {};
     }
 
-    const sim::FxAABB buyer_aabb = ents::common::GetContactAabbForEnt(buyer, graphics);
-    const sim::FxVec2 buyer_center = buyer_aabb.center();
+    const FxAABB buyer_aabb = ents::common::GetContactAabbForEnt(buyer, graphics);
+    const FxVec2 buyer_center = buyer_aabb.center();
     const std::vector<VID> results = QueryEntsInAabb(state, buyer_aabb, buyer.vid);
 
     std::vector<OverlappingBuyableEnt> overlaps;
@@ -59,7 +59,7 @@ std::vector<OverlappingBuyableEnt> FindOverlappingBuyableEnts(
             continue;
         }
 
-        const sim::FxAABB item_aabb = GetNearestWorldAabb(
+        const FxAABB item_aabb = GetNearestWorldAabb(
             state.stage,
             buyer_center,
             ents::common::GetContactAabbForEnt(*item, graphics)

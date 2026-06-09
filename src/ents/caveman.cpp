@@ -31,18 +31,18 @@ constexpr int kCavemanIdleMinFrames = 24;
 constexpr int kCavemanIdleMaxFrames = 64;
 constexpr int kCavemanIdleChance = 120;
 
-void FaceTowards(Ent& caveman, sim::FxVec2 target_pos, const Stage& stage) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(stage, caveman.GetCenter(), target_pos);
-    if (delta.x < sim::Scalar::zero()) {
+void FaceTowards(Ent& caveman, FxVec2 target_pos, const Stage& stage) {
+    const FxVec2 delta = GetNearestWorldDelta(stage, caveman.GetCenter(), target_pos);
+    if (delta.x < FxScalar::zero()) {
         caveman.facing = Side::Left;
-    } else if (delta.x > sim::Scalar::zero()) {
+    } else if (delta.x > FxScalar::zero()) {
         caveman.facing = Side::Right;
     }
 }
 
 void StartIdle(Ent& caveman, State& state) {
     caveman.ai_state = EntAiState::Idle;
-    caveman.counter_a = sim::Scalar::from_int(
+    caveman.counter_a = FxScalar::from_int(
         state.drng.RandomIntInclusive(kCavemanIdleMinFrames, kCavemanIdleMaxFrames));
     common::DecelerateHorizontallyToStop(caveman, kCavemanWalkAcceleration);
     TrySetAnim(caveman, EntDisplayState::Neutral);
@@ -80,7 +80,7 @@ bool CanSeePlayerAhead(
     const State& state,
     const Graphics& graphics
 ) {
-    const sim::FxVec2 caveman_center = caveman.GetCenter();
+    const FxVec2 caveman_center = caveman.GetCenter();
     const int direction = caveman.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -90,15 +90,15 @@ bool CanSeePlayerAhead(
         if (player == nullptr || !player->active || player->condition != EntCondition::Normal) {
             continue;
         }
-        const sim::FxVec2 player_center =
+        const FxVec2 player_center =
             GetNearestWorldPoint(state.stage, caveman_center, player->GetCenter());
-        const sim::FxVec2 player_delta = player_center - caveman_center;
-        if (player_delta.y.abs() > sim::Scalar::from_int(kCavemanSightVerticalTolerance) ||
-            player_delta.x.abs() > sim::Scalar::from_int(kCavemanSightDistance)) {
+        const FxVec2 player_delta = player_center - caveman_center;
+        if (player_delta.y.abs() > FxScalar::from_int(kCavemanSightVerticalTolerance) ||
+            player_delta.x.abs() > FxScalar::from_int(kCavemanSightDistance)) {
             continue;
         }
-        if ((direction < 0 && player_delta.x >= sim::Scalar::zero()) ||
-            (direction > 0 && player_delta.x <= sim::Scalar::zero())) {
+        if ((direction < 0 && player_delta.x >= FxScalar::zero()) ||
+            (direction > 0 && player_delta.x <= FxScalar::zero())) {
             continue;
         }
         const WorldRayHit hit = RaycastHorizontal(
@@ -133,7 +133,7 @@ void MaybeWallHopWhileIdle(Ent& caveman, const State& state, const Graphics& gra
     caveman.vel.x = caveman.facing == Side::Left ? -ToFxScalar(kCavemanWallHopSpeedX)
                                                  : ToFxScalar(kCavemanWallHopSpeedX);
     caveman.counter_a =
-        gfxp::max(sim::Scalar::zero(), caveman.counter_a - sim::Scalar::from_int(10));
+        gfxp::max(FxScalar::zero(), caveman.counter_a - FxScalar::from_int(10));
 }
 
 } // namespace
@@ -193,8 +193,8 @@ void StepEntLogicAsCaveman(
         common::DecelerateHorizontallyToStop(caveman, kCavemanWalkAcceleration);
         TrySetAnim(caveman, EntDisplayState::Neutral);
         MaybeWallHopWhileIdle(caveman, state, graphics);
-        if (caveman.counter_a > sim::Scalar::zero()) {
-            caveman.counter_a -= sim::Scalar::from_int(1);
+        if (caveman.counter_a > FxScalar::zero()) {
+            caveman.counter_a -= FxScalar::from_int(1);
             return;
         }
 

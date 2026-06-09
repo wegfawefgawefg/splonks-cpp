@@ -4,7 +4,7 @@
 #include "audio.hpp"
 #include "ent/spec.hpp"
 #include "aframe_id.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
@@ -48,8 +48,8 @@ void AddTikiHeadReleaseShake(State& state, const Ent& head) {
 
 const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
     const Ent* best_player = nullptr;
-    sim::Scalar best_distance_sq{};
-    const sim::FxVec2 head_center = head.GetCenter();
+    FxScalar best_distance_sq{};
+    const FxVec2 head_center = head.GetCenter();
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -59,9 +59,9 @@ const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
             continue;
         }
 
-        const sim::FxVec2 delta =
+        const FxVec2 delta =
             GetNearestWorldDelta(state.stage, head_center, player->GetCenter());
-        const sim::Scalar distance_sq = gfxp::length_sq(delta);
+        const FxScalar distance_sq = gfxp::length_sq(delta);
         if (best_player == nullptr || distance_sq < best_distance_sq) {
             best_player = player;
             best_distance_sq = distance_sq;
@@ -78,9 +78,9 @@ std::optional<VID> SpawnBoulderForHead(Ent& head, State& state, Audio& audio) {
 
         const Ent* const player = FindClosestPlayerToHead(head, state);
         if (player != nullptr) {
-            const sim::FxVec2 delta =
+            const FxVec2 delta =
                 GetNearestWorldDelta(state.stage, head.GetCenter(), player->GetCenter());
-            spawned_boulder.facing = delta.x < sim::Scalar::zero() ? Side::Left : Side::Right;
+            spawned_boulder.facing = delta.x < FxScalar::zero() ? Side::Left : Side::Right;
         } else {
             spawned_boulder.facing = Side::Right;
         }
@@ -141,7 +141,7 @@ void StepEntLogicAsGiantTikiHead(
     }
 
     if (head.ai_state == EntAiState::Idle) {
-        if (sim::ToPixelIVec2Round(idol->pos) == head.point_a) {
+        if (ToPixelIVec2Round(idol->pos) == head.point_a) {
             return;
         }
 
@@ -161,10 +161,10 @@ void StepEntLogicAsGiantTikiHead(
         return;
     }
 
-    if (head.counter_a > sim::Scalar::zero()) {
-        head.counter_a -= sim::Scalar::from_int(1);
-        if (head.counter_a < sim::Scalar::zero()) {
-            head.counter_a = sim::Scalar::zero();
+    if (head.counter_a > FxScalar::zero()) {
+        head.counter_a -= FxScalar::from_int(1);
+        if (head.counter_a < FxScalar::zero()) {
+            head.counter_a = FxScalar::zero();
         }
         const int shake_interval = static_cast<int>(kTikiHeadWindupShakeIntervalFrames);
         if (shake_interval > 0 &&

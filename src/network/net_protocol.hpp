@@ -3,7 +3,7 @@
 #include "network/lockstep_config.hpp"
 #include "network/net_ids.hpp"
 #include "network/net_limits.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 
 #include <algorithm>
 #include <array>
@@ -69,10 +69,10 @@ struct JoinAcceptPacket {
     std::array<PlayerId, kNetPlayersPerProcess> assigned_player_ids{};
     PlayerId host_player_id = kPrimaryLocalPlayerId;
     StageInstanceId stage_instance_id = 1;
-    sim::Scalar remote_spawn_x = sim::Scalar::zero();
-    sim::Scalar remote_spawn_y = sim::Scalar::zero();
-    sim::Scalar host_spawn_x = sim::Scalar::zero();
-    sim::Scalar host_spawn_y = sim::Scalar::zero();
+    FxScalar remote_spawn_x = FxScalar::zero();
+    FxScalar remote_spawn_y = FxScalar::zero();
+    FxScalar host_spawn_x = FxScalar::zero();
+    FxScalar host_spawn_y = FxScalar::zero();
     std::uint32_t stage_seed = 1;
     std::uint64_t lockstep_start_frame = 0;
     std::uint32_t lockstep_input_delay_frames = kDefaultLockstepInputDelayFrames;

@@ -4,7 +4,7 @@
 #include "ent/core_types.hpp"
 #include "aframe_id.hpp"
 #include "math_types.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "tile.hpp"
 #include "utils.hpp"
 
@@ -178,14 +178,14 @@ struct Stage {
     std::vector<std::vector<Tile>> tiles;
     std::vector<std::vector<TileRotation>> tile_rotations;
     std::vector<std::vector<Tile>> fluid_tiles;
-    std::vector<std::vector<sim::Scalar>> fluid_amount;
-    std::vector<std::vector<sim::Scalar>> fluid_display_amount;
-    std::vector<std::vector<sim::FxVec2>> fluid_velocity;
-    std::vector<std::vector<sim::FxVec2>> fluid_gravity;
+    std::vector<std::vector<FxScalar>> fluid_amount;
+    std::vector<std::vector<FxScalar>> fluid_display_amount;
+    std::vector<std::vector<FxVec2>> fluid_velocity;
+    std::vector<std::vector<FxVec2>> fluid_gravity;
     std::vector<std::vector<std::uint8_t>> fluid_gravity_strength;
-    std::vector<std::vector<sim::FxVec2>> fluid_temp_gravity;
-    std::vector<std::vector<sim::Scalar>> tile_shake;
-    std::vector<std::vector<sim::Scalar>> backwall_tile_shake;
+    std::vector<std::vector<FxVec2>> fluid_temp_gravity;
+    std::vector<std::vector<FxScalar>> tile_shake;
+    std::vector<std::vector<FxScalar>> backwall_tile_shake;
     std::vector<std::vector<Tile>> backwall_tiles;
     std::vector<Tile> backwall_fill_tiles;
     std::vector<std::vector<EmbeddedTreasure>> embedded_treasures;
@@ -197,7 +197,7 @@ struct Stage {
     std::vector<StageGenAnnotation> stagegen_annotations;
     std::vector<StageLight> lights;
     AFrameId block_anim_id = aframe_ids::CaveBlock;
-    sim::Scalar gravity = ToFxScalar(kDefaultStageGravity);
+    FxScalar gravity = ToFxScalar(kDefaultStageGravity);
     StageBorder border{};
     bool camera_clamp_enabled = true;
     FVec2 camera_clamp_margin = FVec2::New(0.0F, 0.0F);
@@ -237,9 +237,9 @@ struct Stage {
     void SyncTileInstanceMetadataGrid();
     void SyncFluidTileGrid();
     void SyncFluidVelocityGrid();
-    void SetFluidGravityOverride(const IVec2& pos, sim::FxVec2 gravity_value);
+    void SetFluidGravityOverride(const IVec2& pos, FxVec2 gravity_value);
     void ClearFluidGravityOverride(const IVec2& pos);
-    void AddFluidTempGravity(const IVec2& pos, sim::FxVec2 gravity_value);
+    void AddFluidTempGravity(const IVec2& pos, FxVec2 gravity_value);
     void ClearFluidTempGravity(const IVec2& pos);
     void SetTile(const IVec2& pos, Tile tile);
     void SetFluidTile(const IVec2& pos, Tile tile);
@@ -264,7 +264,7 @@ struct Stage {
     VID AddLightWithVid(VID vid, const IVec2& tile_pos, int radius);
     bool RemoveLight(VID vid);
     const StageLight* GetLight(VID vid) const;
-    void SetTilesInRectWc(sim::FxAABB area, Tile tile_type);
+    void SetTilesInRectWc(FxAABB area, Tile tile_type);
     void SetTilesInRect(IAABB tile_area, Tile tile_type);
     std::vector<IAABB> GetAabbsForAllCollidableTilesInRect(const IVec2& tl, const IVec2& br) const;
     UVec2 GetRandomRegularRoomGridCoord(DetRng& det_rng) const;
@@ -279,7 +279,7 @@ struct Stage {
     bool WrapsX() const;
     bool WrapsY() const;
     bool HasVoidDeathY() const;
-    sim::Scalar GetVoidDeathY() const;
+    FxScalar GetVoidDeathY() const;
     const StageBorderSide& GetBorderSide(StageBorderSideKind side) const;
     Tile GetBorderTile(StageBorderSideKind side) const;
     bool IsBorderSideBlocking(StageBorderSideKind side) const;

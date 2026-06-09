@@ -67,7 +67,7 @@ public:
         }
     }
 
-    void WriteScalar(sim::Scalar value) {
+    void WriteScalar(FxScalar value) {
         WriteI32(value.raw_value());
     }
 
@@ -169,8 +169,8 @@ public:
         return value;
     }
 
-    sim::Scalar ReadScalar() {
-        return sim::Scalar::from_raw(ReadI32());
+    FxScalar ReadScalar() {
+        return FxScalar::from_raw(ReadI32());
     }
 
     template <std::size_t N>

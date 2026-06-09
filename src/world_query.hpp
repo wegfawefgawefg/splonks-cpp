@@ -9,11 +9,11 @@ namespace splonks {
 
 FVec2 GetNearestWorldDelta(const Stage& stage, const FVec2& from, const FVec2& to);
 FVec2 GetNearestWorldPoint(const Stage& stage, const FVec2& anchor, const FVec2& point);
-sim::FxVec2 GetNearestWorldDelta(const Stage& stage, sim::FxVec2 from, sim::FxVec2 to);
-sim::FxVec2 GetNearestWorldPoint(const Stage& stage, sim::FxVec2 anchor, sim::FxVec2 point);
-sim::FxAABB GetNearestWorldAabb(const Stage& stage, sim::FxVec2 anchor, sim::FxAABB aabb);
-bool WorldAabbContainsPoint(const Stage& stage, sim::FxAABB area, sim::FxVec2 point);
-bool WorldAabbsIntersect(const Stage& stage, sim::FxAABB area, sim::FxAABB other);
+FxVec2 GetNearestWorldDelta(const Stage& stage, FxVec2 from, FxVec2 to);
+FxVec2 GetNearestWorldPoint(const Stage& stage, FxVec2 anchor, FxVec2 point);
+FxAABB GetNearestWorldAabb(const Stage& stage, FxVec2 anchor, FxAABB aabb);
+bool WorldAabbContainsPoint(const Stage& stage, FxAABB area, FxVec2 point);
+bool WorldAabbsIntersect(const Stage& stage, FxAABB area, FxAABB other);
 std::vector<IVec2> GetTileCoordsInRect(const Stage& stage, const IVec2& tl, const IVec2& br);
 
 struct WorldTileQueryResult {
@@ -34,33 +34,33 @@ std::vector<WorldTileQueryResult> QueryTilesInWorldRect(
     const IVec2& tl,
     const IVec2& br
 );
-std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, sim::FxAABB area);
+std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, FxAABB area);
 bool IsOneWayTopTileSupportingAabb(
     const Stage& stage,
     const WorldTileQueryResult& tile_query,
-    sim::FxAABB area
+    FxAABB area
 );
-bool AabbTouchesBlockingStageBounds(const Stage& stage, sim::FxAABB area);
-bool AabbHitsBlockingTiles(const Stage& stage, sim::FxAABB area);
-bool AabbHitsBlockingWorldGeometry(const Stage& stage, sim::FxAABB area);
+bool AabbTouchesBlockingStageBounds(const Stage& stage, FxAABB area);
+bool AabbHitsBlockingTiles(const Stage& stage, FxAABB area);
+bool AabbHitsBlockingWorldGeometry(const Stage& stage, FxAABB area);
 bool AabbHitsImpassableEnts(
     const State& state,
     const Graphics& graphics,
-    sim::FxAABB area,
+    FxAABB area,
     std::optional<VID> exclude_vid = std::nullopt
 );
 bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
     const State& state,
     const Graphics& graphics,
-    sim::FxAABB area,
+    FxAABB area,
     std::optional<VID> exclude_vid = std::nullopt
 );
 std::optional<WorldTileQueryResult> QueryTileAtTilePos(const Stage& stage, const IVec2& tile_pos);
 std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, const IVec2& world_pos);
-std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, sim::FxVec2 world_pos);
+std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, FxVec2 world_pos);
 std::vector<VID> QueryEntsInAabb(
     const State& state,
-    sim::FxAABB area,
+    FxAABB area,
     std::optional<VID> exclude_vid = std::nullopt
 );
 
@@ -103,7 +103,7 @@ WorldRayHit RaycastRenderTiles(
 
 WorldRayHit RaycastHorizontal(
     const Ent& source_ent,
-    sim::FxVec2 start_pos,
+    FxVec2 start_pos,
     int direction,
     int max_distance,
     const State& state,

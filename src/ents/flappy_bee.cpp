@@ -42,7 +42,7 @@ void SetBeeAnim(Ent& bee) {
 
 void UpdateBeeRotation(Ent& bee) {
     if (bee.grounded) {
-        bee.rotation = sim::Scalar::zero();
+        bee.rotation = FxScalar::zero();
         return;
     }
 
@@ -97,8 +97,8 @@ void OnDeathAsFlappyBee(std::size_t ent_idx, State& state, Audio& audio) {
     bee.render_enabled = false;
     bee.has_physics = false;
     bee.can_collide = false;
-    bee.vel = sim::FxVec2::zero();
-    bee.acc = sim::FxVec2::zero();
+    bee.vel = FxVec2::zero();
+    bee.acc = FxVec2::zero();
 }
 
 void ControlEntAsFlappyBee(
@@ -144,8 +144,8 @@ void ControlEntAsFlappyBee(
     }
 
     if (control.stop) {
-        bee.acc = sim::FxVec2::zero();
-        bee.vel = sim::FxVec2::zero();
+        bee.acc = FxVec2::zero();
+        bee.vel = FxVec2::zero();
     }
 }
 

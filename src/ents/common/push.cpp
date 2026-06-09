@@ -40,30 +40,30 @@ bool IsAtCrusherLeadingFace(
     const Ent& other_ent,
     const IVec2& push_direction
 ) {
-    const sim::FxAABB crusher_aabb = crusher.GetAABB();
-    const sim::FxAABB other_aabb =
+    const FxAABB crusher_aabb = crusher.GetAABB();
+    const FxAABB other_aabb =
         GetNearestWorldAabb(stage, crusher_aabb.center(), other_ent.GetAABB());
-    const sim::FxVec2 crusher_center = crusher_aabb.center();
-    const sim::FxVec2 other_center = other_aabb.center();
+    const FxVec2 crusher_center = crusher_aabb.center();
+    const FxVec2 other_center = other_aabb.center();
 
-    const sim::Scalar overlap_x =
+    const FxScalar overlap_x =
         gfxp::min(crusher_aabb.br.x, other_aabb.br.x) -
         gfxp::max(crusher_aabb.tl.x, other_aabb.tl.x);
-    const sim::Scalar overlap_y =
+    const FxScalar overlap_y =
         gfxp::min(crusher_aabb.br.y, other_aabb.br.y) -
         gfxp::max(crusher_aabb.tl.y, other_aabb.tl.y);
 
     if (push_direction.x > 0) {
-        return overlap_y >= sim::Scalar::zero() && other_center.x >= crusher_center.x;
+        return overlap_y >= FxScalar::zero() && other_center.x >= crusher_center.x;
     }
     if (push_direction.x < 0) {
-        return overlap_y >= sim::Scalar::zero() && other_center.x <= crusher_center.x;
+        return overlap_y >= FxScalar::zero() && other_center.x <= crusher_center.x;
     }
     if (push_direction.y > 0) {
-        return overlap_x >= sim::Scalar::zero() && other_center.y >= crusher_center.y;
+        return overlap_x >= FxScalar::zero() && other_center.y >= crusher_center.y;
     }
     if (push_direction.y < 0) {
-        return overlap_x >= sim::Scalar::zero() && other_center.y <= crusher_center.y;
+        return overlap_x >= FxScalar::zero() && other_center.y <= crusher_center.y;
     }
 
     return false;
@@ -89,13 +89,13 @@ bool TryApplyPushEntAction(
         return false;
     }
 
-    const sim::FxAABB pusher_aabb = GetContactAabbForEnt(*pusher, graphics);
-    const sim::FxAABB push_zone{
-        .tl = pusher_aabb.tl - sim::PixelVec2(6, 0),
-        .br = pusher_aabb.br + sim::PixelVec2(6, 0),
+    const FxAABB pusher_aabb = GetContactAabbForEnt(*pusher, graphics);
+    const FxAABB push_zone{
+        .tl = pusher_aabb.tl - PixelVec2(6, 0),
+        .br = pusher_aabb.br + PixelVec2(6, 0),
     };
-    const sim::FxVec2 pusher_center = pusher_aabb.center();
-    const sim::FxAABB pushed_aabb = GetNearestWorldAabb(
+    const FxVec2 pusher_center = pusher_aabb.center();
+    const FxAABB pushed_aabb = GetNearestWorldAabb(
         state.stage,
         pusher_center,
         GetContactAabbForEnt(*pushed, graphics)
@@ -104,7 +104,7 @@ bool TryApplyPushEntAction(
         return false;
     }
 
-    const sim::FxVec2 pushed_center = pushed_aabb.center();
+    const FxVec2 pushed_center = pushed_aabb.center();
     if (push_acc_delta > 0.0F && pushed_center.x < pusher_center.x) {
         return false;
     }
@@ -123,15 +123,15 @@ void TryPushBlocks(
 ) {
     Ent& ent = state.ents.ents[ent_idx];
     const bool ent_grounded = ent.grounded;
-    const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
     const VID ent_vid = ent.vid;
-    const sim::FxVec2 ent_vel = ent.vel;
+    const FxVec2 ent_vel = ent.vel;
 
     bool ready_to_push = false;
     if (ent_grounded) {
-        const sim::FxAABB try_to_push_zone = {
-            .tl = ent_aabb.tl - sim::PixelVec2(6, 0),
-            .br = ent_aabb.br + sim::PixelVec2(6, 0),
+        const FxAABB try_to_push_zone = {
+            .tl = ent_aabb.tl - PixelVec2(6, 0),
+            .br = ent_aabb.br + PixelVec2(6, 0),
         };
         const std::vector<VID> search_results =
             QueryEntsInAabb(state, try_to_push_zone, ent_vid);
@@ -142,21 +142,21 @@ void TryPushBlocks(
             }
             if (Ent* const block_ent = state.ents.GetEntMut(vid)) {
                 ready_to_push = true;
-                const sim::Scalar push_zone_left_x = ent_aabb.tl.x - sim::Scalar::from_int(1);
-                const sim::Scalar push_zone_right_x = ent_aabb.br.x + sim::Scalar::from_int(1);
-                const sim::FxAABB nearest_block_aabb =
+                const FxScalar push_zone_left_x = ent_aabb.tl.x - FxScalar::from_int(1);
+                const FxScalar push_zone_right_x = ent_aabb.br.x + FxScalar::from_int(1);
+                const FxAABB nearest_block_aabb =
                     GetNearestWorldAabb(state.stage, ent_aabb.center(), block_ent->GetAABB());
-                const sim::FxVec2 block_tl = nearest_block_aabb.tl;
-                const sim::FxVec2 block_br = nearest_block_aabb.br;
-                sim::Scalar block_x_acc_delta = sim::Scalar::zero();
-                if (ent_vel.x > sim::Scalar::zero() && block_br.x > push_zone_left_x &&
+                const FxVec2 block_tl = nearest_block_aabb.tl;
+                const FxVec2 block_br = nearest_block_aabb.br;
+                FxScalar block_x_acc_delta = FxScalar::zero();
+                if (ent_vel.x > FxScalar::zero() && block_br.x > push_zone_left_x &&
                     block_tl.x > push_zone_left_x) {
                     block_x_acc_delta = block_ent->push_acc;
-                } else if (ent_vel.x < sim::Scalar::zero() && block_tl.x < push_zone_right_x &&
+                } else if (ent_vel.x < FxScalar::zero() && block_tl.x < push_zone_right_x &&
                            block_br.x < push_zone_right_x) {
                     block_x_acc_delta = -block_ent->push_acc;
                 }
-                if (block_x_acc_delta != sim::Scalar::zero()) {
+                if (block_x_acc_delta != FxScalar::zero()) {
                     block_ent->acc.x += block_x_acc_delta;
                 }
                 break;
@@ -186,9 +186,9 @@ bool TryDisplaceEntByOnePixel(
         return false;
     }
 
-    const sim::FxVec2 candidate_pos = ent.pos + sim::PixelVec2(direction.x, direction.y);
-    const sim::FxAABB candidate_aabb =
-        sim::FxAABB::from_pos_size(candidate_pos, ent.size - sim::PixelVec2(1, 1));
+    const FxVec2 candidate_pos = ent.pos + PixelVec2(direction.x, direction.y);
+    const FxAABB candidate_aabb =
+        FxAABB::from_pos_size(candidate_pos, ent.size - PixelVec2(1, 1));
     const BlockingContactSet contacts =
         GatherBlockingContactsForAabb(ent_idx, candidate_aabb, state, true, true);
     if (ResolveBlockingContactSet(ent_idx, contacts, state).blocks_movement) {

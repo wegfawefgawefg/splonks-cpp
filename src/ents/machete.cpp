@@ -35,11 +35,11 @@ std::int32_t GetPendingFavor(const Ent& machete) {
 }
 
 void AddPendingFavor(Ent& machete, std::int32_t amount) {
-    machete.counter_b = sim::Scalar::from_int(GetPendingFavor(machete) + std::max(0, amount));
+    machete.counter_b = FxScalar::from_int(GetPendingFavor(machete) + std::max(0, amount));
 }
 
 void ClearPendingFavor(Ent& machete) {
-    machete.counter_b = sim::Scalar::zero();
+    machete.counter_b = FxScalar::zero();
 }
 
 FVec2 GetVictimEffectPos(const Ent& victim, const Graphics& graphics) {
@@ -109,14 +109,14 @@ bool TryDepositFavorWhileGroundedOnSacAltar(
         return false;
     }
 
-    const sim::FxAABB feet = machete.GetFeet();
+    const FxAABB feet = machete.GetFeet();
     for (const VID& other_vid : QueryEntsInAabb(state, feet, machete.vid)) {
         Ent* const other_ent = state.ents.GetEntMut(other_vid);
         if (other_ent == nullptr || !other_ent->active || other_ent->type_ != EntType::SacAltar) {
             continue;
         }
 
-        const sim::FxAABB altar_aabb = GetNearestWorldAabb(
+        const FxAABB altar_aabb = GetNearestWorldAabb(
             state.stage,
             machete.GetCenter(),
             common::GetContactAabbForEnt(*other_ent, graphics)
@@ -147,14 +147,14 @@ void TryApplyMacheteStrike(std::size_t ent_idx, State& state, const Graphics& gr
         holder = state.ents.GetEntMut(*machete.held_by_vid);
     }
 
-    const sim::FxAABB strike_aabb = common::GetContactAabbForEnt(machete, graphics);
+    const FxAABB strike_aabb = common::GetContactAabbForEnt(machete, graphics);
     for (const VID& other_vid : QueryEntsInAabb(state, strike_aabb, machete.vid)) {
         Ent* const other_ent = state.ents.GetEntMut(other_vid);
         if (other_ent == nullptr) {
             continue;
         }
 
-        const sim::FxAABB other_aabb = GetNearestWorldAabb(
+        const FxAABB other_aabb = GetNearestWorldAabb(
             state.stage,
             strike_aabb.center(),
             common::GetContactAabbForEnt(*other_ent, graphics)
@@ -173,7 +173,7 @@ void TryApplyMacheteStrike(std::size_t ent_idx, State& state, const Graphics& gr
         }
 
         const Ent victim_before_damage = *other_ent;
-        const sim::Scalar knockback_x =
+        const FxScalar knockback_x =
             ToFxScalar(machete.facing == Side::Left ? -3.5F : 3.5F);
         const common::DamageResult damage_result =
             common::TryHitEnt(
@@ -185,7 +185,7 @@ void TryApplyMacheteStrike(std::size_t ent_idx, State& state, const Graphics& gr
                 common::HitOptions{
                     .source_vid = machete.vid,
                     .knockback = common::KnockbackSpec{
-                        .velocity = sim::FxVec2{knockback_x, ToFxScalar(-1.5F)},
+                        .velocity = FxVec2{knockback_x, ToFxScalar(-1.5F)},
                         .clear_velocity = true,
                         .clear_acceleration = true,
                         .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,
@@ -263,7 +263,7 @@ void OnUseAsMachete(std::size_t ent_idx, State& state, Graphics& graphics, Audio
 
     SetAnim(machete, aframe_ids::KnifeSwing);
     machete.aframe_animator.loop = false;
-    machete.counter_a = sim::Scalar::from_int(kMacheteStrikePending);
+    machete.counter_a = FxScalar::from_int(kMacheteStrikePending);
     (void)PlayEntCenterSoundEmitter(state, machete, audio_asset_ids::Throw);
 
     if (machete.use_state.source == AttachMode::None) {
@@ -285,9 +285,9 @@ void StepEntLogicAsMachete(
         return;
     }
 
-    if (machete.counter_a > sim::Scalar::zero() && machete.aframe_animator.current_frame > 0) {
+    if (machete.counter_a > FxScalar::zero() && machete.aframe_animator.current_frame > 0) {
         TryApplyMacheteStrike(ent_idx, state, graphics, audio);
-        machete.counter_a = sim::Scalar::zero();
+        machete.counter_a = FxScalar::zero();
     }
 
     if (!machete.aframe_animator.IsFinished()) {

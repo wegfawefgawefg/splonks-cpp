@@ -3,7 +3,7 @@
 #include "debug/debug_stage_common.hpp"
 #include "ent/spec.hpp"
 #include "player_queries.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "stage_spawning.hpp"
 
 #include <algorithm>

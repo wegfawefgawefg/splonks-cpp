@@ -30,21 +30,21 @@ bool IsInSpelunkyExplosionFootprint(const IVec2& tile_delta) {
            (abs_y == 0 && abs_x <= kExplosionCrossRadiusTiles);
 }
 
-bool IsInSpelunkyExplosionFootprint(sim::FxVec2 world_delta) {
-    const sim::Scalar abs_x = world_delta.x.abs();
-    const sim::Scalar abs_y = world_delta.y.abs();
-    const sim::Scalar diagonal_limit = ToFxScalar(1.5F * static_cast<float>(kTileSize));
+bool IsInSpelunkyExplosionFootprint(FxVec2 world_delta) {
+    const FxScalar abs_x = world_delta.x.abs();
+    const FxScalar abs_y = world_delta.y.abs();
+    const FxScalar diagonal_limit = ToFxScalar(1.5F * static_cast<float>(kTileSize));
     if (abs_x <= diagonal_limit && abs_y <= diagonal_limit) {
         return true;
     }
 
-    const sim::Scalar centerline_limit = ToFxScalar(0.5F * static_cast<float>(kTileSize));
-    const sim::Scalar cross_limit = ToFxScalar(2.5F * static_cast<float>(kTileSize));
+    const FxScalar centerline_limit = ToFxScalar(0.5F * static_cast<float>(kTileSize));
+    const FxScalar cross_limit = ToFxScalar(2.5F * static_cast<float>(kTileSize));
     return (abs_x <= centerline_limit && abs_y <= cross_limit) ||
            (abs_y <= centerline_limit && abs_x <= cross_limit);
 }
 
-std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, sim::FxVec2 center) {
+std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, FxVec2 center) {
     const IVec2 center_tile = stage.GetTileCoordAtWc(
         IVec2::New(center.x.trunc_int(), center.y.trunc_int())
     );
@@ -70,7 +70,7 @@ std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, sim::FxVec2 
 
 void DoExplosion(
     std::size_t ent_idx,
-    sim::FxVec2 center,
+    FxVec2 center,
     float size,
     float push_magnitude,
     State& state,
@@ -138,18 +138,18 @@ void DoExplosion(
     const std::vector<IVec2> explosion_tiles = BuildExplosionFootprintTiles(state.stage, center);
     BreakStageTilesAtCoords(explosion_tiles, state, audio);
 
-    const sim::Scalar explosion_size = ToFxScalar(size * static_cast<float>(kTileSize));
-    const sim::FxAABB area = sim::FxAABB::from_corners(
-        center - sim::FxVec2{explosion_size, explosion_size},
-        center + sim::FxVec2{explosion_size, explosion_size}
+    const FxScalar explosion_size = ToFxScalar(size * static_cast<float>(kTileSize));
+    const FxAABB area = FxAABB::from_corners(
+        center - FxVec2{explosion_size, explosion_size},
+        center + FxVec2{explosion_size, explosion_size}
     );
 
     const VID this_vid = state.ents.GetVid(ent_idx);
     const std::vector<VID> results = QueryEntsInAabb(state, area, this_vid);
-    const sim::Scalar sim_push_magnitude = ToFxScalar(push_magnitude);
+    const FxScalar sim_push_magnitude = ToFxScalar(push_magnitude);
     for (const VID& vid : results) {
         if (Ent* const ent = state.ents.GetEntMut(vid)) {
-            const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, center, ent->GetCenter());
+            const FxVec2 delta = GetNearestWorldDelta(state.stage, center, ent->GetCenter());
             const bool can_receive_push =
                 ent->active &&
                 ent->has_physics &&
@@ -168,11 +168,11 @@ void DoExplosion(
                 );
                 continue;
             }
-            sim::FxVec2 knockback_dir = sim::NormalizeOrZero(delta);
-            if (knockback_dir == sim::FxVec2::zero()) {
-                knockback_dir = sim::FxVec2{
-                    sim::Scalar::zero(),
-                    sim::Scalar::from_int(-1),
+            FxVec2 knockback_dir = FxNormalizeOrZero(delta);
+            if (knockback_dir == FxVec2::zero()) {
+                knockback_dir = FxVec2{
+                    FxScalar::zero(),
+                    FxScalar::from_int(-1),
                 };
             }
             (void)TryHitEnt(

@@ -7,7 +7,7 @@ namespace splonks {
 
 namespace {
 
-using TileShakeGrid = std::vector<std::vector<sim::Scalar>>;
+using TileShakeGrid = std::vector<std::vector<FxScalar>>;
 
 constexpr int kTileShakeDistanceScale = 1024;
 
@@ -27,13 +27,13 @@ int WrapCoordinate(int value, int size) {
     return wrapped;
 }
 
-std::vector<std::vector<sim::Scalar>> MakeEmptyTileShakeGrid(
+std::vector<std::vector<FxScalar>> MakeEmptyTileShakeGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::Scalar>> tile_shake;
+    std::vector<std::vector<FxScalar>> tile_shake;
     tile_shake.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        tile_shake.push_back(std::vector<sim::Scalar>(row.size(), sim::Scalar::zero()));
+        tile_shake.push_back(std::vector<FxScalar>(row.size(), FxScalar::zero()));
     }
     return tile_shake;
 }
@@ -90,11 +90,11 @@ void AddTileShakeToGrid(Stage& stage, TileShakeGrid& grid, const IVec2& pos, flo
     if (!resolved.has_value()) {
         return;
     }
-    const sim::Scalar max_tile_shake = sim::Scalar::from_int(8);
-    const sim::Scalar shake_amount = ToFxScalar(amount);
-    sim::Scalar& shake =
+    const FxScalar max_tile_shake = FxScalar::from_int(8);
+    const FxScalar shake_amount = ToFxScalar(amount);
+    FxScalar& shake =
         grid[static_cast<std::size_t>(resolved->y)][static_cast<std::size_t>(resolved->x)];
-    shake = std::clamp(shake + shake_amount, sim::Scalar::zero(), max_tile_shake);
+    shake = std::clamp(shake + shake_amount, FxScalar::zero(), max_tile_shake);
 }
 
 void AddTileShakeAreaToGrid(Stage& stage, TileShakeGrid& grid, const IVec2& pos, float magnitude, float dist) {
@@ -141,31 +141,31 @@ void AddTileShakeAreaToGrid(Stage& stage, TileShakeGrid& grid, const IVec2& pos,
             if (!resolved.has_value()) {
                 continue;
             }
-            sim::Scalar& contribution = contributions[static_cast<std::size_t>(resolved->y)]
+            FxScalar& contribution = contributions[static_cast<std::size_t>(resolved->y)]
                                                      [static_cast<std::size_t>(resolved->x)];
             contribution = std::max(contribution, ToFxScalar(magnitude * falloff));
             touched[static_cast<std::size_t>(resolved->y)][static_cast<std::size_t>(resolved->x)] = true;
         }
     }
 
-    const sim::Scalar max_tile_shake = sim::Scalar::from_int(8);
+    const FxScalar max_tile_shake = FxScalar::from_int(8);
     for (std::size_t y = 0; y < contributions.size(); ++y) {
         for (std::size_t x = 0; x < contributions[y].size(); ++x) {
             if (!touched[y][x]) {
                 continue;
             }
             grid[y][x] =
-                std::clamp(grid[y][x] + contributions[y][x], sim::Scalar::zero(), max_tile_shake);
+                std::clamp(grid[y][x] + contributions[y][x], FxScalar::zero(), max_tile_shake);
         }
     }
 }
 
 void AttenuateTileShakeGrid(TileShakeGrid& grid, const std::vector<std::vector<Tile>>& tiles, float amount) {
     SyncTileShakeGridToTiles(grid, tiles);
-    const sim::Scalar attenuation = ToFxScalar(amount);
-    for (std::vector<sim::Scalar>& row : grid) {
-        for (sim::Scalar& shake : row) {
-            shake = std::max(sim::Scalar::zero(), shake - attenuation);
+    const FxScalar attenuation = ToFxScalar(amount);
+    for (std::vector<FxScalar>& row : grid) {
+        for (FxScalar& shake : row) {
+            shake = std::max(FxScalar::zero(), shake - attenuation);
         }
     }
 }

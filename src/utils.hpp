@@ -1,7 +1,7 @@
 #pragma once
 
 #include "math_types.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 
 #include <cstdint>
 
@@ -17,7 +17,7 @@ struct DetRng {
     float RandomFloat(float minimum, float maximum);
 };
 
-sim::Scalar RandomSimScalar(DetRng& rng, sim::Scalar minimum, sim::Scalar maximum);
+FxScalar RandomSimScalar(DetRng& rng, FxScalar minimum, FxScalar maximum);
 
 struct FAABB {
     FVec2 tl;
@@ -38,10 +38,10 @@ struct IAABB {
 FVec2 GetMinDisplacement(const FAABB& aabb1, const FAABB& aabb2);
 bool AabbsIntersect(const FAABB& left, const FAABB& right);
 
-sim::FxAABB ToFxAABB(const FAABB& value, gfxp::Rounding rounding = gfxp::Rounding::Nearest);
-FAABB ToFAABB(const sim::FxAABB& value);
-IAABB ToIAABBFloorCeil(const sim::FxAABB& value);
-FVec2 ToFMinDisplacement(sim::FxAABB aabb1, sim::FxAABB aabb2);
+FxAABB ToFxAABB(const FAABB& value, gfxp::Rounding rounding = gfxp::Rounding::Nearest);
+FAABB ToFAABB(const FxAABB& value);
+IAABB ToIAABBFloorCeil(const FxAABB& value);
+FVec2 ToFMinDisplacement(FxAABB aabb1, FxAABB aabb2);
 
 namespace rng {
 

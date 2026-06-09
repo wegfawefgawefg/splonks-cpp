@@ -4,8 +4,8 @@
 
 namespace splonks::ents::shop {
 
-sim::FxAABB GetShopArea(const Ent& shop);
-void SetShopArea(Ent& shop, sim::FxAABB area);
+FxAABB GetShopArea(const Ent& shop);
+void SetShopArea(Ent& shop, FxAABB area);
 void AddShopChild(Ent& shop, VID child_vid);
 void DisturbShop(std::size_t shop_idx, State& state, Audio& audio);
 void DisturbShopByVid(std::optional<VID> shop_vid, State& state, Audio& audio);

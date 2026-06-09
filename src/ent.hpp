@@ -6,7 +6,7 @@
 #include "aframe_animator.hpp"
 #include "aframe_id.hpp"
 #include "math_types.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "stage_progression.hpp"
 #include "stage.hpp"
 #include "utils.hpp"
@@ -56,9 +56,9 @@ struct Ent {
     bool can_collect_pickups = false;
     bool can_go_on_back = false;
     bool grounded = false;
-    sim::Scalar shake = sim::Scalar::zero();
-    sim::Scalar rotation = sim::Scalar::zero();
-    sim::Scalar alpha = sim::Scalar::from_int(1);
+    FxScalar shake = FxScalar::zero();
+    FxScalar rotation = FxScalar::zero();
+    FxScalar alpha = FxScalar::from_int(1);
     std::uint32_t coyote_time = 0;
     std::uint32_t stun_timer = 0;
     bool stun_recovers_on_ground = true;
@@ -69,19 +69,19 @@ struct Ent {
     bool impassable = false;
     bool can_be_hung_on = true;
     std::uint32_t fall_timer = 0;
-    sim::FxVec2 pos;
-    sim::FxVec2 vel;
-    sim::FxVec2 acc;
-    sim::Scalar max_speed = ToFxScalar(7.0F);
+    FxVec2 pos;
+    FxVec2 vel;
+    FxVec2 acc;
+    FxScalar max_speed = ToFxScalar(7.0F);
     std::uint32_t jump_hold_gravity_frames_remaining = 0;
-    sim::Scalar throw_velocity_scale = sim::Scalar::from_int(1);
-    sim::Scalar buoyancy = sim::Scalar::zero();
-    sim::FxVec2 size;
-    sim::Scalar self_light = sim::Scalar::zero();
-    sim::Scalar light_strength = sim::Scalar::zero();
-    sim::Color3 light_color = ToFxColor3(Color3::White());
+    FxScalar throw_velocity_scale = FxScalar::from_int(1);
+    FxScalar buoyancy = FxScalar::zero();
+    FxVec2 size;
+    FxScalar self_light = FxScalar::zero();
+    FxScalar light_strength = FxScalar::zero();
+    FxColor3 light_color = ToFxColor3(Color3::White());
     int light_radius = 0;
-    sim::Scalar dist_traveled_this_frame = sim::Scalar::zero();
+    FxScalar dist_traveled_this_frame = FxScalar::zero();
     Side facing = Side::Left;
     bool vertical_flip = false;
     DrawLayer draw_layer = DrawLayer::Middle;
@@ -103,8 +103,8 @@ struct Ent {
     std::optional<VID> back_vid;
     AttachMode attach_mode = AttachMode::None;
     UseState use_state;
-    sim::Scalar travel_sound_countdown =
-        sim::Scalar::from_int(static_cast<std::int32_t>(kTravelSoundDistInterval));
+    FxScalar travel_sound_countdown =
+        FxScalar::from_int(static_cast<std::int32_t>(kTravelSoundDistInterval));
     TravelSound travel_sound = TravelSound::One;
     EntCondition condition = EntCondition::Normal;
     EntCondition last_condition = EntCondition::Normal;
@@ -115,8 +115,8 @@ struct Ent {
     bool hurt_on_contact = false;
     bool vanish_on_death = false;
     bool affected_by_ground_friction = true;
-    sim::Scalar support_ground_friction = ToFxScalar(0.85F);
-    sim::Scalar push_acc = sim::Scalar::zero();
+    FxScalar support_ground_friction = ToFxScalar(0.85F);
+    FxScalar push_acc = FxScalar::zero();
     std::optional<AFrameId> damage_anim = std::nullopt;
     std::optional<AudioAssetId> damage_sound = std::nullopt;
     std::optional<AudioAssetId> collide_sound = std::nullopt;
@@ -166,22 +166,22 @@ struct Ent {
     std::optional<std::vector<VID>> inside_vids;
     EntLabel ent_label_a = EntLabel::None;
     Alignment alignment = Alignment::Neutral;
-    sim::Scalar counter_a = sim::Scalar::zero();
-    sim::Scalar counter_b = sim::Scalar::zero();
-    sim::Scalar counter_c = sim::Scalar::zero();
-    sim::Scalar counter_d = sim::Scalar::zero();
-    sim::Scalar threshold_a = sim::Scalar::zero();
-    sim::Scalar threshold_b = sim::Scalar::zero();
+    FxScalar counter_a = FxScalar::zero();
+    FxScalar counter_b = FxScalar::zero();
+    FxScalar counter_c = FxScalar::zero();
+    FxScalar counter_d = FxScalar::zero();
+    FxScalar threshold_a = FxScalar::zero();
+    FxScalar threshold_b = FxScalar::zero();
 
     static constexpr FVec2 kHangHandSize = {1.0F, 4.0F};
 
     static Ent New();
     void Reset();
-    sim::FxAABB GetAABB() const;
-    sim::FxVec2 GetCenter() const;
-    void SetCenter(sim::FxVec2 center);
-    sim::FxAABB GetFeet() const;
-    sim::FxAABB GetGroundProbe() const;
+    FxAABB GetAABB() const;
+    FxVec2 GetCenter() const;
+    void SetCenter(FxVec2 center);
+    FxAABB GetFeet() const;
+    FxAABB GetGroundProbe() const;
     void IncTravelSound();
     bool IsHanging() const;
     bool IsClimbing() const;

@@ -181,11 +181,11 @@ void ApplyPendingStageTransition(State& state) {
     }
 }
 
-std::optional<sim::FxVec2> FindStageEntranceSpawnPos(const State& state) {
+std::optional<FxVec2> FindStageEntranceSpawnPos(const State& state) {
     for (unsigned int y = 0; y < state.stage.GetTileHeight(); ++y) {
         for (unsigned int x = 0; x < state.stage.GetTileWidth(); ++x) {
             if (state.stage.GetTile(x, y) == Tile::Entrance) {
-                return sim::PixelVec2(static_cast<int>(x) * static_cast<int>(kTileSize),
+                return PixelVec2(static_cast<int>(x) * static_cast<int>(kTileSize),
                                       static_cast<int>(y) * static_cast<int>(kTileSize));
             }
         }
@@ -206,8 +206,8 @@ std::vector<VID> ResetStageEntrancePres(State& state) {
         if (!ent.active || ent.type_ != EntType::Entrance) {
             continue;
         }
-        ent.counter_a = sim::Scalar::zero();
-        ent.counter_b = sim::Scalar::zero();
+        ent.counter_a = FxScalar::zero();
+        ent.counter_b = FxScalar::zero();
         changed_ents.push_back(ent.vid);
     }
     return changed_ents;

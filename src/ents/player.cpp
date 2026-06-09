@@ -7,7 +7,7 @@
 #include "ents/meathead.hpp"
 #include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 #include "world_ops.hpp"
@@ -168,7 +168,7 @@ void UpdateClimbAnimPlayback(Ent& player, const Graphics& graphics) {
 
     animator.animate = true;
     const AnimPlaybackMode desired_mode =
-        player.vel.y < sim::Scalar::zero() ? AnimPlaybackMode::Forward : AnimPlaybackMode::Reverse;
+        player.vel.y < FxScalar::zero() ? AnimPlaybackMode::Forward : AnimPlaybackMode::Reverse;
     if (animator.playback_mode == desired_mode) {
         return;
     }
@@ -177,10 +177,10 @@ void UpdateClimbAnimPlayback(Ent& player, const Graphics& graphics) {
     if (anim != nullptr && animator.current_frame < anim->frame_indices.size()) {
         const AFrame& aframe =
             graphics.aframe_db.frames[anim->frame_indices[animator.current_frame]];
-        const sim::Scalar frame_duration =
-            sim::Scalar::from_int(static_cast<std::int32_t>(aframe.duration));
+        const FxScalar frame_duration =
+            FxScalar::from_int(static_cast<std::int32_t>(aframe.duration));
         animator.current_time =
-            std::clamp(frame_duration - animator.current_time, sim::Scalar::zero(), frame_duration);
+            std::clamp(frame_duration - animator.current_time, FxScalar::zero(), frame_duration);
     }
 
     animator.playback_mode = desired_mode;
@@ -194,7 +194,7 @@ void StepPlayerFallTimer(Ent& player, const State& state) {
         player.fall_timer = 0;
         return;
     }
-    if (player.vel.y > sim::Scalar::zero() && !player.IsClimbing() && !player.IsHanging()) {
+    if (player.vel.y > FxScalar::zero() && !player.IsClimbing() && !player.IsHanging()) {
         if (fall_timer_rate >= 1.0F) {
             player.fall_timer += static_cast<std::uint32_t>(RoundToInt(fall_timer_rate));
             return;
@@ -275,7 +275,7 @@ void ApplyClassicFallDamageOnLanding(
 
     Ent& mutable_player = state.ents.ents[ent_idx];
     if (was_holding_player) {
-        mutable_player.vel.y = sim::Scalar::zero();
+        mutable_player.vel.y = FxScalar::zero();
         mutable_player.grounded = true;
     } else {
         mutable_player.vel.y = ToFxScalar(kFallDamageBounceVelocityY);
@@ -308,8 +308,8 @@ void ControlEntAsPlayerWithTuning(
 
     const bool climbing = player.IsClimbing();
     if (climbing) {
-        player.acc.x = sim::Scalar::zero();
-        player.vel.x = sim::Scalar::zero();
+        player.acc.x = FxScalar::zero();
+        player.vel.x = FxScalar::zero();
     } else if (!(intent.left && intent.right)) {
         if (intent.run) {
             if (intent.left) {
@@ -328,8 +328,8 @@ void ControlEntAsPlayerWithTuning(
         }
     }
     if (intent.stop) {
-        player.acc = sim::FxVec2::zero();
-        player.vel = sim::FxVec2::zero();
+        player.acc = FxVec2::zero();
+        player.vel = FxVec2::zero();
     }
 }
 
@@ -443,10 +443,10 @@ void StepEntLogicAsPlayer(
     // SET ANIMATIONS AND DISPLAY STATES
     {
         Ent& player = state.ents.ents[ent_idx];
-        if (player.vel.x < sim::Scalar::zero()) {
+        if (player.vel.x < FxScalar::zero()) {
             player.facing = Side::Left;
         }
-        if (player.vel.x > sim::Scalar::zero()) {
+        if (player.vel.x > FxScalar::zero()) {
             player.facing = Side::Right;
         }
 
@@ -483,14 +483,14 @@ void StepEntLogicAsPlayer(
                 const bool walking_horizontally =
                     player.grounded &&
                     moving_with_input &&
-                    player.dist_traveled_this_frame > sim::Scalar::zero();
+                    player.dist_traveled_this_frame > FxScalar::zero();
                 const bool running_horizontally = walking_horizontally && control.run;
                 const bool pushing_into_blocker =
                     player.grounded &&
                     has_horizontal_input &&
                     !walking_horizontally;
 
-                if (!player.grounded && player.vel.y > sim::Scalar::zero()) {
+                if (!player.grounded && player.vel.y > FxScalar::zero()) {
                     TrySetAnim(player, EntDisplayState::Falling);
                     player.aframe_animator.ResetSpeed();
                 } else if (walking_horizontally) {
@@ -536,7 +536,7 @@ void StepEntLogicAsPlayer(
     }
     if (!loss_of_control) {
         const Ent& player = state.ents.ents[ent_idx];
-        const sim::FxVec2 player_pos = player.pos;
+        const FxVec2 player_pos = player.pos;
         const bool trying_to_attack = control.attack_pressed;
         const VID player_vid = player.vid;
         const unsigned int attack_delay_countdown = player.attack_delay_countdown;
@@ -619,10 +619,10 @@ void StepEntPhysicsAsPlayerWithTuning(
     );
     if (!externally_launched_player) {
         if (control.run) {
-            const sim::Scalar max_speed = ToFxScalar(max_run_speed * move_speed_scale);
+            const FxScalar max_speed = ToFxScalar(max_run_speed * move_speed_scale);
             ent.vel.x = std::clamp(ent.vel.x, -max_speed, max_speed);
         } else {
-            const sim::Scalar max_speed = ToFxScalar(max_walk_speed * move_speed_scale);
+            const FxScalar max_speed = ToFxScalar(max_walk_speed * move_speed_scale);
             ent.vel.x = std::clamp(ent.vel.x, -max_speed, max_speed);
         }
     }

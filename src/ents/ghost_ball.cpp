@@ -53,13 +53,13 @@ void StepEntLogicAsGhostBall(
     // try to fetch the target
     // set your acceleration towards your target vid
     Ent& ghost_ball = state.ents.ents[ent_idx];
-    sim::FxVec2 target_position = ghost_ball.pos;
+    FxVec2 target_position = ghost_ball.pos;
     if (ghost_ball.ent_a.has_value()) {
         if (const Ent* const target = state.ents.GetEnt(*ghost_ball.ent_a)) {
             target_position = target->pos;
         }
     }
-    ghost_ball.acc = sim::NormalizeOrZero(target_position - ghost_ball.pos) *
+    ghost_ball.acc = FxNormalizeOrZero(target_position - ghost_ball.pos) *
                      ToFxScalar(kChaseSpeed);
 }
 

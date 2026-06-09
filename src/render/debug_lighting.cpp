@@ -7,7 +7,7 @@
 #include "state.hpp"
 #include "text.hpp"
 #include "tile.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 
 #include <algorithm>
 #include <cmath>

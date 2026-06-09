@@ -2,7 +2,7 @@
 
 #include "ent.hpp"
 #include "network/net_session.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 
 #include <algorithm>
@@ -103,7 +103,7 @@ struct FingerprintWriter {
         AddPod(static_cast<std::uint64_t>(count));
     }
 
-    void AddFixedScalar(sim::Scalar value_) {
+    void AddFixedScalar(FxScalar value_) {
         AddPod(value_.raw_value());
     }
 
@@ -117,17 +117,17 @@ struct FingerprintWriter {
     }
 
     void AddVec2(const FVec2& vec) {
-        const sim::FxVec2 fixed = ToFxVec2(vec);
+        const FxVec2 fixed = ToFxVec2(vec);
         AddFixedScalar(fixed.x);
         AddFixedScalar(fixed.y);
     }
 
-    void AddFixedVec2(const sim::FxVec2& vec) {
+    void AddFixedVec2(const FxVec2& vec) {
         AddFixedScalar(vec.x);
         AddFixedScalar(vec.y);
     }
 
-    void AddFixedColor3(const sim::Color3& color) {
+    void AddFixedColor3(const FxColor3& color) {
         AddFixedScalar(color.r);
         AddFixedScalar(color.g);
         AddFixedScalar(color.b);
@@ -188,17 +188,17 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
                 }
                 return stage.tile_rotations[row_y][col_x];
             };
-            const auto read_sim_scalar_grid = [](const std::vector<std::vector<sim::Scalar>>& grid,
+            const auto read_sim_scalar_grid = [](const std::vector<std::vector<FxScalar>>& grid,
                                                  std::size_t y_, std::size_t x_) {
                 if (y_ >= grid.size() || x_ >= grid[y_].size()) {
-                    return sim::Scalar::zero();
+                    return FxScalar::zero();
                 }
                 return grid[y_][x_];
             };
-            const auto read_sim_vec2_grid = [](const std::vector<std::vector<sim::FxVec2>>& grid,
+            const auto read_sim_vec2_grid = [](const std::vector<std::vector<FxVec2>>& grid,
                                                std::size_t y_, std::size_t x_) {
                 if (y_ >= grid.size() || x_ >= grid[y_].size()) {
-                    return sim::FxVec2::zero();
+                    return FxVec2::zero();
                 }
                 return grid[y_][x_];
             };

@@ -4,7 +4,7 @@
 #include "ents/common/contact_types.hpp"
 #include "ents/common/knockback.hpp"
 #include "graphics.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 #include "tools/tool_spec.hpp"
 
@@ -115,7 +115,7 @@ void DoTileAndEntCollisions(
 );
 void DoExplosion(
     std::size_t ent_idx,
-    sim::FxVec2 center,
+    FxVec2 center,
     float size,
     float push_magnitude,
     State& state,
@@ -125,9 +125,9 @@ bool TryApplyPlausibleLocomotionClaim(
     Ent& ent,
     State& state,
     const JumpAndClimbTuning& tuning,
-    sim::FxVec2 claimed_pos,
-    sim::FxVec2 claimed_vel,
-    sim::FxVec2 claimed_acc,
+    FxVec2 claimed_pos,
+    FxVec2 claimed_vel,
+    FxVec2 claimed_acc,
     std::uint32_t claimed_movement_flags,
     bool claimed_grounded,
     std::optional<Side> claimed_hang_side,
@@ -137,12 +137,12 @@ bool TryApplyPlausibleLocomotionClaim(
     std::uint32_t claimed_climb_detach_cooldown
 );
 const AFrame* GetCurrentAFrameForEnt(const Ent& ent, const Graphics& graphics);
-sim::FxVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
-sim::FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback);
-void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 center);
-sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback);
-sim::FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics);
-sim::FxAABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);
+FxVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
+FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, FxVec2 fallback);
+void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, FxVec2 center);
+FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, FxVec2 fallback);
+FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics);
+FxAABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);
 bool CanCollectPickupFromContact(
     std::size_t pickup_idx,
     std::size_t collector_idx,
@@ -171,7 +171,7 @@ bool TryDropEntByVid(
 bool TryThrowEntByVid(
     VID thrower_vid,
     VID thrown_vid,
-    sim::FxVec2 throw_velocity,
+    FxVec2 throw_velocity,
     State& state,
     const Graphics& graphics,
     Audio& audio
@@ -244,7 +244,7 @@ bool TrySpawnAndThrowEntForToolUse(
     std::uint32_t thrown_immunity_timer,
     void (*setup_ent)(Ent&),
     ToolThrowVelocityBuilder build_throw_velocity = nullptr,
-    std::optional<sim::FxVec2> throw_velocity_override = std::nullopt
+    std::optional<FxVec2> throw_velocity_override = std::nullopt
 );
 bool TryUseToolSlot(
     std::size_t ent_idx,
@@ -254,7 +254,7 @@ bool TryUseToolSlot(
     std::size_t tool_slot_index,
     bool trigger_pressed,
     ToolThrowVelocityBuilder build_throw_velocity = nullptr,
-    std::optional<sim::FxVec2> throw_velocity_override = std::nullopt
+    std::optional<FxVec2> throw_velocity_override = std::nullopt
 );
 
 enum class DamageResult {
@@ -334,13 +334,13 @@ bool TryDispatchEntEntOverlapContacts(
 );
 std::vector<VID> GatherTouchedEntContactsForAabb(
     std::size_t ent_idx,
-    sim::FxAABB aabb,
+    FxAABB aabb,
     const Graphics& graphics,
     State& state
 );
 BlockingContactSet GatherBlockingContactsForAabb(
     std::size_t ent_idx,
-    sim::FxAABB aabb,
+    FxAABB aabb,
     const State& state,
     bool check_tiles,
     bool check_ents

@@ -47,7 +47,7 @@ float ParseFloat(const std::string& value, float fallback) {
     }
 }
 
-sim::Scalar ParseSimScalar(const std::string& value, sim::Scalar fallback) {
+FxScalar ParseSimScalar(const std::string& value, FxScalar fallback) {
     return ToFxScalar(ParseFloat(value, ToFloat(fallback)));
 }
 
@@ -154,9 +154,9 @@ FluidSettings FluidSettings::New() {
     FluidSettings result;
     result.simulation_enabled = true;
     result.simulation_interval_frames = 6;
-    result.transfer_per_step = sim::Scalar::from_int(1);
-    result.gravity_x = sim::Scalar::zero();
-    result.gravity_y = sim::Scalar::from_int(1);
+    result.transfer_per_step = FxScalar::from_int(1);
+    result.gravity_x = FxScalar::zero();
+    result.gravity_y = FxScalar::from_int(1);
     result.pressure_strength = ToFxScalar(0.35F);
     result.velocity_damping = ToFxScalar(0.88F);
     result.temp_gravity_decay = ToFxScalar(0.92F);
@@ -165,7 +165,7 @@ FluidSettings FluidSettings::New() {
     result.render_cutoff_amount = ToFxScalar(0.004F);
     result.water_alpha = ToFxScalar(0.69F);
     result.lighting_enabled = true;
-    result.lighting_strength = sim::Scalar::from_int(1);
+    result.lighting_strength = FxScalar::from_int(1);
     return result;
 }
 
@@ -177,8 +177,8 @@ WaterEffectSettings WaterEffectSettings::New() {
     result.move_speed_scale = ToFxScalar(0.5F);
     result.max_fall_speed = ToFxScalar(1.35F);
     result.buoyancy_strength = ToFxScalar(0.55F);
-    result.fall_timer_rate = sim::Scalar::zero();
-    result.stomp_damage_scale = sim::Scalar::zero();
+    result.fall_timer_rate = FxScalar::zero();
+    result.stomp_damage_scale = FxScalar::zero();
     result.swim_impulse = ToFxScalar(8.70F);
     return result;
 }
@@ -708,7 +708,7 @@ bool SaveSettings(const Settings& settings) {
     if (!output.is_open()) {
         return false;
     }
-    const auto write_sim_scalar = [&](const char* key, sim::Scalar value) {
+    const auto write_sim_scalar = [&](const char* key, FxScalar value) {
         output << key << "=" << ToFloat(value) << "\n";
     };
 

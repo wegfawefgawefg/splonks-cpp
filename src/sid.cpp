@@ -20,7 +20,7 @@ int FloorDiv(int value, int divisor) {
     return result;
 }
 
-int GetCellCoord(sim::Scalar value) {
+int GetCellCoord(FxScalar value) {
     return FloorDiv(value.floor_int(), static_cast<int>(kTileSize));
 }
 
@@ -29,7 +29,7 @@ std::int64_t MakeCellKey(int x, int y) {
            static_cast<std::uint32_t>(y);
 }
 
-std::vector<SIDCell> BuildCoveredCells(sim::FxAABB aabb) {
+std::vector<SIDCell> BuildCoveredCells(FxAABB aabb) {
     const int min_x = GetCellCoord(aabb.tl.x);
     const int min_y = GetCellCoord(aabb.tl.y);
     const int max_x = GetCellCoord(aabb.br.x);
@@ -57,7 +57,7 @@ void SID::Clear() {
     records_.clear();
 }
 
-void SID::Upsert(const VID& vid, sim::FxAABB aabb) {
+void SID::Upsert(const VID& vid, FxAABB aabb) {
     if (records_.size() <= vid.id) {
         records_.resize(vid.id + 1);
     }
@@ -112,7 +112,7 @@ void SID::Remove(const VID& vid) {
     record.cells.clear();
 }
 
-std::vector<VID> SID::Query(sim::FxAABB area) const {
+std::vector<VID> SID::Query(FxAABB area) const {
     const int min_x = GetCellCoord(area.tl.x);
     const int min_y = GetCellCoord(area.tl.y);
     const int max_x = GetCellCoord(area.br.x);
@@ -152,7 +152,7 @@ std::vector<VID> SID::Query(sim::FxAABB area) const {
     return result;
 }
 
-std::vector<VID> SID::QueryExclude(sim::FxAABB area, const VID& exclude_vid) const {
+std::vector<VID> SID::QueryExclude(FxAABB area, const VID& exclude_vid) const {
     std::vector<VID> result = Query(area);
     result.erase(
         std::remove_if(

@@ -24,7 +24,7 @@ constexpr float kBoxBreakawayImpactSpeed = 2.0F;
 Ent* SpawnEntAtTopLeft(EntType type_, const FVec2& pos, State& state) {
     return world_ops::SpawnEnt(state, type_, [pos](Ent& ent) {
         ent.pos = ToFxVec2(pos);
-        ent.vel = sim::FxVec2::zero();
+        ent.vel = FxVec2::zero();
     });
 }
 
@@ -35,7 +35,7 @@ EntType RandomTeleporterVariant(State& state) {
 }
 
 void StepControlledBox(Ent& box, const controls::ControlIntent& control) {
-    const sim::Scalar move_acc =
+    const FxScalar move_acc =
         ToFxScalar(box.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
     if (box.attack_delay_countdown > 0) {
         box.attack_delay_countdown -= 1;

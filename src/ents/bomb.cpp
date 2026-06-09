@@ -5,7 +5,7 @@
 #include "ents/common/common.hpp"
 #include "aframe_id.hpp"
 #include "math_types.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 
 namespace splonks::ents::bomb {
@@ -32,8 +32,8 @@ AFrameId GetBombLiveAnim(const Ent& bomb) {
 }
 
 void StickBombInPlace(Ent& bomb) {
-    bomb.vel = sim::FxVec2::zero();
-    bomb.acc = sim::FxVec2::zero();
+    bomb.vel = FxVec2::zero();
+    bomb.acc = FxVec2::zero();
     bomb.has_physics = false;
     bomb.thrown_by.reset();
     bomb.thrown_immunity_timer = 0;
@@ -53,9 +53,9 @@ void UpdateStickyBombAttach(Ent& bomb, State& state) {
         return;
     }
 
-    bomb.pos = attached->pos + sim::PixelVec2(bomb.point_a.x, bomb.point_a.y);
-    bomb.vel = sim::FxVec2::zero();
-    bomb.acc = sim::FxVec2::zero();
+    bomb.pos = attached->pos + PixelVec2(bomb.point_a.x, bomb.point_a.y);
+    bomb.vel = FxVec2::zero();
+    bomb.acc = FxVec2::zero();
 }
 
 void UpdateBombRotation(Ent& bomb) {
@@ -78,9 +78,9 @@ void UpdateBombRotation(Ent& bomb) {
 }
 
 void UpdateBombFuseLight(Ent& bomb) {
-    if (bomb.counter_a <= sim::Scalar::zero()) {
-        bomb.self_light = sim::Scalar::zero();
-        bomb.light_strength = sim::Scalar::zero();
+    if (bomb.counter_a <= FxScalar::zero()) {
+        bomb.self_light = FxScalar::zero();
+        bomb.light_strength = FxScalar::zero();
         bomb.light_color = ToFxColor3(Color3::White());
         bomb.light_radius = 0;
         return;
@@ -122,7 +122,7 @@ extern const EntSpec kBombSpec{
 };
 
 void MarkBombSticky(Ent& bomb) {
-    bomb.counter_b = sim::Scalar::from_int(kStickyBombFlag);
+    bomb.counter_b = FxScalar::from_int(kStickyBombFlag);
     SetAnim(bomb, aframe_ids::StickyGrenade);
 }
 
@@ -134,11 +134,11 @@ void OnUseAsBomb(std::size_t ent_idx, State& state, Graphics& graphics, Audio& a
     (void)graphics;
     (void)audio;
     Ent& bomb = state.ents.ents[ent_idx];
-    if (!bomb.use_state.pressed || bomb.counter_a > sim::Scalar::zero()) {
+    if (!bomb.use_state.pressed || bomb.counter_a > FxScalar::zero()) {
         return;
     }
 
-    bomb.counter_a = sim::Scalar::from_int(144);
+    bomb.counter_a = FxScalar::from_int(144);
     SetAnim(bomb, GetBombLiveAnim(bomb));
 
     if (bomb.use_state.source == AttachMode::None) {
@@ -161,9 +161,9 @@ void StepEntLogicAsBomb(
     // if bomb is in winding up
     // set anim and display state
     // start decrementing the counter
-    if (bomb.counter_a > sim::Scalar::zero()) {
-        bomb.counter_a -= sim::Scalar::from_int(1);
-        if (bomb.counter_a <= sim::Scalar::zero()) {
+    if (bomb.counter_a > FxScalar::zero()) {
+        bomb.counter_a -= FxScalar::from_int(1);
+        if (bomb.counter_a <= FxScalar::zero()) {
             UpdateBombFuseLight(bomb);
             bomb.health = 0;
             common::DieIfDead(ent_idx, state, audio);

@@ -17,17 +17,17 @@ namespace splonks::ents::bat {
 
 namespace {
 
-sim::FxAABB GetAreaAbove(const Ent& bat) {
-    const sim::FxAABB aabb = bat.GetAABB();
-    return sim::FxAABB::from_corners(
-        sim::FxVec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
-        sim::FxVec2{aabb.br.x, aabb.tl.y}
+FxAABB GetAreaAbove(const Ent& bat) {
+    const FxAABB aabb = bat.GetAABB();
+    return FxAABB::from_corners(
+        FxVec2{aabb.tl.x, aabb.tl.y - FxScalar::from_pixels(1)},
+        FxVec2{aabb.br.x, aabb.tl.y}
     );
 }
 
 bool IsAtPerchOrRoof(const Ent& bat, const State& state) {
-    const sim::FxAABB area_above = GetAreaAbove(bat);
-    if (area_above.tl.y < sim::Scalar::zero()) {
+    const FxAABB area_above = GetAreaAbove(bat);
+    if (area_above.tl.y < FxScalar::zero()) {
         return true;
     }
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, area_above)) {
@@ -38,15 +38,15 @@ bool IsAtPerchOrRoof(const Ent& bat, const State& state) {
     return false;
 }
 
-std::optional<sim::FxVec2> FindBatTargetPosition(const Ent& bat, const State& state) {
+std::optional<FxVec2> FindBatTargetPosition(const Ent& bat, const State& state) {
     constexpr int kVerticalDetectDist = 8 * static_cast<int>(kTileSize);
     constexpr int kHorizontalChaseDist = 4 * static_cast<int>(kTileSize);
-    const sim::Scalar vertical_detect_dist = sim::Scalar::from_pixels(kVerticalDetectDist);
-    const sim::Scalar horizontal_chase_dist = sim::Scalar::from_pixels(kHorizontalChaseDist);
+    const FxScalar vertical_detect_dist = FxScalar::from_pixels(kVerticalDetectDist);
+    const FxScalar horizontal_chase_dist = FxScalar::from_pixels(kHorizontalChaseDist);
 
-    std::optional<sim::FxVec2> best_target;
-    sim::Scalar best_dist_sq{};
-    const sim::FxVec2 bat_pos = bat.pos;
+    std::optional<FxVec2> best_target;
+    FxScalar best_dist_sq{};
+    const FxVec2 bat_pos = bat.pos;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -57,15 +57,15 @@ std::optional<sim::FxVec2> FindBatTargetPosition(const Ent& bat, const State& st
             continue;
         }
 
-        const sim::FxVec2 player_delta =
+        const FxVec2 player_delta =
             GetNearestWorldDelta(state.stage, bat_pos, player->pos);
-        if (player_delta.y <= sim::Scalar::zero() ||
+        if (player_delta.y <= FxScalar::zero() ||
             player_delta.y.abs() >= vertical_detect_dist ||
             player_delta.x.abs() >= horizontal_chase_dist) {
             continue;
         }
 
-        const sim::Scalar dist_sq = gfxp::length_sq(player_delta);
+        const FxScalar dist_sq = gfxp::length_sq(player_delta);
         if (!best_target.has_value() || dist_sq < best_dist_sq) {
             best_dist_sq = dist_sq;
             best_target = bat_pos + player_delta;
@@ -80,7 +80,7 @@ void SnapBatToRoof(Ent& bat, const State& state) {
     }
 
     for (int i = 0; i < static_cast<int>(kTileSize); ++i) {
-        bat.pos.y -= sim::Scalar::from_pixels(1);
+        bat.pos.y -= FxScalar::from_pixels(1);
         if (IsAtPerchOrRoof(bat, state)) {
             return;
         }
@@ -111,8 +111,8 @@ void ControlEntAsBat(
     if (!steering && IsAtPerchOrRoof(bat, state)) {
         bat.ai_state = EntAiState::Idle;
         SetAnim(bat, aframe_ids::HangingBat);
-        bat.acc = sim::FxVec2::zero();
-        bat.vel = sim::FxVec2::zero();
+        bat.acc = FxVec2::zero();
+        bat.vel = FxVec2::zero();
         return;
     }
 
@@ -125,8 +125,8 @@ void ControlEntAsBat(
 
     bat.ai_state = EntAiState::Pursuing;
     SetAnim(bat, aframe_ids::FlyingBat);
-    bat.acc = sim::FxVec2::zero();
-    const sim::Scalar chase_speed = ToFxScalar(kChaseSpeed);
+    bat.acc = FxVec2::zero();
+    const FxScalar chase_speed = ToFxScalar(kChaseSpeed);
     if (control.left) {
         bat.acc.x -= chase_speed;
     }
@@ -142,10 +142,10 @@ void ControlEntAsBat(
     if (!steering) {
         bat.vel = bat.vel * ToFxScalar(0.8F);
     }
-    if (bat.vel.x < sim::Scalar::zero()) {
+    if (bat.vel.x < FxScalar::zero()) {
         bat.facing = Side::Left;
     }
-    if (bat.vel.x > sim::Scalar::zero()) {
+    if (bat.vel.x > FxScalar::zero()) {
         bat.facing = Side::Right;
     }
 }
@@ -204,7 +204,7 @@ void StepEntLogicAsBat(
     const EntCondition bat_condition = bat.condition;
 
     if (bat_condition == EntCondition::Normal) {
-        const std::optional<sim::FxVec2> target_position = FindBatTargetPosition(bat, state);
+        const std::optional<FxVec2> target_position = FindBatTargetPosition(bat, state);
 
         //  State Machine
         Ent& mutable_bat = state.ents.ents[ent_idx];
@@ -220,7 +220,7 @@ void StepEntLogicAsBat(
             }
             //  go to the target
             mutable_bat.ai_state = EntAiState::Pursuing;
-            mutable_bat.acc += sim::NormalizeOrZero(*target_position - mutable_bat.pos) *
+            mutable_bat.acc += FxNormalizeOrZero(*target_position - mutable_bat.pos) *
                                ToFxScalar(kChaseSpeed);
             SetAnim(mutable_bat, aframe_ids::FlyingBat);
         } else {
@@ -230,24 +230,24 @@ void StepEntLogicAsBat(
             const bool at_perch_or_roof = IsAtPerchOrRoof(mutable_bat, state);
             if (at_perch_or_roof) {
                 mutable_bat.ai_state = EntAiState::Idle;
-                mutable_bat.acc = sim::FxVec2::zero();
-                mutable_bat.vel = sim::FxVec2::zero();
+                mutable_bat.acc = FxVec2::zero();
+                mutable_bat.vel = FxVec2::zero();
                 SetAnim(mutable_bat, aframe_ids::HangingBat);
             } else {
                 //  keep going up till you get there
-                mutable_bat.acc += sim::FxVec2{
-                    sim::Scalar::zero(),
-                    sim::Scalar::from_int(-2),
+                mutable_bat.acc += FxVec2{
+                    FxScalar::zero(),
+                    FxScalar::from_int(-2),
                 };
-                mutable_bat.vel.x = sim::Scalar::zero();
+                mutable_bat.vel.x = FxScalar::zero();
                     SetAnim(mutable_bat, aframe_ids::FlyingBat);
             }
         }
-        if (mutable_bat.vel.x < sim::Scalar::zero()) {
+        if (mutable_bat.vel.x < FxScalar::zero()) {
             mutable_bat.facing = Side::Left;
         }
 
-        if (mutable_bat.vel.x > sim::Scalar::zero()) {
+        if (mutable_bat.vel.x > FxScalar::zero()) {
             mutable_bat.facing = Side::Right;
         }
     }
@@ -278,8 +278,8 @@ void StepEntPhysicsAsBat(
     if (bat_condition != EntCondition::Normal) {
         common::ApplyGravity(ent_idx, state, dt);
     } else if (bat_ai_state == EntAiState::Idle) {
-        bat.acc = sim::FxVec2::zero();
-        bat.vel = sim::FxVec2::zero();
+        bat.acc = FxVec2::zero();
+        bat.vel = FxVec2::zero();
     } else if (!controlled) {
         common::ApplyGravity(ent_idx, state, dt);
     }
@@ -288,12 +288,12 @@ void StepEntPhysicsAsBat(
     if (bat_condition != EntCondition::Normal) {
         common::ApplySpecGroundFriction(ent_idx, state);
     } else if (controlled) {
-        const sim::Scalar chase_max_speed = ToFxScalar(kChaseMaxSpeed);
+        const FxScalar chase_max_speed = ToFxScalar(kChaseMaxSpeed);
         bat.vel.x = gfxp::clamp(bat.vel.x, -chase_max_speed, chase_max_speed);
         bat.vel.y = gfxp::clamp(bat.vel.y, -chase_max_speed, chase_max_speed);
     } else if (bat.ai_state == EntAiState::Pursuing ||
         bat.ai_state == EntAiState::Returning) {
-        const sim::Scalar chase_max_speed = ToFxScalar(kChaseMaxSpeed);
+        const FxScalar chase_max_speed = ToFxScalar(kChaseMaxSpeed);
         bat.vel.x = gfxp::clamp(bat.vel.x, -chase_max_speed, chase_max_speed);
         bat.vel.y = gfxp::clamp(bat.vel.y, -chase_max_speed, chase_max_speed);
     }

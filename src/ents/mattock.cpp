@@ -70,26 +70,26 @@ bool IsSwinging(const Ent& mattock) {
     );
 }
 
-sim::FxAABB SimTileAabbForTilePos(const IVec2& tile_pos) {
-    const sim::FxVec2 tile_tl = sim::PixelVec2(
+FxAABB SimTileAabbForTilePos(const IVec2& tile_pos) {
+    const FxVec2 tile_tl = PixelVec2(
         tile_pos.x * static_cast<int>(kTileSize),
         tile_pos.y * static_cast<int>(kTileSize)
     );
-    return sim::FxAABB::from_corners(
+    return FxAABB::from_corners(
         tile_tl,
-        tile_tl + sim::PixelVec2(static_cast<int>(kTileSize - 1), static_cast<int>(kTileSize - 1))
+        tile_tl + PixelVec2(static_cast<int>(kTileSize - 1), static_cast<int>(kTileSize - 1))
     );
 }
 
-IVec2 ToWorldPixelTrunc(sim::FxVec2 point) {
+IVec2 ToWorldPixelTrunc(FxVec2 point) {
     return IVec2::New(point.x.trunc_int(), point.y.trunc_int());
 }
 
-sim::FxVec2 GetFallbackStrikePoint(const Ent& mattock) {
-    const sim::Scalar direction =
-        sim::Scalar::from_int(mattock.facing == Side::Left ? -1 : 1);
-    return mattock.GetCenter() + sim::FxVec2{sim::Scalar::from_int(10) * direction,
-                                              sim::Scalar::zero()};
+FxVec2 GetFallbackStrikePoint(const Ent& mattock) {
+    const FxScalar direction =
+        FxScalar::from_int(mattock.facing == Side::Left ? -1 : 1);
+    return mattock.GetCenter() + FxVec2{FxScalar::from_int(10) * direction,
+                                              FxScalar::zero()};
 }
 
 void SpawnMattockImpactParticles(State& state, const FVec2& pos, int direction) {
@@ -178,7 +178,7 @@ StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& aud
 }
 
 MattockTileTargets GetMattockTileTargets(const Ent& holder, const Stage& stage) {
-    const sim::FxAABB holder_aabb = holder.GetAABB();
+    const FxAABB holder_aabb = holder.GetAABB();
     const int front_world_x = holder.facing == Side::Left
                                   ? holder_aabb.tl.x.floor_int() - 1 -
                                         kMattockForwardProbeBiasPixels
@@ -223,7 +223,7 @@ void AddMattockDebugAnnotations(
     });
 
     if (holder == nullptr) {
-        const sim::FxVec2 fallback = GetFallbackStrikePoint(mattock);
+        const FxVec2 fallback = GetFallbackStrikePoint(mattock);
         const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToWorldPixelTrunc(fallback));
         state.AddDebugRectAnnotation(DebugRectAnnotation{
             .area = RenderTileAabbForTilePos(fallback_tile),
@@ -271,8 +271,8 @@ void AddMattockDebugAnnotations(
 }
 
 bool ShouldBreakMattockAfterSuccessfulDig(Ent& mattock, State& state) {
-    if (mattock.counter_b > sim::Scalar::zero()) {
-        mattock.counter_b -= sim::Scalar::from_int(1);
+    if (mattock.counter_b > FxScalar::zero()) {
+        mattock.counter_b -= FxScalar::from_int(1);
         return false;
     }
 
@@ -310,7 +310,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
     const Graphics& graphics,
     Audio& audio
 ) {
-    const sim::FxAABB strike_aabb = common::GetContactAabbForEnt(mattock, graphics);
+    const FxAABB strike_aabb = common::GetContactAabbForEnt(mattock, graphics);
     EntStrikeOutcome result{};
 
     for (const VID& other_vid : QueryEntsInAabb(state, strike_aabb, mattock.vid)) {
@@ -319,7 +319,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
             continue;
         }
 
-        const sim::FxAABB other_aabb = GetNearestWorldAabb(
+        const FxAABB other_aabb = GetNearestWorldAabb(
             state.stage,
             strike_aabb.center(),
             common::GetContactAabbForEnt(*other_ent_const, graphics)
@@ -330,8 +330,8 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
 
         const DamageType damage_type = GetMattockDamageType(*other_ent_const);
         const bool is_heavy_target = other_ent_const->impassable || other_ent_const->stone;
-        const sim::Scalar knockback_x =
-            sim::Scalar::from_int(mattock.facing == Side::Left ? -4 : 4);
+        const FxScalar knockback_x =
+            FxScalar::from_int(mattock.facing == Side::Left ? -4 : 4);
         const common::DamageResult damage_result =
             common::TryHitEnt(
                 other_ent_const->vid.id,
@@ -342,7 +342,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
                 common::HitOptions{
                     .source_vid = mattock.vid,
                     .knockback = common::KnockbackSpec{
-                        .velocity = sim::FxVec2{knockback_x, sim::Scalar::from_int(-2)},
+                        .velocity = FxVec2{knockback_x, FxScalar::from_int(-2)},
                         .clear_velocity = !other_ent_const->impassable,
                         .clear_acceleration = !other_ent_const->impassable,
                         .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,
@@ -379,7 +379,7 @@ StrikeOutcome ComputeMattockStrikeOutcome(
     Audio& audio
 ) {
     if (holder == nullptr) {
-        const sim::FxVec2 fallback = GetFallbackStrikePoint(mattock);
+        const FxVec2 fallback = GetFallbackStrikePoint(mattock);
         const IVec2 tile_pos = state.stage.GetTileCoordAtWc(ToWorldPixelTrunc(fallback));
         return TryStrikeTileCoord(tile_pos, state, audio);
     }
@@ -463,9 +463,9 @@ void StepEntLogicAsMattock(
         return;
     }
 
-    if (mattock.counter_a > sim::Scalar::zero() && mattock.aframe_animator.current_frame > 0) {
+    if (mattock.counter_a > FxScalar::zero() && mattock.aframe_animator.current_frame > 0) {
         TryApplyMattockStrike(ent_idx, state, graphics, audio);
-        mattock.counter_a = sim::Scalar::zero();
+        mattock.counter_a = FxScalar::zero();
     }
 
     if (!mattock.aframe_animator.IsFinished()) {

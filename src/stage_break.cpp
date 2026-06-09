@@ -16,27 +16,27 @@ namespace splonks {
 
 namespace {
 
-Ent* SpawnEntAtCenter(EntType type_, sim::FxVec2 center, State& state) {
+Ent* SpawnEntAtCenter(EntType type_, FxVec2 center, State& state) {
     return world_ops::SpawnEnt(state, type_, [center](Ent& ent) {
         ent.SetCenter(center);
-        ent.vel = sim::FxVec2::zero();
+        ent.vel = FxVec2::zero();
     });
 }
 
 void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const IVec2& tile_pos, State& state) {
-    const sim::FxVec2 center = sim::PixelVec2(
+    const FxVec2 center = PixelVec2(
         tile_pos.x * static_cast<int>(kTileSize) + 8,
         tile_pos.y * static_cast<int>(kTileSize) + 8
     );
-    static const std::array<sim::FxVec2, 8> kDropOffsets{{
-        sim::PixelVec2(-4, -1),
-        sim::PixelVec2(0, 1),
-        sim::PixelVec2(4, -1),
-        sim::PixelVec2(-2, 3),
-        sim::PixelVec2(2, -3),
-        sim::PixelVec2(-5, 2),
-        sim::PixelVec2(5, 2),
-        sim::PixelVec2(0, -4),
+    static const std::array<FxVec2, 8> kDropOffsets{{
+        PixelVec2(-4, -1),
+        PixelVec2(0, 1),
+        PixelVec2(4, -1),
+        PixelVec2(-2, 3),
+        PixelVec2(2, -3),
+        PixelVec2(-5, 2),
+        PixelVec2(5, 2),
+        PixelVec2(0, -4),
     }};
 
     std::size_t offset_index = 0;
@@ -64,11 +64,11 @@ void SpawnTileBreakAnim(AFrameId anim_id, const IVec2& tile_pos, State& state) {
 }
 
 void NotifyAreaEntsTileChanged(const IVec2& tile_pos, State& state, Audio& audio) {
-    const sim::FxVec2 tile_center = sim::PixelVec2(
+    const FxVec2 tile_center = PixelVec2(
         tile_pos.x * static_cast<int>(kTileSize) + 8,
         tile_pos.y * static_cast<int>(kTileSize) + 8
     );
-    const sim::FxAABB tile_point_aabb = sim::FxAABB::from_corners(tile_center, tile_center);
+    const FxAABB tile_point_aabb = FxAABB::from_corners(tile_center, tile_center);
 
     for (const VID& vid : QueryEntsInAabb(state, tile_point_aabb)) {
         const Ent* const ent = state.ents.GetEnt(vid);
@@ -150,7 +150,7 @@ void BreakStageTilesAtCoordsInternal(
 } // namespace
 
 void BreakStageTilesInRectWc(
-    sim::FxAABB area,
+    FxAABB area,
     State& state,
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound,

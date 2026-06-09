@@ -2,28 +2,28 @@
 
 #include "controls.hpp"
 #include "ent/spec.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "world_ops.hpp"
 
 namespace splonks::ents::common {
 
 namespace {
 
-sim::FxVec2 BuildThrowVelocity(const controls::ControlIntent& control) {
-    sim::FxVec2 throw_vel = sim::FxVec2::zero();
+FxVec2 BuildThrowVelocity(const controls::ControlIntent& control) {
+    FxVec2 throw_vel = FxVec2::zero();
     if (control.left) {
-        throw_vel.x = sim::Scalar::from_int(-10);
+        throw_vel.x = FxScalar::from_int(-10);
     } else if (control.right) {
-        throw_vel.x = sim::Scalar::from_int(10);
+        throw_vel.x = FxScalar::from_int(10);
     }
     if (control.up) {
-        throw_vel.y = sim::Scalar::from_int(-10);
+        throw_vel.y = FxScalar::from_int(-10);
     }
     if (control.down) {
-        throw_vel.y = sim::Scalar::from_int(10);
+        throw_vel.y = FxScalar::from_int(10);
     }
     if (!control.up && !control.down && (control.left || control.right)) {
-        throw_vel.y = sim::Scalar::from_int(-2);
+        throw_vel.y = FxScalar::from_int(-2);
     }
     return throw_vel;
 }
@@ -41,7 +41,7 @@ bool TrySpawnAndThrowEntForToolUse(
     std::uint32_t thrown_immunity_timer,
     void (*setup_ent)(Ent&),
     ToolThrowVelocityBuilder build_throw_velocity,
-    std::optional<sim::FxVec2> throw_velocity_override
+    std::optional<FxVec2> throw_velocity_override
 ) {
     (void)audio;
     if (!trigger_pressed) {
@@ -70,7 +70,7 @@ bool TrySpawnAndThrowEntForToolUse(
         spawned.proj_contact_damage_amount = spawned_spec.proj_contact_damage_amount;
         spawned.proj_contact_timer = kProjContactDuration;
         spawned.SetCenter(thrower.GetCenter());
-        const sim::FxVec2 throw_velocity =
+        const FxVec2 throw_velocity =
             throw_velocity_override.value_or(
                 velocity_builder(control) * thrower.throw_velocity_scale
             );

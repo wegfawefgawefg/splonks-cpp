@@ -5,7 +5,7 @@
 #include "ent/callbacks.hpp"
 #include "aframe_id.hpp"
 #include "hud/types.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 
 namespace splonks {
 
@@ -16,7 +16,7 @@ using EntBuildHudEntry = void (*)(const Ent& ent, const State& state, HudEntrySo
 
 struct EntSpec {
     EntType type_ = EntType::None;
-    sim::FxVec2 size = sim::FxVec2::from_pixels(8, 8);
+    FxVec2 size = FxVec2::from_pixels(8, 8);
     std::uint32_t health = 0;
     bool has_physics = true;
     bool can_collide = true;
@@ -40,14 +40,14 @@ struct EntSpec {
     bool stun_recovers_on_ground = true;
     bool stun_recovers_while_held = true;
     bool affected_by_ground_friction = true;
-    sim::Scalar support_ground_friction = ToFxScalar(0.85F);
-    sim::Scalar push_acc = sim::Scalar::zero();
-    sim::Scalar throw_velocity_scale = sim::Scalar::from_int(1);
-    sim::Scalar buoyancy = sim::Scalar::zero();
-    sim::Scalar alpha = sim::Scalar::from_int(1);
-    sim::Scalar self_light = sim::Scalar::zero();
-    sim::Scalar light_strength = sim::Scalar::zero();
-    sim::Color3 light_color = ToFxColor3(Color3::White());
+    FxScalar support_ground_friction = ToFxScalar(0.85F);
+    FxScalar push_acc = FxScalar::zero();
+    FxScalar throw_velocity_scale = FxScalar::from_int(1);
+    FxScalar buoyancy = FxScalar::zero();
+    FxScalar alpha = FxScalar::from_int(1);
+    FxScalar self_light = FxScalar::zero();
+    FxScalar light_strength = FxScalar::zero();
+    FxColor3 light_color = ToFxColor3(Color3::White());
     int light_radius = 0;
     bool preserve_held_aim = false;
     bool predict_local_attach_use = false;
@@ -58,9 +58,9 @@ struct EntSpec {
     EntCondition condition = EntCondition::Normal;
     EntAiState ai_state = EntAiState::Idle;
     EntDisplayState display_state = EntDisplayState::Neutral;
-    sim::Scalar counter_a = sim::Scalar::zero();
-    sim::Scalar counter_b = sim::Scalar::zero();
-    sim::Scalar counter_d = sim::Scalar::zero();
+    FxScalar counter_a = FxScalar::zero();
+    FxScalar counter_b = FxScalar::zero();
+    FxScalar counter_d = FxScalar::zero();
     DamageVuln damage_vuln = DamageVuln::Vulnerable;
     DamageType proj_contact_damage_type = DamageType::Attack;
     std::uint32_t proj_contact_damage_amount = 1;
@@ -91,15 +91,15 @@ struct EntSpec {
     AFrameAnimator aframe_animator{};
 };
 
-inline sim::FxVec2 EntSpecSize(float width, float height) {
+inline FxVec2 EntSpecSize(float width, float height) {
     return ToFxVec2(FVec2::New(width, height));
 }
 
-inline sim::FxVec2 EntSpecSize(const FVec2& size) {
+inline FxVec2 EntSpecSize(const FVec2& size) {
     return ToFxVec2(size);
 }
 
-inline sim::Scalar EntSpecCounter(float value) {
+inline FxScalar EntSpecCounter(float value) {
     return ToFxScalar(value);
 }
 

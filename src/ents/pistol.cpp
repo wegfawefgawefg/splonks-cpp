@@ -90,15 +90,15 @@ void SpawnPistolImpactEffect(State& state, const FVec2& pos, int direction) {
     }
 }
 
-sim::FxVec2 GetFallbackMuzzlePos(const Ent& pistol) {
+FxVec2 GetFallbackMuzzlePos(const Ent& pistol) {
     const int direction = pistol.facing == Side::Left ? -1 : 1;
-    return pistol.GetCenter() + sim::PixelVec2(8 * direction, 1);
+    return pistol.GetCenter() + PixelVec2(8 * direction, 1);
 }
 
 void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     const Ent& pistol = state.ents.ents[ent_idx];
     const int direction = pistol.facing == Side::Left ? -1 : 1;
-    const sim::FxVec2 muzzle_pos = common::GetEmitPointForEnt(
+    const FxVec2 muzzle_pos = common::GetEmitPointForEnt(
         pistol,
         graphics,
         GetFallbackMuzzlePos(pistol)
@@ -137,9 +137,9 @@ void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio
             common::HitOptions{
                 .source_vid = pistol.vid,
                 .knockback = common::KnockbackSpec{
-                    .velocity = sim::FxVec2{
-                        sim::Scalar::from_int(direction),
-                        sim::Scalar::from_int(-1),
+                    .velocity = FxVec2{
+                        FxScalar::from_int(direction),
+                        FxScalar::from_int(-1),
                     },
                     .clear_velocity = true,
                     .clear_acceleration = true,
@@ -153,11 +153,11 @@ void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio
 
 void OnUseAsPistol(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     Ent& pistol = state.ents.ents[ent_idx];
-    if (!pistol.use_state.pressed || pistol.counter_a > sim::Scalar::zero()) {
+    if (!pistol.use_state.pressed || pistol.counter_a > FxScalar::zero()) {
         return;
     }
 
-    if (pistol.counter_b <= sim::Scalar::zero()) {
+    if (pistol.counter_b <= FxScalar::zero()) {
         (void)PlayEntSoundEmitter(state, pistol, audio_asset_ids::GunEmpty);
         if (pistol.use_state.source == AttachMode::None) {
             StopUsingEnt(pistol);
@@ -166,7 +166,7 @@ void OnUseAsPistol(std::size_t ent_idx, State& state, Graphics& graphics, Audio&
     }
 
     pistol.counter_a = ToFxScalar(kPistolFireCooldownFrames);
-    pistol.counter_b -= sim::Scalar::from_int(1);
+    pistol.counter_b -= FxScalar::from_int(1);
     FirePistolShot(ent_idx, state, graphics, audio);
 
     if (pistol.use_state.source == AttachMode::None) {
@@ -185,10 +185,10 @@ void StepEntLogicAsPistol(
     (void)audio;
     (void)dt;
     Ent& pistol = state.ents.ents[ent_idx];
-    if (pistol.counter_a > sim::Scalar::zero()) {
-        pistol.counter_a -= sim::Scalar::from_int(1);
-        if (pistol.counter_a < sim::Scalar::zero()) {
-            pistol.counter_a = sim::Scalar::zero();
+    if (pistol.counter_a > FxScalar::zero()) {
+        pistol.counter_a -= FxScalar::from_int(1);
+        if (pistol.counter_a < FxScalar::zero()) {
+            pistol.counter_a = FxScalar::zero();
         }
     }
 }

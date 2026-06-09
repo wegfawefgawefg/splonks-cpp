@@ -6,7 +6,7 @@
 #include "ents/common/common.hpp"
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 #include "world_ops.hpp"
@@ -42,8 +42,8 @@ struct TeleportAim {
 struct TeleportProbeCandidate {
     int distance_tiles = 0;
     IVec2 tile_pos = IVec2::New(0, 0);
-    sim::FxVec2 destination_center = sim::FxVec2::zero();
-    sim::FxAABB destination_aabb = sim::FxAABB::from_corners(sim::FxVec2::zero(), sim::FxVec2::zero());
+    FxVec2 destination_center = FxVec2::zero();
+    FxAABB destination_aabb = FxAABB::from_corners(FxVec2::zero(), FxVec2::zero());
     TeleportProbeBlockReason block_reason = TeleportProbeBlockReason::None;
     std::vector<VID> telefrag_vids;
     std::vector<VID> splat_vids;
@@ -53,8 +53,8 @@ bool IsDiagonalDirection(const IVec2& direction) {
     return direction.x != 0 && direction.y != 0;
 }
 
-sim::FxVec2 TileCenterForTilePos(const IVec2& tile_pos) {
-    return sim::FxVec2::from_pixels(
+FxVec2 TileCenterForTilePos(const IVec2& tile_pos) {
+    return FxVec2::from_pixels(
         tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2),
         tile_pos.y * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2)
     );
@@ -135,7 +135,7 @@ TeleportAim GetTeleportAim(const Ent& teleporter, const Ent& holder, const State
 Ent BuildTeleporterProbeEnt(
     const Ent& holder,
     const Graphics& graphics,
-    sim::FxVec2 destination_center
+    FxVec2 destination_center
 ) {
     Ent probe = holder;
     common::SetVisualCenterForEnt(probe, graphics, destination_center);
@@ -201,12 +201,12 @@ bool CanSplatDeadEnt(const Ent& ent) {
 }
 
 bool DoesProbeOverlapEnt(
-    sim::FxAABB probe_aabb,
+    FxAABB probe_aabb,
     const Ent& other,
     const State& state,
     const Graphics& graphics
 ) {
-    const sim::FxAABB other_aabb = GetNearestWorldAabb(
+    const FxAABB other_aabb = GetNearestWorldAabb(
         state.stage,
         probe_aabb.center(),
         common::GetContactAabbForEnt(other, graphics)
@@ -223,18 +223,18 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
     State& state,
     const Graphics& graphics
 ) {
-    const sim::FxVec2 holder_visual_center =
+    const FxVec2 holder_visual_center =
         common::GetVisualCenterForEnt(holder, graphics, holder.GetCenter());
-    const IVec2 holder_tile = state.stage.GetTileCoordAtWc(sim::ToPixelIVec2Round(holder_visual_center));
+    const IVec2 holder_tile = state.stage.GetTileCoordAtWc(ToPixelIVec2Round(holder_visual_center));
     const IVec2 raw_target_tile = holder_tile + IVec2::New(aim.direction.x * distance_tiles, aim.direction.y * distance_tiles);
     const IVec2 target_tile = state.stage.WrapTileCoord(raw_target_tile);
-    const sim::FxVec2 destination_center = TileCenterForTilePos(target_tile);
+    const FxVec2 destination_center = TileCenterForTilePos(target_tile);
 
     TeleportProbeCandidate candidate{
         .distance_tiles = distance_tiles,
         .tile_pos = target_tile,
         .destination_center = destination_center,
-        .destination_aabb = sim::FxAABB::from_corners(sim::FxVec2::zero(), sim::FxVec2::zero()),
+        .destination_aabb = FxAABB::from_corners(FxVec2::zero(), FxVec2::zero()),
         .block_reason = TeleportProbeBlockReason::None,
         .telefrag_vids = {},
         .splat_vids = {},
@@ -446,12 +446,12 @@ void ApplyTelefragToCandidate(const TeleportProbeCandidate& candidate, State& st
 void MoveTeleportHolderToDestination(
     Ent& holder,
     std::size_t holder_idx,
-    sim::FxVec2 destination_center,
+    FxVec2 destination_center,
     State& state,
     const Graphics& graphics
 ) {
     common::SetVisualCenterForEnt(holder, graphics, destination_center);
-    holder.pos = sim::PixelVec2(holder.pos.x.round_int(), holder.pos.y.round_int());
+    holder.pos = PixelVec2(holder.pos.x.round_int(), holder.pos.y.round_int());
     holder.grounded = false;
     holder.hang_side.reset();
     SetMovementFlag(holder, EntMovementFlag::Climbing, false);
@@ -579,7 +579,7 @@ void OnUseAsTeleporter(std::size_t ent_idx, State& state, Graphics& graphics, Au
     const TeleportProbeCandidate* const blocked = FindFirstBlockedTeleportProbeCandidate(candidates);
 
     (void)PlayEntCenterSoundEmitter(state, *holder, audio_asset_ids::Teleport);
-    const sim::FxVec2 source_center =
+    const FxVec2 source_center =
         ents::common::GetVisualCenterForEnt(*holder, graphics, holder->GetCenter());
     AddEntShake(*holder, 0.5F);
     AddEntShake(teleporter, 0.5F);

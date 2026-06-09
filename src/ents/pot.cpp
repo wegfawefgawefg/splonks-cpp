@@ -21,10 +21,10 @@ constexpr float kControlledSlideVel = 3.0F;
 constexpr std::uint32_t kControlledSlideCooldownFrames = 120;
 constexpr float kPotBreakawayImpactSpeed = 1.0F;
 
-Ent* SpawnEntAtTopLeft(EntType type_, sim::FxVec2 pos, State& state) {
+Ent* SpawnEntAtTopLeft(EntType type_, FxVec2 pos, State& state) {
     return world_ops::SpawnEnt(state, type_, [pos](Ent& ent) {
         ent.pos = pos;
-        ent.vel = sim::FxVec2::zero();
+        ent.vel = FxVec2::zero();
     });
 }
 
@@ -158,15 +158,15 @@ void OnDeathAsPot(std::size_t ent_idx, State& state, Audio& audio) {
 
     const Ent& pot = state.ents.ents[ent_idx];
 
-    const sim::FxVec2 spawn_pos = pot.pos;
+    const FxVec2 spawn_pos = pot.pos;
     SpawnBreakawayContainerShards(ToFVec2(pot.GetCenter()), state);
-    const sim::FxVec2 spider_spawn_pos = pot.pos + sim::PixelVec2(-8, -8);
+    const FxVec2 spider_spawn_pos = pot.pos + PixelVec2(-8, -8);
 
-    sim::FxVec2 snake_spawn_pos = pot.pos + sim::PixelVec2(-8, -8);
+    FxVec2 snake_spawn_pos = pot.pos + PixelVec2(-8, -8);
     if (pot.point_a.x < 0) {
-        snake_spawn_pos = pot.pos + sim::PixelVec2(0, -8);
+        snake_spawn_pos = pot.pos + PixelVec2(0, -8);
     } else if (pot.point_a.x > 0) {
-        snake_spawn_pos = pot.pos + sim::PixelVec2(-16, -8);
+        snake_spawn_pos = pot.pos + PixelVec2(-16, -8);
     }
 
     if (state.drng.RandomIntInclusive(1, 3) == 1) {

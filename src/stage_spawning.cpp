@@ -8,7 +8,7 @@
 #include "ents/shop.hpp"
 #include "ents/store_light.hpp"
 #include "player_queries.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 #include "tools/tool_spec.hpp"
 
 #include <algorithm>
@@ -77,14 +77,14 @@ void PrepareEntForStageEntry(Ent& ent) {
     ent.back_vid.reset();
     ent.held_by_vid.reset();
     ent.attach_mode = AttachMode::None;
-    ent.vel = sim::FxVec2::zero();
-    ent.acc = sim::FxVec2::zero();
+    ent.vel = FxVec2::zero();
+    ent.acc = FxVec2::zero();
     ent.grounded = false;
     ent.coyote_time = 0;
     ent.fall_timer = 0;
     ent.stun_timer = 0;
     ent.holding_timer = kDefaultHoldingTimer;
-    ent.dist_traveled_this_frame = sim::Scalar::zero();
+    ent.dist_traveled_this_frame = FxScalar::zero();
     ent.jumped_this_frame = false;
     ent.hang_side.reset();
     ent.hang_count = 0;
@@ -230,14 +230,14 @@ void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
     }
 }
 
-void PlacePlayerAtPosition(State& state, sim::FxVec2 pos) {
+void PlacePlayerAtPosition(State& state, FxVec2 pos) {
     Ent* const player = GetPrimaryLocalPlayerMut(state);
     if (player == nullptr) {
         return;
     }
     player->pos = pos;
-    player->vel = sim::FxVec2::zero();
-    player->acc = sim::FxVec2::zero();
+    player->vel = FxVec2::zero();
+    player->acc = FxVec2::zero();
 }
 
 void PlacePlayerAtRenderPosition(State& state, const FVec2& pos) {
@@ -255,36 +255,36 @@ void SnapAttachedItemsToPlayer(State& state) {
             continue;
         }
 
-        const sim::FxVec2 player_center = player->GetCenter();
+        const FxVec2 player_center = player->GetCenter();
 
         if (player->holding_vid.has_value()) {
             if (Ent* const held_item = state.ents.GetEntMut(*player->holding_vid)) {
-                const sim::FxVec2 hold_offset = sim::PixelVec2(4, 1);
+                const FxVec2 hold_offset = PixelVec2(4, 1);
                 held_item->facing = player->facing;
                 held_item->draw_layer = DrawLayer::Foreground;
                 held_item->SetCenter(player->facing == Side::Left
                                             ? player_center +
-                                                  sim::FxVec2{-hold_offset.x, hold_offset.y}
+                                                  FxVec2{-hold_offset.x, hold_offset.y}
                                             : player_center + hold_offset);
             }
         }
 
         if (player->back_vid.has_value()) {
             if (Ent* const back_item = state.ents.GetEntMut(*player->back_vid)) {
-                const sim::FxVec2 back_offset = sim::PixelVec2(-3, 0);
+                const FxVec2 back_offset = PixelVec2(-3, 0);
                 back_item->facing = player->facing;
                 back_item->draw_layer = DrawLayer::Background;
                 TrySetAnim(*back_item, EntDisplayState::Neutral);
                 back_item->SetCenter(player->facing == Side::Left
                                             ? player_center +
-                                                  sim::FxVec2{-back_offset.x, back_offset.y}
+                                                  FxVec2{-back_offset.x, back_offset.y}
                                             : player_center + back_offset);
             }
         }
     }
 }
 
-void SpawnPlayer(State& state, sim::FxVec2 pos) {
+void SpawnPlayer(State& state, FxVec2 pos) {
     (void)state.players.EnsurePrimaryLocalPlayer();
     const std::optional<VID> player_vid = SpawnPlayerForPlayerId(state, kPrimaryLocalPlayerId, pos);
     if (!player_vid.has_value()) {
@@ -297,14 +297,14 @@ void SpawnPlayerAtRenderPosition(State& state, const FVec2& pos) {
     SpawnPlayer(state, ToFxVec2(pos));
 }
 
-std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, sim::FxVec2 pos) {
+std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, FxVec2 pos) {
     if (const std::optional<VID> player_vid = state.ents.NewEnt()) {
         if (Ent* const player = state.ents.GetEntMut(*player_vid)) {
             const EntType spawn_type = GetConfiguredPlayerSpawnType(state, player_id);
             SetEntAs(*player, spawn_type);
             player->pos = pos;
-            player->vel = sim::FxVec2::zero();
-            player->acc = sim::FxVec2::zero();
+            player->vel = FxVec2::zero();
+            player->acc = FxVec2::zero();
             player->money = kPlayerInitialTestingMoney;
             state.players.AssignEnt(player_id, *player_vid);
 
@@ -325,7 +325,7 @@ std::optional<VID> SpawnPlayerForPlayerIdAtRenderPosition(
     return SpawnPlayerForPlayerId(state, player_id, ToFxVec2(pos));
 }
 
-std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, sim::FxVec2 pos) {
+std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, FxVec2 pos) {
     const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
         return std::nullopt;
@@ -338,7 +338,7 @@ std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, sim::FxVe
 
     SetEntAs(*ent, type_);
     ent->pos = pos;
-    ent->vel = sim::FxVec2::zero();
+    ent->vel = FxVec2::zero();
     if (type_ == EntType::StoreLight) {
         ents::store_light::AttachStoreLight(*ent, state);
     }
@@ -349,7 +349,7 @@ std::optional<VID> SpawnStageEntAtRenderTopLeft(State& state, EntType type_, con
     return SpawnStageEntAtTopLeft(state, type_, ToFxVec2(pos));
 }
 
-std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, sim::FxVec2 center) {
+std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, FxVec2 center) {
     const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
         return std::nullopt;
@@ -362,7 +362,7 @@ std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, sim::FxVec
 
     SetEntAs(*ent, type_);
     ent->SetCenter(center);
-    ent->vel = sim::FxVec2::zero();
+    ent->vel = FxVec2::zero();
     return vid;
 }
 
@@ -394,7 +394,7 @@ void SpawnAuthoredStageEnts(State& state) {
             ent->size = ToFxVec2(*spawn.size_override);
         }
         ent->facing = spawn.facing;
-        ent->vel = sim::FxVec2::zero();
+        ent->vel = FxVec2::zero();
         if (spawn.ai_state_override.has_value()) {
             ent->ai_state = *spawn.ai_state_override;
         }
@@ -439,22 +439,22 @@ void SpawnAuthoredStageEnts(State& state) {
         switch (slot) {
         case 0:
             ent->ent_a = *spawned_vids[*linked_spawn_index];
-            ent->point_a = sim::ToPixelIVec2Round(linked_ent->pos);
+            ent->point_a = ToPixelIVec2Round(linked_ent->pos);
             ent->point_label_a = PointLabel::Target;
             break;
         case 1:
             ent->ent_b = *spawned_vids[*linked_spawn_index];
-            ent->point_b = sim::ToPixelIVec2Round(linked_ent->pos);
+            ent->point_b = ToPixelIVec2Round(linked_ent->pos);
             ent->point_label_b = PointLabel::Target;
             break;
         case 2:
             ent->ent_c = *spawned_vids[*linked_spawn_index];
-            ent->point_c = sim::ToPixelIVec2Round(linked_ent->pos);
+            ent->point_c = ToPixelIVec2Round(linked_ent->pos);
             ent->point_label_c = PointLabel::Target;
             break;
         case 3:
             ent->ent_d = *spawned_vids[*linked_spawn_index];
-            ent->point_d = sim::ToPixelIVec2Round(linked_ent->pos);
+            ent->point_d = ToPixelIVec2Round(linked_ent->pos);
             ent->point_label_d = PointLabel::Target;
             break;
         default:

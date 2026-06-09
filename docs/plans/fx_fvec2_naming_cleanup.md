@@ -14,12 +14,8 @@ Use two vector spellings:
 The same idea applies to rectangles and scalar conversions:
 
 - `FxAABB`: fixed-point authoritative/gameplay rectangle.
-- `FAABB` or `FRect`: float presentation rectangle. Pick one spelling before
-  the rename. `FAABB` is the most mechanical continuation from current
-  `RenderAABB`.
-- `sim::Scalar`: fixed-point scalar. Keep this spelling because it is always
-  scoped through `sim::`, while vectors and rectangles need the shorter
-  `Fx`/`F` contrast at call sites.
+- `FAABB`: float presentation rectangle.
+- `FxScalar`: fixed-point scalar.
 
 This plan is intentionally a rename/collapse pass. It should not change
 gameplay behavior, lockstep protocol semantics, or rendering behavior.
@@ -45,7 +41,7 @@ migration clutter under a new prefix. The intended cleanup is:
 
 ```cpp
 // Good: one fixed helper, local presentation conversion.
-sim::FxVec2 GetCoreSizeWc(const Stage& stage);
+FxVec2 GetCoreSizeWc(const Stage& stage);
 const FVec2 render_size = ToFVec2(GetCoreSizeWc(stage));
 
 // Bad: duplicate helper that only returns a float copy.
@@ -115,10 +111,10 @@ Presentation lane:
 Boundary conversions:
 
 - Prefer short conversion names:
-  - `ToFVec2(fx)` instead of `sim::ToRenderVec2(fx)`
-  - `ToFxVec2(f)` instead of `sim::ToSimVec2(f)`
-  - `ToFloat(fx)` or `fx.to_float()` instead of `sim::ToRenderScalar(fx)`
-  - `ToFxScalar(f)` instead of `sim::ToSimScalar(f)`
+  - `ToFVec2(fx)`
+  - `ToFxVec2(f)`
+  - `ToFloat(fx)` or `fx.to_float()`
+  - `ToFxScalar(f)`
 - Keep conversion names semantically neutral. A fixed vector converted to float
   may be used for render, audio, debug, UI, particles, or logs, not only render.
 - Boundary conversions should appear near the boundary, not sprinkled through
@@ -133,14 +129,12 @@ drifting back into one-entity-at-a-time cleanup for this naming work.
 Progress:
 
 - Completed 2026-06-09: first scripted lane renamed the old float `Vec2` type
-  and constructor call sites to `FVec2`, while keeping fixed vectors spelled
-  `sim::Vec2` for now.
+  and constructor call sites to `FVec2`.
 - Completed 2026-06-09: second scripted lane renamed old float `RenderAABB` and
   `ToRenderAABB(...)` call sites to `FAABB` and `ToFAABB(...)`.
-- Completed 2026-06-09: third scripted lane renamed fixed vectors from
-  `sim::Vec2` to `sim::FxVec2`.
-- Completed 2026-06-09: fourth scripted lane renamed fixed rectangles from
-  `sim::AABB` to `sim::FxAABB`.
+- Completed 2026-06-09: third scripted lane renamed fixed vectors to `FxVec2`.
+- Completed 2026-06-09: fourth scripted lane renamed fixed rectangles to
+  `FxAABB`.
 - Completed 2026-06-09: fifth scripted lane shortened scalar, vector,
   color, and AABB conversion helper names.
 - Completed 2026-06-09: sixth scripted lane collapsed entity fixed geometry
@@ -151,10 +145,8 @@ Progress:
 - Completed 2026-06-09: eighth docs lane updated older fxp/determinism plan
   references from the migration vocabulary to the current `FxVec2`/`FxAABB`,
   `FVec2`/`FAABB`, and `ToFx*`/`ToF*` spellings.
-- Completed 2026-06-09: scalar naming decision made. Keep `sim::Scalar` rather
-  than renaming more than a thousand scalar uses to `sim::FxScalar`; the
-  namespace already communicates the fixed domain, and `ToFxScalar(...)`
-  remains the explicit float-to-fixed boundary.
+- Completed 2026-06-09: scalar naming settled on top-level `FxScalar`, and
+  `ToFxScalar(...)` remains the explicit float-to-fixed boundary.
 - Completed 2026-06-09: ninth helper-collapse lane removed duplicate float
   overloads for `GetVisualCenterForEnt(...)` and `GetEmitPointForEnt(...)`.
   Presentation callers now use the fixed helper and convert with `ToFVec2(...)`
@@ -167,26 +159,22 @@ Progress:
    - Update constructors and operators mechanically.
    - `Vec2::New(...)` becomes `FVec2::New(...)` where the old float type is
      intended.
-   - Keep fixed vectors under `sim::Vec2` during this batch to avoid ambiguity.
+   - Keep fixed vectors separate as `FxVec2`.
 
-2. Rename old float `RenderAABB` to `FAABB` or `FRect`.
-   - Pick one before implementation.
-   - `ToRenderAABB(...)` becomes `ToFAABB(...)` if `FAABB` is chosen.
+2. Rename old float `RenderAABB` to `FAABB`.
+   - `ToRenderAABB(...)` becomes `ToFAABB(...)`.
 
-3. Rename fixed aliases in `src/sim/fxp.hpp`.
-   - `sim::Vec2` -> `sim::FxVec2`
-   - `sim::AABB` -> `sim::FxAABB`
-   - Keep `sim::Scalar` as the fixed scalar spelling; it remains obvious because
-     scalar uses are scoped through `sim::`, and the conversion helper is still
-     explicit as `ToFxScalar(...)`.
+3. Promote fixed aliases in `src/fxp.hpp`.
+   - `FxVec2` is top-level `splonks::FxVec2`.
+   - `FxAABB` is top-level `splonks::FxAABB`.
+   - `FxScalar` is top-level `splonks::FxScalar`.
+   - `FxColor3` is top-level `splonks::FxColor3`.
 
 4. Shorten conversion helpers.
-   - `sim::ToRenderVec2(...)` -> `ToFVec2(...)`
-   - `sim::ToSimVec2(...)` -> `ToFxVec2(...)`
-   - `sim::ToRenderScalar(...)` -> `ToFloat(...)`
-   - `sim::ToSimScalar(...)` -> `ToFxScalar(...)`
-   - `sim::PixelVec2(...)` -> `FxVec2::from_pixels(...)` if that call shape is
-     readable enough everywhere.
+   - Use `ToFVec2(...)`, `ToFxVec2(...)`, `ToFloat(...)`, and
+     `ToFxScalar(...)`.
+   - Use `PixelVec2(...)` or `FxVec2::from_pixels(...)` based on local
+     readability.
 
 5. Collapse entity fixed geometry accessor names.
    - Only after float `Vec2` is renamed, so `GetCenter()` can safely mean fixed.
@@ -253,39 +241,21 @@ Audit notes from 2026-06-09:
   naming-only change. The goal should be one fixed authoritative probe path,
   with debug annotations converting to `FVec2` only when emitted.
 
-## Regex-Friendly Mappings
+## Completed Audit
 
-These mappings are good candidates for broad scripted replacement after the
-old float type has been renamed:
+As of the 2026-06-09 cleanup pass:
 
-```text
-sim::ToRenderVec2(   -> ToFVec2(
-sim::ToSimVec2(      -> ToFxVec2(
-sim::ToRenderScalar( -> ToFloat(
-sim::ToSimScalar(    -> ToFxScalar(
-sim::Vec2            -> sim::FxVec2
-sim::AABB            -> sim::FxAABB
-GetSimCenter(        -> GetCenter(
-SetSimCenter(        -> SetCenter(
-GetSimAABB(          -> GetAABB(
-GetSimFeet(          -> GetFeet(
-GetSimGroundProbe(   -> GetGroundProbe(
-```
+- Game source has no remaining `sim::` fixed geometry namespace references.
+- Game source has no remaining bare float `Vec2` or old `AABB` spelling outside
+  vendored gfxp internals.
+- Fixed point types live in `src/fxp.hpp` as top-level Splonks types:
+  `FxScalar`, `FxVec2`, `FxAABB`, and `FxColor3`.
+- Float presentation types are `FVec2`, `FAABB`, and `Color3`.
+- Conversion is explicit at boundaries with `ToFVec2`, `ToFxVec2`, `ToFAABB`,
+  `ToFxAABB`, `ToFloat`, and `ToFxScalar`.
 
-The old float `Vec2` -> `FVec2` pass should be scripted with token-aware care,
-not a plain unbounded text replacement, because files will contain both old
-float `Vec2` and fixed `sim::Vec2` during the transition.
-
-For the simple lanes, prefer one command/script per mapping plus compile:
-
-```text
-RenderAABB -> FAABB
-sim::Vec2 -> sim::FxVec2
-sim::AABB -> sim::FxAABB
-sim::ToRenderVec2( -> ToFVec2(
-sim::ToSimVec2( -> ToFxVec2(
-GetSimCenter( -> GetCenter(
-```
+For future broad rename lanes, prefer one command/script per mapping plus
+compile, but do not keep no-op mapping cheat sheets after a lane is complete.
 
 If a lane cannot be handled mechanically, stop and document the conflict rather
 than silently doing a long manual migration.

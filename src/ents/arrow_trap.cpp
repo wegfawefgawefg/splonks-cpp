@@ -37,16 +37,16 @@ constexpr std::int64_t kNinetyDegreesRaw = 90 * kAngleScale;
 constexpr std::int64_t kAtanCurveDegreesRaw = 16 * kAngleScale;
 
 bool HasFired(const Ent& trap) {
-    return trap.counter_a > sim::Scalar::zero();
+    return trap.counter_a > FxScalar::zero();
 }
 
 int DirectionForTrap(const Ent& trap) {
     return trap.facing == Side::Left ? -1 : 1;
 }
 
-sim::FxVec2 GetSensorStart(const Ent& trap) {
+FxVec2 GetSensorStart(const Ent& trap) {
     const int direction = DirectionForTrap(trap);
-    return trap.GetCenter() + sim::PixelVec2(direction * 9, 0);
+    return trap.GetCenter() + PixelVec2(direction * 9, 0);
 }
 
 bool ShouldTriggerOnEnt(const Ent& ent) {
@@ -54,28 +54,28 @@ bool ShouldTriggerOnEnt(const Ent& ent) {
            ToFxScalar(kArrowTrapMovingEntSpeedSq);
 }
 
-sim::FxVec2 ArrowLaunchVelocity(int direction) {
-    return sim::FxVec2{
-        sim::Scalar::from_int(direction) * ToFxScalar(kArrowTrapArrowSpeed),
-        sim::Scalar::zero()
+FxVec2 ArrowLaunchVelocity(int direction) {
+    return FxVec2{
+        FxScalar::from_int(direction) * ToFxScalar(kArrowTrapArrowSpeed),
+        FxScalar::zero()
     };
 }
 
-sim::FxVec2 ArrowGravityAcceleration() {
-    return sim::FxVec2{sim::Scalar::zero(), ToFxScalar(kArrowGravity)};
+FxVec2 ArrowGravityAcceleration() {
+    return FxVec2{FxScalar::zero(), ToFxScalar(kArrowGravity)};
 }
 
 void SnapArrowPositionToPixels(Ent& arrow) {
-    arrow.pos = sim::PixelVec2(arrow.pos.x.floor_int(),
+    arrow.pos = PixelVec2(arrow.pos.x.floor_int(),
                                arrow.pos.y.floor_int());
 }
 
-IVec2 ToStoredArrowOffsetPoint(sim::FxVec2 offset) {
-    return sim::ToPixelIVec2Round(offset);
+IVec2 ToStoredArrowOffsetPoint(FxVec2 offset) {
+    return ToPixelIVec2Round(offset);
 }
 
-sim::FxVec2 FromStoredArrowOffsetPoint(const IVec2& point) {
-    return sim::FxVec2::from_pixels(point.x, point.y);
+FxVec2 FromStoredArrowOffsetPoint(const IVec2& point) {
+    return FxVec2::from_pixels(point.x, point.y);
 }
 
 std::int32_t ClampAngleRaw(std::int64_t raw) {
@@ -99,16 +99,16 @@ std::int64_t AtanUnitRatioDegreesRaw(std::int64_t ratio_raw) {
     return linear + curve;
 }
 
-sim::Scalar ArrowRotationFromVelocity(sim::FxVec2 velocity, Side facing) {
+FxScalar ArrowRotationFromVelocity(FxVec2 velocity, Side facing) {
     const std::int64_t x_raw = std::max<std::int64_t>(
         1,
         AbsInt64(static_cast<std::int64_t>(
             (velocity.x.abs() *
-             sim::Scalar::from_int(static_cast<int>(kAngleScale))).round_int()))
+             FxScalar::from_int(static_cast<int>(kAngleScale))).round_int()))
     );
     const std::int64_t y_raw = static_cast<std::int64_t>(
         (velocity.y *
-         sim::Scalar::from_int(static_cast<int>(kAngleScale))).round_int());
+         FxScalar::from_int(static_cast<int>(kAngleScale))).round_int());
     const std::int64_t abs_y_raw = AbsInt64(y_raw);
     std::int64_t angle_raw = 0;
     if (abs_y_raw <= x_raw) {
@@ -124,7 +124,7 @@ sim::Scalar ArrowRotationFromVelocity(sim::FxVec2 velocity, Side facing) {
     if (facing == Side::Left) {
         angle_raw = -angle_raw;
     }
-    return sim::Scalar::from_raw(ClampAngleRaw(angle_raw));
+    return FxScalar::from_raw(ClampAngleRaw(angle_raw));
 }
 
 int GetOpenSensorCacheMarker(const Stage& stage) {
@@ -133,7 +133,7 @@ int GetOpenSensorCacheMarker(const Stage& stage) {
 
 int ComputeOpenSensorDistance(const Ent& trap, const State& state) {
     const int direction = DirectionForTrap(trap);
-    const sim::FxVec2 start = GetSensorStart(trap);
+    const FxVec2 start = GetSensorStart(trap);
     const IVec2 origin_tile = state.stage.GetTileCoordAtWc(IVec2::New(
         start.x.trunc_int(),
         start.y.trunc_int()
@@ -160,19 +160,19 @@ int GetCachedOpenSensorDistance(Ent& trap, const State& state) {
     return trap.point_a.y;
 }
 
-sim::FxAABB GetOpenSensorAabb(Ent& trap, const State& state) {
+FxAABB GetOpenSensorAabb(Ent& trap, const State& state) {
     const int direction = DirectionForTrap(trap);
-    const sim::FxVec2 start = GetSensorStart(trap);
+    const FxVec2 start = GetSensorStart(trap);
     const int open_distance = GetCachedOpenSensorDistance(trap, state);
-    const sim::Scalar end_x = start.x + sim::Scalar::from_int(direction * open_distance);
-    return sim::FxAABB::from_corners(
-        sim::FxVec2{
+    const FxScalar end_x = start.x + FxScalar::from_int(direction * open_distance);
+    return FxAABB::from_corners(
+        FxVec2{
             std::min(start.x, end_x),
-            start.y - sim::Scalar::from_int(kArrowTrapSensorHalfHeight),
+            start.y - FxScalar::from_int(kArrowTrapSensorHalfHeight),
         },
-        sim::FxVec2{
+        FxVec2{
             std::max(start.x, end_x),
-            start.y + sim::Scalar::from_int(kArrowTrapSensorHalfHeight),
+            start.y + FxScalar::from_int(kArrowTrapSensorHalfHeight),
         }
     );
 }
@@ -199,7 +199,7 @@ bool SensorTouchesMovingEnt(
     const State& state,
     const Graphics& graphics
 ) {
-    const sim::FxAABB sensor_aabb = GetOpenSensorAabb(trap, state);
+    const FxAABB sensor_aabb = GetOpenSensorAabb(trap, state);
     if (sensor_aabb.br.x <= sensor_aabb.tl.x) {
         return false;
     }
@@ -226,13 +226,13 @@ bool SensorTouchesMovingEnt(
     return false;
 }
 
-Ent* SpawnArrow(State& state, sim::FxVec2 center, int direction, const VID& trap_vid) {
+Ent* SpawnArrow(State& state, FxVec2 center, int direction, const VID& trap_vid) {
     return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         arrow.SetCenter(center);
         arrow.vel = ArrowLaunchVelocity(direction);
-        arrow.acc = sim::FxVec2::zero();
+        arrow.acc = FxVec2::zero();
         arrow.facing = direction < 0 ? Side::Left : Side::Right;
-        arrow.rotation = sim::Scalar::zero();
+        arrow.rotation = FxScalar::zero();
         arrow.thrown_by = trap_vid;
         arrow.thrown_immunity_timer = ents::common::kThrownByImmunityDuration;
         arrow.proj_contact_damage_type = DamageType::Attack;
@@ -243,12 +243,12 @@ Ent* SpawnArrow(State& state, sim::FxVec2 center, int direction, const VID& trap
     });
 }
 
-Ent* SpawnLooseArrow(State& state, sim::FxVec2 center) {
+Ent* SpawnLooseArrow(State& state, FxVec2 center) {
     return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         arrow.SetCenter(center);
         SnapArrowPositionToPixels(arrow);
-        arrow.vel = sim::FxVec2::zero();
-        arrow.acc = sim::FxVec2::zero();
+        arrow.vel = FxVec2::zero();
+        arrow.acc = FxVec2::zero();
         arrow.proj_contact_timer = 0;
         arrow.proj_contact_damage_amount = kArrowDamage;
         arrow.can_apply_proj_contact = false;
@@ -264,12 +264,12 @@ void FireTrap(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const int direction = DirectionForTrap(trap);
-    const sim::FxVec2 arrow_center = trap.GetCenter() + sim::FxVec2::from_pixels(direction * 10, -4);
+    const FxVec2 arrow_center = trap.GetCenter() + FxVec2::from_pixels(direction * 10, -4);
     Ent* const arrow = SpawnArrow(state, arrow_center, direction, trap.vid);
     if (arrow == nullptr) {
         return;
     }
-    trap.counter_a = sim::Scalar::from_int(1);
+    trap.counter_a = FxScalar::from_int(1);
     (void)PlayWorldSoundEmitter(state, ToFVec2(arrow_center), audio_asset_ids::Throw);
 }
 
@@ -316,7 +316,7 @@ void StepEntLogicAsArrow(
     Ent& arrow = state.ents.ents[ent_idx];
     if (arrow.held_by_vid.has_value()) {
         arrow.ent_a.reset();
-        arrow.rotation = sim::Scalar::zero();
+        arrow.rotation = FxScalar::zero();
         SnapArrowPositionToPixels(arrow);
         return;
     }
@@ -327,7 +327,7 @@ void StepEntLogicAsArrow(
             arrow.ent_a.reset();
             arrow.has_physics = true;
             arrow.can_collide = true;
-            arrow.vel = sim::FxVec2::zero();
+            arrow.vel = FxVec2::zero();
             arrow.acc = ArrowGravityAcceleration();
             arrow.proj_contact_timer = 0;
             arrow.can_apply_proj_contact = false;
@@ -336,8 +336,8 @@ void StepEntLogicAsArrow(
 
         arrow.has_physics = false;
         arrow.can_collide = false;
-        arrow.vel = sim::FxVec2::zero();
-        arrow.acc = sim::FxVec2::zero();
+        arrow.vel = FxVec2::zero();
+        arrow.acc = FxVec2::zero();
         arrow.SetCenter(stuck_to->GetCenter() + FromStoredArrowOffsetPoint(arrow.point_a));
         SnapArrowPositionToPixels(arrow);
         return;
@@ -353,7 +353,7 @@ void StepEntLogicAsArrow(
             arrow.proj_contact_damage_amount = kArrowDamage;
         }
         if (arrow.vel.x.abs() > ToFxScalar(kArrowRotationVelocityEpsilon)) {
-            arrow.facing = arrow.vel.x < sim::Scalar::zero() ? Side::Left : Side::Right;
+            arrow.facing = arrow.vel.x < FxScalar::zero() ? Side::Left : Side::Right;
         }
         arrow.rotation = ArrowRotationFromVelocity(arrow.vel, arrow.facing);
     }
@@ -418,11 +418,11 @@ bool TryCollectLooseArrowIntoHeldBow(
         return false;
     }
 
-    bow->counter_b += sim::Scalar::from_int(1);
+    bow->counter_b += FxScalar::from_int(1);
     if (!bow->ent_a.has_value()) {
         SetAnim(
             *bow,
-            bow->counter_b > sim::Scalar::zero() ? aframe_ids::BowLooseLoaded
+            bow->counter_b > FxScalar::zero() ? aframe_ids::BowLooseLoaded
                                                  : aframe_ids::BowLooseEmpty
         );
     }
@@ -432,8 +432,8 @@ bool TryCollectLooseArrowIntoHeldBow(
 }
 
 void StickArrowToEnt(Ent& arrow, Ent& other, State& state) {
-    const sim::FxVec2 other_center = other.GetCenter();
-    const sim::FxVec2 arrow_center = GetNearestWorldPoint(state.stage, other_center, arrow.GetCenter());
+    const FxVec2 other_center = other.GetCenter();
+    const FxVec2 arrow_center = GetNearestWorldPoint(state.stage, other_center, arrow.GetCenter());
     const IVec2 stored_offset = ToStoredArrowOffsetPoint(arrow_center - other_center);
 
     arrow.SetCenter(other_center + FromStoredArrowOffsetPoint(stored_offset));
@@ -446,8 +446,8 @@ void StickArrowToEnt(Ent& arrow, Ent& other, State& state) {
     arrow.can_apply_proj_contact = false;
     arrow.thrown_by.reset();
     arrow.thrown_immunity_timer = 0;
-    arrow.vel = sim::FxVec2::zero();
-    arrow.acc = sim::FxVec2::zero();
+    arrow.vel = FxVec2::zero();
+    arrow.acc = FxVec2::zero();
 }
 
 ents::common::ContactResult OnEntContactAsArrow(
@@ -485,7 +485,7 @@ ents::common::ContactResult OnEntContactAsArrow(
         return {};
     }
 
-    const sim::FxVec2 impact_velocity = arrow.vel;
+    const FxVec2 impact_velocity = arrow.vel;
     if (arrow.collide_sound.has_value()) {
         (void)PlayWorldSoundEmitter(state, ToFVec2(arrow.GetCenter()), *arrow.collide_sound);
     }
@@ -536,8 +536,8 @@ ents::common::ContactResult OnTileContactAsArrow(
         return {};
     }
 
-    arrow.vel = sim::FxVec2::zero();
-    arrow.acc = sim::FxVec2::zero();
+    arrow.vel = FxVec2::zero();
+    arrow.acc = FxVec2::zero();
     arrow.proj_contact_timer = 0;
     arrow.proj_contact_damage_amount = 0;
     arrow.can_apply_proj_contact = false;

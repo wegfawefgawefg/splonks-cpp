@@ -2,7 +2,7 @@
 
 #include "buying.hpp"
 #include "ents/damsel.hpp"
-#include "sim/fxp.hpp"
+#include "fxp.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -40,10 +40,10 @@ bool ReadRawByte(std::istream& in, std::uint8_t& value) {
 
 void WriteFloat(std::ostream& out, float value);
 bool ReadFloat(std::istream& in, float& value);
-void WriteSimScalar(std::ostream& out, sim::Scalar value);
-bool ReadSimScalar(std::istream& in, sim::Scalar& value);
-void WriteSimVec2(std::ostream& out, const sim::FxVec2& value);
-bool ReadSimVec2(std::istream& in, sim::FxVec2& value);
+void WriteSimScalar(std::ostream& out, FxScalar value);
+bool ReadSimScalar(std::istream& in, FxScalar& value);
+void WriteSimVec2(std::ostream& out, const FxVec2& value);
+bool ReadSimVec2(std::istream& in, FxVec2& value);
 void WriteInt32(std::ostream& out, int value);
 bool ReadInt32(std::istream& in, int& value);
 void WriteSigned32(std::ostream& out, std::int32_t value);
@@ -591,24 +591,24 @@ bool ReadColor3(std::istream& in, Color3& color) {
            ReadFloat(in, color.b);
 }
 
-void WriteSimColor3(std::ostream& out, const sim::Color3& color) {
+void WriteSimColor3(std::ostream& out, const FxColor3& color) {
     WriteSimScalar(out, color.r);
     WriteSimScalar(out, color.g);
     WriteSimScalar(out, color.b);
 }
 
-bool ReadSimColor3(std::istream& in, sim::Color3& color) {
+bool ReadSimColor3(std::istream& in, FxColor3& color) {
     return ReadSimScalar(in, color.r) &&
            ReadSimScalar(in, color.g) &&
            ReadSimScalar(in, color.b);
 }
 
-void WriteSimVec2(std::ostream& out, const sim::FxVec2& value) {
+void WriteSimVec2(std::ostream& out, const FxVec2& value) {
     WriteSimScalar(out, value.x);
     WriteSimScalar(out, value.y);
 }
 
-bool ReadSimVec2(std::istream& in, sim::FxVec2& value) {
+bool ReadSimVec2(std::istream& in, FxVec2& value) {
     return ReadSimScalar(in, value.x) &&
            ReadSimScalar(in, value.y);
 }
@@ -654,16 +654,16 @@ bool ReadFloat(std::istream& in, float& value) {
     return true;
 }
 
-void WriteSimScalar(std::ostream& out, sim::Scalar value) {
+void WriteSimScalar(std::ostream& out, FxScalar value) {
     WriteSigned32(out, value.raw_value());
 }
 
-bool ReadSimScalar(std::istream& in, sim::Scalar& value) {
+bool ReadSimScalar(std::istream& in, FxScalar& value) {
     std::int32_t raw_value = 0;
     if (!ReadSigned32(in, raw_value)) {
         return false;
     }
-    value = sim::Scalar::from_raw(raw_value);
+    value = FxScalar::from_raw(raw_value);
     return true;
 }
 
@@ -1397,7 +1397,7 @@ void WriteEffectInstance(std::ostream& out, const EffectInstance& effect) {
 bool ReadEffectInstance(std::istream& in, EffectInstance& effect) {
     std::uint8_t id = 0;
     std::int32_t count = 0;
-    sim::Scalar value = sim::Scalar::zero();
+    FxScalar value = FxScalar::zero();
     std::uint32_t frames_remaining = 0;
     if (!ReadUint8(in, id) ||
         !ReadSigned32(in, count) ||
@@ -1624,9 +1624,9 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
 }
 
 bool ReadEnt(std::istream& in, Ent& ent) {
-    sim::FxVec2 pos;
-    sim::FxVec2 vel;
-    sim::FxVec2 acc;
+    FxVec2 pos;
+    FxVec2 vel;
+    FxVec2 acc;
     const bool ok = ReadBoolByte(in, ent.active) &&
            ReadBoolByte(in, ent.marked_for_destruction) &&
            ReadEntType(in, ent.type_) &&

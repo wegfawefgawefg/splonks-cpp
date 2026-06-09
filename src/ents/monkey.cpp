@@ -64,38 +64,38 @@ MonkeyState GetMonkeyState(const Ent& monkey) {
 }
 
 void SetMonkeyState(Ent& monkey, MonkeyState state) {
-    monkey.counter_d = sim::Scalar::from_int(static_cast<int>(state));
+    monkey.counter_d = FxScalar::from_int(static_cast<int>(state));
 }
 
-sim::Scalar Frames(std::uint32_t frames) {
-    return sim::Scalar::from_int(static_cast<int>(frames));
+FxScalar Frames(std::uint32_t frames) {
+    return FxScalar::from_int(static_cast<int>(frames));
 }
 
-sim::Scalar RandomFrames(State& state, int min_frames, int max_frames) {
-    return sim::Scalar::from_int(state.drng.RandomIntInclusive(min_frames, max_frames));
+FxScalar RandomFrames(State& state, int min_frames, int max_frames) {
+    return FxScalar::from_int(state.drng.RandomIntInclusive(min_frames, max_frames));
 }
 
-sim::Scalar MonkeySightDistanceSq() {
-    return sim::Scalar::from_int(kMonkeySightDistanceSq);
+FxScalar MonkeySightDistanceSq() {
+    return FxScalar::from_int(kMonkeySightDistanceSq);
 }
 
-bool IsClimbableAt(const State& state, sim::FxVec2 world_pos) {
+bool IsClimbableAt(const State& state, FxVec2 world_pos) {
     const std::optional<WorldTileQueryResult> tile_query =
         QueryTileAtWorldPos(state.stage, world_pos);
     return tile_query.has_value() && IsTileQueryClimbable(state.stage, *tile_query);
 }
 
-std::optional<sim::FxVec2> FindNearbyClimbableCenter(const State& state, const Ent& monkey) {
-    const sim::FxVec2 center = monkey.GetCenter();
+std::optional<FxVec2> FindNearbyClimbableCenter(const State& state, const Ent& monkey) {
+    const FxVec2 center = monkey.GetCenter();
     for (const int probe_x : kMonkeyNearbyClimbProbeXs) {
         const std::optional<WorldTileQueryResult> tile_query =
-            QueryTileAtWorldPos(state.stage, center + sim::PixelVec2(probe_x, 0));
+            QueryTileAtWorldPos(state.stage, center + PixelVec2(probe_x, 0));
         if (!tile_query.has_value() || !IsTileQueryClimbable(state.stage, *tile_query)) {
             continue;
         }
 
-        return sim::FxVec2{
-            sim::Scalar::from_int(tile_query->tile_pos.x * static_cast<int>(kTileSize) +
+        return FxVec2{
+            FxScalar::from_int(tile_query->tile_pos.x * static_cast<int>(kTileSize) +
                                   static_cast<int>(kTileSize / 2)),
             center.y,
         };
@@ -103,8 +103,8 @@ std::optional<sim::FxVec2> FindNearbyClimbableCenter(const State& state, const E
     return std::nullopt;
 }
 
-std::optional<sim::FxVec2> FindClimbableTargetCenter(const State& state, const Ent& monkey) {
-    const sim::FxVec2 center = monkey.GetCenter();
+std::optional<FxVec2> FindClimbableTargetCenter(const State& state, const Ent& monkey) {
+    const FxVec2 center = monkey.GetCenter();
     const std::optional<WorldTileQueryResult> origin_query =
         QueryTileAtWorldPos(state.stage, center);
     if (!origin_query.has_value()) {
@@ -112,7 +112,7 @@ std::optional<sim::FxVec2> FindClimbableTargetCenter(const State& state, const E
     }
 
     int best_score = 0;
-    std::optional<sim::FxVec2> best_center;
+    std::optional<FxVec2> best_center;
     for (int dy = -kMonkeyClimbSearchUpTiles; dy <= kMonkeyClimbSearchDownTiles; ++dy) {
         for (int dx = -kMonkeyClimbSearchRadiusXTiles; dx <= kMonkeyClimbSearchRadiusXTiles; ++dx) {
             if (dx == 0 && dy == 0) {
@@ -131,7 +131,7 @@ std::optional<sim::FxVec2> FindClimbableTargetCenter(const State& state, const E
             const int score = (std::abs(dx) * 2) + (std::abs(dy) * 3) + downward_penalty;
             if (!best_center.has_value() || score < best_score) {
                 best_score = score;
-                best_center = sim::PixelVec2(
+                best_center = PixelVec2(
                     tile_query->tile_pos.x * static_cast<int>(kTileSize) +
                         static_cast<int>(kTileSize / 2),
                     tile_query->tile_pos.y * static_cast<int>(kTileSize) +
@@ -144,16 +144,16 @@ std::optional<sim::FxVec2> FindClimbableTargetCenter(const State& state, const E
     return best_center;
 }
 
-bool ShouldClimbUp(Ent& monkey, State& state, const std::optional<sim::FxVec2>& player_delta) {
+bool ShouldClimbUp(Ent& monkey, State& state, const std::optional<FxVec2>& player_delta) {
     (void)monkey;
     if (player_delta.has_value() && gfxp::length_sq(*player_delta) < MonkeySightDistanceSq() &&
-        player_delta->y.abs() > sim::Scalar::from_int(16)) {
-        return player_delta->y < sim::Scalar::zero();
+        player_delta->y.abs() > FxScalar::from_int(16)) {
+        return player_delta->y < FxScalar::zero();
     }
     return state.drng.RandomIntInclusive(1, 100) <= kMonkeyClimbUpBiasPercent;
 }
 
-std::optional<sim::FxVec2> GetNearestPlayerDelta(const Ent& monkey, const State& state) {
+std::optional<FxVec2> GetNearestPlayerDelta(const Ent& monkey, const State& state) {
     const Ent* const player = FindNearestPlayer(state, monkey.GetCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
@@ -178,22 +178,22 @@ AudioAssetId RandomMonkeyNoise(State& state, int min_index, int max_index) {
 
 void ThrowSpawnedEnt(Ent& ent, const Ent& monkey) {
     const int throw_x = monkey.facing == Side::Right ? 5 : -5;
-    ent.vel = sim::FxVec2{sim::Scalar::from_int(throw_x), -sim::Scalar::from_int(4)};
-    ent.acc = sim::FxVec2::zero();
+    ent.vel = FxVec2{FxScalar::from_int(throw_x), -FxScalar::from_int(4)};
+    ent.acc = FxVec2::zero();
     ent.thrown_by = monkey.vid;
     ent.thrown_immunity_timer = common::kThrownByImmunityDuration;
     ent.proj_contact_timer = common::kProjContactDuration;
 }
 
-sim::FxVec2 BuildMonkeyThrowLeft(const controls::ControlIntent&) {
-    return sim::FxVec2{
+FxVec2 BuildMonkeyThrowLeft(const controls::ControlIntent&) {
+    return FxVec2{
         ToFxScalar(-kMonkeyItemThrowSpeedX),
         ToFxScalar(kMonkeyItemThrowSpeedY),
     };
 }
 
-sim::FxVec2 BuildMonkeyThrowRight(const controls::ControlIntent&) {
-    return sim::FxVec2{
+FxVec2 BuildMonkeyThrowRight(const controls::ControlIntent&) {
+    return FxVec2{
         ToFxScalar(kMonkeyItemThrowSpeedX),
         ToFxScalar(kMonkeyItemThrowSpeedY),
     };
@@ -266,15 +266,15 @@ bool TryStealRandomToolAndCast(
 }
 
 void BounceAwayFromPlayer(Ent& monkey, const Ent& player, State& state) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, monkey.GetCenter(), player.GetCenter());
+    const FxVec2 delta = GetNearestWorldDelta(state.stage, monkey.GetCenter(), player.GetCenter());
     monkey.draw_layer = DrawLayer::Foreground;
-    monkey.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(2, 4));
-    if (delta.x > sim::Scalar::zero()) {
+    monkey.vel.y = -FxScalar::from_int(state.drng.RandomIntInclusive(2, 4));
+    if (delta.x > FxScalar::zero()) {
         monkey.facing = Side::Left;
-        monkey.vel.x = -sim::Scalar::from_int(kMonkeyLeapSpeed);
+        monkey.vel.x = -FxScalar::from_int(kMonkeyLeapSpeed);
     } else {
         monkey.facing = Side::Right;
-        monkey.vel.x = sim::Scalar::from_int(kMonkeyLeapSpeed);
+        monkey.vel.x = FxScalar::from_int(kMonkeyLeapSpeed);
     }
     SetMonkeyState(monkey, MonkeyState::Bounce);
     monkey.counter_c = Frames(kMonkeyVineCooldownFrames);
@@ -287,21 +287,21 @@ void EnterIdle(Ent& monkey, State& state) {
     monkey.draw_layer = DrawLayer::Foreground;
     monkey.counter_a = RandomFrames(state, kMonkeyIdleMinFrames, kMonkeyIdleMaxFrames);
     monkey.point_a.x = 0;
-    monkey.vel.x = sim::Scalar::zero();
+    monkey.vel.x = FxScalar::zero();
     TrySetAnim(monkey, EntDisplayState::Neutral);
 }
 
 void EnterCharge(Ent& monkey, State& state) {
     SetMonkeyState(monkey, MonkeyState::Charge);
     monkey.counter_a = RandomFrames(state, kMonkeyChargeMinFrames, kMonkeyChargeMaxFrames);
-    monkey.vel.x = sim::Scalar::zero();
+    monkey.vel.x = FxScalar::zero();
     TrySetAnim(monkey, EntDisplayState::Walk);
 }
 
 void EnterHang(Ent& monkey, State& state, int forced_launch_direction = 0) {
     SetMonkeyState(monkey, MonkeyState::Hang);
-    monkey.vel = sim::FxVec2::zero();
-    monkey.acc = sim::FxVec2::zero();
+    monkey.vel = FxVec2::zero();
+    monkey.acc = FxVec2::zero();
     monkey.point_a.x = std::clamp(forced_launch_direction, -1, 1);
     monkey.counter_a = RandomFrames(state, 10, 40);
     TrySetAnim(monkey, EntDisplayState::Hanging);
@@ -309,43 +309,43 @@ void EnterHang(Ent& monkey, State& state, int forced_launch_direction = 0) {
 
 void EnterClimb(Ent& monkey, State& state, bool moving_up) {
     SetMonkeyState(monkey, MonkeyState::Climb);
-    monkey.vel = sim::FxVec2::zero();
-    monkey.acc = sim::FxVec2::zero();
+    monkey.vel = FxVec2::zero();
+    monkey.acc = FxVec2::zero();
     monkey.point_a.x = moving_up ? 0 : 1;
     monkey.counter_a = RandomFrames(state, kMonkeyClimbMinFrames, kMonkeyClimbMaxFrames);
     TrySetAnim(monkey, EntDisplayState::Climbing);
 }
 
-void SnapToClimbableAndEnterClimb(Ent& monkey, State& state, sim::FxVec2 climb_center, bool moving_up) {
-    monkey.SetCenter(sim::FxVec2{climb_center.x, monkey.GetCenter().y});
+void SnapToClimbableAndEnterClimb(Ent& monkey, State& state, FxVec2 climb_center, bool moving_up) {
+    monkey.SetCenter(FxVec2{climb_center.x, monkey.GetCenter().y});
     EnterClimb(monkey, state, moving_up);
 }
 
-bool TryGroundClimbOrApproach(Ent& monkey, State& state, const std::optional<sim::FxVec2>& player_delta) {
-    const std::optional<sim::FxVec2> climb_center = FindNearbyClimbableCenter(state, monkey);
+bool TryGroundClimbOrApproach(Ent& monkey, State& state, const std::optional<FxVec2>& player_delta) {
+    const std::optional<FxVec2> climb_center = FindNearbyClimbableCenter(state, monkey);
     if (climb_center.has_value()) {
         SnapToClimbableAndEnterClimb(monkey, state, *climb_center, ShouldClimbUp(monkey, state, player_delta));
         return true;
     }
 
-    const std::optional<sim::FxVec2> climb_target = FindClimbableTargetCenter(state, monkey);
+    const std::optional<FxVec2> climb_target = FindClimbableTargetCenter(state, monkey);
     if (!climb_target.has_value()) {
         return false;
     }
 
-    const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, monkey.GetCenter(), *climb_target);
-    if (delta.x.abs() < sim::Scalar::from_int(3)) {
+    const FxVec2 delta = GetNearestWorldDelta(state.stage, monkey.GetCenter(), *climb_target);
+    if (delta.x.abs() < FxScalar::from_int(3)) {
         SnapToClimbableAndEnterClimb(monkey, state, *climb_target, ShouldClimbUp(monkey, state, player_delta));
         return true;
     }
 
-    const int direction = delta.x < sim::Scalar::zero() ? -1 : 1;
+    const int direction = delta.x < FxScalar::zero() ? -1 : 1;
     monkey.facing = direction < 0 ? Side::Left : Side::Right;
     monkey.draw_layer = DrawLayer::Foreground;
-    monkey.vel.x = sim::Scalar::from_int(direction * kMonkeyGroundLeapSpeed);
+    monkey.vel.x = FxScalar::from_int(direction * kMonkeyGroundLeapSpeed);
     monkey.vel.y =
-        -sim::Scalar::from_int(state.drng.RandomIntInclusive(
-            delta.y < -sim::Scalar::from_int(8) ? 6 : 5,
+        -FxScalar::from_int(state.drng.RandomIntInclusive(
+            delta.y < -FxScalar::from_int(8) ? 6 : 5,
             7
         ));
     monkey.point_a.x = 0;
@@ -354,32 +354,32 @@ bool TryGroundClimbOrApproach(Ent& monkey, State& state, const std::optional<sim
     return true;
 }
 
-void LaunchAtPlayerOrForward(Ent& monkey, const std::optional<sim::FxVec2>& player_delta, State& state) {
+void LaunchAtPlayerOrForward(Ent& monkey, const std::optional<FxVec2>& player_delta, State& state) {
     monkey.draw_layer = DrawLayer::Foreground;
     const int forced_launch_direction = std::clamp(monkey.point_a.x, -1, 1);
     if (forced_launch_direction != 0) {
         monkey.facing = forced_launch_direction < 0 ? Side::Left : Side::Right;
-        monkey.vel.x = sim::Scalar::from_int(forced_launch_direction * kMonkeyGroundLeapSpeed);
-    } else if (player_delta.has_value() && player_delta->x < sim::Scalar::zero()) {
+        monkey.vel.x = FxScalar::from_int(forced_launch_direction * kMonkeyGroundLeapSpeed);
+    } else if (player_delta.has_value() && player_delta->x < FxScalar::zero()) {
         monkey.facing = Side::Left;
-        monkey.vel.x = -sim::Scalar::from_int(kMonkeyGroundLeapSpeed);
+        monkey.vel.x = -FxScalar::from_int(kMonkeyGroundLeapSpeed);
     } else if (player_delta.has_value()) {
         monkey.facing = Side::Right;
-        monkey.vel.x = sim::Scalar::from_int(kMonkeyGroundLeapSpeed);
+        monkey.vel.x = FxScalar::from_int(kMonkeyGroundLeapSpeed);
     } else {
-        monkey.vel.x = sim::Scalar::from_int(
+        monkey.vel.x = FxScalar::from_int(
             monkey.facing == Side::Left ? -kMonkeyGroundLeapSpeed : kMonkeyGroundLeapSpeed);
     }
     monkey.point_a.x = 0;
     const bool needs_height = monkey.grounded || forced_launch_direction != 0;
-    monkey.vel.y = -sim::Scalar::from_int(
+    monkey.vel.y = -FxScalar::from_int(
         state.drng.RandomIntInclusive(needs_height ? 5 : 4, needs_height ? 7 : 5));
     SetMonkeyState(monkey, MonkeyState::Recover);
     TrySetAnim(monkey, EntDisplayState::Falling);
     (void)PlayEntCenterSoundEmitter(state, monkey, RandomMonkeyNoise(state, 3, 5));
 }
 
-void LaunchOffClimbable(Ent& monkey, const std::optional<sim::FxVec2>& player_delta, State& state) {
+void LaunchOffClimbable(Ent& monkey, const std::optional<FxVec2>& player_delta, State& state) {
     if (player_delta.has_value() && gfxp::length_sq(*player_delta) < MonkeySightDistanceSq()) {
         LaunchAtPlayerOrForward(monkey, player_delta, state);
     } else {
@@ -390,21 +390,21 @@ void LaunchOffClimbable(Ent& monkey, const std::optional<sim::FxVec2>& player_de
     monkey.counter_c = Frames(kMonkeyClimbDismountCooldownFrames);
 }
 
-void HopAlongClimbable(Ent& monkey, const std::optional<sim::FxVec2>& player_delta, State& state) {
+void HopAlongClimbable(Ent& monkey, const std::optional<FxVec2>& player_delta, State& state) {
     const bool moving_up = ShouldClimbUp(monkey, state, player_delta);
     monkey.point_a.x = moving_up ? 0 : 1;
-    monkey.vel = sim::FxVec2{
-        sim::Scalar::zero(),
-        sim::Scalar::from_int(moving_up ? -kMonkeyClimbSpeed : kMonkeyClimbSpeed),
+    monkey.vel = FxVec2{
+        FxScalar::zero(),
+        FxScalar::from_int(moving_up ? -kMonkeyClimbSpeed : kMonkeyClimbSpeed),
     };
-    monkey.acc = sim::FxVec2::zero();
+    monkey.acc = FxVec2::zero();
     monkey.counter_a = RandomFrames(state, kMonkeyClimbMinFrames, kMonkeyClimbMaxFrames);
 }
 
 void TripPlayer(Ent& player, State& state) {
     const int trip_x = player.facing == Side::Left ? -3 : 3;
-    player.vel = sim::FxVec2{sim::Scalar::from_int(trip_x), -sim::Scalar::from_int(3)};
-    player.acc = sim::FxVec2::zero();
+    player.vel = FxVec2{FxScalar::from_int(trip_x), -FxScalar::from_int(3)};
+    player.acc = FxVec2::zero();
     player.condition = EntCondition::Stunned;
     player.stun_timer = kMonkeyTripStunFrames;
     common::DropHeldItemFromEnt(player, state);
@@ -421,11 +421,11 @@ void RobPlayer(std::size_t monkey_idx, Ent& monkey, Ent& player, State& state, G
         if (world_ops::SpawnEnt(state, EntType::GoldNugget, [&](Ent& gold) {
                 gold.SetCenter(monkey.GetCenter());
                 state.UpdateSidForEnt(gold.vid.id, graphics);
-                gold.vel = sim::FxVec2{
-                    sim::Scalar::from_int(state.drng.RandomIntInclusive(-2, 2)),
-                    -sim::Scalar::from_int(state.drng.RandomIntInclusive(3, 4)),
+                gold.vel = FxVec2{
+                    FxScalar::from_int(state.drng.RandomIntInclusive(-2, 2)),
+                    -FxScalar::from_int(state.drng.RandomIntInclusive(3, 4)),
                 };
-                gold.acc = sim::FxVec2::zero();
+                gold.acc = FxVec2::zero();
             }) != nullptr) {
         }
         (void)PlayEntCenterSoundEmitter(state, monkey, audio_asset_ids::Throw);
@@ -440,8 +440,8 @@ void RobPlayer(std::size_t monkey_idx, Ent& monkey, Ent& player, State& state, G
 void AttachToPlayer(Ent& monkey, Ent& player, State& state) {
     monkey.ent_a = player.vid;
     monkey.point_a = IVec2::New(1, 0);
-    monkey.vel = sim::FxVec2::zero();
-    monkey.acc = sim::FxVec2::zero();
+    monkey.vel = FxVec2::zero();
+    monkey.acc = FxVec2::zero();
     monkey.counter_a = RandomFrames(state, 40, 80);
     monkey.counter_b = Frames(kMonkeyGrabCooldownFrames);
     SetMonkeyState(monkey, MonkeyState::Grab);
@@ -492,24 +492,24 @@ void StepEntLogicAsMonkey(
         return;
     }
 
-    if (monkey.counter_b > sim::Scalar::zero()) {
-        monkey.counter_b -= sim::Scalar::from_int(1);
+    if (monkey.counter_b > FxScalar::zero()) {
+        monkey.counter_b -= FxScalar::from_int(1);
     }
-    if (monkey.counter_c > sim::Scalar::zero()) {
-        monkey.counter_c -= sim::Scalar::from_int(1);
+    if (monkey.counter_c > FxScalar::zero()) {
+        monkey.counter_c -= FxScalar::from_int(1);
     }
-    if (monkey.threshold_a > sim::Scalar::zero()) {
-        monkey.threshold_a -= sim::Scalar::from_int(1);
+    if (monkey.threshold_a > FxScalar::zero()) {
+        monkey.threshold_a -= FxScalar::from_int(1);
     }
 
-    const std::optional<sim::FxVec2> player_delta = GetNearestPlayerDelta(monkey, state);
+    const std::optional<FxVec2> player_delta = GetNearestPlayerDelta(monkey, state);
     MonkeyState monkey_state = GetMonkeyState(monkey);
 
     switch (monkey_state) {
     case MonkeyState::Idle:
         common::DecelerateHorizontallyToStop(monkey, 0.5F);
-        if (monkey.counter_a > sim::Scalar::zero()) {
-            monkey.counter_a -= sim::Scalar::from_int(1);
+        if (monkey.counter_a > FxScalar::zero()) {
+            monkey.counter_a -= FxScalar::from_int(1);
         } else if (monkey.grounded &&
                    state.drng.RandomIntInclusive(1, 100) <= kMonkeyGroundClimbChancePercent &&
                    TryGroundClimbOrApproach(monkey, state, player_delta)) {
@@ -523,8 +523,8 @@ void StepEntLogicAsMonkey(
         break;
     case MonkeyState::Charge:
         common::DecelerateHorizontallyToStop(monkey, 0.5F);
-        if (monkey.counter_a > sim::Scalar::zero()) {
-            monkey.counter_a -= sim::Scalar::from_int(1);
+        if (monkey.counter_a > FxScalar::zero()) {
+            monkey.counter_a -= FxScalar::from_int(1);
         } else if (monkey.grounded &&
                    state.drng.RandomIntInclusive(1, 100) <= kMonkeyGroundClimbChancePercent &&
                    TryGroundClimbOrApproach(monkey, state, player_delta)) {
@@ -535,7 +535,7 @@ void StepEntLogicAsMonkey(
     case MonkeyState::Recover:
         if (monkey.grounded) {
             EnterIdle(monkey, state);
-        } else if (monkey.counter_c <= sim::Scalar::zero() &&
+        } else if (monkey.counter_c <= FxScalar::zero() &&
                    IsClimbableAt(state, monkey.GetCenter())) {
             EnterHang(monkey, state);
         } else if (monkey.collided_last_frame) {
@@ -556,13 +556,13 @@ void StepEntLogicAsMonkey(
         }
         break;
     case MonkeyState::Hang:
-        monkey.vel = sim::FxVec2::zero();
-        monkey.acc = sim::FxVec2::zero();
-        if (monkey.counter_a > sim::Scalar::zero()) {
-            monkey.counter_a -= sim::Scalar::from_int(1);
+        monkey.vel = FxVec2::zero();
+        monkey.acc = FxVec2::zero();
+        if (monkey.counter_a > FxScalar::zero()) {
+            monkey.counter_a -= FxScalar::from_int(1);
         } else if (monkey.point_a.x == 0 &&
                    state.drng.RandomIntInclusive(1, 100) <= kMonkeyClimbChanceFromHangPercent) {
-            const std::optional<sim::FxVec2> climb_center = FindNearbyClimbableCenter(state, monkey);
+            const std::optional<FxVec2> climb_center = FindNearbyClimbableCenter(state, monkey);
             if (climb_center.has_value()) {
                 SnapToClimbableAndEnterClimb(monkey, state, *climb_center, ShouldClimbUp(monkey, state, player_delta));
             } else {
@@ -573,12 +573,12 @@ void StepEntLogicAsMonkey(
         }
         break;
     case MonkeyState::Climb: {
-        monkey.vel.x = sim::Scalar::zero();
+        monkey.vel.x = FxScalar::zero();
         const bool moving_up = monkey.point_a.x == 0;
-        monkey.vel.y = sim::Scalar::from_int(moving_up ? -kMonkeyClimbSpeed : kMonkeyClimbSpeed);
-        const sim::FxVec2 probe = monkey.GetCenter() + sim::PixelVec2(0, moving_up ? -8 : 14);
-        if (monkey.counter_a > sim::Scalar::zero()) {
-            monkey.counter_a -= sim::Scalar::from_int(1);
+        monkey.vel.y = FxScalar::from_int(moving_up ? -kMonkeyClimbSpeed : kMonkeyClimbSpeed);
+        const FxVec2 probe = monkey.GetCenter() + PixelVec2(0, moving_up ? -8 : 14);
+        if (monkey.counter_a > FxScalar::zero()) {
+            monkey.counter_a -= FxScalar::from_int(1);
         } else if (state.drng.RandomIntInclusive(1, 100) <= kMonkeyClimbSideDismountPercent) {
             LaunchOffClimbable(monkey, player_delta, state);
             break;
@@ -592,16 +592,16 @@ void StepEntLogicAsMonkey(
         }
 
         if (player_delta.has_value() && gfxp::length_sq(*player_delta) < MonkeySightDistanceSq() &&
-            player_delta->y > sim::Scalar::zero()) {
+            player_delta->y > FxScalar::zero()) {
             SetMonkeyState(monkey, MonkeyState::Bounce);
             monkey.counter_c = Frames(kMonkeyVineCooldownFrames);
-            monkey.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(2, 4));
-            if (player_delta->x < sim::Scalar::zero()) {
+            monkey.vel.y = -FxScalar::from_int(state.drng.RandomIntInclusive(2, 4));
+            if (player_delta->x < FxScalar::zero()) {
                 monkey.facing = Side::Left;
-                monkey.vel.x = -sim::Scalar::from_int(kMonkeyLeapSpeed);
+                monkey.vel.x = -FxScalar::from_int(kMonkeyLeapSpeed);
             } else {
                 monkey.facing = Side::Right;
-                monkey.vel.x = sim::Scalar::from_int(kMonkeyLeapSpeed);
+                monkey.vel.x = FxScalar::from_int(kMonkeyLeapSpeed);
             }
         }
         break;
@@ -618,16 +618,16 @@ void StepEntLogicAsMonkey(
             break;
         }
 
-        monkey.vel = sim::FxVec2::zero();
-        monkey.acc = sim::FxVec2::zero();
+        monkey.vel = FxVec2::zero();
+        monkey.acc = FxVec2::zero();
         const int side = ((state.stage_frame / kMonkeyPlayerAttachSwapFrames) % 2U) == 0U ? -1 : 1;
         monkey.point_a.x = side;
         monkey.facing = side < 0 ? Side::Right : Side::Left;
         monkey.SetCenter(player->GetCenter() +
-                            sim::PixelVec2(side * kMonkeyPlayerAttachOffsetX,
+                            PixelVec2(side * kMonkeyPlayerAttachOffsetX,
                                            kMonkeyPlayerAttachOffsetY));
-        if (monkey.counter_a > sim::Scalar::zero()) {
-            monkey.counter_a -= sim::Scalar::from_int(1);
+        if (monkey.counter_a > FxScalar::zero()) {
+            monkey.counter_a -= FxScalar::from_int(1);
         } else {
             RobPlayer(ent_idx, monkey, *player, state, graphics, audio);
             monkey.ent_a.reset();
@@ -655,8 +655,8 @@ void StepEntPhysicsAsMonkey(
     switch (GetMonkeyState(monkey)) {
     case MonkeyState::Grab:
     case MonkeyState::Hang:
-        monkey.vel = sim::FxVec2::zero();
-        monkey.acc = sim::FxVec2::zero();
+        monkey.vel = FxVec2::zero();
+        monkey.acc = FxVec2::zero();
         return;
     case MonkeyState::Climb:
         common::PrePartialEulerStep(ent_idx, state, dt);
@@ -691,16 +691,16 @@ common::ContactResult OnEntContactAsMonkey(
     }
 
     if (state.players.FindByEntVid(other.vid) != nullptr &&
-        monkey.counter_b <= sim::Scalar::zero() && other.condition == EntCondition::Normal) {
+        monkey.counter_b <= FxScalar::zero() && other.condition == EntCondition::Normal) {
         AttachToPlayer(monkey, other, state);
         return {};
     }
 
-    if (monkey.threshold_a <= sim::Scalar::zero() && other.can_be_picked_up && !other.held_by_vid.has_value() &&
+    if (monkey.threshold_a <= FxScalar::zero() && other.can_be_picked_up && !other.held_by_vid.has_value() &&
         other.attach_mode == AttachMode::None && other.type_ != EntType::Monkey &&
         other.type_ != EntType::Player && !other.impassable) {
         ThrowSpawnedEnt(other, monkey);
-        monkey.threshold_a = sim::Scalar::from_int(kMonkeyThrowCooldownFrames);
+        monkey.threshold_a = FxScalar::from_int(kMonkeyThrowCooldownFrames);
         SetMonkeyState(monkey, MonkeyState::Idle);
         monkey.counter_a = RandomFrames(state, 20, 60);
     }

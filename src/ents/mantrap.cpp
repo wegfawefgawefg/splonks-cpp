@@ -23,7 +23,7 @@ constexpr std::uint32_t kMantrapEatDamage = 9999;
 
 void StartIdle(Ent& mantrap, State& state) {
     mantrap.ai_state = EntAiState::Idle;
-    mantrap.counter_a = sim::Scalar::from_int(
+    mantrap.counter_a = FxScalar::from_int(
         state.drng.RandomIntInclusive(kMantrapIdleMinFrames, kMantrapIdleMaxFrames));
     common::DecelerateHorizontallyToStop(mantrap, kMantrapWalkAcceleration);
     TrySetAnim(mantrap, EntDisplayState::Neutral);
@@ -52,11 +52,11 @@ bool CanMantrapEatEnt(const Ent& target) {
 }
 
 void FaceTarget(Ent& mantrap, const Ent& target, const Stage& stage) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(stage, mantrap.GetAABB().center(),
+    const FxVec2 delta = GetNearestWorldDelta(stage, mantrap.GetAABB().center(),
                                                  target.GetAABB().center());
-    if (delta.x < sim::Scalar::zero()) {
+    if (delta.x < FxScalar::zero()) {
         mantrap.facing = Side::Left;
-    } else if (delta.x > sim::Scalar::zero()) {
+    } else if (delta.x > FxScalar::zero()) {
         mantrap.facing = Side::Right;
     }
 }
@@ -68,13 +68,13 @@ bool TryEatOverlappingEnt(
     Audio& audio
 ) {
     Ent& mantrap = state.ents.ents[mantrap_idx];
-    const sim::FxAABB mantrap_aabb = common::GetContactAabbForEnt(mantrap, graphics);
+    const FxAABB mantrap_aabb = common::GetContactAabbForEnt(mantrap, graphics);
     for (const VID& target_vid : QueryEntsInAabb(state, mantrap_aabb, mantrap.vid)) {
         Ent* const target = state.ents.GetEntMut(target_vid);
         if (target == nullptr || !CanMantrapEatEnt(*target)) {
             continue;
         }
-        const sim::FxAABB target_aabb = GetNearestWorldAabb(
+        const FxAABB target_aabb = GetNearestWorldAabb(
             state.stage,
             mantrap_aabb.center(),
             common::GetContactAabbForEnt(*target, graphics)
@@ -84,7 +84,7 @@ bool TryEatOverlappingEnt(
         }
 
         FaceTarget(mantrap, *target, state.stage);
-        mantrap.vel.x = sim::Scalar::zero();
+        mantrap.vel.x = FxScalar::zero();
         mantrap.counter_b = ToFxScalar(kMantrapEatFrames);
         SetAnim(mantrap, aframe_ids::MantrapEat);
         const common::DamageResult damage_result =
@@ -122,9 +122,9 @@ void StepEntLogicAsMantrap(
         return;
     }
 
-    if (mantrap.counter_b > sim::Scalar::zero()) {
-        mantrap.counter_b -= sim::Scalar::from_int(1);
-        mantrap.vel.x = sim::Scalar::zero();
+    if (mantrap.counter_b > FxScalar::zero()) {
+        mantrap.counter_b -= FxScalar::from_int(1);
+        mantrap.vel.x = FxScalar::zero();
         SetAnim(mantrap, aframe_ids::MantrapEat);
         return;
     }
@@ -136,8 +136,8 @@ void StepEntLogicAsMantrap(
     if (mantrap.ai_state == EntAiState::Idle) {
         common::DecelerateHorizontallyToStop(mantrap, kMantrapWalkAcceleration);
         TrySetAnim(mantrap, EntDisplayState::Neutral);
-        if (mantrap.counter_a > sim::Scalar::zero()) {
-            mantrap.counter_a -= sim::Scalar::from_int(1);
+        if (mantrap.counter_a > FxScalar::zero()) {
+            mantrap.counter_a -= FxScalar::from_int(1);
             return;
         }
 

@@ -68,15 +68,15 @@ FVec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& 
         return ToFVec2(idol.GetCenter());
     }
 
-    const sim::FxAABB target_aabb = target->GetAABB();
-    return ToFVec2(sim::FxVec2{
+    const FxAABB target_aabb = target->GetAABB();
+    return ToFVec2(FxVec2{
         target_aabb.center().x,
         target_aabb.tl.y + target->size.y * ToFxScalar(kRewardParticleYOffsetFactor),
     });
 }
 
 std::optional<std::size_t> FindIntersectingShopIdx(const Ent& idol, const State& state) {
-    const sim::FxAABB idol_aabb = idol.GetAABB();
+    const FxAABB idol_aabb = idol.GetAABB();
     for (std::size_t ent_idx = 0; ent_idx < state.ents.ents.size(); ++ent_idx) {
         const Ent& ent = state.ents.ents[ent_idx];
         if (!ent.active || ent.type_ != EntType::Shop) {
@@ -162,7 +162,7 @@ void StepEntLogicAsGoldIdol(
         if (const std::optional<std::size_t> shop_idx = FindIntersectingShopIdx(idol, state)) {
             (void)shop_idx;
             const std::uint32_t amount =
-                idol.counter_b > sim::Scalar::zero()
+                idol.counter_b > FxScalar::zero()
                     ? static_cast<std::uint32_t>(idol.counter_b.trunc_int())
                     : kGoldIdolShopValue;
             RedeemGoldIdol(ent_idx, amount, audio_asset_ids::CashRegister, state, graphics, audio);
@@ -172,7 +172,7 @@ void StepEntLogicAsGoldIdol(
 
     if (ents::basic_exit::IsEntTouchingBasicExit(idol, state, graphics)) {
         const std::uint32_t amount =
-            idol.counter_a > sim::Scalar::zero()
+            idol.counter_a > FxScalar::zero()
                 ? static_cast<std::uint32_t>(idol.counter_a.trunc_int())
                 : kGoldIdolExitValue;
         RedeemGoldIdol(ent_idx, amount, audio_asset_ids::GoldStack, state, graphics, audio);

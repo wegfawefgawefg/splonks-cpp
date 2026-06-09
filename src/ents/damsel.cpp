@@ -74,8 +74,8 @@ FVec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, 
         return ToFVec2(damsel.GetCenter());
     }
 
-    const sim::FxAABB target_aabb = target->GetAABB();
-    return ToFVec2(sim::FxVec2{
+    const FxAABB target_aabb = target->GetAABB();
+    return ToFVec2(FxVec2{
         target_aabb.center().x,
         target_aabb.tl.y + target->size.y * ToFxScalar(kRescueKissYOffsetFactor),
     });
@@ -147,11 +147,11 @@ void StartPanicRun(Ent& damsel, const State& state) {
 }
 
 void MaybeStartPanicRunFromCarryRelease(Ent& damsel, const State& state) {
-    if (damsel.counter_a <= sim::Scalar::zero() || damsel.condition != EntCondition::Normal) {
+    if (damsel.counter_a <= FxScalar::zero() || damsel.condition != EntCondition::Normal) {
         return;
     }
 
-    damsel.counter_a = sim::Scalar::zero();
+    damsel.counter_a = FxScalar::zero();
     StartPanicRun(damsel, state);
 }
 
