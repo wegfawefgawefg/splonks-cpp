@@ -141,8 +141,10 @@ Status:
 
 - [x] Keep both because the float versions remain presentation-side.
 - [x] Do not use float overloads from authoritative gameplay files.
-- [ ] Consider moving float overloads to a presentation helper if the boundary stays
-  noisy.
+- [x] Consider moving float overloads to a presentation helper. Leave them in
+  `world_query` for now because current callers are render, debug, audio, and
+  presentation paths, and moving them would only add churn without removing a
+  gameplay ambiguity.
 
 ### Flesh Guy Float/Fixed Tile Queries
 
@@ -212,6 +214,13 @@ For the low-risk cleanup pass:
 ./scripts/build.sh
 git diff --check
 ```
+
+Status:
+
+- [x] `./scripts/build.sh`
+- [x] `git diff --check`
+- [x] Final audit searches show the old wrapper names only remain in this doc as
+  examples, and `FloorDiv(...)` has one implementation in `src/math_types.hpp`.
 
 If any gameplay helper is moved across files, run a quick local playtest around
 the affected mechanic: bow, web cannon, mattock, baseball bat, and stage spawn
