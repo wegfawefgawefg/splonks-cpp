@@ -361,8 +361,8 @@ does not become tedious or error-prone.
 - [ ] Keep `Vec2` as the default `BasicVec2<Fixed>`.
 - [ ] Add explicit fixed-to-fixed conversion helpers, such as
       `fixed_cast<ToFixed>(value)`, with named rounding.
-- [x] Keep construction helpers such as `from_pixels` and
-      `checked_from_pixels`, but do not add one-line `to_pixels_*` aliases.
+- [x] Keep construction helpers such as `from_int` and
+      `checked_from_int`, but do not add one-line pixel/unit aliases.
       Call `floor_int()`, `ceil_int()`, `round_int()`, and `trunc_int()`
       directly so rounding policy is visible.
 - [ ] Add checked and unchecked hot-path helpers where the distinction matters.

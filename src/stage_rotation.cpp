@@ -32,7 +32,7 @@ float Smoothstep(float t) {
 }
 
 FxVec2 GetStagePixelDims(const Stage& stage) {
-    return PixelVec2(static_cast<int>(stage.GetWidth()), static_cast<int>(stage.GetHeight()));
+    return FxVec2::from_int(static_cast<int>(stage.GetWidth()), static_cast<int>(stage.GetHeight()));
 }
 
 FxVec2 Half(FxVec2 value) {
@@ -268,7 +268,7 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
             continue;
         }
         ent.SetCenter(RotatePoint(ent.GetCenter(), sim_old_dims, quarter_turns));
-        ent.pos = PixelVec2(ent.pos.x.round_int(), ent.pos.y.round_int());
+        ent.pos = FxVec2::from_int(ent.pos.x.round_int(), ent.pos.y.round_int());
         ent.vel = FxVec2::zero();
         ent.acc = FxVec2::zero();
         ent.grounded = false;

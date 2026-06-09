@@ -253,7 +253,7 @@ void SnapAttachedItemsToPlayer(State& state) {
 
         if (player->holding_vid.has_value()) {
             if (Ent* const held_item = state.ents.GetEntMut(*player->holding_vid)) {
-                const FxVec2 hold_offset = PixelVec2(4, 1);
+                const FxVec2 hold_offset = FxVec2::from_int(4, 1);
                 held_item->facing = player->facing;
                 held_item->draw_layer = DrawLayer::Foreground;
                 held_item->SetCenter(player->facing == Side::Left
@@ -265,7 +265,7 @@ void SnapAttachedItemsToPlayer(State& state) {
 
         if (player->back_vid.has_value()) {
             if (Ent* const back_item = state.ents.GetEntMut(*player->back_vid)) {
-                const FxVec2 back_offset = PixelVec2(-3, 0);
+                const FxVec2 back_offset = FxVec2::from_int(-3, 0);
                 back_item->facing = player->facing;
                 back_item->draw_layer = DrawLayer::Background;
                 TrySetAnim(*back_item, EntDisplayState::Neutral);
@@ -433,22 +433,22 @@ void SpawnAuthoredStageEnts(State& state) {
         switch (slot) {
         case 0:
             ent->ent_a = *spawned_vids[*linked_spawn_index];
-            ent->point_a = ToPixelIVec2Round(linked_ent->pos);
+            ent->point_a = ToIVec2Round(linked_ent->pos);
             ent->point_label_a = PointLabel::Target;
             break;
         case 1:
             ent->ent_b = *spawned_vids[*linked_spawn_index];
-            ent->point_b = ToPixelIVec2Round(linked_ent->pos);
+            ent->point_b = ToIVec2Round(linked_ent->pos);
             ent->point_label_b = PointLabel::Target;
             break;
         case 2:
             ent->ent_c = *spawned_vids[*linked_spawn_index];
-            ent->point_c = ToPixelIVec2Round(linked_ent->pos);
+            ent->point_c = ToIVec2Round(linked_ent->pos);
             ent->point_label_c = PointLabel::Target;
             break;
         case 3:
             ent->ent_d = *spawned_vids[*linked_spawn_index];
-            ent->point_d = ToPixelIVec2Round(linked_ent->pos);
+            ent->point_d = ToIVec2Round(linked_ent->pos);
             ent->point_label_d = PointLabel::Target;
             break;
         default:

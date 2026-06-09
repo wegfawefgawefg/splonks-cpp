@@ -23,7 +23,7 @@ constexpr std::uint32_t kBeamContactDamage = 1;
 
 bool HasSolidSupportAbove(const Ent& emitter, const State& state) {
     const FxVec2 probe =
-        emitter.GetCenter() + FxVec2::from_pixels(0, -kBeamSegmentSizePixels);
+        emitter.GetCenter() + FxVec2::from_int(0, -kBeamSegmentSizePixels);
     const std::optional<WorldTileQueryResult> tile_query =
         QueryTileAtWorldPos(state.stage, probe);
     return tile_query.has_value() && tile_query->tile != nullptr &&
@@ -65,7 +65,7 @@ void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
     for (std::size_t segment_idx = 0; segment_idx < static_cast<std::size_t>(kBeamSegmentCount); ++segment_idx) {
         const FxVec2 segment_center =
             emitter.GetCenter() +
-            FxVec2::from_pixels(
+            FxVec2::from_int(
                 0,
                 kBeamSegmentSizePixels * static_cast<int>(segment_idx + 1)
             );

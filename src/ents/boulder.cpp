@@ -51,13 +51,13 @@ FxAABB GetLeadingBreakStrip(const Ent& boulder) {
     const FxAABB aabb = boulder.GetAABB();
     if (boulder.facing == Side::Right) {
         return FxAABB::from_corners(
-            FxVec2{aabb.br.x + FxScalar::from_pixels(1), aabb.tl.y},
-            FxVec2{aabb.br.x + FxScalar::from_pixels(1), aabb.br.y}
+            FxVec2{aabb.br.x + FxScalar::from_int(1), aabb.tl.y},
+            FxVec2{aabb.br.x + FxScalar::from_int(1), aabb.br.y}
         );
     }
     return FxAABB::from_corners(
-        FxVec2{aabb.tl.x - FxScalar::from_pixels(1), aabb.tl.y},
-        FxVec2{aabb.tl.x - FxScalar::from_pixels(1), aabb.br.y}
+        FxVec2{aabb.tl.x - FxScalar::from_int(1), aabb.tl.y},
+        FxVec2{aabb.tl.x - FxScalar::from_int(1), aabb.br.y}
     );
 }
 
@@ -380,7 +380,7 @@ void StepEntLogicAsBoulder(
     if (boulder.ai_state == EntAiState::Idle && boulder.grounded) {
         boulder.ai_state = EntAiState::Disturbed;
         boulder.travel_sound_countdown = FxScalar::zero();
-        boulder.point_a = ToPixelIVec2Trunc(boulder.pos);
+        boulder.point_a = ToIVec2Trunc(boulder.pos);
         boulder.counter_b = FxScalar::zero();
         boulder.counter_c = FxScalar::zero();
         boulder.counter_d = FxScalar::zero();
@@ -472,7 +472,7 @@ void StepEntPhysicsAsBoulder(
             }
         }
 
-        const IVec2 current_pos = ToPixelIVec2Round(boulder.pos);
+        const IVec2 current_pos = ToIVec2Round(boulder.pos);
         if (current_pos == boulder.point_a) {
             boulder.counter_b += FxScalar::from_int(1);
         } else {

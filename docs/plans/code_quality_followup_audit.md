@@ -96,9 +96,9 @@ gameplay coordinate language.
 Plan:
 
 - [x] Replace fixed -> float -> fixed position offsets with fixed math such as
-  `holder->GetCenter() + PixelVec2(4, 1)`.
+  `holder->GetCenter() + FxVec2::from_int(4, 1)`.
 - [x] Replace `ToIVec2(ToFVec2(fx_vec))` with an explicit fixed-to-pixel helper
-  such as `ToPixelIVec2Trunc(...)` or `ToPixelIVec2Round(...)`.
+  such as `ToIVec2Trunc(...)` or `ToIVec2Round(...)`.
 - [x] Choose trunc vs round per call site; do not blindly replace semantics.
 
 ### Stale `Sim` Names In Fingerprint Internals
@@ -281,7 +281,7 @@ Decision:
 - `SimSnapshot` names. They refer to simulation snapshots, not fixed-point
   vectors.
 - `ToFVec2(...)`, `ToFAABB(...)`, `ToFxVec2(...)`, `ToFxScalar(...)`,
-  `ToPixelIVec2Round(...)`, and `ToPixelIVec2Trunc(...)`. These are boundary
+  `ToIVec2Round(...)`, and `ToIVec2Trunc(...)`. These are boundary
   conversion helpers. The problem is wrapping them in one-line functions that
   only rename the conversion.
 - Render, audio, UI, debug overlay, and authored-stage APIs that naturally deal

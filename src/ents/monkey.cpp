@@ -89,7 +89,7 @@ std::optional<FxVec2> FindNearbyClimbableCenter(const State& state, const Ent& m
     const FxVec2 center = monkey.GetCenter();
     for (const int probe_x : kMonkeyNearbyClimbProbeXs) {
         const std::optional<WorldTileQueryResult> tile_query =
-            QueryTileAtWorldPos(state.stage, center + PixelVec2(probe_x, 0));
+            QueryTileAtWorldPos(state.stage, center + FxVec2::from_int(probe_x, 0));
         if (!tile_query.has_value() || !IsTileQueryClimbable(state.stage, *tile_query)) {
             continue;
         }
@@ -131,7 +131,7 @@ std::optional<FxVec2> FindClimbableTargetCenter(const State& state, const Ent& m
             const int score = (std::abs(dx) * 2) + (std::abs(dy) * 3) + downward_penalty;
             if (!best_center.has_value() || score < best_score) {
                 best_score = score;
-                best_center = PixelVec2(
+                best_center = FxVec2::from_int(
                     tile_query->tile_pos.x * static_cast<int>(kTileSize) +
                         static_cast<int>(kTileSize / 2),
                     tile_query->tile_pos.y * static_cast<int>(kTileSize) +
@@ -576,7 +576,7 @@ void StepEntLogicAsMonkey(
         monkey.vel.x = FxScalar::zero();
         const bool moving_up = monkey.point_a.x == 0;
         monkey.vel.y = FxScalar::from_int(moving_up ? -kMonkeyClimbSpeed : kMonkeyClimbSpeed);
-        const FxVec2 probe = monkey.GetCenter() + PixelVec2(0, moving_up ? -8 : 14);
+        const FxVec2 probe = monkey.GetCenter() + FxVec2::from_int(0, moving_up ? -8 : 14);
         if (monkey.counter_a > FxScalar::zero()) {
             monkey.counter_a -= FxScalar::from_int(1);
         } else if (state.drng.RandomIntInclusive(1, 100) <= kMonkeyClimbSideDismountPercent) {
@@ -624,7 +624,7 @@ void StepEntLogicAsMonkey(
         monkey.point_a.x = side;
         monkey.facing = side < 0 ? Side::Right : Side::Left;
         monkey.SetCenter(player->GetCenter() +
-                            PixelVec2(side * kMonkeyPlayerAttachOffsetX,
+                            FxVec2::from_int(side * kMonkeyPlayerAttachOffsetX,
                                            kMonkeyPlayerAttachOffsetY));
         if (monkey.counter_a > FxScalar::zero()) {
             monkey.counter_a -= FxScalar::from_int(1);

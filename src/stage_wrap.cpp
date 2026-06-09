@@ -17,12 +17,12 @@ namespace {
 
 FxVec2 GetCoreOriginWc(const Stage& stage) {
     const UVec2 origin = stage.wrap_core_origin_tiles * kTileSize;
-    return PixelVec2(static_cast<std::int32_t>(origin.x), static_cast<std::int32_t>(origin.y));
+    return FxVec2::from_int(static_cast<std::int32_t>(origin.x), static_cast<std::int32_t>(origin.y));
 }
 
 FxVec2 GetCoreSizeWc(const Stage& stage) {
     const UVec2 size = stage.wrap_core_size_tiles * kTileSize;
-    return PixelVec2(static_cast<std::int32_t>(size.x), static_cast<std::int32_t>(size.y));
+    return FxVec2::from_int(static_cast<std::int32_t>(size.x), static_cast<std::int32_t>(size.y));
 }
 
 void ShiftActiveEnts(State& state, const FxVec2& sim_delta) {
@@ -311,7 +311,7 @@ void ExpandStageForWrap(
     stage.wrap_core_size_tiles = old_tile_dims;
 
     const IVec2 delta_pixels = ToIVec2(padding_tile_dims * kTileSize);
-    const FxVec2 sim_delta_wc = PixelVec2(delta_pixels.x, delta_pixels.y);
+    const FxVec2 sim_delta_wc = FxVec2::from_int(delta_pixels.x, delta_pixels.y);
     const FVec2 delta_wc = ToVec2(delta_pixels);
     ShiftActiveEnts(state, sim_delta_wc);
     ShiftStageSpawnsAndStamps(stage, delta_wc);
@@ -418,7 +418,7 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
     }
 
     const IVec2 delta_pixels = ToIVec2(core_origin * kTileSize);
-    const FxVec2 sim_delta_wc = PixelVec2(delta_pixels.x, delta_pixels.y);
+    const FxVec2 sim_delta_wc = FxVec2::from_int(delta_pixels.x, delta_pixels.y);
     const FVec2 delta_wc = ToVec2(delta_pixels);
     CropEntsAndShiftBack(state, sim_delta_wc);
     CropStageSpawnsAndStampsAndShiftBack(stage, delta_wc);

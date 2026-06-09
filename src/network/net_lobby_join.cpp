@@ -557,7 +557,7 @@ void HandleJoinAcceptAsPeer(
             player_id,
             true,
             false,
-            remote_spawn + PixelVec2(static_cast<int>(i) * 8, 0),
+            remote_spawn + FxVec2::from_int(static_cast<int>(i) * 8, 0),
             graphics
         );
     }

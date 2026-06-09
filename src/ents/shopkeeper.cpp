@@ -96,7 +96,7 @@ bool SpawnShopkeeperPistolIntoHands(std::size_t ent_idx, State& state, const Gra
         spawned_pistol.can_collide = false;
         spawned_pistol.counter_b = FxScalar::from_int(9999);
         spawned_pistol.facing = shopkeeper.facing;
-        spawned_pistol.SetCenter(shopkeeper.GetCenter() + FxVec2::from_pixels(4, 1));
+        spawned_pistol.SetCenter(shopkeeper.GetCenter() + FxVec2::from_int(4, 1));
         shopkeeper.holding_vid = spawned_pistol.vid;
         shopkeeper.holding = true;
         shopkeeper.ent_b = spawned_pistol.vid;
@@ -129,7 +129,7 @@ void SyncHeldPistolToShopkeeper(Ent& shopkeeper, Ent& pistol, State& state, cons
     pistol.draw_layer = DrawLayer::Foreground;
     StopUsingEnt(pistol);
 
-    const FxVec2 hold_offset = FxVec2::from_pixels(4, 1);
+    const FxVec2 hold_offset = FxVec2::from_int(4, 1);
     const FxVec2 shopkeeper_center = shopkeeper.GetCenter();
     const FxVec2 held_pos_target =
         shopkeeper.facing == Side::Left

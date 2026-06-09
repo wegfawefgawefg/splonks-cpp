@@ -73,8 +73,8 @@ const FVec2 render_center = ToFVec2(ent.GetCenter());
 ```
 
 The same applies inside `gfxp`: do not wrap `ceil_int()`, `round_int()`, or
-`trunc_int()` with `to_pixels_ceil()`, `to_pixels_round()`, or
-`to_pixels_trunc()` when the wrapper does nothing but change the name. Call the
+`trunc_int()` with `ceil_int()`, `round_int()`, or
+`trunc_int()` when the wrapper does nothing but change the name. Call the
 real rounding method directly.
 
 ## Naming Rules
@@ -173,7 +173,7 @@ Progress:
 4. Shorten conversion helpers.
    - Use `ToFVec2(...)`, `ToFxVec2(...)`, `ToFloat(...)`, and
      `ToFxScalar(...)`.
-   - Use `PixelVec2(...)` or `FxVec2::from_pixels(...)` based on local
+   - Use `FxVec2::from_int(...)` or `FxVec2::from_int(...)` based on local
      readability.
 
 5. Collapse entity fixed geometry accessor names.

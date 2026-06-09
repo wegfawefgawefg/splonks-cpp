@@ -92,7 +92,7 @@ void SpawnPistolImpactEffect(State& state, const FVec2& pos, int direction) {
 
 FxVec2 GetFallbackMuzzlePos(const Ent& pistol) {
     const int direction = pistol.facing == Side::Left ? -1 : 1;
-    return pistol.GetCenter() + PixelVec2(8 * direction, 1);
+    return pistol.GetCenter() + FxVec2::from_int(8 * direction, 1);
 }
 
 void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {

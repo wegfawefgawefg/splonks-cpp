@@ -95,7 +95,7 @@ std::vector<FxVec2> GetQueryOffsets(const Stage& stage, FxAABB area) {
 }
 
 bool PointInAabb(const IVec2& point, FxAABB aabb) {
-    const FxVec2 sim_point = PixelVec2(point.x, point.y);
+    const FxVec2 sim_point = FxVec2::from_int(point.x, point.y);
     return sim_point.x >= aabb.tl.x &&
            sim_point.x <= aabb.br.x &&
            sim_point.y >= aabb.tl.y &&
@@ -252,14 +252,14 @@ bool IsOneWayTopTileSupportingAabb(
     }
 
     const FxVec2 tile_tl =
-        FxVec2::from_pixels(tile_query.tile_pos.x * static_cast<int>(kTileSize),
+        FxVec2::from_int(tile_query.tile_pos.x * static_cast<int>(kTileSize),
                                tile_query.tile_pos.y * static_cast<int>(kTileSize));
     const FxAABB tile_aabb = GetNearestWorldAabb(
         stage,
         area.center(),
         FxAABB::from_corners(
             tile_tl,
-            tile_tl + FxVec2::from_pixels(static_cast<int>(kTileSize - 1),
+            tile_tl + FxVec2::from_int(static_cast<int>(kTileSize - 1),
                                              static_cast<int>(kTileSize - 1))
         )
     );
@@ -582,8 +582,8 @@ WorldRayHit RaycastHorizontal(
     const int ray_y = start_pos.y.trunc_int();
     const int end_x = start_x + (step_dir * max_distance);
     const FxAABB ray_aabb = FxAABB::from_corners(
-        PixelVec2(std::min(start_x, end_x), ray_y),
-        PixelVec2(std::max(start_x, end_x), ray_y)
+        FxVec2::from_int(std::min(start_x, end_x), ray_y),
+        FxVec2::from_int(std::max(start_x, end_x), ray_y)
     );
     const std::vector<RaycastTarget> targets =
         CollectRaycastTargets(source_ent, start_pos, ray_aabb, state, graphics, owner_vid);

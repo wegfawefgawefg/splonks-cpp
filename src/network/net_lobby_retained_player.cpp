@@ -22,11 +22,11 @@ FxVec2 GetPrimaryPlayerSpawnPos(const State& state) {
             }
         }
     }
-    return PixelVec2(24, 24);
+    return FxVec2::from_int(24, 24);
 }
 
 FxVec2 GetRemoteSpawnPos(const State& state) {
-    return GetPrimaryPlayerSpawnPos(state) + PixelVec2(16, 0);
+    return GetPrimaryPlayerSpawnPos(state) + FxVec2::from_int(16, 0);
 }
 
 FxVec2 GetEntranceOrRemoteSpawnPos(const State& state) {
@@ -232,7 +232,7 @@ FxVec2 ResolveReconnectSpawnPos(
     const NetRetainedPlayerState* retained,
     std::size_t player_index
 ) {
-    const FxVec2 player_offset = PixelVec2(static_cast<int>(player_index) * 8, 0);
+    const FxVec2 player_offset = FxVec2::from_int(static_cast<int>(player_index) * 8, 0);
     FxVec2 pos = GetRemoteSpawnPos(state) + player_offset;
     switch (state.net_session.reconnect_spawn_mode) {
     case NetReconnectSpawnMode::FreshAtEntrance:
@@ -241,7 +241,7 @@ FxVec2 ResolveReconnectSpawnPos(
         break;
     case NetReconnectSpawnMode::FreshAtHost:
     case NetReconnectSpawnMode::RetainedAtHost:
-        pos = GetPrimaryPlayerSpawnPos(state) + PixelVec2(16, 0) + player_offset;
+        pos = GetPrimaryPlayerSpawnPos(state) + FxVec2::from_int(16, 0) + player_offset;
         break;
     case NetReconnectSpawnMode::RetainedAtLastPosition:
         if (retained != nullptr) {

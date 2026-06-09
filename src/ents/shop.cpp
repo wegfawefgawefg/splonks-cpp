@@ -42,7 +42,7 @@ FxAABB GetShopArea(const Ent& shop) {
 
 void SetShopArea(Ent& shop, FxAABB area) {
     shop.pos = area.tl;
-    shop.size = area.br - area.tl + PixelVec2(1, 1);
+    shop.size = area.br - area.tl + FxVec2::from_int(1, 1);
     shop.point_a = IVec2::New(0, 0);
     shop.point_b = IVec2::New(0, 0);
     shop.point_label_a = PointLabel::None;

@@ -578,7 +578,7 @@ Cleanup:
       spawn/topology paths.
 - [x] Keep render `Vec2` spawning only for explicitly named debug/test
       authoring adapters.
-- Prefer `PixelVec2(...)` and fixed offsets for common integer-pixel spawn
+- Prefer `FxVec2::from_int(...)` and fixed offsets for common integer-pixel spawn
   spacing.
 
 ### 10. Generic entity counters remain generic
@@ -654,7 +654,7 @@ Cleanup:
 - Treat conversions inside authoritative gameplay as migration debt unless the
   function is clearly authoring, debug, tooling, audio, or rendering code.
 - Prefer fixed constructors such as `FxScalar::from_int`,
-  `FxVec2::from_pixels`, and `PixelVec2` for gameplay constants.
+  `FxVec2::from_int`, and `FxVec2::from_int` for gameplay constants.
 - Keep `ToF*` / `ToFAABB` conversions near render/debug/audio/UI, not in collision, damage,
   topology, stage mutation, or gameplay query code.
 - [x] Remove deterministic `RandomFloat` from authoritative entity launch

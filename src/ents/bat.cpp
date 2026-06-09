@@ -20,7 +20,7 @@ namespace {
 FxAABB GetAreaAbove(const Ent& bat) {
     const FxAABB aabb = bat.GetAABB();
     return FxAABB::from_corners(
-        FxVec2{aabb.tl.x, aabb.tl.y - FxScalar::from_pixels(1)},
+        FxVec2{aabb.tl.x, aabb.tl.y - FxScalar::from_int(1)},
         FxVec2{aabb.br.x, aabb.tl.y}
     );
 }
@@ -41,8 +41,8 @@ bool IsAtPerchOrRoof(const Ent& bat, const State& state) {
 std::optional<FxVec2> FindBatTargetPosition(const Ent& bat, const State& state) {
     constexpr int kVerticalDetectDist = 8 * static_cast<int>(kTileSize);
     constexpr int kHorizontalChaseDist = 4 * static_cast<int>(kTileSize);
-    const FxScalar vertical_detect_dist = FxScalar::from_pixels(kVerticalDetectDist);
-    const FxScalar horizontal_chase_dist = FxScalar::from_pixels(kHorizontalChaseDist);
+    const FxScalar vertical_detect_dist = FxScalar::from_int(kVerticalDetectDist);
+    const FxScalar horizontal_chase_dist = FxScalar::from_int(kHorizontalChaseDist);
 
     std::optional<FxVec2> best_target;
     FxScalar best_dist_sq{};
@@ -80,7 +80,7 @@ void SnapBatToRoof(Ent& bat, const State& state) {
     }
 
     for (int i = 0; i < static_cast<int>(kTileSize); ++i) {
-        bat.pos.y -= FxScalar::from_pixels(1);
+        bat.pos.y -= FxScalar::from_int(1);
         if (IsAtPerchOrRoof(bat, state)) {
             return;
         }

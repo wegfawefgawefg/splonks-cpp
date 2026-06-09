@@ -123,14 +123,14 @@ void StepVerticalPingPong(Ent& platform) {
 }
 
 void StepCircle(Ent& platform) {
-    const FxVec2 center = PixelVec2(platform.point_a.x, platform.point_a.y);
+    const FxVec2 center = FxVec2::from_int(platform.point_a.x, platform.point_a.y);
     const int radius = platform.threshold_a.round_int();
     const int path_idx = PositiveModulo(
         platform.counter_a.trunc_int(),
         static_cast<int>(kCirclePath.size())
     );
     const CircleUnit unit = kCirclePath[static_cast<std::size_t>(path_idx)];
-    const FxVec2 desired_pos = center + PixelVec2(
+    const FxVec2 desired_pos = center + FxVec2::from_int(
         static_cast<int>(DivRoundNearest(static_cast<std::int64_t>(unit.x) * radius,
                                          kCircleUnitScale)),
         static_cast<int>(DivRoundNearest(static_cast<std::int64_t>(unit.y) * radius,

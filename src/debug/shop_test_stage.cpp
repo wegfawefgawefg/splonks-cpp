@@ -152,9 +152,9 @@ FxAABB MakeShopTestArea(const ShopTestStallSpec& stall) {
     constexpr int kShopTopY = 4;
     constexpr int kShopBottomY = 10;
     return FxAABB::from_corners(
-        PixelVec2(stall.left_x * static_cast<int>(kTileSize),
+        FxVec2::from_int(stall.left_x * static_cast<int>(kTileSize),
                        kShopTopY * static_cast<int>(kTileSize)),
-        PixelVec2((stall.right_x + 1) * static_cast<int>(kTileSize) - 1,
+        FxVec2::from_int((stall.right_x + 1) * static_cast<int>(kTileSize) - 1,
                        (kShopBottomY + 1) * static_cast<int>(kTileSize) - 1)
     );
 }
@@ -259,7 +259,7 @@ void SpawnShopTestCrapsTable(
     if (table == nullptr) {
         return;
     }
-    table->size = shop_area.br - shop_area.tl + PixelVec2(1, 1);
+    table->size = shop_area.br - shop_area.tl + FxVec2::from_int(1, 1);
     table->ent_a = shop_vid;
     table->ent_b = dice_vid;
     table->ent_c = prize_vid;

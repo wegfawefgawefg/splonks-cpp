@@ -99,7 +99,7 @@ void UpdateOpenParachuteVisual(Ent& owner, State& state, const Graphics& graphic
     const FxVec2 owner_visual_center =
         common::GetVisualCenterForEnt(owner, graphics, owner.GetCenter());
     parachute->SetCenter(
-        owner_visual_center + FxVec2::from_pixels(0, kParachuteVisualOffsetYPixels)
+        owner_visual_center + FxVec2::from_int(0, kParachuteVisualOffsetYPixels)
     );
     parachute->vel = FxVec2::zero();
     parachute->acc = FxVec2::zero();

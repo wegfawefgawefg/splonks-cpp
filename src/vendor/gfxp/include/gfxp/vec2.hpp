@@ -19,8 +19,8 @@ template <typename FixedT> struct BasicVec2 {
         return BasicVec2{FixedT::from_raw(x_raw), FixedT::from_raw(y_raw)};
     }
 
-    [[nodiscard]] static constexpr BasicVec2 from_pixels(int32_t x_pixels, int32_t y_pixels) {
-        return BasicVec2{FixedT::from_pixels(x_pixels), FixedT::from_pixels(y_pixels)};
+    [[nodiscard]] static constexpr BasicVec2 from_int(int32_t x, int32_t y) {
+        return BasicVec2{FixedT::from_int(x), FixedT::from_int(y)};
     }
 
     constexpr BasicVec2& operator+=(BasicVec2 other) {

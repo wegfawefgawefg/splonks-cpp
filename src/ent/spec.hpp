@@ -16,7 +16,7 @@ using EntBuildHudEntry = void (*)(const Ent& ent, const State& state, HudEntrySo
 
 struct EntSpec {
     EntType type_ = EntType::None;
-    FxVec2 size = FxVec2::from_pixels(8, 8);
+    FxVec2 size = FxVec2::from_int(8, 8);
     std::uint32_t health = 0;
     bool has_physics = true;
     bool can_collide = true;

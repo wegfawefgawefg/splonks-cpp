@@ -109,7 +109,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
             continue;
         }
 
-        const FxVec2 spawn_pos = *entrance_pos + PixelVec2(respawn_index * 8, 0);
+        const FxVec2 spawn_pos = *entrance_pos + FxVec2::from_int(respawn_index * 8, 0);
         ++respawn_index;
 
         Ent* ent = nullptr;
@@ -191,7 +191,7 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
             continue;
         }
 
-        const FxVec2 spawn_pos = *entrance_pos + PixelVec2(respawn_index * 8, 0);
+        const FxVec2 spawn_pos = *entrance_pos + FxVec2::from_int(respawn_index * 8, 0);
         ++respawn_index;
 
         if (!IsPlayerEntDeadOrMissing(state, slot)) {
@@ -303,7 +303,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
             continue;
         }
 
-        const FxVec2 spawn_pos = *entrance_pos + PixelVec2(spawn_index * 8, 0);
+        const FxVec2 spawn_pos = *entrance_pos + FxVec2::from_int(spawn_index * 8, 0);
         ++spawn_index;
 
         Ent* ent = nullptr;

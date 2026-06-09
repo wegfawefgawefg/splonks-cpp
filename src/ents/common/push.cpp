@@ -91,8 +91,8 @@ bool TryApplyPushEntAction(
 
     const FxAABB pusher_aabb = GetContactAabbForEnt(*pusher, graphics);
     const FxAABB push_zone{
-        .tl = pusher_aabb.tl - PixelVec2(6, 0),
-        .br = pusher_aabb.br + PixelVec2(6, 0),
+        .tl = pusher_aabb.tl - FxVec2::from_int(6, 0),
+        .br = pusher_aabb.br + FxVec2::from_int(6, 0),
     };
     const FxVec2 pusher_center = pusher_aabb.center();
     const FxAABB pushed_aabb = GetNearestWorldAabb(
@@ -130,8 +130,8 @@ void TryPushBlocks(
     bool ready_to_push = false;
     if (ent_grounded) {
         const FxAABB try_to_push_zone = {
-            .tl = ent_aabb.tl - PixelVec2(6, 0),
-            .br = ent_aabb.br + PixelVec2(6, 0),
+            .tl = ent_aabb.tl - FxVec2::from_int(6, 0),
+            .br = ent_aabb.br + FxVec2::from_int(6, 0),
         };
         const std::vector<VID> search_results =
             QueryEntsInAabb(state, try_to_push_zone, ent_vid);
@@ -186,9 +186,9 @@ bool TryDisplaceEntByOnePixel(
         return false;
     }
 
-    const FxVec2 candidate_pos = ent.pos + PixelVec2(direction.x, direction.y);
+    const FxVec2 candidate_pos = ent.pos + FxVec2::from_int(direction.x, direction.y);
     const FxAABB candidate_aabb =
-        FxAABB::from_pos_size(candidate_pos, ent.size - PixelVec2(1, 1));
+        FxAABB::from_pos_size(candidate_pos, ent.size - FxVec2::from_int(1, 1));
     const BlockingContactSet contacts =
         GatherBlockingContactsForAabb(ent_idx, candidate_aabb, state, true, true);
     if (ResolveBlockingContactSet(ent_idx, contacts, state).blocks_movement) {

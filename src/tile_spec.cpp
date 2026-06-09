@@ -24,13 +24,13 @@ Ent* SpawnEntAtCenter(EntType type_, FxVec2 center, State& state) {
 
 void OnBreakAsBigGoldMaterial(const IVec2& tile_pos, State& state, Audio& audio) {
     (void)audio;
-    const FxVec2 center = PixelVec2(
+    const FxVec2 center = FxVec2::from_int(
         tile_pos.x * static_cast<int>(kTileSize) + 8,
         tile_pos.y * static_cast<int>(kTileSize) + 8
     );
-    SpawnEntAtCenter(EntType::GoldChunk, center + PixelVec2(-4, -1), state);
-    SpawnEntAtCenter(EntType::GoldChunk, center + PixelVec2(0, 1), state);
-    SpawnEntAtCenter(EntType::GoldChunk, center + PixelVec2(4, -1), state);
+    SpawnEntAtCenter(EntType::GoldChunk, center + FxVec2::from_int(-4, -1), state);
+    SpawnEntAtCenter(EntType::GoldChunk, center + FxVec2::from_int(0, 1), state);
+    SpawnEntAtCenter(EntType::GoldChunk, center + FxVec2::from_int(4, -1), state);
     SpawnEntAtCenter(EntType::GoldNugget, center, state);
 }
 

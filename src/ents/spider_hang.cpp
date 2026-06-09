@@ -23,7 +23,7 @@ bool HasCeilingSupport(const Ent& ent, const State& state) {
     const FxAABB aabb = ent.GetAABB();
     const FxVec2 sample_pos = FxVec2{
         aabb.center().x,
-        aabb.tl.y - FxScalar::from_pixels(1),
+        aabb.tl.y - FxScalar::from_int(1),
     };
     const std::optional<WorldTileQueryResult> tile_query = QueryTileAtWorldPos(state.stage, sample_pos);
     return tile_query.has_value() && tile_query->tile != nullptr && IsTileCollidable(*tile_query->tile);

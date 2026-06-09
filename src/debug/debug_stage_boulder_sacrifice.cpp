@@ -135,7 +135,7 @@ void InitBoulderTestStage(State& state) {
         const Ent* const idol = state.ents.GetEnt(*idol_vid);
         if (head != nullptr && idol != nullptr) {
             head->ent_a = *idol_vid;
-            head->point_a = ToPixelIVec2Trunc(idol->pos);
+            head->point_a = ToIVec2Trunc(idol->pos);
             head->point_label_a = PointLabel::Target;
         }
     }

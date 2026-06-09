@@ -592,7 +592,7 @@ void InitBigMonkeySampleStage(State& state) {
 
     for (int room_y = 0; room_y < 4; ++room_y) {
         for (int room_x = 0; room_x < 4; ++room_x) {
-            const FxVec2 center = PixelVec2(
+            const FxVec2 center = FxVec2::from_int(
                 (room_x * 10 + 5) * static_cast<int>(kTileSize),
                 (room_y * 8 + 4) * static_cast<int>(kTileSize)
             );

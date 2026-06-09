@@ -19,15 +19,11 @@ struct FxColor3 {
     FxScalar b = FxScalar::from_int(1);
 };
 
-[[nodiscard]] constexpr FxVec2 PixelVec2(std::int32_t x, std::int32_t y) {
-    return FxVec2::from_pixels(x, y);
-}
-
-[[nodiscard]] inline IVec2 ToPixelIVec2Round(FxVec2 value) {
+[[nodiscard]] inline IVec2 ToIVec2Round(FxVec2 value) {
     return IVec2::New(value.x.round_int(), value.y.round_int());
 }
 
-[[nodiscard]] inline IVec2 ToPixelIVec2Trunc(FxVec2 value) {
+[[nodiscard]] inline IVec2 ToIVec2Trunc(FxVec2 value) {
     return IVec2::New(value.x.trunc_int(), value.y.trunc_int());
 }
 

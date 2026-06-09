@@ -2814,7 +2814,7 @@ bool RunRetainedReconnectSmoke() {
 
     state.net_session.reconnect_spawn_mode = network::NetReconnectSpawnMode::RetainedAtLastPosition;
     const FxVec2 spawn_pos = network::ResolveReconnectSpawnPos(state, retained, 1);
-    if (spawn_pos != PixelVec2(128, 192)) {
+    if (spawn_pos != FxVec2::from_int(128, 192)) {
         std::cerr << "retained reconnect smoke failed: retained spawn pos mismatch\n";
         return false;
     }

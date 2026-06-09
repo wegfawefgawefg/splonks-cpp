@@ -160,13 +160,13 @@ void OnDeathAsPot(std::size_t ent_idx, State& state, Audio& audio) {
 
     const FxVec2 spawn_pos = pot.pos;
     SpawnBreakawayContainerShards(ToFVec2(pot.GetCenter()), state);
-    const FxVec2 spider_spawn_pos = pot.pos + PixelVec2(-8, -8);
+    const FxVec2 spider_spawn_pos = pot.pos + FxVec2::from_int(-8, -8);
 
-    FxVec2 snake_spawn_pos = pot.pos + PixelVec2(-8, -8);
+    FxVec2 snake_spawn_pos = pot.pos + FxVec2::from_int(-8, -8);
     if (pot.point_a.x < 0) {
-        snake_spawn_pos = pot.pos + PixelVec2(0, -8);
+        snake_spawn_pos = pot.pos + FxVec2::from_int(0, -8);
     } else if (pot.point_a.x > 0) {
-        snake_spawn_pos = pot.pos + PixelVec2(-16, -8);
+        snake_spawn_pos = pot.pos + FxVec2::from_int(-16, -8);
     }
 
     if (state.drng.RandomIntInclusive(1, 3) == 1) {

@@ -24,19 +24,19 @@ Ent* SpawnEntAtCenter(EntType type_, FxVec2 center, State& state) {
 }
 
 void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const IVec2& tile_pos, State& state) {
-    const FxVec2 center = PixelVec2(
+    const FxVec2 center = FxVec2::from_int(
         tile_pos.x * static_cast<int>(kTileSize) + 8,
         tile_pos.y * static_cast<int>(kTileSize) + 8
     );
     static const std::array<FxVec2, 8> kDropOffsets{{
-        PixelVec2(-4, -1),
-        PixelVec2(0, 1),
-        PixelVec2(4, -1),
-        PixelVec2(-2, 3),
-        PixelVec2(2, -3),
-        PixelVec2(-5, 2),
-        PixelVec2(5, 2),
-        PixelVec2(0, -4),
+        FxVec2::from_int(-4, -1),
+        FxVec2::from_int(0, 1),
+        FxVec2::from_int(4, -1),
+        FxVec2::from_int(-2, 3),
+        FxVec2::from_int(2, -3),
+        FxVec2::from_int(-5, 2),
+        FxVec2::from_int(5, 2),
+        FxVec2::from_int(0, -4),
     }};
 
     std::size_t offset_index = 0;
@@ -64,7 +64,7 @@ void SpawnTileBreakAnim(AFrameId anim_id, const IVec2& tile_pos, State& state) {
 }
 
 void NotifyAreaEntsTileChanged(const IVec2& tile_pos, State& state, Audio& audio) {
-    const FxVec2 tile_center = PixelVec2(
+    const FxVec2 tile_center = FxVec2::from_int(
         tile_pos.x * static_cast<int>(kTileSize) + 8,
         tile_pos.y * static_cast<int>(kTileSize) + 8
     );

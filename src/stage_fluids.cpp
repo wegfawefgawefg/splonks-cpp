@@ -231,7 +231,7 @@ void AddFluidTransferProposalsForCell(
         }
 
         const FxScalar target_amount = GetAmountFromGrid(amounts, *resolved_target);
-        const FxVec2 direction = FxNormalizeOrZero(PixelVec2(offset.x, offset.y));
+        const FxVec2 direction = FxNormalizeOrZero(FxVec2::from_int(offset.x, offset.y));
         const FxScalar velocity_score =
             ClampScalar(Dot(source_velocity, direction), kZero, kVelocityClamp);
         const FxScalar directional_pressure_gate =

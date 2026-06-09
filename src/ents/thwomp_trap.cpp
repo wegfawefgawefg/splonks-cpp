@@ -30,11 +30,11 @@ void StoreHomePosition(Ent& thwomp) {
         return;
     }
     thwomp.point_label_a = PointLabel::Target;
-    thwomp.point_a = ToPixelIVec2Round(thwomp.pos);
+    thwomp.point_a = ToIVec2Round(thwomp.pos);
 }
 
 FxScalar GetHomeY(const Ent& thwomp) {
-    return FxScalar::from_pixels(thwomp.point_a.y);
+    return FxScalar::from_int(thwomp.point_a.y);
 }
 
 bool IsDropping(const Ent& thwomp) {

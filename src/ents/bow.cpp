@@ -86,7 +86,7 @@ void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
     (void)world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         const FxVec2 spawn_center = bow.GetCenter() +
                                        (aim.direction * FxScalar::from_int(12));
-        arrow.SetCenter(PixelVec2(spawn_center.x.round_int(),
+        arrow.SetCenter(FxVec2::from_int(spawn_center.x.round_int(),
                                           spawn_center.y.round_int()));
         arrow.vel = aim.direction * ToFxScalar(kBowArrowSpeed);
         arrow.acc = FxVec2::zero();

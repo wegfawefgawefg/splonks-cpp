@@ -57,13 +57,13 @@ bool IsSwinging(const Ent& mattock) {
 }
 
 FxAABB TileAabbForTilePos(const IVec2& tile_pos) {
-    const FxVec2 tile_tl = PixelVec2(
+    const FxVec2 tile_tl = FxVec2::from_int(
         tile_pos.x * static_cast<int>(kTileSize),
         tile_pos.y * static_cast<int>(kTileSize)
     );
     return FxAABB::from_corners(
         tile_tl,
-        tile_tl + PixelVec2(static_cast<int>(kTileSize - 1), static_cast<int>(kTileSize - 1))
+        tile_tl + FxVec2::from_int(static_cast<int>(kTileSize - 1), static_cast<int>(kTileSize - 1))
     );
 }
 
@@ -206,7 +206,7 @@ void AddMattockDebugAnnotations(
 
     if (holder == nullptr) {
         const FxVec2 fallback = GetFallbackStrikePoint(mattock);
-        const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToPixelIVec2Trunc(fallback));
+        const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToIVec2Trunc(fallback));
         state.AddDebugRectAnnotation(DebugRectAnnotation{
             .area = ToFAABB(TileAabbForTilePos(fallback_tile)),
             .color = DebugAnnotationColor{255, 0, 0, 255},
@@ -362,7 +362,7 @@ StrikeOutcome ComputeMattockStrikeOutcome(
 ) {
     if (holder == nullptr) {
         const FxVec2 fallback = GetFallbackStrikePoint(mattock);
-        const IVec2 tile_pos = state.stage.GetTileCoordAtWc(ToPixelIVec2Trunc(fallback));
+        const IVec2 tile_pos = state.stage.GetTileCoordAtWc(ToIVec2Trunc(fallback));
         return TryStrikeTileCoord(tile_pos, state, audio);
     }
 

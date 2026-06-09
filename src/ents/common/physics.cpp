@@ -22,7 +22,7 @@ bool VidLess(const VID& left, const VID& right) {
 }
 
 FxAABB GetAabbAtPosition(const Ent& ent, FxVec2 pos) {
-    return FxAABB::from_pos_size(pos, ent.size - FxVec2::from_pixels(1, 1));
+    return FxAABB::from_pos_size(pos, ent.size - FxVec2::from_int(1, 1));
 }
 
 void StoreDistanceTraveled(std::size_t ent_idx, State& state, FxVec2 start_pos) {
@@ -59,7 +59,7 @@ void ResolveBlockingOverlap(
     for (int distance = 1; distance <= max_push; ++distance) {
         for (const IVec2& direction : candidates) {
             const FxVec2 candidate_pos =
-                ent.pos + FxVec2::from_pixels(direction.x * distance, direction.y * distance);
+                ent.pos + FxVec2::from_int(direction.x * distance, direction.y * distance);
             const FxAABB candidate_aabb = GetAabbAtPosition(ent, candidate_pos);
             const BlockingContactSet candidate_contacts = GatherBlockingContactsForAabb(
                 ent_idx, candidate_aabb, state, check_tiles, check_ents);
@@ -92,14 +92,14 @@ BlockingImpactSurface GetImpactSurfaceForBlockedContacts(const BlockingContactSe
 
 FxAABB GetTileAabbForContact(const TileContact& tile_contact, const Stage& stage, FxVec2 anchor) {
     const FxVec2 tile_tl =
-        FxVec2::from_pixels(tile_contact.tile_pos.x * static_cast<int>(kTileSize),
+        FxVec2::from_int(tile_contact.tile_pos.x * static_cast<int>(kTileSize),
                                tile_contact.tile_pos.y * static_cast<int>(kTileSize));
     return GetNearestWorldAabb(
         stage,
         anchor,
         FxAABB::from_corners(
             tile_tl,
-            tile_tl + FxVec2::from_pixels(static_cast<int>(kTileSize - 1),
+            tile_tl + FxVec2::from_int(static_cast<int>(kTileSize - 1),
                                              static_cast<int>(kTileSize - 1)))
     );
 }
@@ -249,7 +249,7 @@ float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
     const VID vid = ent.vid;
     const FxAABB feet_aabb = {
         .tl = FxVec2{ent_aabb.tl.x, ent_aabb.br.y},
-        .br = ent_aabb.br + PixelVec2(0, 1),
+        .br = ent_aabb.br + FxVec2::from_int(0, 1),
     };
     for (const VID& other_vid : QueryEntsInAabb(state, feet_aabb, vid)) {
         const Ent* const other = state.ents.GetEnt(other_vid);
@@ -525,7 +525,7 @@ void MoveEntPixelStep(
                 state,
                 hanging_carry_vids
             );
-            const FxVec2 next_pos = ent.pos + FxVec2::from_pixels(1, 0);
+            const FxVec2 next_pos = ent.pos + FxVec2::from_int(1, 0);
             const FxAABB current_aabb = ent.GetAABB();
             const FxAABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
@@ -616,7 +616,7 @@ void MoveEntPixelStep(
                 state,
                 hanging_carry_vids
             );
-            const FxVec2 next_pos = ent.pos + FxVec2::from_pixels(-1, 0);
+            const FxVec2 next_pos = ent.pos + FxVec2::from_int(-1, 0);
             const FxAABB current_aabb = ent.GetAABB();
             const FxAABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
@@ -715,7 +715,7 @@ void MoveEntPixelStep(
                 state,
                 hanging_carry_vids
             );
-            const FxVec2 next_pos = ent.pos + FxVec2::from_pixels(0, 1);
+            const FxVec2 next_pos = ent.pos + FxVec2::from_int(0, 1);
             const FxAABB current_aabb = ent.GetAABB();
             const FxAABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
@@ -815,7 +815,7 @@ void MoveEntPixelStep(
                 state,
                 hanging_carry_vids
             );
-            const FxVec2 next_pos = ent.pos + FxVec2::from_pixels(0, -1);
+            const FxVec2 next_pos = ent.pos + FxVec2::from_int(0, -1);
             const FxAABB current_aabb = ent.GetAABB();
             const FxAABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
@@ -910,7 +910,7 @@ bool IsGroundedOnEnts(std::size_t ent_idx, State& state) {
     const VID vid = ent.vid;
     const FxAABB feet_aabb = {
         .tl = FxVec2{ent_aabb.tl.x, ent_aabb.br.y},
-        .br = ent_aabb.br + PixelVec2(0, 1),
+        .br = ent_aabb.br + FxVec2::from_int(0, 1),
     };
     const std::vector<VID> ents_at_feet =
         QueryEntsInAabb(state, feet_aabb, vid);

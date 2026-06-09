@@ -141,7 +141,7 @@ void StepEntLogicAsGiantTikiHead(
     }
 
     if (head.ai_state == EntAiState::Idle) {
-        if (ToPixelIVec2Round(idol->pos) == head.point_a) {
+        if (ToIVec2Round(idol->pos) == head.point_a) {
             return;
         }
 

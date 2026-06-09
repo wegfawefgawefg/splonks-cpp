@@ -56,7 +56,7 @@ std::optional<FVec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
     const FxAABB player_aabb = player.GetAABB();
     const int air_tile_y = state.stage.GetTileCoordAtWc(IVec2::New(
         player_aabb.br.x.trunc_int(),
-        (player_aabb.br.y - FxScalar::from_pixels(1)).trunc_int()
+        (player_aabb.br.y - FxScalar::from_int(1)).trunc_int()
     )).y;
     const FxVec2 player_center = player.GetCenter();
     const int center_tile_x = state.stage.GetTileCoordAtWc(IVec2::New(

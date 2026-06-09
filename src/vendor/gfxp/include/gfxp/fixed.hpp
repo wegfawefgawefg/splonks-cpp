@@ -112,20 +112,12 @@ template <typename Raw, int FracBits> struct BasicFixed {
         return BasicFixed{static_cast<Raw>(value * static_cast<int32_t>(scale))};
     }
 
-    [[nodiscard]] static constexpr BasicFixed from_pixels(int32_t value) {
-        return from_int(value);
-    }
-
     [[nodiscard]] static constexpr std::optional<BasicFixed> checked_from_int(int32_t value) {
         const wide_type raw_value = static_cast<wide_type>(value) * static_cast<wide_type>(scale);
         const std::optional<Raw> checked = detail::checked_raw<Raw>(raw_value);
         if (!checked)
             return std::nullopt;
         return BasicFixed{*checked};
-    }
-
-    [[nodiscard]] static constexpr std::optional<BasicFixed> checked_from_pixels(int32_t value) {
-        return checked_from_int(value);
     }
 
     [[nodiscard]] static constexpr std::optional<BasicFixed>

@@ -163,7 +163,7 @@ void StepEntLogicAsBasicExit(
                       nearest_exit_aabb.tl.y}
         );
         state.AddWorldPrompt(WorldPrompt{
-            .world_pos = ToFVec2(prompt_base + PixelVec2(0, -6)),
+            .world_pos = ToFVec2(prompt_base + FxVec2::from_int(0, -6)),
             .action_text = player_prompt->action_text,
             .message_text = player_prompt->message_text,
             .show_down_arrow = player_prompt->show_down_arrow,

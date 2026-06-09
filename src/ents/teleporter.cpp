@@ -54,7 +54,7 @@ bool IsDiagonalDirection(const IVec2& direction) {
 }
 
 FxVec2 TileCenterForTilePos(const IVec2& tile_pos) {
-    return FxVec2::from_pixels(
+    return FxVec2::from_int(
         tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2),
         tile_pos.y * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2)
     );
@@ -225,7 +225,7 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
 ) {
     const FxVec2 holder_visual_center =
         common::GetVisualCenterForEnt(holder, graphics, holder.GetCenter());
-    const IVec2 holder_tile = state.stage.GetTileCoordAtWc(ToPixelIVec2Round(holder_visual_center));
+    const IVec2 holder_tile = state.stage.GetTileCoordAtWc(ToIVec2Round(holder_visual_center));
     const IVec2 raw_target_tile = holder_tile + IVec2::New(aim.direction.x * distance_tiles, aim.direction.y * distance_tiles);
     const IVec2 target_tile = state.stage.WrapTileCoord(raw_target_tile);
     const FxVec2 destination_center = TileCenterForTilePos(target_tile);
@@ -451,7 +451,7 @@ void MoveTeleportHolderToDestination(
     const Graphics& graphics
 ) {
     common::SetVisualCenterForEnt(holder, graphics, destination_center);
-    holder.pos = PixelVec2(holder.pos.x.round_int(), holder.pos.y.round_int());
+    holder.pos = FxVec2::from_int(holder.pos.x.round_int(), holder.pos.y.round_int());
     holder.grounded = false;
     holder.hang_side.reset();
     SetMovementFlag(holder, EntMovementFlag::Climbing, false);

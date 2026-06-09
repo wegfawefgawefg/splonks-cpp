@@ -113,13 +113,13 @@ FxAABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResul
     default:
         break;
     }
-    const FxVec2 tile_tl = PixelVec2(
+    const FxVec2 tile_tl = FxVec2::from_int(
         tile_query.tile_pos.x * static_cast<int>(kTileSize),
         tile_query.tile_pos.y * static_cast<int>(kTileSize)
     );
     const FxAABB cbox_aabb = FxAABB::from_corners(
-        tile_tl + PixelVec2(cbox.x, cbox.y),
-        tile_tl + PixelVec2(cbox.x + cbox.w - 1, cbox.y + cbox.h - 1)
+        tile_tl + FxVec2::from_int(cbox.x, cbox.y),
+        tile_tl + FxVec2::from_int(cbox.x + cbox.w - 1, cbox.y + cbox.h - 1)
     );
     return GetNearestWorldAabb(stage, anchor, cbox_aabb);
 }

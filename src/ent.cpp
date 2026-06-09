@@ -60,7 +60,7 @@ Ent Ent::New() {
     ent.jump_hold_gravity_frames_remaining = 0;
     ent.throw_velocity_scale = FxScalar::from_int(1);
     ent.buoyancy = FxScalar::zero();
-    ent.size = FxVec2::from_pixels(8, 8);
+    ent.size = FxVec2::from_int(8, 8);
     ent.self_light = FxScalar::zero();
     ent.light_strength = FxScalar::zero();
     ent.light_color = ToFxColor3(Color3::White());
@@ -222,7 +222,7 @@ void ClearTransientMovementFlags(Ent& ent) {
 }
 
 FxAABB Ent::GetAABB() const {
-    return FxAABB::from_pos_size(pos, size - FxVec2::from_pixels(1, 1));
+    return FxAABB::from_pos_size(pos, size - FxVec2::from_int(1, 1));
 }
 
 FxVec2 Ent::GetCenter() const {

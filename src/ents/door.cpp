@@ -57,7 +57,7 @@ bool HasTargetTopY(const Ent& door) {
 }
 
 FxScalar GetTargetTopY(const Ent& door) {
-    return FxScalar::from_pixels(door.point_a.y);
+    return FxScalar::from_int(door.point_a.y);
 }
 
 float GetMoveDirection(const Ent& door) {

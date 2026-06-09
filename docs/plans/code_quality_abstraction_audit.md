@@ -54,8 +54,8 @@ IVec2::New(point.x.trunc_int(), point.y.trunc_int())
 
 Status:
 
-- [x] Move one shared helper into `src/fxp.hpp`, near `ToPixelIVec2Round(...)`.
-- [x] Use the direct name `ToPixelIVec2Trunc(...)`.
+- [x] Move one shared helper into `src/fxp.hpp`, near `ToIVec2Round(...)`.
+- [x] Use the direct name `ToIVec2Trunc(...)`.
 - [x] Replace the local copies.
 
 ### Repeated `FloorDiv`
@@ -197,7 +197,7 @@ These looked wrapper-heavy in broad text scans, but they are not the same smell:
 ## Suggested Cleanup Order
 
 1. [x] Remove dead nearest-player `FVec2` overloads.
-2. [x] Add shared `ToPixelIVec2Trunc(...)` and remove duplicate local copies.
+2. [x] Add shared `ToIVec2Trunc(...)` and remove duplicate local copies.
 3. [x] Centralize integer `FloorDiv(...)`.
 4. [x] Delete one-line local wrappers in `world_query.cpp` and
    `render/tiles_and_ents.cpp`.

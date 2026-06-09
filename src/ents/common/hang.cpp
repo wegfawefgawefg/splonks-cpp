@@ -46,7 +46,7 @@ FxAABB PointAabb(FxScalar x, FxScalar y) {
 }
 
 FxScalar HalfWidthFloor(const Ent& ent) {
-    return FxScalar::from_pixels((ent.size.x / 2).floor_int());
+    return FxScalar::from_int((ent.size.x / 2).floor_int());
 }
 
 void AddClimbDebugLabel(State& state, const FVec2& world_pos, const char* text) {
@@ -188,7 +188,7 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
             continue;
         }
 
-        const FxVec2 tile_center = FxVec2::from_pixels(
+        const FxVec2 tile_center = FxVec2::from_int(
             tile_query->tile_pos.x * static_cast<int>(kTileSize) + 8,
             tile_query->tile_pos.y * static_cast<int>(kTileSize) + 8
         );
@@ -229,7 +229,7 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
         ToIVec2(probes.center),
         ToIVec2(probes.right),
     };
-    const int probe_y = (aabb.br.y + FxScalar::from_pixels(1)).floor_int();
+    const int probe_y = (aabb.br.y + FxScalar::from_int(1)).floor_int();
     const std::array<IVec2, 3> probe_points = {
         IVec2::New(FloorToInt(probes.left.x), probe_y),
         IVec2::New(FloorToInt(probes.center.x), probe_y),
@@ -246,8 +246,8 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
     }
 
     const std::array<IVec2, 2> edge_probe_points = {
-        IVec2::New((aabb.tl.x - FxScalar::from_pixels(1)).floor_int(), probe_y),
-        IVec2::New((aabb.br.x + FxScalar::from_pixels(1)).floor_int(), probe_y),
+        IVec2::New((aabb.tl.x - FxScalar::from_int(1)).floor_int(), probe_y),
+        IVec2::New((aabb.br.x + FxScalar::from_int(1)).floor_int(), probe_y),
     };
     for (const IVec2& edge_probe_point : edge_probe_points) {
         AddClimbDebugRect(state, ToVec2(edge_probe_point), DebugAnnotationColor{255, 240, 64, 255});
@@ -497,11 +497,11 @@ bool IsSideBlockedForHang(
     const FxAABB wall_area =
         left_side
             ? FxAABB::from_corners(
-                  FxVec2{aabb.tl.x - FxScalar::from_pixels(1), aabb.tl.y},
+                  FxVec2{aabb.tl.x - FxScalar::from_int(1), aabb.tl.y},
                   FxVec2{aabb.tl.x, aabb.br.y})
             : FxAABB::from_corners(
                   FxVec2{aabb.br.x, aabb.tl.y},
-                  FxVec2{aabb.br.x + FxScalar::from_pixels(1), aabb.br.y});
+                  FxVec2{aabb.br.x + FxScalar::from_int(1), aabb.br.y});
     return IsBlockedForHangProbe(
         wall_area,
         state,
@@ -540,12 +540,12 @@ bool CanCornerHangOnSide(
 ) {
     const FxAABB aabb = ent.GetAABB();
     const FxScalar side_x =
-        left_side ? aabb.tl.x - FxScalar::from_pixels(1)
-                  : aabb.br.x + FxScalar::from_pixels(1);
-    const FxScalar upper_probe_y_a = aabb.tl.y + FxScalar::from_pixels(2);
-    const FxScalar upper_probe_y_b = aabb.tl.y + FxScalar::from_pixels(3);
+        left_side ? aabb.tl.x - FxScalar::from_int(1)
+                  : aabb.br.x + FxScalar::from_int(1);
+    const FxScalar upper_probe_y_a = aabb.tl.y + FxScalar::from_int(2);
+    const FxScalar upper_probe_y_b = aabb.tl.y + FxScalar::from_int(3);
     const FxScalar center_x = aabb.tl.x + HalfWidthFloor(ent);
-    const FxScalar below_probe_y = aabb.br.y + FxScalar::from_pixels(1);
+    const FxScalar below_probe_y = aabb.br.y + FxScalar::from_int(1);
 
     const bool upper_probe_blocked =
         IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_a, check_tiles, check_ents, true) ||
@@ -555,7 +555,7 @@ bool CanCornerHangOnSide(
             ent,
             state,
             side_x,
-            aabb.tl.y - FxScalar::from_pixels(1),
+            aabb.tl.y - FxScalar::from_int(1),
             check_tiles,
             check_ents,
             false
@@ -575,8 +575,8 @@ bool CanGloveHangBelowCorner(
 ) {
     const FxAABB aabb = ent.GetAABB();
     const FxScalar side_x =
-        left_side ? aabb.tl.x - FxScalar::from_pixels(1)
-                  : aabb.br.x + FxScalar::from_pixels(1);
+        left_side ? aabb.tl.x - FxScalar::from_int(1)
+                  : aabb.br.x + FxScalar::from_int(1);
     const int start_y = aabb.tl.y.floor_int() - 1;
     const int end_y = aabb.br.y.floor_int();
 
@@ -585,12 +585,12 @@ bool CanGloveHangBelowCorner(
                 ent,
                 state,
                 side_x,
-                FxScalar::from_pixels(y),
+                FxScalar::from_int(y),
                 check_tiles,
                 check_ents,
                 true
             )) {
-            return aabb.tl.y >= FxScalar::from_pixels(y);
+            return aabb.tl.y >= FxScalar::from_int(y);
         }
     }
 
@@ -692,8 +692,8 @@ bool IsPlausibleHangCandidate(
     const FxAABB aabb = candidate.GetAABB();
     const bool top_blocked = IsBlockedForHangProbe(
         FxAABB::from_corners(
-            FxVec2{aabb.tl.x, aabb.tl.y - FxScalar::from_pixels(1)},
-            FxVec2{aabb.br.x, aabb.tl.y - FxScalar::from_pixels(1)}),
+            FxVec2{aabb.tl.x, aabb.tl.y - FxScalar::from_int(1)},
+            FxVec2{aabb.br.x, aabb.tl.y - FxScalar::from_int(1)}),
         state,
         true,
         true,
@@ -805,8 +805,8 @@ bool TryCaptureHdHang(
     const FxAABB aabb = ent.GetAABB();
     const bool top_blocked = IsBlockedForHangProbe(
         FxAABB::from_corners(
-            FxVec2{aabb.tl.x, aabb.tl.y - FxScalar::from_pixels(1)},
-            FxVec2{aabb.br.x, aabb.tl.y - FxScalar::from_pixels(1)}),
+            FxVec2{aabb.tl.x, aabb.tl.y - FxScalar::from_int(1)},
+            FxVec2{aabb.br.x, aabb.tl.y - FxScalar::from_int(1)}),
         state,
         check_tiles,
         check_ents,
@@ -819,12 +819,12 @@ bool TryCaptureHdHang(
 
     const bool has_gloves = EntHasHangGloves(ent);
     const FxScalar center_x = aabb.tl.x + HalfWidthFloor(ent);
-    const FxScalar upper_probe_y_a = aabb.tl.y + FxScalar::from_pixels(2);
-    const FxScalar upper_probe_y_b = aabb.tl.y + FxScalar::from_pixels(3);
-    const FxScalar below_probe_y = aabb.br.y + FxScalar::from_pixels(1);
+    const FxScalar upper_probe_y_a = aabb.tl.y + FxScalar::from_int(2);
+    const FxScalar upper_probe_y_b = aabb.tl.y + FxScalar::from_int(3);
+    const FxScalar below_probe_y = aabb.br.y + FxScalar::from_int(1);
 
     if (try_left && IsSideBlockedForHang(ent, state, true, check_tiles, check_ents)) {
-        const FxScalar side_x = aabb.tl.x - FxScalar::from_pixels(1);
+        const FxScalar side_x = aabb.tl.x - FxScalar::from_int(1);
         if (has_gloves) {
             if (CanCornerHangOnSide(ent, state, true, check_tiles, check_ents)) {
                 SnapEntHangYToTile(ent);
@@ -858,7 +858,7 @@ bool TryCaptureHdHang(
                 ent,
                 state,
                 side_x,
-                aabb.tl.y - FxScalar::from_pixels(1),
+                aabb.tl.y - FxScalar::from_int(1),
                 check_tiles,
                 check_ents,
                 false
@@ -883,7 +883,7 @@ bool TryCaptureHdHang(
     }
 
     if (try_right && IsSideBlockedForHang(ent, state, false, check_tiles, check_ents)) {
-        const FxScalar side_x = aabb.br.x + FxScalar::from_pixels(1);
+        const FxScalar side_x = aabb.br.x + FxScalar::from_int(1);
         if (has_gloves) {
             if (CanCornerHangOnSide(ent, state, false, check_tiles, check_ents)) {
                 SnapEntHangYToTile(ent);
@@ -917,7 +917,7 @@ bool TryCaptureHdHang(
                 ent,
                 state,
                 side_x,
-                aabb.tl.y - FxScalar::from_pixels(1),
+                aabb.tl.y - FxScalar::from_int(1),
                 check_tiles,
                 check_ents,
                 false

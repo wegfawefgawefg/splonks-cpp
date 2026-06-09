@@ -22,7 +22,7 @@ namespace {
 constexpr std::uint32_t kBatTrailLifetimeFrames = 6;
 constexpr float kBatTrailMinDistance = 2.0F;
 constexpr float kBatTrailMinDistanceSq = kBatTrailMinDistance * kBatTrailMinDistance;
-const FxVec2 kBatHoldOffset = PixelVec2(5, -10);
+const FxVec2 kBatHoldOffset = FxVec2::from_int(5, -10);
 
 void SpawnBatTrailSegment(State& state, const FVec2& from, const FVec2& to) {
     const FVec2 wrapped_to = GetNearestWorldPoint(state.stage, from, to);
@@ -281,15 +281,15 @@ void StepBaseballBat(
     const FVec2 render_bat_emit_point = ToFVec2(bat_emit_point);
     if (baseball_bat.point_label_a != PointLabel::Target) {
         baseball_bat.point_label_a = PointLabel::Target;
-        baseball_bat.point_a = ToPixelIVec2Trunc(bat_emit_point);
+        baseball_bat.point_a = ToIVec2Trunc(bat_emit_point);
     } else {
         SpawnBatTrailSegment(state, ToVec2(baseball_bat.point_a), render_bat_emit_point);
         const FxVec2 nearest_emit_point = GetNearestWorldPoint(
             state.stage,
-            PixelVec2(baseball_bat.point_a.x, baseball_bat.point_a.y),
+            FxVec2::from_int(baseball_bat.point_a.x, baseball_bat.point_a.y),
             bat_emit_point
         );
-        baseball_bat.point_a = ToPixelIVec2Trunc(nearest_emit_point);
+        baseball_bat.point_a = ToIVec2Trunc(nearest_emit_point);
     }
 
     state.UpdateSidForEnt(ent_idx, graphics);

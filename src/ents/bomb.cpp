@@ -53,7 +53,7 @@ void UpdateStickyBombAttach(Ent& bomb, State& state) {
         return;
     }
 
-    bomb.pos = attached->pos + PixelVec2(bomb.point_a.x, bomb.point_a.y);
+    bomb.pos = attached->pos + FxVec2::from_int(bomb.point_a.x, bomb.point_a.y);
     bomb.vel = FxVec2::zero();
     bomb.acc = FxVec2::zero();
 }

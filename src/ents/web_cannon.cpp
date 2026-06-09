@@ -56,7 +56,7 @@ IVec2 SnapWorldPointToTile(FxVec2 point, const Stage& stage) {
 
 FxVec2 TileCenterToWorld(const IVec2& tile_pos) {
     const int tile_size = static_cast<int>(kTileSize);
-    return PixelVec2(tile_pos.x * tile_size + 8, tile_pos.y * tile_size + 8);
+    return FxVec2::from_int(tile_pos.x * tile_size + 8, tile_pos.y * tile_size + 8);
 }
 
 bool HasCobwebAtTile(const IVec2& tile_pos, const State& state) {

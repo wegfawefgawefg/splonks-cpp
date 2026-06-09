@@ -100,7 +100,7 @@ Ent* SpawnWonPrize(Ent& table, const Ent& display_prize, State& state) {
         display_prize.type_,
         [&](Ent& ent) {
             ClearEntBuyableState(ent);
-            ent.SetCenter(table.GetCenter() + FxVec2::from_pixels(0, -18));
+            ent.SetCenter(table.GetCenter() + FxVec2::from_int(0, -18));
             ent.vel = PrizeLaunchVelocity();
             ent.acc = FxVec2::zero();
             ent.grounded = false;
@@ -127,7 +127,7 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
     dice.counter_b = FxScalar::from_int(kDiceRollState);
     dice.rotation = ToFxScalar(static_cast<float>(state.drng.RandomIntInclusive(0, 359)));
 
-    dice.SetCenter(table.GetCenter() + FxVec2::from_pixels(0, -10));
+    dice.SetCenter(table.GetCenter() + FxVec2::from_int(0, -10));
     dice.vel = DiceLaunchVelocity(state);
     dice.acc = FxVec2::zero();
 }
@@ -173,7 +173,7 @@ void PayCrapsResult(
 
 void AddCrapsPrompt(Ent& table, State& state, const char* message, std::uint32_t quantity) {
     state.AddWorldPrompt(WorldPrompt{
-        .world_pos = ToFVec2(table.GetCenter() + FxVec2::from_pixels(0, -24)),
+        .world_pos = ToFVec2(table.GetCenter() + FxVec2::from_int(0, -24)),
         .action_text = quantity > 0 ? "RB" : "",
         .message_text = message,
         .show_down_arrow = true,

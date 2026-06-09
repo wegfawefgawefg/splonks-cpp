@@ -74,8 +74,8 @@ bool BelongsToOwnerAltar(const Ent& ent, const Ent& owner) {
 FxAABB GetSacrificeArea(const Ent& altar) {
     const FxVec2 altar_pos = altar.pos;
     return FxAABB::from_corners(
-        altar_pos + PixelVec2(-1, -kSacrificeSurfaceTopOffset),
-        altar_pos + PixelVec2(31, kSacrificeSurfaceBottomOffset)
+        altar_pos + FxVec2::from_int(-1, -kSacrificeSurfaceTopOffset),
+        altar_pos + FxVec2::from_int(31, kSacrificeSurfaceBottomOffset)
     );
 }
 
@@ -239,7 +239,7 @@ FxVec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics& g
     return common::GetEmitPointForEnt(
         altar,
         graphics,
-        altar.pos + PixelVec2(16, -8)
+        altar.pos + FxVec2::from_int(16, -8)
     );
 }
 
@@ -256,7 +256,7 @@ FVec2 GetAltarSoundPos(const Ent& altar, const State& state, const Graphics& gra
         common::GetVisualCenterForEnt(
             altar,
             graphics,
-            altar.pos + PixelVec2(16, -8)
+            altar.pos + FxVec2::from_int(16, -8)
         )
     );
 }
@@ -472,7 +472,7 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
     if (state.sac_altar_reward_tier == 0 && state.sac_altar_favor >= kAccessoryRewardFavor) {
         const EntType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
         Ent* const reward = world_ops::SpawnEnt(state, reward_type, [&](Ent& spawned_reward) {
-            spawned_reward.SetCenter(emit_pos + PixelVec2(0, -3));
+            spawned_reward.SetCenter(emit_pos + FxVec2::from_int(0, -3));
             spawned_reward.vel = FxVec2{
                 RandomFxScalar(state.drng, ToFxScalar(-0.55F), ToFxScalar(0.55F)),
                 ToFxScalar(-1.7F),
@@ -490,7 +490,7 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
 
     if (state.sac_altar_reward_tier == 1 && state.sac_altar_favor >= kSecondRewardFavor) {
         Ent* const reward = world_ops::SpawnEnt(state, EntType::Meathead, [&](Ent& spawned_reward) {
-            spawned_reward.SetCenter(emit_pos + PixelVec2(0, -2));
+            spawned_reward.SetCenter(emit_pos + FxVec2::from_int(0, -2));
             spawned_reward.ent_a = altar.vid;
             spawned_reward.draw_layer = DrawLayer::Middle;
             spawned_reward.vel = FxVec2::zero();

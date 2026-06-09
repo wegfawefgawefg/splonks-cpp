@@ -27,7 +27,7 @@ void PlacePlayerAtEntrance(State& state) {
                 continue;
             }
 
-            const FxVec2 spawn_pos = PixelVec2(
+            const FxVec2 spawn_pos = FxVec2::from_int(
                 static_cast<int>(x * kTileSize),
                 static_cast<int>(y * kTileSize));
             unsigned int local_player_index = 0;
@@ -37,7 +37,7 @@ void PlacePlayerAtEntrance(State& state) {
                 }
                 if (Ent* const player = state.ents.GetEntMut(*slot.ent_vid)) {
                     player->pos =
-                        spawn_pos + PixelVec2(static_cast<int>(local_player_index) * 8, 0);
+                        spawn_pos + FxVec2::from_int(static_cast<int>(local_player_index) * 8, 0);
                     player->vel = FxVec2::zero();
                     player->acc = FxVec2::zero();
                 }
@@ -60,7 +60,7 @@ void SpawnConnectedPlayers(State& state, FxVec2 spawn_pos) {
         const std::optional<VID> player_vid = SpawnPlayerForPlayerId(
             state,
             slot.player_id,
-            spawn_pos + PixelVec2(static_cast<int>(player_index) * 8, 0)
+            spawn_pos + FxVec2::from_int(static_cast<int>(player_index) * 8, 0)
         );
         if (player_vid.has_value() &&
             (slot.primary_local || !state.controlled_ent_vid.has_value())) {
@@ -107,7 +107,7 @@ void InitStage(State& state, bool preserve_player_state) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const ent = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*ent, EntType::JetPack);
-                        ent->pos = PixelVec2(random_available_position->x, random_available_position->y);
+                        ent->pos = FxVec2::from_int(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -122,7 +122,7 @@ void InitStage(State& state, bool preserve_player_state) {
                         const EntType money_type =
                             RandomMoneyType(state.stagegen_drng) == 0 ? EntType::Gold : EntType::GoldStack;
                         SetEntAs(*money, money_type);
-                        money->pos = PixelVec2(random_available_position->x, random_available_position->y);
+                        money->pos = FxVec2::from_int(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -135,7 +135,7 @@ void InitStage(State& state, bool preserve_player_state) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const bat = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*bat, EntType::Bat);
-                        bat->pos = PixelVec2(random_available_position->x, random_available_position->y);
+                        bat->pos = FxVec2::from_int(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -155,7 +155,7 @@ void InitStage(State& state, bool preserve_player_state) {
                         } else {
                             SetEntAs(*ent, EntType::Rock);
                         }
-                        ent->pos = PixelVec2(random_available_position->x, random_available_position->y);
+                        ent->pos = FxVec2::from_int(random_available_position->x, random_available_position->y);
                     }
                 }
             }
@@ -168,7 +168,7 @@ void InitStage(State& state, bool preserve_player_state) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const block = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*block, EntType::Block);
-                        block->pos = PixelVec2(random_available_position->x, random_available_position->y);
+                        block->pos = FxVec2::from_int(random_available_position->x, random_available_position->y);
                     }
                 }
             }

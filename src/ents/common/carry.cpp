@@ -60,7 +60,7 @@ void RestoreDetachedCarryEnt(Ent& ent) {
 }
 
 void SnapPlacedAttachToPixels(Ent& ent) {
-    ent.pos = PixelVec2(ent.pos.x.round_int(),
+    ent.pos = FxVec2::from_int(ent.pos.x.round_int(),
                              ent.pos.y.round_int());
 }
 
@@ -160,8 +160,8 @@ void SyncHeldAttachForHolder(
                               ? DrawLayer::Background
                               : DrawLayer::Foreground;
 
-    const FxVec2 hold_offset = FxVec2::from_pixels(4, 0);
-    const FxVec2 holder_center = holder.GetCenter() + FxVec2::from_pixels(0, 1);
+    const FxVec2 hold_offset = FxVec2::from_int(4, 0);
+    const FxVec2 holder_center = holder.GetCenter() + FxVec2::from_int(0, 1);
     const FxVec2 held_pos_target =
         holder.facing == Side::Left
             ? holder_center + FxVec2{-hold_offset.x, hold_offset.y}

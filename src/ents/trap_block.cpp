@@ -26,7 +26,7 @@ constexpr float kWindupShake = 0.08F;
 constexpr float kImpactShake = 0.34F;
 constexpr float kImpactTileShake = 0.28F;
 constexpr float kImpactShakeRadiusTiles = 1.1F;
-constexpr FxScalar kSensorHalfWidth = FxScalar::from_pixels(7);
+constexpr FxScalar kSensorHalfWidth = FxScalar::from_int(7);
 constexpr FxScalar kOneShotMode = FxScalar::from_int(1);
 constexpr FxScalar kHasFired = FxScalar::from_int(1);
 
@@ -128,7 +128,7 @@ int GetCachedOpenSensorDistance(Ent& block, const State& state, std::size_t dire
 }
 
 FxVec2 GetSensorStart(FxVec2 center, const DirectionInfo& direction) {
-    return center + PixelVec2(
+    return center + FxVec2::from_int(
         direction.tile_dir.x * static_cast<int>(kTileSize / 2),
         direction.tile_dir.y * static_cast<int>(kTileSize / 2)
     );
@@ -136,7 +136,7 @@ FxVec2 GetSensorStart(FxVec2 center, const DirectionInfo& direction) {
 
 FxAABB MakeSensorAabb(FxVec2 center, const DirectionInfo& direction, int open_distance) {
     const FxVec2 start = GetSensorStart(center, direction);
-    const FxVec2 end = start + PixelVec2(
+    const FxVec2 end = start + FxVec2::from_int(
         direction.tile_dir.x * open_distance,
         direction.tile_dir.y * open_distance
     );
@@ -202,7 +202,7 @@ int GetEntBlockedOpenSensorDistance(
     const FxAABB tile_open_sensor = MakeSensorAabb(center, direction, open_distance);
     const FxVec2 sensor_start = GetSensorStart(center, direction);
 
-    FxScalar blocked_distance = FxScalar::from_pixels(open_distance);
+    FxScalar blocked_distance = FxScalar::from_int(open_distance);
     for (const VID& vid : QueryEntsInAabb(state, tile_open_sensor, block.vid)) {
         const Ent* const ent = state.ents.GetEnt(vid);
         if (ent == nullptr || !IsSensorBlockingEnt(*ent)) {
@@ -309,7 +309,7 @@ std::optional<std::uint32_t> FindTriggerDirection(
 
         const DirectionInfo& direction = kDirections[direction_idx];
         FxScalar nearest_distance =
-            FxScalar::from_pixels(GetMaxSensorDistance(state, direction.tile_dir) + 1);
+            FxScalar::from_int(GetMaxSensorDistance(state, direction.tile_dir) + 1);
         const FxAABB sensor = GetSensorAabb(block, state, graphics, direction_idx);
         for (const VID& vid : QueryEntsInAabb(state, sensor, block.vid)) {
             const Ent* const ent = state.ents.GetEnt(vid);

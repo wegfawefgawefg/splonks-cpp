@@ -46,7 +46,7 @@ int DirectionForTrap(const Ent& trap) {
 
 FxVec2 GetSensorStart(const Ent& trap) {
     const int direction = DirectionForTrap(trap);
-    return trap.GetCenter() + PixelVec2(direction * 9, 0);
+    return trap.GetCenter() + FxVec2::from_int(direction * 9, 0);
 }
 
 bool ShouldTriggerOnEnt(const Ent& ent) {
@@ -66,16 +66,16 @@ FxVec2 ArrowGravityAcceleration() {
 }
 
 void SnapArrowPositionToPixels(Ent& arrow) {
-    arrow.pos = PixelVec2(arrow.pos.x.floor_int(),
+    arrow.pos = FxVec2::from_int(arrow.pos.x.floor_int(),
                                arrow.pos.y.floor_int());
 }
 
 IVec2 ToStoredArrowOffsetPoint(FxVec2 offset) {
-    return ToPixelIVec2Round(offset);
+    return ToIVec2Round(offset);
 }
 
 FxVec2 FromStoredArrowOffsetPoint(const IVec2& point) {
-    return FxVec2::from_pixels(point.x, point.y);
+    return FxVec2::from_int(point.x, point.y);
 }
 
 std::int32_t ClampAngleRaw(std::int64_t raw) {
@@ -264,7 +264,7 @@ void FireTrap(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const int direction = DirectionForTrap(trap);
-    const FxVec2 arrow_center = trap.GetCenter() + FxVec2::from_pixels(direction * 10, -4);
+    const FxVec2 arrow_center = trap.GetCenter() + FxVec2::from_int(direction * 10, -4);
     Ent* const arrow = SpawnArrow(state, arrow_center, direction, trap.vid);
     if (arrow == nullptr) {
         return;

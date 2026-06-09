@@ -150,7 +150,7 @@ std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
 
     for (const FxVec2& probe : probes) {
         const std::optional<WorldTileQueryResult> tile_query =
-            QueryTileAtWorldPos(state.stage, ToPixelIVec2Round(probe));
+            QueryTileAtWorldPos(state.stage, ToIVec2Round(probe));
         if (IsClimbableTileQuery(tile_query)) {
             return tile_query->tile_pos;
         }

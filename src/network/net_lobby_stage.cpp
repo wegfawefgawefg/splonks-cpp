@@ -156,7 +156,7 @@ bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string*
             slot.player_id,
             slot.local,
             slot.primary,
-            spawn_base + PixelVec2(static_cast<int>(i) * 8, 0),
+            spawn_base + FxVec2::from_int(static_cast<int>(i) * 8, 0),
             graphics
         );
     }
