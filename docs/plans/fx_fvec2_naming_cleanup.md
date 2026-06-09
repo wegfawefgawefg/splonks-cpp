@@ -23,6 +23,11 @@ The same idea applies to rectangles and scalar conversions:
 This plan is intentionally a rename/collapse pass. It should not change
 gameplay behavior, lockstep protocol semantics, or rendering behavior.
 
+This should be executed with broad scripted replacements per lane, not by
+hand-converting individual call sites. Hand work is for fixing compile errors,
+resolving rare name conflicts, and reviewing boundary mistakes after each
+scripted sweep.
+
 ## Naming Rules
 
 Default gameplay lane:
@@ -64,7 +69,8 @@ Boundary conversions:
 ## Mechanical Rename Order
 
 Do this in compile-checked batches. Each batch should be a mostly mechanical
-commit, with no intentional behavior changes.
+scripted/regex sweep and commit, with no intentional behavior changes. Avoid
+drifting back into one-entity-at-a-time cleanup for this naming work.
 
 1. Rename the old float `Vec2` type to `FVec2`.
    - Update constructors and operators mechanically.
@@ -138,6 +144,20 @@ GetSimGroundProbe(   -> GetGroundProbe(
 The old float `Vec2` -> `FVec2` pass should be scripted with token-aware care,
 not a plain unbounded text replacement, because files will contain both old
 float `Vec2` and fixed `sim::Vec2` during the transition.
+
+For the simple lanes, prefer one command/script per mapping plus compile:
+
+```text
+RenderAABB -> FAABB
+sim::Vec2 -> sim::FxVec2
+sim::AABB -> sim::FxAABB
+sim::ToRenderVec2( -> ToFVec2(
+sim::ToSimVec2( -> ToFxVec2(
+GetSimCenter( -> GetCenter(
+```
+
+If a lane cannot be handled mechanically, stop and document the conflict rather
+than silently doing a long manual migration.
 
 ## Safety Checks
 
