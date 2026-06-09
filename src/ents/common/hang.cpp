@@ -65,7 +65,7 @@ void AddClimbDebugRect(State& state, const FVec2& world_pos, DebugAnnotationColo
         return;
     }
     state.AddDebugRectAnnotation(DebugRectAnnotation{
-        .area = RenderAABB::New(world_pos, world_pos),
+        .area = FAABB::New(world_pos, world_pos),
         .color = color,
     });
 }
@@ -345,7 +345,7 @@ void AddClimbDebugAnnotations(const Ent& ent, State& state, const JumpAndClimbTu
         const DebugAnnotationColor color = is_climbable
                                                ? DebugAnnotationColor{64, 255, 128, 255}
                                                : DebugAnnotationColor{255, 64, 64, 255};
-        const RenderAABB point_aabb = RenderAABB::New(probe_point, probe_point);
+        const FAABB point_aabb = FAABB::New(probe_point, probe_point);
         state.AddDebugRectAnnotation(DebugRectAnnotation{
             .area = point_aabb,
             .color = color,

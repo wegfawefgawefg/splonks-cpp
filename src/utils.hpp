@@ -19,11 +19,11 @@ struct DetRng {
 
 sim::Scalar RandomSimScalar(DetRng& rng, sim::Scalar minimum, sim::Scalar maximum);
 
-struct RenderAABB {
+struct FAABB {
     FVec2 tl;
     FVec2 br;
 
-    static RenderAABB New(const FVec2& top_left, const FVec2& bottom_right);
+    static FAABB New(const FVec2& top_left, const FVec2& bottom_right);
     struct IAABB AsIAABB() const;
 };
 
@@ -32,14 +32,14 @@ struct IAABB {
     IVec2 br;
 
     static IAABB New(const IVec2& top_left, const IVec2& bottom_right);
-    RenderAABB AsRenderAABB() const;
+    FAABB AsFAABB() const;
 };
 
-FVec2 GetMinDisplacement(const RenderAABB& aabb1, const RenderAABB& aabb2);
-bool AabbsIntersect(const RenderAABB& left, const RenderAABB& right);
+FVec2 GetMinDisplacement(const FAABB& aabb1, const FAABB& aabb2);
+bool AabbsIntersect(const FAABB& left, const FAABB& right);
 
-sim::AABB ToSimAABB(const RenderAABB& value, gfxp::Rounding rounding = gfxp::Rounding::Nearest);
-RenderAABB ToRenderAABB(const sim::AABB& value);
+sim::AABB ToSimAABB(const FAABB& value, gfxp::Rounding rounding = gfxp::Rounding::Nearest);
+FAABB ToFAABB(const sim::AABB& value);
 IAABB ToIAABBFloorCeil(const sim::AABB& value);
 FVec2 ToRenderMinDisplacement(sim::AABB aabb1, sim::AABB aabb2);
 

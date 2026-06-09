@@ -182,7 +182,7 @@ void AddArrowTrapDebugAnnotations(Ent& trap, State& state) {
         return;
     }
 
-    const RenderAABB render_sensor_aabb = ToRenderAABB(GetOpenSensorAabb(trap, state));
+    const FAABB render_sensor_aabb = ToFAABB(GetOpenSensorAabb(trap, state));
     state.AddDebugRectAnnotation(DebugRectAnnotation{
         .area = render_sensor_aabb,
         .color = DebugAnnotationColor{255, 192, 0, 255},

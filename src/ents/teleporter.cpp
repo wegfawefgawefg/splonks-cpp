@@ -514,7 +514,7 @@ void AddTeleporterDebugAnnotations(
         }
 
         state.AddDebugRectAnnotation(DebugRectAnnotation{
-            .area = ToRenderAABB(candidate.destination_aabb),
+            .area = ToFAABB(candidate.destination_aabb),
             .color = color,
         });
 

@@ -253,11 +253,11 @@ void AddDebugAnnotations(Ent& block, State& state, const Graphics& graphics) {
         );
         const sim::AABB sensor = GetSensorAabb(block, state, graphics, direction_idx);
         state.AddDebugRectAnnotation(DebugRectAnnotation{
-            .area = ToRenderAABB(tile_open_sensor),
+            .area = ToFAABB(tile_open_sensor),
             .color = DebugAnnotationColor{255, 216, 0, 255},
         });
         state.AddDebugRectAnnotation(DebugRectAnnotation{
-            .area = ToRenderAABB(sensor),
+            .area = ToFAABB(sensor),
             .color = DebugAnnotationColor{255, 32, 32, 255},
         });
     }

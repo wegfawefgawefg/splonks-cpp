@@ -77,6 +77,8 @@ Progress:
 - Completed 2026-06-09: first scripted lane renamed the old float `Vec2` type
   and constructor call sites to `FVec2`, while keeping fixed vectors spelled
   `sim::Vec2` for now.
+- Completed 2026-06-09: second scripted lane renamed old float `RenderAABB` and
+  `ToRenderAABB(...)` call sites to `FAABB` and `ToFAABB(...)`.
 
 1. Rename the old float `Vec2` type to `FVec2`.
    - Update constructors and operators mechanically.

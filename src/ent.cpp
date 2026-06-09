@@ -299,8 +299,8 @@ std::tuple<FVec2, FVec2> Ent::GetRenderBounds() const {
     return {sim::ToRenderVec2(bounds.tl), sim::ToRenderVec2(bounds.br)};
 }
 
-RenderAABB Ent::GetRenderAABB() const {
-    return ToRenderAABB(GetSimAABB());
+FAABB Ent::GetRenderAABB() const {
+    return ToFAABB(GetSimAABB());
 }
 
 FVec2 Ent::GetRenderCenter() const {

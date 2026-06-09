@@ -43,7 +43,7 @@ void ClearPendingFavor(Ent& machete) {
 }
 
 FVec2 GetVictimEffectPos(const Ent& victim, const Graphics& graphics) {
-    const RenderAABB render_victim_aabb = ToRenderAABB(common::GetContactAabbForEnt(victim, graphics));
+    const FAABB render_victim_aabb = ToFAABB(common::GetContactAabbForEnt(victim, graphics));
     return FVec2::New(
         (render_victim_aabb.tl.x + render_victim_aabb.br.x) * 0.5F,
         render_victim_aabb.br.y - 2.0F

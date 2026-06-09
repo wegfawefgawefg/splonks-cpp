@@ -47,14 +47,14 @@ sim::Scalar RandomSimScalar(DetRng& rng, sim::Scalar minimum, sim::Scalar maximu
     ));
 }
 
-RenderAABB RenderAABB::New(const FVec2& top_left, const FVec2& bottom_right) {
-    RenderAABB result;
+FAABB FAABB::New(const FVec2& top_left, const FVec2& bottom_right) {
+    FAABB result;
     result.tl = top_left;
     result.br = bottom_right;
     return result;
 }
 
-IAABB RenderAABB::AsIAABB() const {
+IAABB FAABB::AsIAABB() const {
     IAABB result;
     result.tl = IVec2::New(static_cast<int>(tl.x), static_cast<int>(tl.y));
     result.br = IVec2::New(static_cast<int>(br.x), static_cast<int>(br.y));
@@ -68,8 +68,8 @@ IAABB IAABB::New(const IVec2& top_left, const IVec2& bottom_right) {
     return result;
 }
 
-RenderAABB IAABB::AsRenderAABB() const {
-    RenderAABB result;
+FAABB IAABB::AsFAABB() const {
+    FAABB result;
     result.tl = FVec2::New(static_cast<float>(tl.x), static_cast<float>(tl.y));
     result.br = FVec2::New(static_cast<float>(br.x), static_cast<float>(br.y));
     return result;
@@ -115,7 +115,7 @@ float RandomFloat(float minimum, float maximum) {
 
 } // namespace rng
 
-FVec2 GetMinDisplacement(const RenderAABB& aabb1, const RenderAABB& aabb2) {
+FVec2 GetMinDisplacement(const FAABB& aabb1, const FAABB& aabb2) {
     float dx = 0.0F;
     if (aabb1.br.x < aabb2.tl.x) {
         dx = aabb2.tl.x - aabb1.br.x;
@@ -133,7 +133,7 @@ FVec2 GetMinDisplacement(const RenderAABB& aabb1, const RenderAABB& aabb2) {
     return FVec2::New(dx, dy);
 }
 
-bool AabbsIntersect(const RenderAABB& left, const RenderAABB& right) {
+bool AabbsIntersect(const FAABB& left, const FAABB& right) {
     if (left.br.x < right.tl.x) {
         return false;
     }
@@ -149,13 +149,13 @@ bool AabbsIntersect(const RenderAABB& left, const RenderAABB& right) {
     return true;
 }
 
-sim::AABB ToSimAABB(const RenderAABB& value, gfxp::Rounding rounding) {
+sim::AABB ToSimAABB(const FAABB& value, gfxp::Rounding rounding) {
     return sim::AABB::from_corners(sim::ToSimVec2(value.tl, rounding),
                                    sim::ToSimVec2(value.br, rounding));
 }
 
-RenderAABB ToRenderAABB(const sim::AABB& value) {
-    return RenderAABB::New(sim::ToRenderVec2(value.tl), sim::ToRenderVec2(value.br));
+FAABB ToFAABB(const sim::AABB& value) {
+    return FAABB::New(sim::ToRenderVec2(value.tl), sim::ToRenderVec2(value.br));
 }
 
 IAABB ToIAABBFloorCeil(const sim::AABB& value) {

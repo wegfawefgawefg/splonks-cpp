@@ -153,7 +153,7 @@ struct DebugAnnotationColor {
 };
 
 struct DebugRectAnnotation {
-    RenderAABB area = RenderAABB::New(FVec2::New(0.0F, 0.0F), FVec2::New(0.0F, 0.0F));
+    FAABB area = FAABB::New(FVec2::New(0.0F, 0.0F), FVec2::New(0.0F, 0.0F));
     DebugAnnotationColor color{};
 };
 
