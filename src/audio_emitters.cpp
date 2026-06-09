@@ -71,8 +71,9 @@ bool ResolveEmitterWorldPos(State& state, const Graphics& graphics, AudioEmitter
     const Ent* const attached = state.ents.GetEnt(*emitter.attached_ent_vid);
     if (attached != nullptr) {
         emitter.world_pos =
-            ents::common::GetVisualCenterForEnt(*attached, graphics, attached->GetRenderCenter()) +
-            emitter.attached_offset;
+            ToFVec2(
+                ents::common::GetVisualCenterForEnt(*attached, graphics, attached->GetCenter())
+            ) + emitter.attached_offset;
         return true;
     }
 

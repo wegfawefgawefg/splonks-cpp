@@ -138,10 +138,8 @@ bool TryApplyPlausibleLocomotionClaim(
 );
 const AFrame* GetCurrentAFrameForEnt(const Ent& ent, const Graphics& graphics);
 sim::FxVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
-FVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback);
 sim::FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback);
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 center);
-FVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback);
 sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback);
 sim::FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics);
 sim::FxAABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);

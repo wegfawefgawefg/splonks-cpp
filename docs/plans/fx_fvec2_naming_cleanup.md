@@ -114,6 +114,10 @@ Progress:
   than renaming more than a thousand scalar uses to `sim::FxScalar`; the
   namespace already communicates the fixed domain, and `ToFxScalar(...)`
   remains the explicit float-to-fixed boundary.
+- Completed 2026-06-09: ninth helper-collapse lane removed duplicate float
+  overloads for `GetVisualCenterForEnt(...)` and `GetEmitPointForEnt(...)`.
+  Presentation callers now use the fixed helper and convert with `ToFVec2(...)`
+  at the call site.
 
 1. Rename the old float `Vec2` type to `FVec2`.
    - Update constructors and operators mechanically.
@@ -193,6 +197,9 @@ Audit notes from 2026-06-09:
   currently only used by debug rendering. This is acceptable for now, but a
   later pass could rename the fixed side to `GetVoidDeathY()` and make debug
   render convert locally if we want the same fixed-default style on `Stage`.
+- `GetVisualCenterForEnt(...)` and `GetEmitPointForEnt(...)` now have only
+  fixed-returning helper APIs. Render/audio/debug callers convert with
+  `ToFVec2(...)` at their presentation boundary.
 - Climbing/hanging still contains float probe helpers next to fixed probe
   helpers. That is a real follow-up for the determinism cleanup, not a quick
   naming-only change. The goal should be one fixed authoritative probe path,

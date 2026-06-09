@@ -78,20 +78,6 @@ sim::FxVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe) {
            facing_adjusted_draw_offset;
 }
 
-FVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback) {
-    const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
-    if (aframe == nullptr) {
-        return fallback;
-    }
-
-    const FVec2 sprite_tl = ToFVec2(GetSpriteTopLeftForEnt(ent, *aframe));
-    const FVec2 sprite_world_size = FVec2::New(
-        static_cast<float>(aframe->sample_rect.w),
-        static_cast<float>(aframe->sample_rect.h)
-    ) * ToFloat(ent.aframe_animator.scale);
-    return sprite_tl + (sprite_world_size * 0.5F);
-}
-
 sim::FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
@@ -128,26 +114,6 @@ void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 cente
         facing_adjusted_draw_offset = sim::FxVec2{-draw_offset.x, draw_offset.y};
     }
     ent.SetPos(center - facing_adjusted_draw_offset - pbox_center_offset);
-}
-
-FVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback) {
-    const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
-    if (aframe == nullptr) {
-        return fallback;
-    }
-
-    const FVec2 sprite_tl = ToFVec2(GetSpriteTopLeftForEnt(ent, *aframe));
-    float emit_x = static_cast<float>(aframe->emit_point.x);
-    if (ent.facing == Side::Right) {
-        emit_x = static_cast<float>(aframe->sample_rect.w - 1 - aframe->emit_point.x);
-    }
-
-    const FVec2 emit_point =
-        sprite_tl + FVec2::New(emit_x, static_cast<float>(aframe->emit_point.y));
-    if (aframe->emit_point.x == 0 && aframe->emit_point.y == 0) {
-        return fallback;
-    }
-    return emit_point;
 }
 
 sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback) {

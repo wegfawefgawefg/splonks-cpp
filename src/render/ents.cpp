@@ -91,7 +91,7 @@ Color3 ClampRenderColor(Color3 color, float min_value = 0.0F, float max_value = 
 Color3 GetEntLightingColor(State& state, const Ent& ent, Graphics& graphics) {
     EnsureStageLighting(state);
     const FVec2 visual_center =
-        ents::common::GetVisualCenterForEnt(ent, graphics, ent.GetRenderCenter());
+        ToFVec2(ents::common::GetVisualCenterForEnt(ent, graphics, ent.GetCenter()));
     Color3 color = SampleForegroundLightColorForRender(state, visual_center);
     const float self_light = ToFloat(ent.self_light);
     if (self_light > 0.0F) {
@@ -269,12 +269,11 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                     RenderWorldTextureRotated(renderer, graphics, sprite_texture, &src, dst, 0.0, nullptr, flip);
                 } else {
                     const FVec2 rotation_world =
-                        ents::common::GetVisualCenterForEnt(
+                        ToFVec2(ents::common::GetVisualCenterForEnt(
                             render_ent,
                             graphics,
-                            render_ent.GetRenderCenter()
-                        ) +
-                        render_offset + shake_offset;
+                            render_ent.GetCenter()
+                        )) + render_offset + shake_offset;
                     const FVec2 rotation_screen = WorldToScreen(graphics, rotation_world);
                     const SDL_FPoint rotation_center{
                         rotation_screen.x - dst.x,

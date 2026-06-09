@@ -378,7 +378,7 @@ void SpawnTelefragSplitEffect(const Ent& ent, const Graphics& graphics, const IV
     SpawnTelefragSplitEffectAt(
         ent,
         graphics,
-        common::GetVisualCenterForEnt(ent, graphics, ent.GetRenderCenter()),
+        ToFVec2(common::GetVisualCenterForEnt(ent, graphics, ent.GetCenter())),
         direction,
         state
     );
@@ -402,7 +402,7 @@ void SpawnTelefragMergeEffect(const Ent& ent, const Graphics& graphics, const IV
     SpawnTelefragMergeEffectAt(
         ent,
         graphics,
-        common::GetVisualCenterForEnt(ent, graphics, ent.GetRenderCenter()),
+        ToFVec2(common::GetVisualCenterForEnt(ent, graphics, ent.GetCenter())),
         direction,
         state
     );

@@ -318,10 +318,12 @@ void SnapCameraAfterStageRotation(State& state, Graphics& graphics) {
     if (graphics.camera_mode == CameraMode::StageFit) {
         zoom = GetStageFitCameraZoom(state.stage, graphics);
     } else if (camera_target_ent != nullptr && camera_target_ent->active) {
-        target = ents::common::GetVisualCenterForEnt(
-            *camera_target_ent,
-            graphics,
-            camera_target_ent->GetRenderCenter()
+        target = ToFVec2(
+            ents::common::GetVisualCenterForEnt(
+                *camera_target_ent,
+                graphics,
+                camera_target_ent->GetCenter()
+            )
         );
         graphics.play_cam.pos = ClampCameraTargetToStage(state.stage, target);
         target = graphics.play_cam.pos;

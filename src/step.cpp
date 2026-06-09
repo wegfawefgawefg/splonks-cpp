@@ -323,10 +323,8 @@ void RefreshPlayableCharacterLamp(State& state) {
 FVec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics& graphics) {
     if (state.controlled_ent_vid.has_value()) {
         if (const Ent* const controlled = state.ents.GetEnt(*state.controlled_ent_vid)) {
-            return ents::common::GetVisualCenterForEnt(
-                *controlled,
-                graphics,
-                controlled->GetRenderCenter()
+            return ToFVec2(
+                ents::common::GetVisualCenterForEnt(*controlled, graphics, controlled->GetCenter())
             );
         }
     }
@@ -578,7 +576,9 @@ void StepPlaying(
         if (primary_player_vid.has_value()) {
             if (const Ent* const player = state.ents.GetEnt(*primary_player_vid)) {
                 if (player->active) {
-                    game_over_pos = ents::common::GetVisualCenterForEnt(*player, graphics, player->GetRenderCenter());
+                    game_over_pos = ToFVec2(
+                        ents::common::GetVisualCenterForEnt(*player, graphics, player->GetCenter())
+                    );
                     state.controlled_ent_vid = primary_player_vid;
                 }
             }
