@@ -39,6 +39,7 @@ __pycache__/
 *.py[cod]
 
 debug_recording.*
+logs.zip
 logs/network_events_*.log
 logs/network_messages_*.log
 logs/desync_replay_*.sdrp

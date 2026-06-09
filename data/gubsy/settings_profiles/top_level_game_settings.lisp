@@ -19,7 +19,7 @@
     (key "gubsy.video.safe_area_left" 0)
     (key "gubsy.video.safe_area_right" 0)
     (key "gubsy.video.safe_area_top" 0)
-    (key "gubsy.video.show_fps" 0)
+    (key "gubsy.video.show_fps" 1)
     (key "gubsy.video.vsync" 1)
     (key "gubsy.video.window_mode" "windowed")
     (key "gubsy.video.window_resolution" "1280x720")
