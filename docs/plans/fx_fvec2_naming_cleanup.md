@@ -34,6 +34,9 @@ the canonical helper should return fixed-point values. Presentation code should
 call that helper and convert at the boundary with `ToFVec2(...)`, `ToFloat(...)`,
 or `ToFAABB(...)`. Add a separate float helper only when it performs genuinely
 presentation-only work that cannot sensibly be represented by the fixed helper.
+Do not grow helper pairs like `GetThing(...)` and `GetFThing(...)` just because
+one render call site needs a float. Render/debug/audio/UI code can call the
+fixed helper and convert the returned value locally.
 
 ## Naming Rules
 
@@ -62,6 +65,10 @@ Presentation lane:
   overlays.
 - Do not duplicate gameplay/fixed helpers just to return floats. Prefer one
   canonical fixed helper and convert at render/audio/debug/UI boundaries.
+- Graphics-side code may call fixed helpers directly. The wall is not "render
+  cannot see fixed"; the wall is "authoritative gameplay should not depend on
+  floats." If a render caller only needs a float copy of an authoritative value,
+  call the authoritative helper and convert at that call site.
 
 Boundary conversions:
 
@@ -161,6 +168,26 @@ Progress:
    - Examples of suspicious names to review: `GetF*`, `GetRender*`,
      `SetRender*`, `ToF*`, and `ToFx*`. Some are valid boundary APIs; the point
      is to remove duplication, not to ban the words outright.
+
+Audit notes from 2026-06-09:
+
+- `src` has no remaining `ToRenderVec2`, `ToSimVec2`, `ToRenderScalar`,
+  `ToSimScalar`, `GetSimSpriteTopLeftForEnt`, or `GetFSpriteTopLeftForEnt`
+  symbols.
+- The duplicate sprite top-left helper was removed. Render now calls
+  `GetSpriteTopLeftForEnt(...)` and converts with `ToFVec2(...)`.
+- The remaining `Ent::GetRender*` / `Ent::SetRender*` methods are boundary
+  adapters, not duplicate gameplay helpers. They still deserve scrutiny when
+  they appear in gameplay files, but they should not be deleted blindly.
+- `Stage::GetVoidDeathY()` and `Stage::GetSimVoidDeathY()` are a small
+  float/fixed boundary pair. The fixed side is gameplay; the float side is
+  currently only used by debug rendering. This is acceptable for now, but a
+  later pass could rename the fixed side to `GetVoidDeathY()` and make debug
+  render convert locally if we want the same fixed-default style on `Stage`.
+- Climbing/hanging still contains float probe helpers next to fixed probe
+  helpers. That is a real follow-up for the determinism cleanup, not a quick
+  naming-only change. The goal should be one fixed authoritative probe path,
+  with debug annotations converting to `FVec2` only when emitted.
 
 ## Regex-Friendly Mappings
 
