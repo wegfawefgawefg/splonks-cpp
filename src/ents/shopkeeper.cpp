@@ -152,7 +152,7 @@ bool IsShopkeeperBlockedMovingTowardPistol(
         return false;
     }
 
-    sim::AABB next_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
+    sim::FxAABB next_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
     const sim::Scalar offset = sim::Scalar::from_int(move_direction);
     next_aabb.tl.x += offset;
     next_aabb.br.x += offset;
@@ -210,8 +210,8 @@ bool TryRecoverDroppedPistol(
         shopkeeper.counter_a = sim::ToSimScalar(kShopkeeperJumpCooldownFrames);
     }
 
-    const sim::AABB shopkeeper_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
-    const sim::AABB pistol_aabb = GetNearestWorldAabb(
+    const sim::FxAABB shopkeeper_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
+    const sim::FxAABB pistol_aabb = GetNearestWorldAabb(
         state.stage,
         shopkeeper_aabb.center(),
         common::GetContactAabbForEnt(*pistol, graphics)

@@ -139,7 +139,7 @@ void DoExplosion(
     BreakStageTilesAtCoords(explosion_tiles, state, audio);
 
     const sim::Scalar explosion_size = sim::ToSimScalar(size * static_cast<float>(kTileSize));
-    const sim::AABB area = sim::AABB::from_corners(
+    const sim::FxAABB area = sim::FxAABB::from_corners(
         center - sim::FxVec2{explosion_size, explosion_size},
         center + sim::FxVec2{explosion_size, explosion_size}
     );

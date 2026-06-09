@@ -110,7 +110,7 @@ void StepTravelSoundWalkerClimber(std::size_t ent_idx, State& state, Audio& audi
 
         AudioAssetId which_step_sound;
         if (ent.IsClimbing()) {
-            const sim::AABB ent_aabb = ent.GetSimAABB();
+            const sim::FxAABB ent_aabb = ent.GetSimAABB();
             bool its_rope = false;
             bool its_ladder = false;
             for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent_aabb)) {

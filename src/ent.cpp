@@ -269,8 +269,8 @@ void Ent::SetRenderAcc(const FVec2& value) {
     acc = sim::ToSimVec2(value);
 }
 
-sim::AABB Ent::GetSimAABB() const {
-    return sim::AABB::from_pos_size(pos, size - sim::FxVec2::from_pixels(1, 1));
+sim::FxAABB Ent::GetSimAABB() const {
+    return sim::FxAABB::from_pos_size(pos, size - sim::FxVec2::from_pixels(1, 1));
 }
 
 sim::FxVec2 Ent::GetSimCenter() const {
@@ -281,21 +281,21 @@ void Ent::SetSimCenter(sim::FxVec2 center) {
     pos = center - (size / sim::Scalar::from_int(2));
 }
 
-sim::AABB Ent::GetSimFeet() const {
-    const sim::AABB bounds = GetSimAABB();
-    return sim::AABB::from_corners(sim::FxVec2{bounds.tl.x, bounds.br.y},
+sim::FxAABB Ent::GetSimFeet() const {
+    const sim::FxAABB bounds = GetSimAABB();
+    return sim::FxAABB::from_corners(sim::FxVec2{bounds.tl.x, bounds.br.y},
                                    bounds.br + sim::FxVec2{sim::Scalar::zero(),
                                                          sim::Scalar::from_int(1)});
 }
 
-sim::AABB Ent::GetSimGroundProbe() const {
-    sim::AABB feet = GetSimFeet();
+sim::FxAABB Ent::GetSimGroundProbe() const {
+    sim::FxAABB feet = GetSimFeet();
     feet.br.y += sim::ToSimScalar(kGroundProbeFractionalEpsilon);
     return feet;
 }
 
 std::tuple<FVec2, FVec2> Ent::GetRenderBounds() const {
-    const sim::AABB bounds = GetSimAABB();
+    const sim::FxAABB bounds = GetSimAABB();
     return {sim::ToRenderVec2(bounds.tl), sim::ToRenderVec2(bounds.br)};
 }
 
@@ -339,7 +339,7 @@ bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
         return false;
     }
 
-    const sim::AABB ground_probe = GetSimGroundProbe();
+    const sim::FxAABB ground_probe = GetSimGroundProbe();
     if (ground_probe.br.y < sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetHeight()))) {
         return false;
     }
@@ -349,7 +349,7 @@ bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
 }
 
 void Ent::SetGrounded(const Stage& stage) {
-    const sim::AABB feet = GetSimGroundProbe();
+    const sim::FxAABB feet = GetSimGroundProbe();
     if (TrySnapToBlockingStageBottom(stage)) {
         grounded |= true;
         return;

@@ -68,7 +68,7 @@ FVec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& 
         return sim::ToRenderVec2(idol.GetSimCenter());
     }
 
-    const sim::AABB target_aabb = target->GetSimAABB();
+    const sim::FxAABB target_aabb = target->GetSimAABB();
     return sim::ToRenderVec2(sim::FxVec2{
         target_aabb.center().x,
         target_aabb.tl.y + target->size.y * sim::ToSimScalar(kRewardParticleYOffsetFactor),
@@ -76,7 +76,7 @@ FVec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& 
 }
 
 std::optional<std::size_t> FindIntersectingShopIdx(const Ent& idol, const State& state) {
-    const sim::AABB idol_aabb = idol.GetSimAABB();
+    const sim::FxAABB idol_aabb = idol.GetSimAABB();
     for (std::size_t ent_idx = 0; ent_idx < state.ents.ents.size(); ++ent_idx) {
         const Ent& ent = state.ents.ents[ent_idx];
         if (!ent.active || ent.type_ != EntType::Shop) {

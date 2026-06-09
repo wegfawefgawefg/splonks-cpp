@@ -40,9 +40,9 @@ int GetRequiredClimbProbeHits(const JumpAndClimbTuning& tuning) {
     return static_cast<int>(std::clamp<std::uint32_t>(tuning.climb_required_probe_hits, 1, 3));
 }
 
-sim::AABB SimPointAabb(sim::Scalar x, sim::Scalar y) {
+sim::FxAABB SimPointAabb(sim::Scalar x, sim::Scalar y) {
     const sim::FxVec2 point{x, y};
-    return sim::AABB::from_corners(point, point);
+    return sim::FxAABB::from_corners(point, point);
 }
 
 sim::Scalar HalfWidthFloor(const Ent& ent) {
@@ -223,7 +223,7 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
     const JumpAndClimbTuning& tuning
 ) {
     const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, ent.GetRenderPos(), tuning);
-    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetSimAABB();
     const std::array<IVec2, 3> normal_probe_points = {
         ToIVec2(probes.left),
         ToIVec2(probes.center),
@@ -358,7 +358,7 @@ void AddClimbDebugAnnotations(const Ent& ent, State& state, const JumpAndClimbTu
     }
 }
 
-bool IsHangableImpassableInRect(sim::AABB area, const State& state, VID self_vid) {
+bool IsHangableImpassableInRect(sim::FxAABB area, const State& state, VID self_vid) {
     const sim::FxVec2 anchor = area.center();
     for (const VID& other_vid : QueryEntsInAabb(state, area, self_vid)) {
         const Ent* const other = state.ents.GetEnt(other_vid);
@@ -375,7 +375,7 @@ bool IsHangableImpassableInRect(sim::AABB area, const State& state, VID self_vid
 }
 
 bool IsBlockedForHangProbe(
-    sim::AABB area,
+    sim::FxAABB area,
     const State& state,
     bool check_tiles,
     bool check_ents,
@@ -493,13 +493,13 @@ bool IsSideBlockedForHang(
     bool check_tiles,
     bool check_ents
 ) {
-    const sim::AABB aabb = ent.GetSimAABB();
-    const sim::AABB wall_area =
+    const sim::FxAABB aabb = ent.GetSimAABB();
+    const sim::FxAABB wall_area =
         left_side
-            ? sim::AABB::from_corners(
+            ? sim::FxAABB::from_corners(
                   sim::FxVec2{aabb.tl.x - sim::Scalar::from_pixels(1), aabb.tl.y},
                   sim::FxVec2{aabb.tl.x, aabb.br.y})
-            : sim::AABB::from_corners(
+            : sim::FxAABB::from_corners(
                   sim::FxVec2{aabb.br.x, aabb.tl.y},
                   sim::FxVec2{aabb.br.x + sim::Scalar::from_pixels(1), aabb.br.y});
     return IsBlockedForHangProbe(
@@ -538,7 +538,7 @@ bool CanCornerHangOnSide(
     bool check_tiles,
     bool check_ents
 ) {
-    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetSimAABB();
     const sim::Scalar side_x =
         left_side ? aabb.tl.x - sim::Scalar::from_pixels(1)
                   : aabb.br.x + sim::Scalar::from_pixels(1);
@@ -573,7 +573,7 @@ bool CanGloveHangBelowCorner(
     bool check_tiles,
     bool check_ents
 ) {
-    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetSimAABB();
     const sim::Scalar side_x =
         left_side ? aabb.tl.x - sim::Scalar::from_pixels(1)
                   : aabb.br.x + sim::Scalar::from_pixels(1);
@@ -623,7 +623,7 @@ bool IsClaimVelocityPlausible(const Ent& candidate) {
 }
 
 bool IsCandidateAabbFreeOfSolidTiles(const Ent& candidate, const State& state) {
-    const sim::AABB aabb = candidate.GetSimAABB();
+    const sim::FxAABB aabb = candidate.GetSimAABB();
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, aabb)) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
             return false;
@@ -689,9 +689,9 @@ bool IsPlausibleHangCandidate(
     }
 
     const bool left_side = *claimed_hang_side == Side::Left;
-    const sim::AABB aabb = candidate.GetSimAABB();
+    const sim::FxAABB aabb = candidate.GetSimAABB();
     const bool top_blocked = IsBlockedForHangProbe(
-        sim::AABB::from_corners(
+        sim::FxAABB::from_corners(
             sim::FxVec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
             sim::FxVec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_pixels(1)}),
         state,
@@ -802,9 +802,9 @@ bool TryCaptureHdHang(
         return false;
     }
 
-    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetSimAABB();
     const bool top_blocked = IsBlockedForHangProbe(
-        sim::AABB::from_corners(
+        sim::FxAABB::from_corners(
             sim::FxVec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
             sim::FxVec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_pixels(1)}),
         state,

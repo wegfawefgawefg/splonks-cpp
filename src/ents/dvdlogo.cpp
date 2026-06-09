@@ -11,13 +11,13 @@ namespace splonks::ents::dvdlogo {
 
 namespace {
 
-sim::AABB TranslateAabb(sim::AABB aabb, sim::FxVec2 delta) {
-    return sim::AABB::from_corners(aabb.tl + delta, aabb.br + delta);
+sim::FxAABB TranslateAabb(sim::FxAABB aabb, sim::FxVec2 delta) {
+    return sim::FxAABB::from_corners(aabb.tl + delta, aabb.br + delta);
 }
 
 bool WouldBlockAt(
     std::size_t ent_idx,
-    sim::AABB target_aabb,
+    sim::FxAABB target_aabb,
     const State& state,
     const Graphics& graphics
 ) {
@@ -35,7 +35,7 @@ void StepBounceAxis(std::size_t ent_idx, State& state, const Graphics& graphics,
     }
 
     Ent& ent = state.ents.ents[ent_idx];
-    const sim::AABB moved_aabb = TranslateAabb(ent.GetSimAABB(), delta);
+    const sim::FxAABB moved_aabb = TranslateAabb(ent.GetSimAABB(), delta);
     if (WouldBlockAt(ent_idx, moved_aabb, state, graphics)) {
         if (delta.x != sim::Scalar::zero()) {
             ent.vel.x = -ent.vel.x;
@@ -68,8 +68,8 @@ void MaybeQueueTransitionOnPlayerContact(
         return;
     }
 
-    const sim::AABB door_aabb = common::GetContactAabbForEnt(ent, graphics);
-    const sim::AABB player_aabb = GetNearestWorldAabb(
+    const sim::FxAABB door_aabb = common::GetContactAabbForEnt(ent, graphics);
+    const sim::FxAABB player_aabb = GetNearestWorldAabb(
         state.stage,
         door_aabb.center(),
         common::GetContactAabbForEnt(*player, graphics)

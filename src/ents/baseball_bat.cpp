@@ -141,8 +141,8 @@ bool TryApplyBatContactToEnt(
         return false;
     }
 
-    const sim::AABB bat_aabb = common::GetContactAabbForEnt(bat_ent, graphics);
-    const sim::AABB other_aabb = GetNearestWorldAabb(
+    const sim::FxAABB bat_aabb = common::GetContactAabbForEnt(bat_ent, graphics);
+    const sim::FxAABB other_aabb = GetNearestWorldAabb(
         state.stage,
         bat_aabb.center(),
         common::GetContactAabbForEnt(other_ent_const, graphics)

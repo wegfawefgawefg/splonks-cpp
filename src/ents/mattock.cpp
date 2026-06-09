@@ -70,12 +70,12 @@ bool IsSwinging(const Ent& mattock) {
     );
 }
 
-sim::AABB SimTileAabbForTilePos(const IVec2& tile_pos) {
+sim::FxAABB SimTileAabbForTilePos(const IVec2& tile_pos) {
     const sim::FxVec2 tile_tl = sim::PixelVec2(
         tile_pos.x * static_cast<int>(kTileSize),
         tile_pos.y * static_cast<int>(kTileSize)
     );
-    return sim::AABB::from_corners(
+    return sim::FxAABB::from_corners(
         tile_tl,
         tile_tl + sim::PixelVec2(static_cast<int>(kTileSize - 1), static_cast<int>(kTileSize - 1))
     );
@@ -178,7 +178,7 @@ StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& aud
 }
 
 MattockTileTargets GetMattockTileTargets(const Ent& holder, const Stage& stage) {
-    const sim::AABB holder_aabb = holder.GetSimAABB();
+    const sim::FxAABB holder_aabb = holder.GetSimAABB();
     const int front_world_x = holder.facing == Side::Left
                                   ? holder_aabb.tl.x.to_pixels_floor() - 1 -
                                         kMattockForwardProbeBiasPixels
@@ -310,7 +310,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
     const Graphics& graphics,
     Audio& audio
 ) {
-    const sim::AABB strike_aabb = common::GetContactAabbForEnt(mattock, graphics);
+    const sim::FxAABB strike_aabb = common::GetContactAabbForEnt(mattock, graphics);
     EntStrikeOutcome result{};
 
     for (const VID& other_vid : QueryEntsInAabb(state, strike_aabb, mattock.vid)) {
@@ -319,7 +319,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
             continue;
         }
 
-        const sim::AABB other_aabb = GetNearestWorldAabb(
+        const sim::FxAABB other_aabb = GetNearestWorldAabb(
             state.stage,
             strike_aabb.center(),
             common::GetContactAabbForEnt(*other_ent_const, graphics)

@@ -79,7 +79,7 @@ bool CanProjImpactWithoutDamage(const Ent& target) {
            target.condition == EntCondition::Dead;
 }
 
-sim::AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
+sim::FxAABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
                                       const TileContactData& tile_contact_data, sim::FxVec2 anchor) {
     FrameRect cbox = tile_contact_data.cbox;
     const TileRotation rotation = GetTileRotationForQuery(stage, tile_query);
@@ -117,7 +117,7 @@ sim::AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryRe
         tile_query.tile_pos.x * static_cast<int>(kTileSize),
         tile_query.tile_pos.y * static_cast<int>(kTileSize)
     );
-    const sim::AABB cbox_aabb = sim::AABB::from_corners(
+    const sim::FxAABB cbox_aabb = sim::FxAABB::from_corners(
         tile_tl + sim::PixelVec2(cbox.x, cbox.y),
         tile_tl + sim::PixelVec2(cbox.x + cbox.w - 1, cbox.y + cbox.h - 1)
     );
@@ -181,7 +181,7 @@ void MaybeHurtAndStunOnContact(
 ) {
     const Ent& ent = state.ents.ents[ent_idx];
     const VID ent_vid = ent.vid;
-    const sim::AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
     const sim::FxVec2 ent_pos = ent.GetSimPos();
     const EntCondition condition = ent.condition;
     const bool hurt_on_contact = ent.hurt_on_contact;
@@ -201,7 +201,7 @@ void MaybeHurtAndStunOnContact(
                 continue;
             }
             if (Ent* const other_ent = state.ents.GetEntMut(vid)) {
-                const sim::AABB other_aabb = GetNearestWorldAabb(
+                const sim::FxAABB other_aabb = GetNearestWorldAabb(
                     state.stage,
                     ent_aabb.center(),
                     GetContactAabbForEnt(*other_ent, graphics)
@@ -210,8 +210,8 @@ void MaybeHurtAndStunOnContact(
                     continue;
                 }
                 if (IsPlayerLikeEntType(other_ent->type_)) {
-                    const sim::AABB player_aabb = other_aabb;
-                    const sim::AABB player_foot = {
+                    const sim::FxAABB player_aabb = other_aabb;
+                    const sim::FxAABB player_foot = {
                         .tl = sim::FxVec2{
                             player_aabb.tl.x,
                             player_aabb.br.y - sim::Scalar::from_int(4),
@@ -287,7 +287,7 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
 
     bool hit_spikes = false;
     {
-        const sim::AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+        const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
         const int ent_bottom_y = ent_aabb.br.y.to_pixels_trunc();
         const bool override_tile_portion_check =
             gfxp::length_sq(ent.vel) > sim::ToSimScalar(kSpikeOverrideVelocitySq);
@@ -311,7 +311,7 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
                 continue;
             }
 
-            const sim::AABB spike_cbox_aabb = GetTileContactCboxWorldAabb(
+            const sim::FxAABB spike_cbox_aabb = GetTileContactCboxWorldAabb(
                 state.stage,
                 tile_query,
                 *tile_contact_data,
@@ -378,8 +378,8 @@ bool TryApplyProjContactToEnt(
         return false;
     }
 
-    const sim::AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
-    const sim::AABB other_aabb = GetNearestWorldAabb(
+    const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const sim::FxAABB other_aabb = GetNearestWorldAabb(
         state.stage,
         ent_aabb.center(),
         GetContactAabbForEnt(other_ent, graphics)

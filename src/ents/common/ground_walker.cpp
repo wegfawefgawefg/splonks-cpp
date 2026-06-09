@@ -16,11 +16,11 @@ bool HasWallAheadForGroundWalker(
     const Graphics& graphics,
     int direction
 ) {
-    const sim::AABB bounds = ent.GetSimAABB();
+    const sim::FxAABB bounds = ent.GetSimAABB();
     const sim::Scalar sample_x = direction < 0
         ? bounds.tl.x - sim::Scalar::from_int(1)
         : bounds.br.x + sim::Scalar::from_int(1);
-    const sim::AABB probe = sim::AABB::from_corners(
+    const sim::FxAABB probe = sim::FxAABB::from_corners(
         sim::FxVec2{sample_x, bounds.tl.y + sim::Scalar::from_int(1)},
         sim::FxVec2{sample_x, bounds.br.y - sim::Scalar::from_int(1)}
     );
@@ -33,12 +33,12 @@ bool HasGroundAheadForGroundWalker(
     const Graphics& graphics,
     int direction
 ) {
-    const sim::AABB bounds = ent.GetSimAABB();
+    const sim::FxAABB bounds = ent.GetSimAABB();
     const sim::Scalar sample_x = direction < 0
         ? bounds.tl.x - sim::Scalar::from_int(1)
         : bounds.br.x + sim::Scalar::from_int(1);
     const sim::Scalar sample_y = bounds.br.y + sim::Scalar::from_int(1);
-    const sim::AABB probe = sim::AABB::from_corners(
+    const sim::FxAABB probe = sim::FxAABB::from_corners(
         sim::FxVec2{sample_x, sample_y},
         sim::FxVec2{sample_x, sample_y}
     );

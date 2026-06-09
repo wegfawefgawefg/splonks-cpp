@@ -9,7 +9,7 @@ namespace splonks::ents::common {
 
 namespace {
 
-bool TouchesStageBounds(sim::AABB aabb, const Stage& stage) {
+bool TouchesStageBounds(sim::FxAABB aabb, const Stage& stage) {
     return AabbTouchesBlockingStageBounds(stage, aabb);
 }
 
@@ -65,7 +65,7 @@ ContactResult ResolveBlockingEntContacts(
 
 BlockingContactSet GatherBlockingContactsForAabb(
     std::size_t ent_idx,
-    sim::AABB aabb,
+    sim::FxAABB aabb,
     const State& state,
     bool check_tiles,
     bool check_ents
@@ -102,7 +102,7 @@ BlockingContactSet GatherBlockingContactsForAabb(
             if (AreDirectlyAttached(ent, *other_ent)) {
                 continue;
             }
-            const sim::AABB other_aabb =
+            const sim::FxAABB other_aabb =
                 GetNearestWorldAabb(state.stage, anchor, other_ent->GetSimAABB());
             if (gfxp::aabbs_intersect(aabb, other_aabb)) {
                 contacts.ent_vids.push_back(other_vid);

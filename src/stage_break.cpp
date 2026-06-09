@@ -68,7 +68,7 @@ void NotifyAreaEntsTileChanged(const IVec2& tile_pos, State& state, Audio& audio
         tile_pos.x * static_cast<int>(kTileSize) + 8,
         tile_pos.y * static_cast<int>(kTileSize) + 8
     );
-    const sim::AABB tile_point_aabb = sim::AABB::from_corners(tile_center, tile_center);
+    const sim::FxAABB tile_point_aabb = sim::FxAABB::from_corners(tile_center, tile_center);
 
     for (const VID& vid : QueryEntsInAabb(state, tile_point_aabb)) {
         const Ent* const ent = state.ents.GetEnt(vid);
@@ -150,7 +150,7 @@ void BreakStageTilesAtCoordsInternal(
 } // namespace
 
 void BreakStageTilesInRectWc(
-    sim::AABB area,
+    sim::FxAABB area,
     State& state,
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound,

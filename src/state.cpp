@@ -47,7 +47,7 @@ void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount
     const float radius_world = radius_tiles * static_cast<float>(kTileSize);
     const sim::Scalar radius_world_sim = sim::ToSimScalar(radius_world);
     const sim::FxVec2 world_pos_sim = sim::ToSimVec2(world_pos);
-    const sim::AABB area = sim::AABB::from_corners(
+    const sim::FxAABB area = sim::FxAABB::from_corners(
         world_pos_sim - sim::FxVec2{radius_world_sim, radius_world_sim},
         world_pos_sim + sim::FxVec2{radius_world_sim, radius_world_sim}
     );
@@ -229,7 +229,7 @@ void State::UpdateSidForEnt(std::size_t ent_id, const Graphics& graphics) {
         return;
     }
 
-    const sim::AABB broadphase_aabb = ents::common::GetEntBroadphaseAabb(ent, graphics);
+    const sim::FxAABB broadphase_aabb = ents::common::GetEntBroadphaseAabb(ent, graphics);
     sid.Upsert(ent.vid, broadphase_aabb);
 }
 

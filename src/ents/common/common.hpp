@@ -144,8 +144,8 @@ sim::FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim:
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 center);
 FVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback);
 sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback);
-sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics);
-sim::AABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);
+sim::FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics);
+sim::FxAABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);
 bool CanCollectPickupFromContact(
     std::size_t pickup_idx,
     std::size_t collector_idx,
@@ -337,13 +337,13 @@ bool TryDispatchEntEntOverlapContacts(
 );
 std::vector<VID> GatherTouchedEntContactsForAabb(
     std::size_t ent_idx,
-    sim::AABB aabb,
+    sim::FxAABB aabb,
     const Graphics& graphics,
     State& state
 );
 BlockingContactSet GatherBlockingContactsForAabb(
     std::size_t ent_idx,
-    sim::AABB aabb,
+    sim::FxAABB aabb,
     const State& state,
     bool check_tiles,
     bool check_ents

@@ -160,12 +160,12 @@ int GetCachedOpenSensorDistance(Ent& trap, const State& state) {
     return trap.point_a.y;
 }
 
-sim::AABB GetOpenSensorAabb(Ent& trap, const State& state) {
+sim::FxAABB GetOpenSensorAabb(Ent& trap, const State& state) {
     const int direction = DirectionForTrap(trap);
     const sim::FxVec2 start = GetSensorStart(trap);
     const int open_distance = GetCachedOpenSensorDistance(trap, state);
     const sim::Scalar end_x = start.x + sim::Scalar::from_int(direction * open_distance);
-    return sim::AABB::from_corners(
+    return sim::FxAABB::from_corners(
         sim::FxVec2{
             std::min(start.x, end_x),
             start.y - sim::Scalar::from_int(kArrowTrapSensorHalfHeight),
@@ -199,7 +199,7 @@ bool SensorTouchesMovingEnt(
     const State& state,
     const Graphics& graphics
 ) {
-    const sim::AABB sensor_aabb = GetOpenSensorAabb(trap, state);
+    const sim::FxAABB sensor_aabb = GetOpenSensorAabb(trap, state);
     if (sensor_aabb.br.x <= sensor_aabb.tl.x) {
         return false;
     }

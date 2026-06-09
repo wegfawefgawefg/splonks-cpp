@@ -109,14 +109,14 @@ bool TryDepositFavorWhileGroundedOnSacAltar(
         return false;
     }
 
-    const sim::AABB feet = machete.GetSimFeet();
+    const sim::FxAABB feet = machete.GetSimFeet();
     for (const VID& other_vid : QueryEntsInAabb(state, feet, machete.vid)) {
         Ent* const other_ent = state.ents.GetEntMut(other_vid);
         if (other_ent == nullptr || !other_ent->active || other_ent->type_ != EntType::SacAltar) {
             continue;
         }
 
-        const sim::AABB altar_aabb = GetNearestWorldAabb(
+        const sim::FxAABB altar_aabb = GetNearestWorldAabb(
             state.stage,
             machete.GetSimCenter(),
             common::GetContactAabbForEnt(*other_ent, graphics)
@@ -147,14 +147,14 @@ void TryApplyMacheteStrike(std::size_t ent_idx, State& state, const Graphics& gr
         holder = state.ents.GetEntMut(*machete.held_by_vid);
     }
 
-    const sim::AABB strike_aabb = common::GetContactAabbForEnt(machete, graphics);
+    const sim::FxAABB strike_aabb = common::GetContactAabbForEnt(machete, graphics);
     for (const VID& other_vid : QueryEntsInAabb(state, strike_aabb, machete.vid)) {
         Ent* const other_ent = state.ents.GetEntMut(other_vid);
         if (other_ent == nullptr) {
             continue;
         }
 
-        const sim::AABB other_aabb = GetNearestWorldAabb(
+        const sim::FxAABB other_aabb = GetNearestWorldAabb(
             state.stage,
             strike_aabb.center(),
             common::GetContactAabbForEnt(*other_ent, graphics)

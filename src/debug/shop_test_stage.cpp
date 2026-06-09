@@ -148,10 +148,10 @@ void AddShopTestVandalismTriggers(State& state, const ShopTestStallSpec& stall, 
     }
 }
 
-sim::AABB MakeShopTestArea(const ShopTestStallSpec& stall) {
+sim::FxAABB MakeShopTestArea(const ShopTestStallSpec& stall) {
     constexpr int kShopTopY = 4;
     constexpr int kShopBottomY = 10;
-    return sim::AABB::from_corners(
+    return sim::FxAABB::from_corners(
         sim::PixelVec2(stall.left_x * static_cast<int>(kTileSize),
                        kShopTopY * static_cast<int>(kTileSize)),
         sim::PixelVec2((stall.right_x + 1) * static_cast<int>(kTileSize) - 1,
@@ -164,7 +164,7 @@ std::optional<VID> SpawnShopTestShop(
     const ShopTestStallSpec& stall,
     int shopkeeper_tile_x
 ) {
-    const sim::AABB shop_area = MakeShopTestArea(stall);
+    const sim::FxAABB shop_area = MakeShopTestArea(stall);
     const std::optional<VID> shop_vid =
         SpawnStageEntAtTopLeft(state, EntType::Shop, shop_area.tl);
     if (!shop_vid.has_value()) {
@@ -248,7 +248,7 @@ void SpawnShopTestCrapsTable(
                   10.0F * static_cast<float>(kTileSize) -
                       sim::ToRenderScalar(GetEntSpec(EntType::JetPack).size.y))
     );
-    const sim::AABB shop_area = MakeShopTestArea(stall);
+    const sim::FxAABB shop_area = MakeShopTestArea(stall);
     const std::optional<VID> table_vid =
         SpawnStageEntAtTopLeft(state, EntType::CrapsTable, shop_area.tl);
     if (!table_vid.has_value()) {

@@ -71,9 +71,9 @@ bool BelongsToOwnerAltar(const Ent& ent, const Ent& owner) {
     return false;
 }
 
-sim::AABB GetSacrificeArea(const Ent& altar) {
+sim::FxAABB GetSacrificeArea(const Ent& altar) {
     const sim::FxVec2 altar_pos = altar.GetSimPos();
-    return sim::AABB::from_corners(
+    return sim::FxAABB::from_corners(
         altar_pos + sim::PixelVec2(-1, -kSacrificeSurfaceTopOffset),
         altar_pos + sim::PixelVec2(31, kSacrificeSurfaceBottomOffset)
     );
@@ -663,7 +663,7 @@ void StepEntLogicAsSacAltar(
         return;
     }
 
-    const sim::AABB sacrifice_area = GetSacrificeArea(altar);
+    const sim::FxAABB sacrifice_area = GetSacrificeArea(altar);
     const std::vector<VID> candidates = QueryEntsInAabb(state, sacrifice_area, altar.vid);
     for (const VID& candidate_vid : candidates) {
         Ent* const victim = state.ents.GetEntMut(candidate_vid);
@@ -684,7 +684,7 @@ void StepEntLogicAsSacAltar(
             continue;
         }
 
-        const sim::AABB victim_aabb = common::GetContactAabbForEnt(*victim, graphics);
+        const sim::FxAABB victim_aabb = common::GetContactAabbForEnt(*victim, graphics);
         if (victim_aabb.br.y < sacrifice_area.tl.y || victim_aabb.br.y > sacrifice_area.br.y) {
             continue;
         }

@@ -105,8 +105,8 @@ bool TryApplyStompContactToEnt(
         return false;
     }
 
-    const sim::AABB stomper_aabb = GetContactAabbForEnt(stomper, graphics);
-    const sim::AABB stomped_aabb = GetNearestWorldAabb(
+    const sim::FxAABB stomper_aabb = GetContactAabbForEnt(stomper, graphics);
+    const sim::FxAABB stomped_aabb = GetNearestWorldAabb(
         state.stage,
         stomper_aabb.center(),
         GetContactAabbForEnt(*stomped, graphics)

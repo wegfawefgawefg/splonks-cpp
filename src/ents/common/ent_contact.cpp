@@ -80,7 +80,7 @@ ContactResult TryDispatchEntEntContactForParticipant(
 
 std::vector<VID> GatherTouchedEntContactsForAabb(
     std::size_t ent_idx,
-    sim::AABB aabb,
+    sim::FxAABB aabb,
     const Graphics& graphics,
     State& state
 ) {
@@ -104,7 +104,7 @@ std::vector<VID> GatherTouchedEntContactsForAabb(
             continue;
         }
 
-        const sim::AABB other_contact_aabb = GetNearestWorldAabb(
+        const sim::FxAABB other_contact_aabb = GetNearestWorldAabb(
             state.stage,
             anchor,
             GetContactAabbForEnt(*other_ent, graphics)

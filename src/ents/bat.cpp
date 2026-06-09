@@ -17,16 +17,16 @@ namespace splonks::ents::bat {
 
 namespace {
 
-sim::AABB GetAreaAbove(const Ent& bat) {
-    const sim::AABB aabb = bat.GetSimAABB();
-    return sim::AABB::from_corners(
+sim::FxAABB GetAreaAbove(const Ent& bat) {
+    const sim::FxAABB aabb = bat.GetSimAABB();
+    return sim::FxAABB::from_corners(
         sim::FxVec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
         sim::FxVec2{aabb.br.x, aabb.tl.y}
     );
 }
 
 bool IsAtPerchOrRoof(const Ent& bat, const State& state) {
-    const sim::AABB area_above = GetAreaAbove(bat);
+    const sim::FxAABB area_above = GetAreaAbove(bat);
     if (area_above.tl.y < sim::Scalar::zero()) {
         return true;
     }

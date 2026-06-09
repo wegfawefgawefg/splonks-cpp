@@ -43,7 +43,7 @@ struct TeleportProbeCandidate {
     int distance_tiles = 0;
     IVec2 tile_pos = IVec2::New(0, 0);
     sim::FxVec2 destination_center = sim::FxVec2::zero();
-    sim::AABB destination_aabb = sim::AABB::from_corners(sim::FxVec2::zero(), sim::FxVec2::zero());
+    sim::FxAABB destination_aabb = sim::FxAABB::from_corners(sim::FxVec2::zero(), sim::FxVec2::zero());
     TeleportProbeBlockReason block_reason = TeleportProbeBlockReason::None;
     std::vector<VID> telefrag_vids;
     std::vector<VID> splat_vids;
@@ -201,12 +201,12 @@ bool CanSplatDeadEnt(const Ent& ent) {
 }
 
 bool DoesProbeOverlapEnt(
-    sim::AABB probe_aabb,
+    sim::FxAABB probe_aabb,
     const Ent& other,
     const State& state,
     const Graphics& graphics
 ) {
-    const sim::AABB other_aabb = GetNearestWorldAabb(
+    const sim::FxAABB other_aabb = GetNearestWorldAabb(
         state.stage,
         probe_aabb.center(),
         common::GetContactAabbForEnt(other, graphics)
@@ -234,7 +234,7 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
         .distance_tiles = distance_tiles,
         .tile_pos = target_tile,
         .destination_center = destination_center,
-        .destination_aabb = sim::AABB::from_corners(sim::FxVec2::zero(), sim::FxVec2::zero()),
+        .destination_aabb = sim::FxAABB::from_corners(sim::FxVec2::zero(), sim::FxVec2::zero()),
         .block_reason = TeleportProbeBlockReason::None,
         .telefrag_vids = {},
         .splat_vids = {},

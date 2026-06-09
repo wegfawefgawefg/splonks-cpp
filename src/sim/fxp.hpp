@@ -11,7 +11,7 @@ namespace splonks::sim {
 
 using Scalar = gfxp::Fixed12;
 using FxVec2 = gfxp::Vec2_12;
-using AABB = gfxp::Aabb_12;
+using FxAABB = gfxp::Aabb_12;
 
 struct Color3 {
     Scalar r = Scalar::from_int(1);

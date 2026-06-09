@@ -53,7 +53,7 @@ std::optional<FVec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
         return std::nullopt;
     }
 
-    const sim::AABB player_aabb = player.GetSimAABB();
+    const sim::FxAABB player_aabb = player.GetSimAABB();
     const int air_tile_y = state.stage.GetTileCoordAtWc(IVec2::New(
         player_aabb.br.x.to_pixels_trunc(),
         (player_aabb.br.y - sim::Scalar::from_pixels(1)).to_pixels_trunc()
@@ -109,8 +109,8 @@ void PlayMeatheadHealFeedback(State& state, const Ent& player) {
     (void)PlayWorldSoundEmitter(state, sound_pos, audio_asset_ids::Smooch);
 }
 
-sim::AABB ExpandAabb(sim::AABB aabb, sim::Scalar amount) {
-    return sim::AABB::from_corners(
+sim::FxAABB ExpandAabb(sim::FxAABB aabb, sim::Scalar amount) {
+    return sim::FxAABB::from_corners(
         aabb.tl - sim::FxVec2{amount, amount},
         aabb.br + sim::FxVec2{amount, amount}
     );
@@ -206,7 +206,7 @@ void OnMeatheadEffectHook(
         return;
     }
 
-    const sim::AABB collect_area = ExpandAabb(owner.GetSimAABB(), kMeatheadPickupRange);
+    const sim::FxAABB collect_area = ExpandAabb(owner.GetSimAABB(), kMeatheadPickupRange);
     if (!WorldAabbsIntersect(state.stage, collect_area, victim->GetSimAABB())) {
         return;
     }

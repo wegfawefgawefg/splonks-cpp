@@ -196,7 +196,7 @@ sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::Fx
     return emit_point;
 }
 
-sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
+sim::FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
         return ent.GetSimAABB();
@@ -213,16 +213,16 @@ sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
 
     const sim::FxVec2 contact_tl =
         sprite_tl + sim::FxVec2::from_pixels(contact_x, aframe->cbox.y);
-    return sim::AABB::from_corners(
+    return sim::FxAABB::from_corners(
         contact_tl,
         contact_tl + sim::FxVec2::from_pixels(aframe->cbox.w - 1, aframe->cbox.h - 1)
     );
 }
 
-sim::AABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics) {
-    const sim::AABB pbox = ent.GetSimAABB();
-    const sim::AABB cbox = GetContactAabbForEnt(ent, graphics);
-    return sim::AABB::from_corners(gfxp::min(pbox.tl, cbox.tl), gfxp::max(pbox.br, cbox.br));
+sim::FxAABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics) {
+    const sim::FxAABB pbox = ent.GetSimAABB();
+    const sim::FxAABB cbox = GetContactAabbForEnt(ent, graphics);
+    return sim::FxAABB::from_corners(gfxp::min(pbox.tl, cbox.tl), gfxp::max(pbox.br, cbox.br));
 }
 
 void StepAnimTimer(std::size_t ent_idx, State& state, const Graphics& graphics, float dt) {

@@ -69,12 +69,12 @@ float GetMoveDirection(const Ent& door) {
 }
 
 FVec2 GetTopEmitPos(const Ent& door) {
-    const sim::AABB aabb = door.GetSimAABB();
+    const sim::FxAABB aabb = door.GetSimAABB();
     return sim::ToRenderVec2(sim::FxVec2{aabb.center().x, aabb.tl.y});
 }
 
 FVec2 GetBottomEmitPos(const Ent& door) {
-    const sim::AABB aabb = door.GetSimAABB();
+    const sim::FxAABB aabb = door.GetSimAABB();
     return sim::ToRenderVec2(sim::FxVec2{aabb.center().x, aabb.br.y});
 }
 

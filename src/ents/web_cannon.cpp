@@ -591,8 +591,8 @@ common::ContactResult OnEntContactAsCobweb(
         return common::ContactResult{};
     }
 
-    const sim::AABB cobweb_aabb = common::GetContactAabbForEnt(cobweb, *graphics);
-    const sim::AABB other_aabb = GetNearestWorldAabb(
+    const sim::FxAABB cobweb_aabb = common::GetContactAabbForEnt(cobweb, *graphics);
+    const sim::FxAABB other_aabb = GetNearestWorldAabb(
         state.stage,
         cobweb_aabb.center(),
         common::GetContactAabbForEnt(other, *graphics)
@@ -804,7 +804,7 @@ void StepEntLogicAsCobweb(
         : 1.0F;
     cobweb.alpha = sim::ToSimScalar(std::clamp(std::min(health_ratio, lifetime_ratio), 0.0F, 1.0F));
 
-    const sim::AABB cobweb_aabb = common::GetContactAabbForEnt(cobweb, graphics);
+    const sim::FxAABB cobweb_aabb = common::GetContactAabbForEnt(cobweb, graphics);
     const std::vector<VID> overlapped_vids = QueryEntsInAabb(state, cobweb_aabb, cobweb.vid);
     bool occupied = false;
     for (const VID& other_vid : overlapped_vids) {
@@ -813,7 +813,7 @@ void StepEntLogicAsCobweb(
             continue;
         }
 
-        const sim::AABB other_aabb = GetNearestWorldAabb(
+        const sim::FxAABB other_aabb = GetNearestWorldAabb(
             state.stage,
             cobweb_aabb.center(),
             common::GetContactAabbForEnt(*other, graphics)

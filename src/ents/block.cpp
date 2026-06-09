@@ -124,7 +124,7 @@ void SpawnBlockTrailSmoke(State& state, const FVec2& pos, Side facing) {
 }
 
 FVec2 GetBlockTrailingBottomCorner(const Ent& block) {
-    const sim::AABB aabb = block.GetSimAABB();
+    const sim::FxAABB aabb = block.GetSimAABB();
     return sim::ToRenderVec2(block.facing == Side::Right
                                  ? sim::FxVec2{aabb.tl.x, aabb.br.y}
                                  : sim::FxVec2{aabb.br.x, aabb.br.y});

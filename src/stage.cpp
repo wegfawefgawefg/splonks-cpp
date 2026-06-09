@@ -536,7 +536,7 @@ const StageLight* Stage::GetLight(VID vid) const {
     return nullptr;
 }
 
-void Stage::SetTilesInRectWc(sim::AABB area, Tile tile_type) {
+void Stage::SetTilesInRectWc(sim::FxAABB area, Tile tile_type) {
     const sim::Scalar tile_size = sim::Scalar::from_int(static_cast<int>(kTileSize));
     SetTilesInRect(
         IAABB::New(

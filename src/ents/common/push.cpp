@@ -40,8 +40,8 @@ bool IsAtCrusherLeadingFace(
     const Ent& other_ent,
     const IVec2& push_direction
 ) {
-    const sim::AABB crusher_aabb = crusher.GetSimAABB();
-    const sim::AABB other_aabb =
+    const sim::FxAABB crusher_aabb = crusher.GetSimAABB();
+    const sim::FxAABB other_aabb =
         GetNearestWorldAabb(stage, crusher_aabb.center(), other_ent.GetSimAABB());
     const sim::FxVec2 crusher_center = crusher_aabb.center();
     const sim::FxVec2 other_center = other_aabb.center();
@@ -89,13 +89,13 @@ bool TryApplyPushEntAction(
         return false;
     }
 
-    const sim::AABB pusher_aabb = GetContactAabbForEnt(*pusher, graphics);
-    const sim::AABB push_zone{
+    const sim::FxAABB pusher_aabb = GetContactAabbForEnt(*pusher, graphics);
+    const sim::FxAABB push_zone{
         .tl = pusher_aabb.tl - sim::PixelVec2(6, 0),
         .br = pusher_aabb.br + sim::PixelVec2(6, 0),
     };
     const sim::FxVec2 pusher_center = pusher_aabb.center();
-    const sim::AABB pushed_aabb = GetNearestWorldAabb(
+    const sim::FxAABB pushed_aabb = GetNearestWorldAabb(
         state.stage,
         pusher_center,
         GetContactAabbForEnt(*pushed, graphics)
@@ -123,13 +123,13 @@ void TryPushBlocks(
 ) {
     Ent& ent = state.ents.ents[ent_idx];
     const bool ent_grounded = ent.grounded;
-    const sim::AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
     const VID ent_vid = ent.vid;
     const sim::FxVec2 ent_vel = ent.vel;
 
     bool ready_to_push = false;
     if (ent_grounded) {
-        const sim::AABB try_to_push_zone = {
+        const sim::FxAABB try_to_push_zone = {
             .tl = ent_aabb.tl - sim::PixelVec2(6, 0),
             .br = ent_aabb.br + sim::PixelVec2(6, 0),
         };
@@ -144,7 +144,7 @@ void TryPushBlocks(
                 ready_to_push = true;
                 const sim::Scalar push_zone_left_x = ent_aabb.tl.x - sim::Scalar::from_int(1);
                 const sim::Scalar push_zone_right_x = ent_aabb.br.x + sim::Scalar::from_int(1);
-                const sim::AABB nearest_block_aabb =
+                const sim::FxAABB nearest_block_aabb =
                     GetNearestWorldAabb(state.stage, ent_aabb.center(), block_ent->GetSimAABB());
                 const sim::FxVec2 block_tl = nearest_block_aabb.tl;
                 const sim::FxVec2 block_br = nearest_block_aabb.br;
@@ -187,8 +187,8 @@ bool TryDisplaceEntByOnePixel(
     }
 
     const sim::FxVec2 candidate_pos = ent.pos + sim::PixelVec2(direction.x, direction.y);
-    const sim::AABB candidate_aabb =
-        sim::AABB::from_pos_size(candidate_pos, ent.size - sim::PixelVec2(1, 1));
+    const sim::FxAABB candidate_aabb =
+        sim::FxAABB::from_pos_size(candidate_pos, ent.size - sim::PixelVec2(1, 1));
     const BlockingContactSet contacts =
         GatherBlockingContactsForAabb(ent_idx, candidate_aabb, state, true, true);
     if (ResolveBlockingContactSet(ent_idx, contacts, state).blocks_movement) {

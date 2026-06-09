@@ -10,7 +10,7 @@
 namespace splonks {
 
 void BreakStageTilesInRectWc(
-    sim::AABB area,
+    sim::FxAABB area,
     State& state,
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound = std::nullopt,

@@ -205,13 +205,13 @@ std::optional<Side> GetWallSlideSide(
         return std::nullopt;
     }
 
-    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetSimAABB();
     const auto side_blocked = [&](Side side) {
         const bool left = side == Side::Left;
         const sim::Scalar probe_x = left
             ? aabb.tl.x - sim::Scalar::from_int(1)
             : aabb.br.x + sim::Scalar::from_int(1);
-        const sim::AABB probe = sim::AABB::from_corners(
+        const sim::FxAABB probe = sim::FxAABB::from_corners(
             sim::FxVec2{probe_x, aabb.tl.y + sim::Scalar::from_int(1)},
             sim::FxVec2{probe_x, aabb.br.y - sim::Scalar::from_int(1)}
         );
@@ -232,7 +232,7 @@ std::optional<MeatSlimeSurface> GetGroundSurface(const Ent& ent, const State& st
         return std::nullopt;
     }
 
-    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetSimAABB();
     const sim::FxVec2 center_support_world{
         ent.GetSimCenter().x,
         aabb.br.y + sim::Scalar::from_int(1),
@@ -320,9 +320,9 @@ void MaybeSpawnTopMeatSlime(Ent& ent, State& state) {
 }
 
 std::optional<MeatSlimeSurface> GetCeilingSurface(const Ent& ent, const State& state) {
-    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetSimAABB();
     const sim::Scalar probe_y = aabb.tl.y - sim::Scalar::from_int(1);
-    const sim::AABB probe = sim::AABB::from_corners(
+    const sim::FxAABB probe = sim::FxAABB::from_corners(
         sim::FxVec2{aabb.tl.x + sim::Scalar::from_int(1), probe_y},
         sim::FxVec2{aabb.br.x - sim::Scalar::from_int(1), probe_y}
     );
@@ -357,11 +357,11 @@ void MaybeSpawnBottomMeatSlime(Ent& ent, State& state) {
 }
 
 std::optional<MeatSlimeSurface> GetSideSurface(const Ent& ent, const State& state, Side side) {
-    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetSimAABB();
     const sim::Scalar probe_x = side == Side::Left
         ? aabb.tl.x - sim::Scalar::from_int(1)
         : aabb.br.x + sim::Scalar::from_int(1);
-    const sim::AABB probe = sim::AABB::from_corners(
+    const sim::FxAABB probe = sim::FxAABB::from_corners(
         sim::FxVec2{probe_x, aabb.tl.y + sim::Scalar::from_int(1)},
         sim::FxVec2{probe_x, aabb.br.y - sim::Scalar::from_int(1)}
     );

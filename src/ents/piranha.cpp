@@ -78,7 +78,7 @@ struct SwimProbeResult {
 };
 
 SwimProbeResult QuerySwimProbes(const Ent& piranha, const State& state) {
-    const sim::AABB aabb = piranha.GetSimAABB();
+    const sim::FxAABB aabb = piranha.GetSimAABB();
     const sim::FxVec2 center = piranha.GetSimCenter();
     const float cutoff = sim::ToRenderScalar(state.settings.fluid.render_cutoff_amount);
     return SwimProbeResult{

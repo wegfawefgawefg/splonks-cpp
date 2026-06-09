@@ -190,11 +190,11 @@ struct Ent {
     void SetRenderVel(const FVec2& value);
     void SetRenderAcc(const FVec2& value);
     FVec2 GetSize() const;
-    sim::AABB GetSimAABB() const;
+    sim::FxAABB GetSimAABB() const;
     sim::FxVec2 GetSimCenter() const;
     void SetSimCenter(sim::FxVec2 center);
-    sim::AABB GetSimFeet() const;
-    sim::AABB GetSimGroundProbe() const;
+    sim::FxAABB GetSimFeet() const;
+    sim::FxAABB GetSimGroundProbe() const;
     std::tuple<FVec2, FVec2> GetRenderBounds() const;
     FAABB GetRenderAABB() const;
     FVec2 GetRenderCenter() const;

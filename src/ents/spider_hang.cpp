@@ -20,7 +20,7 @@ constexpr int kGiantSpiderDropDistance = 90;
 constexpr float kGiantSpiderDropXTolerance = 8.0F;
 
 bool HasCeilingSupport(const Ent& ent, const State& state) {
-    const sim::AABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetSimAABB();
     const sim::FxVec2 sample_pos = sim::FxVec2{
         aabb.center().x,
         aabb.tl.y - sim::Scalar::from_pixels(1),

@@ -17,7 +17,7 @@ struct SIDCell {
 struct SIDRecord {
     bool active = false;
     VID vid;
-    sim::AABB aabb;
+    sim::FxAABB aabb;
     std::vector<SIDCell> cells;
 };
 
@@ -26,10 +26,10 @@ class SID {
     static SID New();
 
     void Clear();
-    void Upsert(const VID& vid, sim::AABB aabb);
+    void Upsert(const VID& vid, sim::FxAABB aabb);
     void Remove(const VID& vid);
-    std::vector<VID> Query(sim::AABB area) const;
-    std::vector<VID> QueryExclude(sim::AABB area, const VID& exclude_vid) const;
+    std::vector<VID> Query(sim::FxAABB area) const;
+    std::vector<VID> QueryExclude(sim::FxAABB area, const VID& exclude_vid) const;
 
   private:
     std::unordered_map<std::int64_t, std::vector<VID>> buckets_;
