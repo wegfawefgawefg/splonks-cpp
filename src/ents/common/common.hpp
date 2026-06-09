@@ -141,7 +141,6 @@ Vec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
 sim::Vec2 GetSimSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
 Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback);
 sim::Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::Vec2 fallback);
-void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, const Vec2& center);
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::Vec2 center);
 Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback);
 sim::Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::Vec2 fallback);

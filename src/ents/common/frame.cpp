@@ -129,35 +129,6 @@ sim::Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::V
     return sprite_tl + (sprite_world_size / sim::Scalar::from_int(2));
 }
 
-void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, const Vec2& center) {
-    const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
-    if (aframe == nullptr) {
-        ent.SetRenderCenter(center);
-        return;
-    }
-
-    const Vec2 draw_offset = Vec2::New(
-        static_cast<float>(aframe->draw_offset.x),
-        static_cast<float>(aframe->draw_offset.y)
-    );
-    const Vec2 pbox_size = Vec2::New(
-        static_cast<float>(aframe->pbox.w),
-        static_cast<float>(aframe->pbox.h)
-    );
-    const Vec2 pbox_center_offset = (pbox_size - Vec2::New(1.0F, 1.0F)) * 0.5F;
-
-    if (ent.facing == Side::Left) {
-        ent.SetRenderPos(center - draw_offset - pbox_center_offset);
-        return;
-    }
-
-    Vec2 facing_adjusted_draw_offset = draw_offset;
-    if (ent.type_ == EntType::BaseballBat) {
-        facing_adjusted_draw_offset = Vec2::New(-draw_offset.x, draw_offset.y);
-    }
-    ent.SetRenderPos(center - facing_adjusted_draw_offset - pbox_center_offset);
-}
-
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::Vec2 center) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {

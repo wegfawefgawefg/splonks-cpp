@@ -251,7 +251,7 @@ void ApplyThrowState(
                 .type = EffectHookType::Throw,
                 .actor_vid = thrower.vid,
                 .target_vid = thrown.vid,
-                .world_pos = thrown.GetRenderCenter(),
+                .world_pos = sim::ToRenderVec2(thrown.GetSimCenter()),
             }
         );
     } else {

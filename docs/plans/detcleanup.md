@@ -428,6 +428,10 @@ Current state:
   now accepts a fixed explosion origin. Explosion tile footprint, broadphase,
   and knockback deltas stay in fixed/int space while particles, sound, shake,
   and transient light convert at presentation boundaries.
+- Completed 2026-06-09: common throw effect hook placement now derives from the
+  thrown entity's fixed center, and the unused render-space
+  `SetVisualCenterForEnt(..., Vec2)` overload was removed so common visual
+  placement writes through the fixed-center helper.
 
 Cleanup:
 
