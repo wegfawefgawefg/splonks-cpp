@@ -23,7 +23,7 @@ bool IsPeerAdminControlDisabled(const State& state) {
     return state.net_session.role == network::NetRole::Peer;
 }
 
-bool SliderSimScalar(
+bool SliderFxScalar(
     const char* label,
     FxScalar& value,
     float min_value,
@@ -38,7 +38,7 @@ bool SliderSimScalar(
     return true;
 }
 
-bool DragSimScalar(
+bool DragFxScalar(
     const char* label,
     FxScalar& value,
     float speed,
@@ -366,20 +366,20 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     );
     brush.mode = static_cast<DebugFluidBrushState::Mode>(brush_mode);
     save_settings |= ImGui::SliderInt("Sim Interval (frames)", &fluid.simulation_interval_frames, 1, 30);
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Transfer / Step (0-1)",
         fluid.transfer_per_step,
         0.0F,
         1.0F,
         "%.3f"
     );
-    save_settings |= SliderSimScalar("Global Gravity X", fluid.gravity_x, -4.0F, 4.0F, "%.2f");
+    save_settings |= SliderFxScalar("Global Gravity X", fluid.gravity_x, -4.0F, 4.0F, "%.2f");
     ImGui::SameLine();
     if (ImGui::Button("0##FluidGravityX")) {
         fluid.gravity_x = FxScalar::zero();
         save_settings = true;
     }
-    save_settings |= SliderSimScalar("Global Gravity Y", fluid.gravity_y, -4.0F, 4.0F, "%.2f");
+    save_settings |= SliderFxScalar("Global Gravity Y", fluid.gravity_y, -4.0F, 4.0F, "%.2f");
     ImGui::SameLine();
     if (ImGui::Button("0##FluidGravityY")) {
         fluid.gravity_y = FxScalar::zero();
@@ -414,25 +414,25 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         brush.paint_gravity_x,
         brush.paint_gravity_y
     );
-    save_settings |= SliderSimScalar("Pressure Strength", fluid.pressure_strength, 0.0F, 4.0F, "%.2f");
-    save_settings |= SliderSimScalar("Velocity Damping", fluid.velocity_damping, 0.0F, 1.0F, "%.2f");
-    save_settings |= SliderSimScalar("Temp Gravity Decay", fluid.temp_gravity_decay, 0.0F, 1.0F, "%.2f");
+    save_settings |= SliderFxScalar("Pressure Strength", fluid.pressure_strength, 0.0F, 4.0F, "%.2f");
+    save_settings |= SliderFxScalar("Velocity Damping", fluid.velocity_damping, 0.0F, 1.0F, "%.2f");
+    save_settings |= SliderFxScalar("Temp Gravity Decay", fluid.temp_gravity_decay, 0.0F, 1.0F, "%.2f");
     save_settings |= ImGui::Checkbox("Temporal Smoothing", &fluid.temporal_smoothing_enabled);
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Temporal Response",
         fluid.temporal_smoothing_response,
         0.0F,
         1.0F,
         "%.2f"
     );
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Render Cutoff (0-1)",
         fluid.render_cutoff_amount,
         0.0F,
         1.0F,
         "%.4f"
     );
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Global Water Alpha",
         fluid.water_alpha,
         0.0F,
@@ -441,7 +441,7 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     );
     ImGui::Checkbox("Show Flow Indicators", &brush.show_flow_indicators);
     save_settings |= ImGui::Checkbox("Water Uses Stage Lighting", &fluid.lighting_enabled);
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Water Lighting Strength",
         fluid.lighting_strength,
         0.0F,
@@ -455,63 +455,63 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         water_effect = WaterEffectSettings::New();
         save_settings = true;
     }
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Effect Gravity Scale",
         water_effect.gravity_scale,
         0.0F,
         2.0F,
         "%.2f"
     );
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Effect Damping X",
         water_effect.velocity_damping_x,
         0.0F,
         1.0F,
         "%.2f"
     );
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Effect Damping Y",
         water_effect.velocity_damping_y,
         0.0F,
         1.0F,
         "%.2f"
     );
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Effect Move Speed Scale",
         water_effect.move_speed_scale,
         0.0F,
         1.0F,
         "%.2f"
     );
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Effect Max Fall Speed",
         water_effect.max_fall_speed,
         0.0F,
         12.0F,
         "%.2f"
     );
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Effect Buoyancy",
         water_effect.buoyancy_strength,
         0.0F,
         4.0F,
         "%.2f"
     );
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Effect Fall Timer Rate",
         water_effect.fall_timer_rate,
         0.0F,
         2.0F,
         "%.2f"
     );
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Effect Stomp Damage Scale",
         water_effect.stomp_damage_scale,
         0.0F,
         1.0F,
         "%.2f"
     );
-    save_settings |= SliderSimScalar(
+    save_settings |= SliderFxScalar(
         "Effect Swim Impulse",
         water_effect.swim_impulse,
         0.0F,
@@ -921,10 +921,10 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
     }
 
     ImGui::SeparatorText("Vertical");
-    changed |= DragSimScalar("Gravity Scale", tuning.gravity_scale, 0.01F, 0.0F, 4.0F, "%.3f");
-    changed |= DragSimScalar("Max Fall Speed", tuning.max_fall_speed, 0.05F, 0.0F, 20.0F, "%.2f");
-    changed |= DragSimScalar("Jump Impulse", tuning.jump_impulse, 0.05F, 0.0F, 12.0F, "%.2f");
-    changed |= DragSimScalar(
+    changed |= DragFxScalar("Gravity Scale", tuning.gravity_scale, 0.01F, 0.0F, 4.0F, "%.3f");
+    changed |= DragFxScalar("Max Fall Speed", tuning.max_fall_speed, 0.05F, 0.0F, 20.0F, "%.2f");
+    changed |= DragFxScalar("Jump Impulse", tuning.jump_impulse, 0.05F, 0.0F, 12.0F, "%.2f");
+    changed |= DragFxScalar(
         "Spring Shoes Jump Bonus",
         tuning.spring_shoes_jump_impulse_bonus,
         0.05F,
@@ -940,11 +940,11 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
     changed |= ImGui::DragInt("Fall Heavy Frames", &tuning.fall_damage_heavy_frames, 1.0F, 0, 240);
 
     ImGui::SeparatorText("Horizontal");
-    changed |= DragSimScalar("Walk Speed", tuning.walk_speed, 0.05F, 0.0F, 12.0F, "%.2f");
-    changed |= DragSimScalar("Run Speed", tuning.run_speed, 0.05F, 0.0F, 12.0F, "%.2f");
-    changed |= DragSimScalar("Move Acc", tuning.move_acc, 0.01F, 0.0F, 4.0F, "%.3f");
-    changed |= DragSimScalar("Run Acc", tuning.run_acc, 0.01F, 0.0F, 4.0F, "%.3f");
-    changed |= DragSimScalar(
+    changed |= DragFxScalar("Walk Speed", tuning.walk_speed, 0.05F, 0.0F, 12.0F, "%.2f");
+    changed |= DragFxScalar("Run Speed", tuning.run_speed, 0.05F, 0.0F, 12.0F, "%.2f");
+    changed |= DragFxScalar("Move Acc", tuning.move_acc, 0.01F, 0.0F, 4.0F, "%.3f");
+    changed |= DragFxScalar("Run Acc", tuning.run_acc, 0.01F, 0.0F, 4.0F, "%.3f");
+    changed |= DragFxScalar(
         "Ground Friction Scale",
         tuning.ground_friction_scale,
         0.01F,
@@ -952,11 +952,11 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
         2.0F,
         "%.3f"
     );
-    changed |= DragSimScalar("Air Friction", tuning.air_friction, 0.005F, 0.0F, 1.0F, "%.3f");
+    changed |= DragFxScalar("Air Friction", tuning.air_friction, 0.005F, 0.0F, 1.0F, "%.3f");
 
     ImGui::SeparatorText("Climb / Hang");
-    changed |= DragSimScalar("Climb Speed", tuning.climb_speed, 0.005F, 0.0F, 8.0F, "%.3f");
-    changed |= DragSimScalar(
+    changed |= DragFxScalar("Climb Speed", tuning.climb_speed, 0.005F, 0.0F, 8.0F, "%.3f");
+    changed |= DragFxScalar(
         "Climb Depart Horizontal",
         tuning.climb_depart_horizontal_speed,
         0.05F,
@@ -964,7 +964,7 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
         12.0F,
         "%.2f"
     );
-    changed |= DragSimScalar(
+    changed |= DragFxScalar(
         "Climb Probe Y Bias",
         tuning.climb_probe_bias_pixels,
         0.1F,
@@ -972,7 +972,7 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
         32.0F,
         "%.1f"
     );
-    changed |= DragSimScalar(
+    changed |= DragFxScalar(
         "Climb Probe X Scale",
         tuning.climb_probe_x_scale,
         0.01F,

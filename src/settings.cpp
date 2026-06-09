@@ -47,7 +47,7 @@ float ParseFloat(const std::string& value, float fallback) {
     }
 }
 
-FxScalar ParseSimScalar(const std::string& value, FxScalar fallback) {
+FxScalar ParseFxScalar(const std::string& value, FxScalar fallback) {
     return ToFxScalar(ParseFloat(value, ToFloat(fallback)));
 }
 
@@ -462,23 +462,23 @@ Settings LoadSettings() {
         } else if (key == "fluid.transfer_per_step" ||
                    key == "debug_ui.fluid_brush_transfer_per_step") {
             settings.fluid.transfer_per_step =
-                ParseSimScalar(value, settings.fluid.transfer_per_step);
+                ParseFxScalar(value, settings.fluid.transfer_per_step);
         } else if (key == "fluid.gravity_x" || key == "debug_ui.fluid_brush_gravity_x") {
-            settings.fluid.gravity_x = ParseSimScalar(value, settings.fluid.gravity_x);
+            settings.fluid.gravity_x = ParseFxScalar(value, settings.fluid.gravity_x);
         } else if (key == "fluid.gravity_y" || key == "debug_ui.fluid_brush_gravity_y") {
-            settings.fluid.gravity_y = ParseSimScalar(value, settings.fluid.gravity_y);
+            settings.fluid.gravity_y = ParseFxScalar(value, settings.fluid.gravity_y);
         } else if (key == "fluid.pressure_strength" ||
                    key == "debug_ui.fluid_brush_pressure_strength") {
             settings.fluid.pressure_strength =
-                ParseSimScalar(value, settings.fluid.pressure_strength);
+                ParseFxScalar(value, settings.fluid.pressure_strength);
         } else if (key == "fluid.velocity_damping" ||
                    key == "debug_ui.fluid_brush_velocity_damping") {
             settings.fluid.velocity_damping =
-                ParseSimScalar(value, settings.fluid.velocity_damping);
+                ParseFxScalar(value, settings.fluid.velocity_damping);
         } else if (key == "fluid.temp_gravity_decay" ||
                    key == "debug_ui.fluid_brush_temp_gravity_decay") {
             settings.fluid.temp_gravity_decay =
-                ParseSimScalar(value, settings.fluid.temp_gravity_decay);
+                ParseFxScalar(value, settings.fluid.temp_gravity_decay);
         } else if (key == "fluid.temporal_smoothing_enabled" ||
                    key == "debug_ui.fluid_brush_temporal_smoothing_enabled") {
             settings.fluid.temporal_smoothing_enabled =
@@ -486,13 +486,13 @@ Settings LoadSettings() {
         } else if (key == "fluid.temporal_smoothing_response" ||
                    key == "debug_ui.fluid_brush_temporal_smoothing_response") {
             settings.fluid.temporal_smoothing_response =
-                ParseSimScalar(value, settings.fluid.temporal_smoothing_response);
+                ParseFxScalar(value, settings.fluid.temporal_smoothing_response);
         } else if (key == "fluid.render_cutoff_amount" ||
                    key == "debug_ui.fluid_brush_render_cutoff_amount") {
             settings.fluid.render_cutoff_amount =
-                ParseSimScalar(value, settings.fluid.render_cutoff_amount);
+                ParseFxScalar(value, settings.fluid.render_cutoff_amount);
         } else if (key == "fluid.water_alpha" || key == "debug_ui.fluid_brush_water_alpha") {
-            settings.fluid.water_alpha = ParseSimScalar(value, settings.fluid.water_alpha);
+            settings.fluid.water_alpha = ParseFxScalar(value, settings.fluid.water_alpha);
         } else if (key == "fluid.lighting_enabled" ||
                    key == "debug_ui.fluid_brush_lighting_enabled") {
             settings.fluid.lighting_enabled =
@@ -500,34 +500,34 @@ Settings LoadSettings() {
         } else if (key == "fluid.lighting_strength" ||
                    key == "debug_ui.fluid_brush_lighting_strength") {
             settings.fluid.lighting_strength =
-                ParseSimScalar(value, settings.fluid.lighting_strength);
+                ParseFxScalar(value, settings.fluid.lighting_strength);
         } else if (key == "water_effect.gravity_scale") {
             settings.water_effect.gravity_scale =
-                ParseSimScalar(value, settings.water_effect.gravity_scale);
+                ParseFxScalar(value, settings.water_effect.gravity_scale);
         } else if (key == "water_effect.velocity_damping_x") {
             settings.water_effect.velocity_damping_x =
-                ParseSimScalar(value, settings.water_effect.velocity_damping_x);
+                ParseFxScalar(value, settings.water_effect.velocity_damping_x);
         } else if (key == "water_effect.velocity_damping_y") {
             settings.water_effect.velocity_damping_y =
-                ParseSimScalar(value, settings.water_effect.velocity_damping_y);
+                ParseFxScalar(value, settings.water_effect.velocity_damping_y);
         } else if (key == "water_effect.move_speed_scale") {
             settings.water_effect.move_speed_scale =
-                ParseSimScalar(value, settings.water_effect.move_speed_scale);
+                ParseFxScalar(value, settings.water_effect.move_speed_scale);
         } else if (key == "water_effect.max_fall_speed") {
             settings.water_effect.max_fall_speed =
-                ParseSimScalar(value, settings.water_effect.max_fall_speed);
+                ParseFxScalar(value, settings.water_effect.max_fall_speed);
         } else if (key == "water_effect.buoyancy_strength") {
             settings.water_effect.buoyancy_strength =
-                ParseSimScalar(value, settings.water_effect.buoyancy_strength);
+                ParseFxScalar(value, settings.water_effect.buoyancy_strength);
         } else if (key == "water_effect.fall_timer_rate") {
             settings.water_effect.fall_timer_rate =
-                ParseSimScalar(value, settings.water_effect.fall_timer_rate);
+                ParseFxScalar(value, settings.water_effect.fall_timer_rate);
         } else if (key == "water_effect.stomp_damage_scale") {
             settings.water_effect.stomp_damage_scale =
-                ParseSimScalar(value, settings.water_effect.stomp_damage_scale);
+                ParseFxScalar(value, settings.water_effect.stomp_damage_scale);
         } else if (key == "water_effect.swim_impulse") {
             settings.water_effect.swim_impulse =
-                ParseSimScalar(value, settings.water_effect.swim_impulse);
+                ParseFxScalar(value, settings.water_effect.swim_impulse);
         } else if (key == "debug_ui.menu_visible") {
             settings.debug_ui.menu_visible = ParseBool(value, settings.debug_ui.menu_visible);
         } else if (key == "debug_ui.playback_visible") {
@@ -619,16 +619,16 @@ Settings LoadSettings() {
                 ParseBool(value, settings.debug_ui.ent_swap_keep_tools);
         } else if (key == "player_tuning.gravity_scale") {
             settings.player_tuning.gravity_scale =
-                ParseSimScalar(value, settings.player_tuning.gravity_scale);
+                ParseFxScalar(value, settings.player_tuning.gravity_scale);
         } else if (key == "player_tuning.max_fall_speed") {
             settings.player_tuning.max_fall_speed =
-                ParseSimScalar(value, settings.player_tuning.max_fall_speed);
+                ParseFxScalar(value, settings.player_tuning.max_fall_speed);
         } else if (key == "player_tuning.jump_impulse") {
             settings.player_tuning.jump_impulse =
-                ParseSimScalar(value, settings.player_tuning.jump_impulse);
+                ParseFxScalar(value, settings.player_tuning.jump_impulse);
         } else if (key == "player_tuning.spring_shoes_jump_impulse_bonus") {
             settings.player_tuning.spring_shoes_jump_impulse_bonus =
-                ParseSimScalar(value, settings.player_tuning.spring_shoes_jump_impulse_bonus);
+                ParseFxScalar(value, settings.player_tuning.spring_shoes_jump_impulse_bonus);
         } else if (key == "player_tuning.jump_hold_frames") {
             settings.player_tuning.jump_hold_frames =
                 ParseInt(value, settings.player_tuning.jump_hold_frames);
@@ -649,34 +649,34 @@ Settings LoadSettings() {
                 ParseInt(value, settings.player_tuning.fall_damage_heavy_frames);
         } else if (key == "player_tuning.walk_speed") {
             settings.player_tuning.walk_speed =
-                ParseSimScalar(value, settings.player_tuning.walk_speed);
+                ParseFxScalar(value, settings.player_tuning.walk_speed);
         } else if (key == "player_tuning.run_speed") {
             settings.player_tuning.run_speed =
-                ParseSimScalar(value, settings.player_tuning.run_speed);
+                ParseFxScalar(value, settings.player_tuning.run_speed);
         } else if (key == "player_tuning.move_acc") {
             settings.player_tuning.move_acc =
-                ParseSimScalar(value, settings.player_tuning.move_acc);
+                ParseFxScalar(value, settings.player_tuning.move_acc);
         } else if (key == "player_tuning.run_acc") {
             settings.player_tuning.run_acc =
-                ParseSimScalar(value, settings.player_tuning.run_acc);
+                ParseFxScalar(value, settings.player_tuning.run_acc);
         } else if (key == "player_tuning.ground_friction_scale") {
             settings.player_tuning.ground_friction_scale =
-                ParseSimScalar(value, settings.player_tuning.ground_friction_scale);
+                ParseFxScalar(value, settings.player_tuning.ground_friction_scale);
         } else if (key == "player_tuning.air_friction") {
             settings.player_tuning.air_friction =
-                ParseSimScalar(value, settings.player_tuning.air_friction);
+                ParseFxScalar(value, settings.player_tuning.air_friction);
         } else if (key == "player_tuning.climb_speed") {
             settings.player_tuning.climb_speed =
-                ParseSimScalar(value, settings.player_tuning.climb_speed);
+                ParseFxScalar(value, settings.player_tuning.climb_speed);
         } else if (key == "player_tuning.climb_depart_horizontal_speed") {
             settings.player_tuning.climb_depart_horizontal_speed =
-                ParseSimScalar(value, settings.player_tuning.climb_depart_horizontal_speed);
+                ParseFxScalar(value, settings.player_tuning.climb_depart_horizontal_speed);
         } else if (key == "player_tuning.climb_probe_bias_pixels") {
             settings.player_tuning.climb_probe_bias_pixels =
-                ParseSimScalar(value, settings.player_tuning.climb_probe_bias_pixels);
+                ParseFxScalar(value, settings.player_tuning.climb_probe_bias_pixels);
         } else if (key == "player_tuning.climb_probe_x_scale") {
             settings.player_tuning.climb_probe_x_scale =
-                ParseSimScalar(value, settings.player_tuning.climb_probe_x_scale);
+                ParseFxScalar(value, settings.player_tuning.climb_probe_x_scale);
         } else if (key == "player_tuning.climb_required_probe_hits") {
             settings.player_tuning.climb_required_probe_hits =
                 ParseInt(value, settings.player_tuning.climb_required_probe_hits);

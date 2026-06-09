@@ -179,8 +179,8 @@ void DropLooseSkull(FxVec2 center, State& state) {
     (void)world_ops::SpawnEnt(state, EntType::Skull, [&](Ent& skull) {
         skull.SetCenter(center);
         skull.vel = FxVec2{
-            RandomSimScalar(state.drng, FxScalar::from_int(-1), FxScalar::from_int(1)),
-            RandomSimScalar(state.drng, ToFxScalar(-1.8F), ToFxScalar(-0.8F)),
+            RandomFxScalar(state.drng, FxScalar::from_int(-1), FxScalar::from_int(1)),
+            RandomFxScalar(state.drng, ToFxScalar(-1.8F), ToFxScalar(-0.8F)),
         };
         skull.acc = FxVec2::zero();
     });

@@ -42,8 +42,7 @@ constexpr float kCobwebOccupantSpeedThresholdSq =
 constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct WebGunAim {
-    FVec2 direction = FVec2::New(1.0F, 0.0F);
-    FxVec2 sim_direction = FxVec2{FxScalar::from_int(1), FxScalar::zero()};
+    FxVec2 direction = FxVec2{FxScalar::from_int(1), FxScalar::zero()};
     Side facing = Side::Right;
     FxScalar rotation = FxScalar::zero();
 };
@@ -58,20 +57,7 @@ float NormalizeDegrees(float degrees) {
     return degrees;
 }
 
-FVec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
-    if (aim_x == 0 && aim_y == 0) {
-        return facing == Side::Left ? FVec2::New(-1.0F, 0.0F) : FVec2::New(1.0F, 0.0F);
-    }
-    if (aim_x != 0 && aim_y != 0) {
-        return FVec2::New(
-            static_cast<float>(aim_x) * kDiagonalAimComponent,
-            static_cast<float>(aim_y) * kDiagonalAimComponent
-        );
-    }
-    return FVec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
-}
-
-FxVec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
+FxVec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
     if (aim_x == 0 && aim_y == 0) {
         return FxVec2{
             FxScalar::from_int(facing == Side::Left ? -1 : 1),
@@ -139,12 +125,11 @@ WebGunAim GetWebGunAim(const Ent& weapon, const Ent* holder, const State& state)
         facing = Side::Right;
     }
 
-    const FVec2 direction = DiscreteAimDirection(aim_x, aim_y, facing);
+    const FxVec2 direction = DiscreteAimDirection(aim_x, aim_y, facing);
     const float world_angle = DiscreteAimWorldAngle(aim_x, aim_y, facing);
     const float base_angle = facing == Side::Left ? 180.0F : 0.0F;
     return WebGunAim{
         .direction = direction,
-        .sim_direction = DiscreteSimAimDirection(aim_x, aim_y, facing),
         .facing = facing,
         .rotation = ToFxScalar(NormalizeDegrees(world_angle - base_angle)),
     };
@@ -409,8 +394,8 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
     weapon.facing = aim.facing;
     weapon.rotation = aim.rotation;
 
-    const FxVec2 muzzle_pos = weapon.GetCenter() + (aim.sim_direction * FxScalar::from_int(8));
-    const FxVec2 spawn_pos = muzzle_pos + (aim.sim_direction * FxScalar::from_int(4));
+    const FxVec2 muzzle_pos = weapon.GetCenter() + (aim.direction * FxScalar::from_int(8));
+    const FxVec2 spawn_pos = muzzle_pos + (aim.direction * FxScalar::from_int(4));
     const FVec2 render_muzzle_pos = ToFVec2(muzzle_pos);
 
     if (holder != nullptr && IsWorldPointInsideSolidTile(muzzle_pos, state)) {
@@ -420,9 +405,9 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
         }
         const FVec2 holder_center = ToFVec2(holder->GetCenter());
         (void)PlayWorldSoundEmitter(state, holder_center, audio_asset_ids::PistolShoot);
-        SpawnWebSpray(state, holder_center, aim.direction);
+        SpawnWebSpray(state, holder_center, ToFVec2(aim.direction));
         if (holder != nullptr) {
-            holder->vel -= aim.sim_direction * ToFxScalar(0.12F);
+            holder->vel -= aim.direction * ToFxScalar(0.12F);
         }
         return;
     }
@@ -430,7 +415,7 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
     (void)world_ops::SpawnEnt(state, EntType::WebBall, [&](Ent& spawned_web_ball) {
         spawned_web_ball.SetCenter(spawn_pos);
         spawned_web_ball.facing = aim.facing;
-        spawned_web_ball.vel = aim.sim_direction * ToFxScalar(kWebBallSpeedX) +
+        spawned_web_ball.vel = aim.direction * ToFxScalar(kWebBallSpeedX) +
                                (holder != nullptr
                                     ? holder->vel * ToFxScalar(0.35F)
                                     : FxVec2::zero());
@@ -444,9 +429,9 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
     });
 
     (void)PlayWorldSoundEmitter(state, render_muzzle_pos, audio_asset_ids::PistolShoot);
-    SpawnWebSpray(state, render_muzzle_pos, aim.direction);
+    SpawnWebSpray(state, render_muzzle_pos, ToFVec2(aim.direction));
     if (holder != nullptr) {
-        holder->vel -= aim.sim_direction * ToFxScalar(0.12F);
+        holder->vel -= aim.direction * ToFxScalar(0.12F);
     }
 }
 

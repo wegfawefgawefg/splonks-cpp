@@ -40,10 +40,10 @@ bool ReadRawByte(std::istream& in, std::uint8_t& value) {
 
 void WriteFloat(std::ostream& out, float value);
 bool ReadFloat(std::istream& in, float& value);
-void WriteSimScalar(std::ostream& out, FxScalar value);
-bool ReadSimScalar(std::istream& in, FxScalar& value);
-void WriteSimVec2(std::ostream& out, const FxVec2& value);
-bool ReadSimVec2(std::istream& in, FxVec2& value);
+void WriteFxScalar(std::ostream& out, FxScalar value);
+bool ReadFxScalar(std::istream& in, FxScalar& value);
+void WriteFxVec2(std::ostream& out, const FxVec2& value);
+bool ReadFxVec2(std::istream& in, FxVec2& value);
 void WriteInt32(std::ostream& out, int value);
 bool ReadInt32(std::istream& in, int& value);
 void WriteSigned32(std::ostream& out, std::int32_t value);
@@ -591,26 +591,26 @@ bool ReadColor3(std::istream& in, Color3& color) {
            ReadFloat(in, color.b);
 }
 
-void WriteSimColor3(std::ostream& out, const FxColor3& color) {
-    WriteSimScalar(out, color.r);
-    WriteSimScalar(out, color.g);
-    WriteSimScalar(out, color.b);
+void WriteFxColor3(std::ostream& out, const FxColor3& color) {
+    WriteFxScalar(out, color.r);
+    WriteFxScalar(out, color.g);
+    WriteFxScalar(out, color.b);
 }
 
-bool ReadSimColor3(std::istream& in, FxColor3& color) {
-    return ReadSimScalar(in, color.r) &&
-           ReadSimScalar(in, color.g) &&
-           ReadSimScalar(in, color.b);
+bool ReadFxColor3(std::istream& in, FxColor3& color) {
+    return ReadFxScalar(in, color.r) &&
+           ReadFxScalar(in, color.g) &&
+           ReadFxScalar(in, color.b);
 }
 
-void WriteSimVec2(std::ostream& out, const FxVec2& value) {
-    WriteSimScalar(out, value.x);
-    WriteSimScalar(out, value.y);
+void WriteFxVec2(std::ostream& out, const FxVec2& value) {
+    WriteFxScalar(out, value.x);
+    WriteFxScalar(out, value.y);
 }
 
-bool ReadSimVec2(std::istream& in, FxVec2& value) {
-    return ReadSimScalar(in, value.x) &&
-           ReadSimScalar(in, value.y);
+bool ReadFxVec2(std::istream& in, FxVec2& value) {
+    return ReadFxScalar(in, value.x) &&
+           ReadFxScalar(in, value.y);
 }
 
 void WriteUVec2Vector(std::ostream& out, const std::vector<UVec2>& values) {
@@ -654,11 +654,11 @@ bool ReadFloat(std::istream& in, float& value) {
     return true;
 }
 
-void WriteSimScalar(std::ostream& out, FxScalar value) {
+void WriteFxScalar(std::ostream& out, FxScalar value) {
     WriteSigned32(out, value.raw_value());
 }
 
-bool ReadSimScalar(std::istream& in, FxScalar& value) {
+bool ReadFxScalar(std::istream& in, FxScalar& value) {
     std::int32_t raw_value = 0;
     if (!ReadSigned32(in, raw_value)) {
         return false;
@@ -1390,7 +1390,7 @@ void WriteEffectInstance(std::ostream& out, const EffectInstance& effect) {
     const std::uint8_t id = static_cast<std::uint8_t>(effect.id);
     WriteUint8(out, id);
     WriteSigned32(out, effect.count);
-    WriteSimScalar(out, effect.value);
+    WriteFxScalar(out, effect.value);
     WriteUint32(out, effect.frames_remaining);
 }
 
@@ -1401,7 +1401,7 @@ bool ReadEffectInstance(std::istream& in, EffectInstance& effect) {
     std::uint32_t frames_remaining = 0;
     if (!ReadUint8(in, id) ||
         !ReadSigned32(in, count) ||
-        !ReadSimScalar(in, value) ||
+        !ReadFxScalar(in, value) ||
         !ReadUint32(in, frames_remaining)) {
         return false;
     }
@@ -1449,9 +1449,9 @@ bool ReadEntEffects(std::istream& in, BoxedEntEffects& effects_box) {
 void WriteAFrameAnimator(std::ostream& out, const AFrameAnimator& animator) {
     WriteUint32(out, animator.anim_id);
     WriteUint32(out, animator.current_frame);
-    WriteSimScalar(out, animator.current_time);
-    WriteSimScalar(out, animator.scale);
-    WriteSimScalar(out, animator.speed);
+    WriteFxScalar(out, animator.current_time);
+    WriteFxScalar(out, animator.scale);
+    WriteFxScalar(out, animator.speed);
     WriteBoolByte(out, animator.animate);
     WriteBoolByte(out, animator.loop);
     WriteBoolByte(out, animator.finished);
@@ -1472,9 +1472,9 @@ bool ReadAFrameAnimator(std::istream& in, AFrameAnimator& animator) {
     bool ping_pong_forward = false;
     if (!ReadUint32(in, animator.anim_id) ||
         !ReadUint32(in, animator.current_frame) ||
-        !ReadSimScalar(in, animator.current_time) ||
-        !ReadSimScalar(in, animator.scale) ||
-        !ReadSimScalar(in, animator.speed) ||
+        !ReadFxScalar(in, animator.current_time) ||
+        !ReadFxScalar(in, animator.scale) ||
+        !ReadFxScalar(in, animator.speed) ||
         !ReadBoolByte(in, animate) ||
         !ReadBoolByte(in, loop) ||
         !ReadBoolByte(in, finished) ||
@@ -1515,9 +1515,9 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.can_collect_pickups);
     WriteBoolByte(out, ent.can_go_on_back);
     WriteBoolByte(out, ent.grounded);
-    WriteSimScalar(out, ent.shake);
-    WriteSimScalar(out, ent.rotation);
-    WriteSimScalar(out, ent.alpha);
+    WriteFxScalar(out, ent.shake);
+    WriteFxScalar(out, ent.rotation);
+    WriteFxScalar(out, ent.alpha);
     WriteUint32(out, ent.coyote_time);
     WriteUint32(out, ent.stun_timer);
     WriteBoolByte(out, ent.stun_recovers_on_ground);
@@ -1528,20 +1528,20 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.impassable);
     WriteBoolByte(out, ent.can_be_hung_on);
     WriteUint32(out, ent.fall_timer);
-    WriteSimVec2(out, ent.pos);
-    WriteSimVec2(out, ent.vel);
-    WriteSimVec2(out, ent.acc);
-    WriteSimScalar(out, ent.max_speed);
+    WriteFxVec2(out, ent.pos);
+    WriteFxVec2(out, ent.vel);
+    WriteFxVec2(out, ent.acc);
+    WriteFxScalar(out, ent.max_speed);
     WriteUint32(out, ent.jump_hold_gravity_frames_remaining);
-    WriteSimScalar(out, ent.throw_velocity_scale);
-    WriteSimScalar(out, ent.buoyancy);
+    WriteFxScalar(out, ent.throw_velocity_scale);
+    WriteFxScalar(out, ent.buoyancy);
     WriteEntEffects(out, ent.effects);
-    WriteSimVec2(out, ent.size);
-    WriteSimScalar(out, ent.self_light);
-    WriteSimScalar(out, ent.light_strength);
-    WriteSimColor3(out, ent.light_color);
+    WriteFxVec2(out, ent.size);
+    WriteFxScalar(out, ent.self_light);
+    WriteFxScalar(out, ent.light_strength);
+    WriteFxColor3(out, ent.light_color);
     WriteInt32(out, ent.light_radius);
-    WriteSimScalar(out, ent.dist_traveled_this_frame);
+    WriteFxScalar(out, ent.dist_traveled_this_frame);
     WriteEnumByte(out, ent.facing);
     WriteBoolByte(out, ent.vertical_flip);
     WriteEnumByte(out, ent.draw_layer);
@@ -1562,7 +1562,7 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalVid(out, ent.back_vid);
     WriteAttachMode(out, ent.attach_mode);
     WriteUseState(out, ent.use_state);
-    WriteSimScalar(out, ent.travel_sound_countdown);
+    WriteFxScalar(out, ent.travel_sound_countdown);
     WriteEnumByte(out, ent.travel_sound);
     WriteEnumByte(out, ent.condition);
     WriteEnumByte(out, ent.last_condition);
@@ -1573,8 +1573,8 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.hurt_on_contact);
     WriteBoolByte(out, ent.vanish_on_death);
     WriteBoolByte(out, ent.affected_by_ground_friction);
-    WriteSimScalar(out, ent.support_ground_friction);
-    WriteSimScalar(out, ent.push_acc);
+    WriteFxScalar(out, ent.support_ground_friction);
+    WriteFxScalar(out, ent.push_acc);
     WriteOptionalAFrameId(out, ent.damage_anim);
     WriteOptionalAudioAssetId(out, ent.damage_sound);
     WriteOptionalAudioAssetId(out, ent.collide_sound);
@@ -1615,12 +1615,12 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteOptionalVidVector(out, ent.inside_vids);
     WriteEnumByte(out, ent.ent_label_a);
     WriteEnumByte(out, ent.alignment);
-    WriteSimScalar(out, ent.counter_a);
-    WriteSimScalar(out, ent.counter_b);
-    WriteSimScalar(out, ent.counter_c);
-    WriteSimScalar(out, ent.counter_d);
-    WriteSimScalar(out, ent.threshold_a);
-    WriteSimScalar(out, ent.threshold_b);
+    WriteFxScalar(out, ent.counter_a);
+    WriteFxScalar(out, ent.counter_b);
+    WriteFxScalar(out, ent.counter_c);
+    WriteFxScalar(out, ent.counter_d);
+    WriteFxScalar(out, ent.threshold_a);
+    WriteFxScalar(out, ent.threshold_b);
 }
 
 bool ReadEnt(std::istream& in, Ent& ent) {
@@ -1644,9 +1644,9 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.can_collect_pickups) &&
            ReadBoolByte(in, ent.can_go_on_back) &&
            ReadBoolByte(in, ent.grounded) &&
-           ReadSimScalar(in, ent.shake) &&
-           ReadSimScalar(in, ent.rotation) &&
-           ReadSimScalar(in, ent.alpha) &&
+           ReadFxScalar(in, ent.shake) &&
+           ReadFxScalar(in, ent.rotation) &&
+           ReadFxScalar(in, ent.alpha) &&
            ReadUint32(in, ent.coyote_time) &&
            ReadUint32(in, ent.stun_timer) &&
            ReadBoolByte(in, ent.stun_recovers_on_ground) &&
@@ -1657,20 +1657,20 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.impassable) &&
            ReadBoolByte(in, ent.can_be_hung_on) &&
            ReadUint32(in, ent.fall_timer) &&
-           ReadSimVec2(in, pos) &&
-           ReadSimVec2(in, vel) &&
-           ReadSimVec2(in, acc) &&
-           ReadSimScalar(in, ent.max_speed) &&
+           ReadFxVec2(in, pos) &&
+           ReadFxVec2(in, vel) &&
+           ReadFxVec2(in, acc) &&
+           ReadFxScalar(in, ent.max_speed) &&
            ReadUint32(in, ent.jump_hold_gravity_frames_remaining) &&
-           ReadSimScalar(in, ent.throw_velocity_scale) &&
-           ReadSimScalar(in, ent.buoyancy) &&
+           ReadFxScalar(in, ent.throw_velocity_scale) &&
+           ReadFxScalar(in, ent.buoyancy) &&
            ReadEntEffects(in, ent.effects) &&
-           ReadSimVec2(in, ent.size) &&
-           ReadSimScalar(in, ent.self_light) &&
-           ReadSimScalar(in, ent.light_strength) &&
-           ReadSimColor3(in, ent.light_color) &&
+           ReadFxVec2(in, ent.size) &&
+           ReadFxScalar(in, ent.self_light) &&
+           ReadFxScalar(in, ent.light_strength) &&
+           ReadFxColor3(in, ent.light_color) &&
            ReadInt32(in, ent.light_radius) &&
-           ReadSimScalar(in, ent.dist_traveled_this_frame) &&
+           ReadFxScalar(in, ent.dist_traveled_this_frame) &&
            ReadEnumByte(in, ent.facing, Side::Right) &&
            ReadBoolByte(in, ent.vertical_flip) &&
            ReadEnumByte(in, ent.draw_layer, DrawLayer::Foreground) &&
@@ -1691,7 +1691,7 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalVid(in, ent.back_vid) &&
            ReadAttachMode(in, ent.attach_mode) &&
            ReadUseState(in, ent.use_state) &&
-           ReadSimScalar(in, ent.travel_sound_countdown) &&
+           ReadFxScalar(in, ent.travel_sound_countdown) &&
            ReadEnumByte(in, ent.travel_sound, TravelSound::Two) &&
            ReadEnumByte(in, ent.condition, EntCondition::Stunned) &&
            ReadEnumByte(in, ent.last_condition, EntCondition::Stunned) &&
@@ -1702,8 +1702,8 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadBoolByte(in, ent.hurt_on_contact) &&
            ReadBoolByte(in, ent.vanish_on_death) &&
            ReadBoolByte(in, ent.affected_by_ground_friction) &&
-           ReadSimScalar(in, ent.support_ground_friction) &&
-           ReadSimScalar(in, ent.push_acc) &&
+           ReadFxScalar(in, ent.support_ground_friction) &&
+           ReadFxScalar(in, ent.push_acc) &&
            ReadOptionalAFrameId(in, ent.damage_anim) &&
            ReadOptionalAudioAssetId(in, ent.damage_sound) &&
            ReadOptionalAudioAssetId(in, ent.collide_sound) &&
@@ -1744,12 +1744,12 @@ bool ReadEnt(std::istream& in, Ent& ent) {
            ReadOptionalVidVector(in, ent.inside_vids) &&
            ReadEnumByte(in, ent.ent_label_a, EntLabel::AttachedToThis) &&
            ReadEnumByte(in, ent.alignment, Alignment::Enemy) &&
-           ReadSimScalar(in, ent.counter_a) &&
-           ReadSimScalar(in, ent.counter_b) &&
-           ReadSimScalar(in, ent.counter_c) &&
-           ReadSimScalar(in, ent.counter_d) &&
-           ReadSimScalar(in, ent.threshold_a) &&
-           ReadSimScalar(in, ent.threshold_b);
+           ReadFxScalar(in, ent.counter_a) &&
+           ReadFxScalar(in, ent.counter_b) &&
+           ReadFxScalar(in, ent.counter_c) &&
+           ReadFxScalar(in, ent.counter_d) &&
+           ReadFxScalar(in, ent.threshold_a) &&
+           ReadFxScalar(in, ent.threshold_b);
     if (!ok) {
         return false;
     }
@@ -1928,59 +1928,59 @@ bool ReadPostProcessSettings(std::istream& in, PostProcessSettings& settings) {
 void WriteFluidSettings(std::ostream& out, const FluidSettings& settings) {
     WriteBoolByte(out, settings.simulation_enabled);
     WriteInt32(out, settings.simulation_interval_frames);
-    WriteSimScalar(out, settings.transfer_per_step);
-    WriteSimScalar(out, settings.gravity_x);
-    WriteSimScalar(out, settings.gravity_y);
-    WriteSimScalar(out, settings.pressure_strength);
-    WriteSimScalar(out, settings.velocity_damping);
-    WriteSimScalar(out, settings.temp_gravity_decay);
+    WriteFxScalar(out, settings.transfer_per_step);
+    WriteFxScalar(out, settings.gravity_x);
+    WriteFxScalar(out, settings.gravity_y);
+    WriteFxScalar(out, settings.pressure_strength);
+    WriteFxScalar(out, settings.velocity_damping);
+    WriteFxScalar(out, settings.temp_gravity_decay);
     WriteBoolByte(out, settings.temporal_smoothing_enabled);
-    WriteSimScalar(out, settings.temporal_smoothing_response);
-    WriteSimScalar(out, settings.render_cutoff_amount);
-    WriteSimScalar(out, settings.water_alpha);
+    WriteFxScalar(out, settings.temporal_smoothing_response);
+    WriteFxScalar(out, settings.render_cutoff_amount);
+    WriteFxScalar(out, settings.water_alpha);
     WriteBoolByte(out, settings.lighting_enabled);
-    WriteSimScalar(out, settings.lighting_strength);
+    WriteFxScalar(out, settings.lighting_strength);
 }
 
 bool ReadFluidSettings(std::istream& in, FluidSettings& settings) {
     return ReadBoolByte(in, settings.simulation_enabled) &&
            ReadInt32(in, settings.simulation_interval_frames) &&
-           ReadSimScalar(in, settings.transfer_per_step) &&
-           ReadSimScalar(in, settings.gravity_x) &&
-           ReadSimScalar(in, settings.gravity_y) &&
-           ReadSimScalar(in, settings.pressure_strength) &&
-           ReadSimScalar(in, settings.velocity_damping) &&
-           ReadSimScalar(in, settings.temp_gravity_decay) &&
+           ReadFxScalar(in, settings.transfer_per_step) &&
+           ReadFxScalar(in, settings.gravity_x) &&
+           ReadFxScalar(in, settings.gravity_y) &&
+           ReadFxScalar(in, settings.pressure_strength) &&
+           ReadFxScalar(in, settings.velocity_damping) &&
+           ReadFxScalar(in, settings.temp_gravity_decay) &&
            ReadBoolByte(in, settings.temporal_smoothing_enabled) &&
-           ReadSimScalar(in, settings.temporal_smoothing_response) &&
-           ReadSimScalar(in, settings.render_cutoff_amount) &&
-           ReadSimScalar(in, settings.water_alpha) &&
+           ReadFxScalar(in, settings.temporal_smoothing_response) &&
+           ReadFxScalar(in, settings.render_cutoff_amount) &&
+           ReadFxScalar(in, settings.water_alpha) &&
            ReadBoolByte(in, settings.lighting_enabled) &&
-           ReadSimScalar(in, settings.lighting_strength);
+           ReadFxScalar(in, settings.lighting_strength);
 }
 
 void WriteWaterEffectSettings(std::ostream& out, const WaterEffectSettings& settings) {
-    WriteSimScalar(out, settings.gravity_scale);
-    WriteSimScalar(out, settings.velocity_damping_x);
-    WriteSimScalar(out, settings.velocity_damping_y);
-    WriteSimScalar(out, settings.move_speed_scale);
-    WriteSimScalar(out, settings.max_fall_speed);
-    WriteSimScalar(out, settings.buoyancy_strength);
-    WriteSimScalar(out, settings.fall_timer_rate);
-    WriteSimScalar(out, settings.stomp_damage_scale);
-    WriteSimScalar(out, settings.swim_impulse);
+    WriteFxScalar(out, settings.gravity_scale);
+    WriteFxScalar(out, settings.velocity_damping_x);
+    WriteFxScalar(out, settings.velocity_damping_y);
+    WriteFxScalar(out, settings.move_speed_scale);
+    WriteFxScalar(out, settings.max_fall_speed);
+    WriteFxScalar(out, settings.buoyancy_strength);
+    WriteFxScalar(out, settings.fall_timer_rate);
+    WriteFxScalar(out, settings.stomp_damage_scale);
+    WriteFxScalar(out, settings.swim_impulse);
 }
 
 bool ReadWaterEffectSettings(std::istream& in, WaterEffectSettings& settings) {
-    return ReadSimScalar(in, settings.gravity_scale) &&
-           ReadSimScalar(in, settings.velocity_damping_x) &&
-           ReadSimScalar(in, settings.velocity_damping_y) &&
-           ReadSimScalar(in, settings.move_speed_scale) &&
-           ReadSimScalar(in, settings.max_fall_speed) &&
-           ReadSimScalar(in, settings.buoyancy_strength) &&
-           ReadSimScalar(in, settings.fall_timer_rate) &&
-           ReadSimScalar(in, settings.stomp_damage_scale) &&
-           ReadSimScalar(in, settings.swim_impulse);
+    return ReadFxScalar(in, settings.gravity_scale) &&
+           ReadFxScalar(in, settings.velocity_damping_x) &&
+           ReadFxScalar(in, settings.velocity_damping_y) &&
+           ReadFxScalar(in, settings.move_speed_scale) &&
+           ReadFxScalar(in, settings.max_fall_speed) &&
+           ReadFxScalar(in, settings.buoyancy_strength) &&
+           ReadFxScalar(in, settings.fall_timer_rate) &&
+           ReadFxScalar(in, settings.stomp_damage_scale) &&
+           ReadFxScalar(in, settings.swim_impulse);
 }
 
 void WriteDebugUiSettings(std::ostream& out, const DebugUiSettings& settings) {
@@ -2052,26 +2052,26 @@ bool ReadDebugUiSettings(std::istream& in, DebugUiSettings& settings) {
 }
 
 void WritePlayerTuningState(std::ostream& out, const PlayerTuningState& tuning) {
-    WriteSimScalar(out, tuning.gravity_scale);
-    WriteSimScalar(out, tuning.max_fall_speed);
-    WriteSimScalar(out, tuning.jump_impulse);
-    WriteSimScalar(out, tuning.spring_shoes_jump_impulse_bonus);
+    WriteFxScalar(out, tuning.gravity_scale);
+    WriteFxScalar(out, tuning.max_fall_speed);
+    WriteFxScalar(out, tuning.jump_impulse);
+    WriteFxScalar(out, tuning.spring_shoes_jump_impulse_bonus);
     WriteInt32(out, tuning.jump_hold_frames);
     WriteInt32(out, tuning.coyote_frames);
     WriteInt32(out, tuning.jump_delay_frames);
     WriteInt32(out, tuning.fall_damage_light_frames);
     WriteInt32(out, tuning.fall_damage_medium_frames);
     WriteInt32(out, tuning.fall_damage_heavy_frames);
-    WriteSimScalar(out, tuning.walk_speed);
-    WriteSimScalar(out, tuning.run_speed);
-    WriteSimScalar(out, tuning.move_acc);
-    WriteSimScalar(out, tuning.run_acc);
-    WriteSimScalar(out, tuning.ground_friction_scale);
-    WriteSimScalar(out, tuning.air_friction);
-    WriteSimScalar(out, tuning.climb_speed);
-    WriteSimScalar(out, tuning.climb_depart_horizontal_speed);
-    WriteSimScalar(out, tuning.climb_probe_bias_pixels);
-    WriteSimScalar(out, tuning.climb_probe_x_scale);
+    WriteFxScalar(out, tuning.walk_speed);
+    WriteFxScalar(out, tuning.run_speed);
+    WriteFxScalar(out, tuning.move_acc);
+    WriteFxScalar(out, tuning.run_acc);
+    WriteFxScalar(out, tuning.ground_friction_scale);
+    WriteFxScalar(out, tuning.air_friction);
+    WriteFxScalar(out, tuning.climb_speed);
+    WriteFxScalar(out, tuning.climb_depart_horizontal_speed);
+    WriteFxScalar(out, tuning.climb_probe_bias_pixels);
+    WriteFxScalar(out, tuning.climb_probe_x_scale);
     WriteInt32(out, tuning.climb_required_probe_hits);
     WriteInt32(out, tuning.climb_detach_cooldown);
     WriteInt32(out, tuning.hang_drop_cooldown);
@@ -2081,26 +2081,26 @@ void WritePlayerTuningState(std::ostream& out, const PlayerTuningState& tuning) 
 }
 
 bool ReadPlayerTuningState(std::istream& in, PlayerTuningState& tuning) {
-    return ReadSimScalar(in, tuning.gravity_scale) &&
-           ReadSimScalar(in, tuning.max_fall_speed) &&
-           ReadSimScalar(in, tuning.jump_impulse) &&
-           ReadSimScalar(in, tuning.spring_shoes_jump_impulse_bonus) &&
+    return ReadFxScalar(in, tuning.gravity_scale) &&
+           ReadFxScalar(in, tuning.max_fall_speed) &&
+           ReadFxScalar(in, tuning.jump_impulse) &&
+           ReadFxScalar(in, tuning.spring_shoes_jump_impulse_bonus) &&
            ReadInt32(in, tuning.jump_hold_frames) &&
            ReadInt32(in, tuning.coyote_frames) &&
            ReadInt32(in, tuning.jump_delay_frames) &&
            ReadInt32(in, tuning.fall_damage_light_frames) &&
            ReadInt32(in, tuning.fall_damage_medium_frames) &&
            ReadInt32(in, tuning.fall_damage_heavy_frames) &&
-           ReadSimScalar(in, tuning.walk_speed) &&
-           ReadSimScalar(in, tuning.run_speed) &&
-           ReadSimScalar(in, tuning.move_acc) &&
-           ReadSimScalar(in, tuning.run_acc) &&
-           ReadSimScalar(in, tuning.ground_friction_scale) &&
-           ReadSimScalar(in, tuning.air_friction) &&
-           ReadSimScalar(in, tuning.climb_speed) &&
-           ReadSimScalar(in, tuning.climb_depart_horizontal_speed) &&
-           ReadSimScalar(in, tuning.climb_probe_bias_pixels) &&
-           ReadSimScalar(in, tuning.climb_probe_x_scale) &&
+           ReadFxScalar(in, tuning.walk_speed) &&
+           ReadFxScalar(in, tuning.run_speed) &&
+           ReadFxScalar(in, tuning.move_acc) &&
+           ReadFxScalar(in, tuning.run_acc) &&
+           ReadFxScalar(in, tuning.ground_friction_scale) &&
+           ReadFxScalar(in, tuning.air_friction) &&
+           ReadFxScalar(in, tuning.climb_speed) &&
+           ReadFxScalar(in, tuning.climb_depart_horizontal_speed) &&
+           ReadFxScalar(in, tuning.climb_probe_bias_pixels) &&
+           ReadFxScalar(in, tuning.climb_probe_x_scale) &&
            ReadInt32(in, tuning.climb_required_probe_hits) &&
            ReadInt32(in, tuning.climb_detach_cooldown) &&
            ReadInt32(in, tuning.hang_drop_cooldown) &&
@@ -2251,7 +2251,7 @@ void WriteStageRotationState(std::ostream& out, const StageRotationState& rotati
     WriteInt32(out, rotation.elapsed_frames);
     WriteInt32(out, rotation.duration_frames);
     WriteInt32(out, rotation.quarter_turns);
-    WriteSimVec2(out, rotation.pivot);
+    WriteFxVec2(out, rotation.pivot);
     WriteStageRotationWrapPolicy(out, rotation.wrap_policy);
 }
 
@@ -2260,7 +2260,7 @@ bool ReadStageRotationState(std::istream& in, StageRotationState& rotation) {
            ReadInt32(in, rotation.elapsed_frames) &&
            ReadInt32(in, rotation.duration_frames) &&
            ReadInt32(in, rotation.quarter_turns) &&
-           ReadSimVec2(in, rotation.pivot) &&
+           ReadFxVec2(in, rotation.pivot) &&
            ReadStageRotationWrapPolicy(in, rotation.wrap_policy);
 }
 
@@ -2649,7 +2649,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     for (const StageExit& exit : stage.exits) {
         WriteStageExit(out, exit);
     }
-    WriteSimScalar(out, stage.gravity);
+    WriteFxScalar(out, stage.gravity);
     WriteTile(out, stage.border.left.tile);
     WriteTile(out, stage.border.right.tile);
     WriteTile(out, stage.border.top.tile);
@@ -2666,14 +2666,14 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WriteGridExplicit(out, stage.tiles, WriteTile);
     WriteGridExplicit(out, stage.tile_rotations, WriteTileRotation);
     WriteGridExplicit(out, stage.fluid_tiles, WriteTile);
-    WriteGridExplicit(out, stage.fluid_amount, WriteSimScalar);
-    WriteGridExplicit(out, stage.fluid_display_amount, WriteSimScalar);
-    WriteGridExplicit(out, stage.fluid_velocity, WriteSimVec2);
-    WriteGridExplicit(out, stage.fluid_gravity, WriteSimVec2);
+    WriteGridExplicit(out, stage.fluid_amount, WriteFxScalar);
+    WriteGridExplicit(out, stage.fluid_display_amount, WriteFxScalar);
+    WriteGridExplicit(out, stage.fluid_velocity, WriteFxVec2);
+    WriteGridExplicit(out, stage.fluid_gravity, WriteFxVec2);
     WriteGridExplicit(out, stage.fluid_gravity_strength, WriteUint8);
-    WriteGridExplicit(out, stage.fluid_temp_gravity, WriteSimVec2);
-    WriteGridExplicit(out, stage.tile_shake, WriteSimScalar);
-    WriteGridExplicit(out, stage.backwall_tile_shake, WriteSimScalar);
+    WriteGridExplicit(out, stage.fluid_temp_gravity, WriteFxVec2);
+    WriteGridExplicit(out, stage.tile_shake, WriteFxScalar);
+    WriteGridExplicit(out, stage.backwall_tile_shake, WriteFxScalar);
     WriteGridExplicit(out, stage.backwall_tiles, WriteTile);
     WriteTileVector(out, stage.backwall_fill_tiles);
     WriteGridExplicit(out, stage.embedded_treasures, WriteEmbeddedTreasure);
@@ -2719,7 +2719,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         }
     }
 
-    if (!ReadSimScalar(in, stage.gravity) ||
+    if (!ReadFxScalar(in, stage.gravity) ||
         !ReadTile(in, stage.border.left.tile) ||
         !ReadTile(in, stage.border.right.tile) ||
         !ReadTile(in, stage.border.top.tile) ||
@@ -2739,14 +2739,14 @@ bool ReadStage(std::istream& in, Stage& stage) {
     if (!ReadGridExplicit(in, stage.tiles, ReadTile) ||
         !ReadGridExplicit(in, stage.tile_rotations, ReadTileRotation) ||
         !ReadGridExplicit(in, stage.fluid_tiles, ReadTile) ||
-        !ReadGridExplicit(in, stage.fluid_amount, ReadSimScalar) ||
-        !ReadGridExplicit(in, stage.fluid_display_amount, ReadSimScalar) ||
-        !ReadGridExplicit(in, stage.fluid_velocity, ReadSimVec2) ||
-        !ReadGridExplicit(in, stage.fluid_gravity, ReadSimVec2) ||
+        !ReadGridExplicit(in, stage.fluid_amount, ReadFxScalar) ||
+        !ReadGridExplicit(in, stage.fluid_display_amount, ReadFxScalar) ||
+        !ReadGridExplicit(in, stage.fluid_velocity, ReadFxVec2) ||
+        !ReadGridExplicit(in, stage.fluid_gravity, ReadFxVec2) ||
         !ReadGridExplicit(in, stage.fluid_gravity_strength, ReadUint8) ||
-        !ReadGridExplicit(in, stage.fluid_temp_gravity, ReadSimVec2) ||
-        !ReadGridExplicit(in, stage.tile_shake, ReadSimScalar) ||
-        !ReadGridExplicit(in, stage.backwall_tile_shake, ReadSimScalar) ||
+        !ReadGridExplicit(in, stage.fluid_temp_gravity, ReadFxVec2) ||
+        !ReadGridExplicit(in, stage.tile_shake, ReadFxScalar) ||
+        !ReadGridExplicit(in, stage.backwall_tile_shake, ReadFxScalar) ||
         !ReadGridExplicit(in, stage.backwall_tiles, ReadTile) ||
         !ReadTileVector(in, stage.backwall_fill_tiles) ||
         !ReadGridExplicit(in, stage.embedded_treasures, ReadEmbeddedTreasure) ||

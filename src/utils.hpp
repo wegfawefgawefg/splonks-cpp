@@ -17,7 +17,7 @@ struct DetRng {
     float RandomFloat(float minimum, float maximum);
 };
 
-FxScalar RandomSimScalar(DetRng& rng, FxScalar minimum, FxScalar maximum);
+FxScalar RandomFxScalar(DetRng& rng, FxScalar minimum, FxScalar maximum);
 
 struct FAABB {
     FVec2 tl;

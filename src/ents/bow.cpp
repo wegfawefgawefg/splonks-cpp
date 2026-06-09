@@ -25,8 +25,7 @@ constexpr std::uint32_t kBowArrowDamage = 2;
 constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct BowAim {
-    FVec2 direction = FVec2::New(1.0F, 0.0F);
-    FxVec2 sim_direction = FxVec2{FxScalar::from_int(1), FxScalar::zero()};
+    FxVec2 direction = FxVec2{FxScalar::from_int(1), FxScalar::zero()};
     Side facing = Side::Right;
     FxScalar rotation = FxScalar::zero();
 };
@@ -78,20 +77,7 @@ float NormalizeDegrees(float degrees) {
     return degrees;
 }
 
-FVec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
-    if (aim_x == 0 && aim_y == 0) {
-        return facing == Side::Left ? FVec2::New(-1.0F, 0.0F) : FVec2::New(1.0F, 0.0F);
-    }
-    if (aim_x != 0 && aim_y != 0) {
-        return FVec2::New(
-            static_cast<float>(aim_x) * kDiagonalAimComponent,
-            static_cast<float>(aim_y) * kDiagonalAimComponent
-        );
-    }
-    return FVec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
-}
-
-FxVec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
+FxVec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
     if (aim_x == 0 && aim_y == 0) {
         return FxVec2{
             FxScalar::from_int(facing == Side::Left ? -1 : 1),
@@ -162,12 +148,11 @@ BowAim GetBowAim(const Ent& bow, const State& state) {
         facing = Side::Right;
     }
 
-    const FVec2 direction = DiscreteAimDirection(aim_x, aim_y, facing);
+    const FxVec2 direction = DiscreteAimDirection(aim_x, aim_y, facing);
     const float world_angle = DiscreteAimWorldAngle(aim_x, aim_y, facing);
     const float base_angle = facing == Side::Left ? 180.0F : 0.0F;
     return BowAim{
         .direction = direction,
-        .sim_direction = DiscreteSimAimDirection(aim_x, aim_y, facing),
         .facing = facing,
         .rotation = ToFxScalar(NormalizeDegrees(world_angle - base_angle)),
     };
@@ -190,10 +175,10 @@ void ArmBow(Ent& bow, State& state) {
 void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
     (void)world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         const FxVec2 spawn_center = bow.GetCenter() +
-                                       (aim.sim_direction * FxScalar::from_int(12));
+                                       (aim.direction * FxScalar::from_int(12));
         arrow.SetCenter(PixelVec2(spawn_center.x.round_int(),
                                           spawn_center.y.round_int()));
-        arrow.vel = aim.sim_direction * ToFxScalar(kBowArrowSpeed);
+        arrow.vel = aim.direction * ToFxScalar(kBowArrowSpeed);
         arrow.acc = FxVec2::zero();
         arrow.facing = aim.facing;
         arrow.rotation = aim.rotation;

@@ -474,7 +474,7 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
         Ent* const reward = world_ops::SpawnEnt(state, reward_type, [&](Ent& spawned_reward) {
             spawned_reward.SetCenter(emit_pos + PixelVec2(0, -3));
             spawned_reward.vel = FxVec2{
-                RandomSimScalar(state.drng, ToFxScalar(-0.55F), ToFxScalar(0.55F)),
+                RandomFxScalar(state.drng, ToFxScalar(-0.55F), ToFxScalar(0.55F)),
                 ToFxScalar(-1.7F),
             };
             spawned_reward.acc = FxVec2::zero();

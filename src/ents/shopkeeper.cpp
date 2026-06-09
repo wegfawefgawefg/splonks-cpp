@@ -27,9 +27,7 @@ constexpr int kShopkeeperShootDistance = 160;
 constexpr int kShopkeeperSightVerticalTolerance = 20;
 constexpr float kShopkeeperJumpCooldownFrames = 20.0F;
 constexpr float kShopkeeperShootCooldownFrames = 45.0F;
-constexpr float kShopkeeperRecoverPistolJumpHeightThreshold = 8.0F;
-const FxScalar kSimShopkeeperRecoverPistolJumpHeightThreshold =
-    ToFxScalar(kShopkeeperRecoverPistolJumpHeightThreshold);
+const FxScalar kShopkeeperRecoverPistolJumpHeightThreshold = FxScalar::from_int(8);
 
 std::optional<std::size_t> GetShopIdxForShopkeeper(const Ent& shopkeeper, const State& state) {
     if (!shopkeeper.ent_a.has_value()) {
@@ -201,7 +199,7 @@ bool TryRecoverDroppedPistol(
         );
     }
 
-    const bool pistol_above = delta.y < -kSimShopkeeperRecoverPistolJumpHeightThreshold;
+    const bool pistol_above = delta.y < -kShopkeeperRecoverPistolJumpHeightThreshold;
     const bool blocked_ahead =
         shopkeeper.grounded &&
         IsShopkeeperBlockedMovingTowardPistol(shopkeeper, move_direction, state, graphics);

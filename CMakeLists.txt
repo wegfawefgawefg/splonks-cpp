@@ -389,6 +389,7 @@ set(SPLONKS_SOURCES
     src/render/stone_overlay.cpp
     src/render/tiles_and_ents.cpp
     src/render/ui.cpp
+    src/render/world_wrap.cpp
     src/render/world_texture.cpp
     src/raw_audio_asset.cpp
     src/raw_aframe.cpp

@@ -22,10 +22,10 @@ namespace {
 constexpr float kDropStartVelocity = 0.0F;
 constexpr float kDropGravity = 0.006F;
 constexpr float kDropMaxVelocity = 0.20F;
-constexpr float kRightSensorMinX = 8.0F;
-constexpr float kRightSensorMaxX = 40.0F;
-constexpr float kRightSensorMinY = 28.0F;
-constexpr float kRightSensorMaxY = 96.0F;
+const FxScalar kRightSensorMinX = FxScalar::from_int(8);
+const FxScalar kRightSensorMaxX = FxScalar::from_int(40);
+const FxScalar kRightSensorMinY = FxScalar::from_int(28);
+const FxScalar kRightSensorMaxY = FxScalar::from_int(96);
 constexpr float kRumbleFrames = 60.0F;
 constexpr float kRumbleDoorShake = 0.05F;
 constexpr float kMovingDoorShake = 0.10F;
@@ -39,10 +39,6 @@ constexpr int kTopSmokeIntervalFrames = 8;
 constexpr int kSealSmokeCount = 8;
 constexpr int kSealShardCount = 5;
 constexpr float kDoorSealWaitFrames = 100.0F;
-const FxScalar kSimRightSensorMinX = ToFxScalar(kRightSensorMinX);
-const FxScalar kSimRightSensorMaxX = ToFxScalar(kRightSensorMaxX);
-const FxScalar kSimRightSensorMinY = ToFxScalar(kRightSensorMinY);
-const FxScalar kSimRightSensorMaxY = ToFxScalar(kRightSensorMaxY);
 
 bool IsRumbling(const Ent& door) {
     return door.ai_state == EntAiState::Pursuing;
@@ -187,9 +183,9 @@ bool ShouldStartDrop(const Ent& door, const State& state) {
         }
         const FxVec2 delta =
             GetNearestWorldDelta(state.stage, door_center, ent.GetCenter());
-        if (delta.x >= kSimRightSensorMinX && delta.x <= kSimRightSensorMaxX &&
-            delta.y >= kSimRightSensorMinY &&
-            delta.y <= kSimRightSensorMaxY) {
+        if (delta.x >= kRightSensorMinX && delta.x <= kRightSensorMaxX &&
+            delta.y >= kRightSensorMinY &&
+            delta.y <= kRightSensorMaxY) {
             return true;
         }
     }

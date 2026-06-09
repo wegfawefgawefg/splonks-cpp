@@ -747,7 +747,7 @@ std::string Vec2DebugString(FVec2 value) {
     return out.str();
 }
 
-std::string SimVec2DebugString(FxVec2 value) {
+std::string FxVec2DebugString(FxVec2 value) {
     std::ostringstream out;
     out << std::fixed << std::setprecision(4)
         << "(" << value.x.to_float() << "," << value.y.to_float()
@@ -903,9 +903,9 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintFieldDiff("holding", left->holding, right->holding);
     PrintFieldDiff("wanted", left->wanted, right->wanted);
     PrintNumericFieldDiff("type", static_cast<int>(left->type_), static_cast<int>(right->type_));
-    PrintFieldDiff("pos", SimVec2DebugString(left->pos), SimVec2DebugString(right->pos));
-    PrintFieldDiff("vel", SimVec2DebugString(left->vel), SimVec2DebugString(right->vel));
-    PrintFieldDiff("acc", SimVec2DebugString(left->acc), SimVec2DebugString(right->acc));
+    PrintFieldDiff("pos", FxVec2DebugString(left->pos), FxVec2DebugString(right->pos));
+    PrintFieldDiff("vel", FxVec2DebugString(left->vel), FxVec2DebugString(right->vel));
+    PrintFieldDiff("acc", FxVec2DebugString(left->acc), FxVec2DebugString(right->acc));
     PrintFieldDiff("size", Vec2DebugString(ToFVec2(left->size)), Vec2DebugString(ToFVec2(right->size)));
     if (left->rotation != right->rotation) {
         std::cout << "    rotation: " << ToFloat(left->rotation)

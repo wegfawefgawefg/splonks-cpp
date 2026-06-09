@@ -39,7 +39,7 @@ float DetRng::RandomFloat(float minimum, float maximum) {
     return minimum + (maximum - minimum) * std::clamp(unit, 0.0F, 1.0F);
 }
 
-FxScalar RandomSimScalar(DetRng& rng, FxScalar minimum, FxScalar maximum) {
+FxScalar RandomFxScalar(DetRng& rng, FxScalar minimum, FxScalar maximum) {
     assert(minimum <= maximum);
     return FxScalar::from_raw(rng.RandomIntInclusive(
         minimum.raw_value(),

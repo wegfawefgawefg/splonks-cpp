@@ -58,7 +58,7 @@ void SpawnGiantSpiderLoot(FxVec2 center, State& state) {
         if (world_ops::SpawnEnt(state, gem_type, [&](Ent& gem) {
                 gem.SetCenter(center);
                 gem.vel = FxVec2{
-                    RandomSimScalar(state.drng, FxScalar::from_int(-2), FxScalar::from_int(2)),
+                    RandomFxScalar(state.drng, FxScalar::from_int(-2), FxScalar::from_int(2)),
                     FxScalar::from_int(-2),
                 };
             }) == nullptr) {

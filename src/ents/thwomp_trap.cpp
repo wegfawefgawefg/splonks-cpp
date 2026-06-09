@@ -11,8 +11,8 @@ namespace splonks::ents::thwomp_trap {
 
 namespace {
 
-constexpr float kTriggerDistance = 96.0F;
-constexpr float kTriggerHalfWidth = 8.0F;
+const FxScalar kTriggerDistance = FxScalar::from_int(96);
+const FxScalar kTriggerHalfWidth = FxScalar::from_int(8);
 constexpr float kDropGravity = 0.45F;
 constexpr float kDropMaxVelocity = 6.0F;
 constexpr float kReturnVelocity = -1.0F;
@@ -20,8 +20,6 @@ constexpr int kWaitFrames = 100;
 constexpr float kImpactShake = 0.45F;
 constexpr float kImpactTileShake = 0.36F;
 constexpr float kImpactShakeRadiusTiles = 1.2F;
-const FxScalar kSimTriggerDistance = ToFxScalar(kTriggerDistance);
-const FxScalar kSimTriggerHalfWidth = ToFxScalar(kTriggerHalfWidth);
 
 bool HasHomePosition(const Ent& thwomp) {
     return thwomp.point_label_a == PointLabel::Target;
@@ -61,8 +59,8 @@ bool ShouldDrop(const Ent& thwomp, const State& state) {
 
         const FxVec2 delta =
             GetNearestWorldDelta(state.stage, thwomp_center, ent.GetCenter());
-        if (delta.y <= FxScalar::zero() || delta.y > kSimTriggerDistance ||
-            delta.x.abs() > kSimTriggerHalfWidth) {
+        if (delta.y <= FxScalar::zero() || delta.y > kTriggerDistance ||
+            delta.x.abs() > kTriggerHalfWidth) {
             continue;
         }
         return true;

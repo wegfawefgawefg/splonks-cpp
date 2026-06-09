@@ -56,21 +56,7 @@ bool IsSwinging(const Ent& mattock) {
     return mattock.aframe_animator.anim_id == aframe_ids::MattockSwing;
 }
 
-[[nodiscard]] FAABB RenderTileAabbForTilePos(const IVec2& tile_pos) {
-    const FVec2 tile_tl = FVec2::New(
-        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
-        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
-    );
-    return FAABB::New(
-        tile_tl,
-        tile_tl + FVec2::New(
-                      static_cast<float>(kTileSize - 1),
-                      static_cast<float>(kTileSize - 1)
-                  )
-    );
-}
-
-FxAABB SimTileAabbForTilePos(const IVec2& tile_pos) {
+FxAABB TileAabbForTilePos(const IVec2& tile_pos) {
     const FxVec2 tile_tl = PixelVec2(
         tile_pos.x * static_cast<int>(kTileSize),
         tile_pos.y * static_cast<int>(kTileSize)
@@ -150,7 +136,7 @@ StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& aud
         }
 
         BreakStageTilesInRectWc(
-            SimTileAabbForTilePos(tile_query->tile_pos),
+            TileAabbForTilePos(tile_query->tile_pos),
             state,
             audio,
             audio_asset_ids::SuccessfulDig,
@@ -226,7 +212,7 @@ void AddMattockDebugAnnotations(
         const FxVec2 fallback = GetFallbackStrikePoint(mattock);
         const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToWorldPixelTrunc(fallback));
         state.AddDebugRectAnnotation(DebugRectAnnotation{
-            .area = RenderTileAabbForTilePos(fallback_tile),
+            .area = ToFAABB(TileAabbForTilePos(fallback_tile)),
             .color = DebugAnnotationColor{255, 0, 0, 255},
         });
         state.AddDebugLabelAnnotation(DebugLabelAnnotation{
@@ -238,8 +224,8 @@ void AddMattockDebugAnnotations(
     }
 
     const MattockTileTargets targets = GetMattockTileTargets(*holder, state.stage);
-    const FAABB primary_render_aabb = RenderTileAabbForTilePos(targets.primary);
-    const FAABB secondary_render_aabb = RenderTileAabbForTilePos(targets.secondary);
+    const FAABB primary_render_aabb = ToFAABB(TileAabbForTilePos(targets.primary));
+    const FAABB secondary_render_aabb = ToFAABB(TileAabbForTilePos(targets.secondary));
     state.AddDebugRectAnnotation(DebugRectAnnotation{
         .area = primary_render_aabb,
         .color = DebugAnnotationColor{0, 255, 0, 255},

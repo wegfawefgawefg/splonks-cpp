@@ -40,7 +40,7 @@ int GetRequiredClimbProbeHits(const JumpAndClimbTuning& tuning) {
     return static_cast<int>(std::clamp<std::uint32_t>(tuning.climb_required_probe_hits, 1, 3));
 }
 
-FxAABB SimPointAabb(FxScalar x, FxScalar y) {
+FxAABB PointAabb(FxScalar x, FxScalar y) {
     const FxVec2 point{x, y};
     return FxAABB::from_corners(point, point);
 }
@@ -522,7 +522,7 @@ bool IsHdHangProbeBlocked(
     bool use_hangable_tiles
 ) {
     return IsBlockedForHangProbe(
-        SimPointAabb(x, y),
+        PointAabb(x, y),
         state,
         check_tiles,
         check_ents,
