@@ -414,6 +414,10 @@ Current state:
 - Completed 2026-06-09: box, pot, bones, block, boulder, and icy-platform
   break/shard particle placement now derives from fixed entity centers and
   converts to render coordinates only at particle presentation boundaries.
+- Completed 2026-06-09: sacrifice altar topper smoke, ball-and-chain
+  punishment placement, reward spawn placement, and altar break effects now use
+  fixed centers/emit points for gameplay placement and convert to render
+  coordinates only for smoke, sounds, and shake presentation.
 
 Cleanup:
 

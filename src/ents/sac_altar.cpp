@@ -89,7 +89,8 @@ bool PlayerHasBallAndChainPunishment(const State& state, const Ent& player) {
 }
 
 void SpawnBallAndChainPunishment(State& state, const Ent* altar_context) {
-    const Vec2 search_pos = altar_context != nullptr ? altar_context->GetRenderCenter() : Vec2::New(0.0F, 0.0F);
+    const sim::Vec2 search_pos = altar_context != nullptr ? altar_context->GetSimCenter()
+                                                          : sim::Vec2::zero();
     const std::optional<VID> player_vid = altar_context != nullptr
         ? FindNearestPlayerVid(state, search_pos, true)
         : FindFirstConnectedLivingPlayerVid(state);
@@ -103,7 +104,10 @@ void SpawnBallAndChainPunishment(State& state, const Ent* altar_context) {
         state,
         EntType::BallAndChainBall,
         [&](Ent& spawned_ball) {
-            spawned_ball.SetRenderCenter(player->GetRenderCenter() + Vec2::New(0.0F, kBallAndChainSpawnOffsetY));
+            spawned_ball.SetSimCenter(
+                player->GetSimCenter() +
+                sim::Vec2{sim::Scalar::zero(), sim::ToSimScalar(kBallAndChainSpawnOffsetY)}
+            );
             spawned_ball.ent_a = player->vid;
             spawned_ball.vel = player->vel;
             spawned_ball.acc = sim::Vec2::zero();
@@ -225,31 +229,35 @@ std::optional<VID> GetRewardTargetVid(const State& state, const Ent& altar) {
     return FindNearestPlayerVid(state, altar.GetSimCenter(), true);
 }
 
-Vec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics& graphics) {
+sim::Vec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics& graphics) {
     if (altar.ent_a.has_value()) {
         if (const Ent* const topper = state.ents.GetEnt(*altar.ent_a)) {
-            return common::GetEmitPointForEnt(*topper, graphics, topper->GetRenderCenter());
+            return common::GetEmitPointForEnt(*topper, graphics, topper->GetSimCenter());
         }
     }
 
     return common::GetEmitPointForEnt(
         altar,
         graphics,
-        altar.GetRenderPos() + Vec2::New(16.0F, -8.0F)
+        altar.GetSimPos() + sim::PixelVec2(16, -8)
     );
 }
 
 Vec2 GetAltarSoundPos(const Ent& altar, const State& state, const Graphics& graphics) {
     if (altar.ent_a.has_value()) {
         if (const Ent* const topper = state.ents.GetEnt(*altar.ent_a)) {
-            return common::GetVisualCenterForEnt(*topper, graphics, topper->GetRenderCenter());
+            return sim::ToRenderVec2(
+                common::GetVisualCenterForEnt(*topper, graphics, topper->GetSimCenter())
+            );
         }
     }
 
-    return common::GetVisualCenterForEnt(
-        altar,
-        graphics,
-        altar.GetRenderPos() + Vec2::New(16.0F, -8.0F)
+    return sim::ToRenderVec2(
+        common::GetVisualCenterForEnt(
+            altar,
+            graphics,
+            altar.GetSimPos() + sim::PixelVec2(16, -8)
+        )
     );
 }
 
@@ -419,7 +427,7 @@ void DeactivateAltarEnt(Ent& ent, State& state) {
 }
 
 void SpawnAltarBreakEffects(const Ent& ent, State& state) {
-    const Vec2 center = ent.GetRenderCenter();
+    const Vec2 center = sim::ToRenderVec2(ent.GetSimCenter());
     SpawnSacrificeSmoke(state, center);
     SpawnSacrificeBodySmoke(state, center);
     SpawnSacrificeSparks(state, center);
@@ -458,12 +466,13 @@ void DeactivateLinkedAltarPieces(Ent& owner, State& state) {
 }
 
 bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
-    const Vec2 emit_pos = GetAltarEffectPos(altar, state, graphics);
+    const sim::Vec2 emit_pos = GetAltarEffectPos(altar, state, graphics);
+    const Vec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
 
     if (state.sac_altar_reward_tier == 0 && state.sac_altar_favor >= kAccessoryRewardFavor) {
         const EntType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
         Ent* const reward = world_ops::SpawnEnt(state, reward_type, [&](Ent& spawned_reward) {
-            spawned_reward.SetRenderCenter(emit_pos + Vec2::New(0.0F, -3.0F));
+            spawned_reward.SetSimCenter(emit_pos + sim::PixelVec2(0, -3));
             spawned_reward.vel = sim::Vec2{
                 RandomSimScalar(state.drng, sim::ToSimScalar(-0.55F), sim::ToSimScalar(0.55F)),
                 sim::ToSimScalar(-1.7F),
@@ -475,13 +484,13 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
         }
 
         state.sac_altar_reward_tier = 1;
-        (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
+        (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::Present);
         return true;
     }
 
     if (state.sac_altar_reward_tier == 1 && state.sac_altar_favor >= kSecondRewardFavor) {
         Ent* const reward = world_ops::SpawnEnt(state, EntType::Meathead, [&](Ent& spawned_reward) {
-            spawned_reward.SetRenderCenter(emit_pos + Vec2::New(0.0F, -2.0F));
+            spawned_reward.SetSimCenter(emit_pos + sim::PixelVec2(0, -2));
             spawned_reward.ent_a = altar.vid;
             spawned_reward.draw_layer = DrawLayer::Middle;
             spawned_reward.vel = sim::Vec2::zero();
@@ -492,7 +501,7 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
         }
 
         state.sac_altar_reward_tier = 2;
-        (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
+        (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::Present);
         return true;
     }
 
@@ -503,9 +512,9 @@ bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
                 reward_target->health += kHealthRewardAmount;
             }
         }
-        SpawnSacrificeSmoke(state, emit_pos);
+        SpawnSacrificeSmoke(state, render_emit_pos);
         state.sac_altar_reward_tier = 3;
-        (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
+        (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::Present);
         return true;
     }
 
@@ -528,7 +537,7 @@ void SacrificeVictim(
         (render_victim_aabb.tl.x + render_victim_aabb.br.x) * 0.5F,
         render_victim_aabb.br.y - 2.0F
     );
-    const Vec2 altar_emit = GetAltarEffectPos(altar, state, graphics);
+    const Vec2 altar_emit = sim::ToRenderVec2(GetAltarEffectPos(altar, state, graphics));
     const Vec2 altar_sound = GetAltarSoundPos(altar, state, graphics);
 
     common::DropHeldItemFromEnt(victim, state);
@@ -589,7 +598,7 @@ bool TryDepositStoredFavor(
         return false;
     }
 
-    const Vec2 altar_emit = GetAltarEffectPos(*owner, state, graphics);
+    const Vec2 altar_emit = sim::ToRenderVec2(GetAltarEffectPos(*owner, state, graphics));
     const Vec2 altar_sound = GetAltarSoundPos(*owner, state, graphics);
     ApplySacAltarFavorDelta(state, favor, owner);
     TriggerTopperSacAnim(*owner, state);
@@ -621,7 +630,7 @@ void OnDeathAsSacAltarPiece(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     ApplySacAltarFavorDelta(state, -kAltarBreakFavorPenalty, owner);
-    const Vec2 owner_center = owner->GetRenderCenter();
+    const Vec2 owner_center = sim::ToRenderVec2(owner->GetSimCenter());
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !BelongsToOwnerAltar(ent, *owner)) {
             continue;
