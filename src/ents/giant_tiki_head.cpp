@@ -27,7 +27,7 @@ constexpr float kTikiHeadReleaseShakeRadiusTiles = 3.0F;
 void AddTikiHeadWindupShake(State& state, const Ent& head) {
     AddShake(
         state,
-        head.GetRenderCenter(),
+        ToFVec2(head.GetCenter()),
         kTikiHeadWindupShakeForegroundAmount,
         kTikiHeadWindupShakeBackgroundAmount,
         kTikiHeadWindupShakeEntAmount,
@@ -38,7 +38,7 @@ void AddTikiHeadWindupShake(State& state, const Ent& head) {
 void AddTikiHeadReleaseShake(State& state, const Ent& head) {
     AddShake(
         state,
-        head.GetRenderCenter(),
+        ToFVec2(head.GetCenter()),
         kTikiHeadReleaseShakeForegroundAmount,
         kTikiHeadReleaseShakeBackgroundAmount,
         kTikiHeadReleaseShakeEntAmount,
@@ -90,7 +90,7 @@ std::optional<VID> SpawnBoulderForHead(Ent& head, State& state, Audio& audio) {
     }
 
     AddTikiHeadReleaseShake(state, head);
-    (void)PlayWorldSoundEmitter(state, head.GetRenderCenter(), audio_asset_ids::BoulderHitGround);
+    (void)PlayWorldSoundEmitter(state, ToFVec2(head.GetCenter()), audio_asset_ids::BoulderHitGround);
     return boulder->vid;
 }
 

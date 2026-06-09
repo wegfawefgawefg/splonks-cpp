@@ -641,7 +641,7 @@ bool SampleMonkeyTest(int frames, bool big_stage) {
                 continue;
             }
 
-            const float center_y = ent.GetRenderCenter().y;
+            const float center_y = ToFVec2(ent.GetCenter()).y;
             if (count == 0) {
                 min_y = center_y;
                 max_y = center_y;
@@ -906,7 +906,7 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintFieldDiff("pos", SimVec2DebugString(left->pos), SimVec2DebugString(right->pos));
     PrintFieldDiff("vel", SimVec2DebugString(left->vel), SimVec2DebugString(right->vel));
     PrintFieldDiff("acc", SimVec2DebugString(left->acc), SimVec2DebugString(right->acc));
-    PrintFieldDiff("size", Vec2DebugString(left->GetSize()), Vec2DebugString(right->GetSize()));
+    PrintFieldDiff("size", Vec2DebugString(ToFVec2(left->size)), Vec2DebugString(ToFVec2(right->size)));
     if (left->rotation != right->rotation) {
         std::cout << "    rotation: " << ToFloat(left->rotation)
                   << " != " << ToFloat(right->rotation) << '\n';

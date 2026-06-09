@@ -85,8 +85,8 @@ int GetMaxSensorDistance(const State& state, const IVec2& direction) {
 int ComputeOpenSensorDistance(const Ent& block, const State& state, const IVec2& direction) {
     const sim::FxVec2 block_center = block.GetCenter();
     const IVec2 origin_world = IVec2::New(
-        block_center.x.to_pixels_trunc(),
-        block_center.y.to_pixels_trunc()
+        block_center.x.trunc_int(),
+        block_center.y.trunc_int()
     );
     const IVec2 origin_tile = state.stage.GetTileCoordAtWc(origin_world);
     const TileStepRaycastResult ray =
@@ -224,7 +224,7 @@ int GetEntBlockedOpenSensorDistance(
         blocked_distance = gfxp::min(blocked_distance, *distance);
     }
 
-    return std::clamp(blocked_distance.to_pixels_floor(), 0, open_distance);
+    return std::clamp(blocked_distance.floor_int(), 0, open_distance);
 }
 
 sim::FxAABB GetSensorAabb(
@@ -413,7 +413,7 @@ void StopMove(Ent& block, State& state) {
     ShowSleepingFrame(block);
     AddShake(
         state,
-        block.GetRenderCenter(),
+        ToFVec2(block.GetCenter()),
         kImpactTileShake,
         kImpactTileShake * 0.65F,
         0.0F,

@@ -172,7 +172,7 @@ void RenderLightOverlay(
                 renderer,
                 graphics,
                 pres,
-                ent.GetRenderCenter() + render_offset,
+                ToFVec2(ent.GetCenter()) + render_offset,
                 ent.light_radius,
                 light_strength,
                 ToFColor3(ent.light_color),

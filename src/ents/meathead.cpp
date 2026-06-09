@@ -55,13 +55,13 @@ std::optional<FVec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
 
     const sim::FxAABB player_aabb = player.GetAABB();
     const int air_tile_y = state.stage.GetTileCoordAtWc(IVec2::New(
-        player_aabb.br.x.to_pixels_trunc(),
-        (player_aabb.br.y - sim::Scalar::from_pixels(1)).to_pixels_trunc()
+        player_aabb.br.x.trunc_int(),
+        (player_aabb.br.y - sim::Scalar::from_pixels(1)).trunc_int()
     )).y;
     const sim::FxVec2 player_center = player.GetCenter();
     const int center_tile_x = state.stage.GetTileCoordAtWc(IVec2::New(
-        player_center.x.to_pixels_trunc(),
-        player_center.y.to_pixels_trunc()
+        player_center.x.trunc_int(),
+        player_center.y.trunc_int()
     )).x;
     std::vector<IVec2> candidates;
     for (int dx = -kMeatheadPopupSearchTiles; dx <= kMeatheadPopupSearchTiles; ++dx) {
@@ -104,7 +104,7 @@ std::optional<FVec2> SpawnMeatheadPopup(State& state, const Ent& player) {
 
 void PlayMeatheadHealFeedback(State& state, const Ent& player) {
     const std::optional<FVec2> popup_center = SpawnMeatheadPopup(state, player);
-    const FVec2 sound_pos = popup_center.value_or(player.GetRenderCenter());
+    const FVec2 sound_pos = popup_center.value_or(ToFVec2(player.GetCenter()));
     (void)PlayWorldSoundEmitter(state, sound_pos, audio_asset_ids::Present);
     (void)PlayWorldSoundEmitter(state, sound_pos, audio_asset_ids::Smooch);
 }

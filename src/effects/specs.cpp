@@ -246,13 +246,13 @@ void OnAnkhEffectHook(
     (void)TrySetAnim(owner, EntDisplayState::Neutral);
 
     if (const std::optional<FVec2> entrance_pos = FindEntranceRevivePos(state)) {
-        owner.SetRenderPos(*entrance_pos);
+        owner.pos = ToFxVec2(*entrance_pos);
     }
     SnapBackItemToOwner(owner, state);
     RemoveEffect(owner, EffectId::Ankh);
 
     if (audio != nullptr) {
-        (void)PlayWorldSoundEmitter(state, owner.GetRenderCenter(), audio_asset_ids::Present);
+        (void)PlayWorldSoundEmitter(state, ToFVec2(owner.GetCenter()), audio_asset_ids::Present);
     }
 }
 

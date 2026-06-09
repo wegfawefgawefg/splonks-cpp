@@ -326,7 +326,7 @@ bool SwapControlledCharacter(
     const bool keep_health = !debug.character_swap_fresh || debug.character_swap_keep_health;
     const bool keep_tools = !debug.character_swap_fresh || debug.character_swap_keep_tools;
 
-    const FVec2 spawn_center = source_ent->GetRenderCenter();
+    const FVec2 spawn_center = ToFVec2(source_ent->GetCenter());
     const Side facing = source_ent->facing;
     const VID replacement_vid = source_ent->vid;
     const std::optional<VID> old_player_vid = FindPrimaryLocalPlayerVid(state);
@@ -350,7 +350,7 @@ bool SwapControlledCharacter(
     source_ent->acc = sim::FxVec2::zero();
     source_ent->rotation = sim::Scalar::zero();
     source_ent->facing = facing;
-    source_ent->SetRenderCenter(spawn_center);
+    source_ent->SetCenter(ToFxVec2(spawn_center));
 
     if (keep_passives) {
         source_ent->effects.reset();
@@ -517,13 +517,13 @@ bool SpawnDebugEnt(
 
     FVec2 spawn_center = graphics.ScreenToWc(state.playing_inputs.mouse_pos);
     if (debug.spawn_center_on_selected && selected_ent != nullptr) {
-        spawn_center = selected_ent->GetRenderCenter();
+        spawn_center = ToFVec2(selected_ent->GetCenter());
     }
 
     Ent* const spawned = world_ops::SpawnEnt(state, type_, [spawn_center](Ent& ent) {
         ent.vel = sim::FxVec2::zero();
         ent.acc = sim::FxVec2::zero();
-        ent.SetRenderCenter(spawn_center);
+        ent.SetCenter(ToFxVec2(spawn_center));
     });
     if (spawned == nullptr) {
         debug.spawn_status = "Spawn failed.";
@@ -540,7 +540,7 @@ bool SpawnDebugEnt(
             spawned->has_physics = false;
             spawned->can_collide = false;
             spawned->facing = player->facing;
-            spawned->SetRenderCenter(player->GetRenderCenter());
+            spawned->SetCenter(ToFxVec2(ToFVec2(player->GetCenter())));
             debug.spawn_status =
                 std::string("Spawned and attached ") + GetEntTypeName(type_) + ".";
         }
@@ -700,7 +700,7 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
     }
 
     Ent& ent = *selected_ent;
-    const FAABB aabb = ent.GetRenderAABB();
+    const FAABB aabb = ToFAABB(ent.GetAABB());
     ImGui::Separator();
     ImGui::Text("Type: %s", EntTypeToString(ent.type_));
     ImGui::Text(
@@ -753,13 +753,13 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
     }
     ImGui::Text("Facing: %s", SideToString(ent.facing));
     ImGui::Text("Grounded: %s", ent.grounded ? "true" : "false");
-    const FVec2 ent_pos = ent.GetRenderPos();
-    const FVec2 ent_vel = ent.GetRenderVel();
-    const FVec2 ent_acc = ent.GetRenderAcc();
+    const FVec2 ent_pos = ToFVec2(ent.pos);
+    const FVec2 ent_vel = ToFVec2(ent.vel);
+    const FVec2 ent_acc = ToFVec2(ent.acc);
     ImGui::Text("Pos: (%.2f, %.2f)", ent_pos.x, ent_pos.y);
     ImGui::Text("Vel: (%.2f, %.2f)", ent_vel.x, ent_vel.y);
     ImGui::Text("Acc: (%.2f, %.2f)", ent_acc.x, ent_acc.y);
-    const FVec2 ent_size = ent.GetSize();
+    const FVec2 ent_size = ToFVec2(ent.size);
     ImGui::Text("Size: (%.2f, %.2f)", ent_size.x, ent_size.y);
     ImGui::Text("FAABB TL: (%.2f, %.2f)", aabb.tl.x, aabb.tl.y);
     ImGui::Text("FAABB BR: (%.2f, %.2f)", aabb.br.x, aabb.br.y);

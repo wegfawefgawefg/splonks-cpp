@@ -89,7 +89,7 @@ void StepRollingSound(State& state, Ent& boulder) {
     (void)PlayAttachedSoundEmitter(
         state,
         boulder.vid,
-        FVec2::New(0.0F, boulder.GetSize().y * 0.5F),
+        FVec2::New(0.0F, ToFVec2(boulder.size).y * 0.5F),
         audio_asset_ids::BoulderRoll,
         params
     );
@@ -380,7 +380,7 @@ void StepEntLogicAsBoulder(
     if (boulder.ai_state == EntAiState::Idle && boulder.grounded) {
         boulder.ai_state = EntAiState::Disturbed;
         boulder.travel_sound_countdown = sim::Scalar::zero();
-        boulder.point_a = ToIVec2(boulder.GetRenderPos());
+        boulder.point_a = ToIVec2(ToFVec2(boulder.pos));
         boulder.counter_b = sim::Scalar::zero();
         boulder.counter_c = sim::Scalar::zero();
         boulder.counter_d = sim::Scalar::zero();

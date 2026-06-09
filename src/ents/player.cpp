@@ -229,7 +229,7 @@ std::uint32_t GetFallDamageAmount(
 }
 
 void SpawnFallDamagePoofs(const Ent& player, State& state) {
-    const FVec2 base_pos = player.GetRenderCenter() + FVec2::New(0.0F, player.GetSize().y * 0.5F);
+    const FVec2 base_pos = ToFVec2(player.GetCenter()) + FVec2::New(0.0F, ToFVec2(player.size).y * 0.5F);
     for (float direction : {-1.0F, 1.0F}) {
         SpriteParticle smoke{};
         smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);

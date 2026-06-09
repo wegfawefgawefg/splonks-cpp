@@ -62,8 +62,8 @@ void RestoreDetachedCarryEnt(Ent& ent) {
 }
 
 void SnapPlacedAttachToPixels(Ent& ent) {
-    ent.pos = sim::PixelVec2(ent.pos.x.to_pixels_round(),
-                             ent.pos.y.to_pixels_round());
+    ent.pos = sim::PixelVec2(ent.pos.x.round_int(),
+                             ent.pos.y.round_int());
 }
 
 bool IsAttachDriven(const Ent& ent) {

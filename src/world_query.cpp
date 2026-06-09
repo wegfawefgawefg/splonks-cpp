@@ -90,13 +90,13 @@ std::vector<sim::FxVec2> GetQueryOffsets(const Stage& stage, sim::FxAABB area) {
     }
 
     const int min_copy_x =
-        stage.WrapsX() ? FloorDiv(area.tl.x.to_pixels_floor(), stage_width_pixels) : 0;
+        stage.WrapsX() ? FloorDiv(area.tl.x.floor_int(), stage_width_pixels) : 0;
     const int max_copy_x =
-        stage.WrapsX() ? FloorDiv(area.br.x.to_pixels_floor(), stage_width_pixels) : 0;
+        stage.WrapsX() ? FloorDiv(area.br.x.floor_int(), stage_width_pixels) : 0;
     const int min_copy_y =
-        stage.WrapsY() ? FloorDiv(area.tl.y.to_pixels_floor(), stage_height_pixels) : 0;
+        stage.WrapsY() ? FloorDiv(area.tl.y.floor_int(), stage_height_pixels) : 0;
     const int max_copy_y =
-        stage.WrapsY() ? FloorDiv(area.br.y.to_pixels_floor(), stage_height_pixels) : 0;
+        stage.WrapsY() ? FloorDiv(area.br.y.floor_int(), stage_height_pixels) : 0;
 
     offsets.clear();
     for (int copy_y = min_copy_y; copy_y <= max_copy_y; ++copy_y) {
@@ -252,10 +252,10 @@ std::vector<WorldTileQueryResult> QueryTilesInWorldRect(
 
 std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, sim::FxAABB area) {
     return QueryTilesInWorldRect(stage,
-                                 IVec2::New(area.tl.x.to_pixels_floor(),
-                                            area.tl.y.to_pixels_floor()),
-                                 IVec2::New(area.br.x.to_pixels_floor(),
-                                            area.br.y.to_pixels_floor()));
+                                 IVec2::New(area.tl.x.floor_int(),
+                                            area.tl.y.floor_int()),
+                                 IVec2::New(area.br.x.floor_int(),
+                                            area.br.y.floor_int()));
 }
 
 bool IsOneWayTopTileSupportingAabb(
@@ -371,7 +371,7 @@ std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, cons
 std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, sim::FxVec2 world_pos) {
     return QueryTileAtWorldPos(
         stage,
-        IVec2::New(world_pos.x.to_pixels_trunc(), world_pos.y.to_pixels_trunc())
+        IVec2::New(world_pos.x.trunc_int(), world_pos.y.trunc_int())
     );
 }
 

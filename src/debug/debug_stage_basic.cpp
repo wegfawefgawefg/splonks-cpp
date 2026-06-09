@@ -65,8 +65,8 @@ void SpawnMazeDoorLogo(State& state, const FVec2& pos, const FVec2& vel, MazeDoo
     }
 
     SetEntAs(*ent, EntType::DvdLogo);
-    ent->SetRenderPos(pos);
-    ent->SetRenderVel(vel);
+    ent->pos = ToFxVec2(pos);
+    ent->vel = ToFxVec2(vel);
     ent->transition_target = StageTransitionTarget{
         .destination = StageLoadTarget::ForDebugLevel(
             DebugLevelKind::MazeDoorTest,
@@ -234,7 +234,7 @@ void InitStompTestStage(State& state) {
     if (const std::optional<VID> vid = state.ents.NewEnt()) {
         if (Ent* const stomp_pad = state.ents.GetEntMut(*vid)) {
             SetEntAs(*stomp_pad, EntType::StompPad);
-            stomp_pad->SetRenderPos(FVec2::New(
+            stomp_pad->pos = ToFxVec2(FVec2::New(
                 static_cast<float>(4 * static_cast<int>(kTileSize)),
                 static_cast<float>(4 * static_cast<int>(kTileSize) - 7)
             ));

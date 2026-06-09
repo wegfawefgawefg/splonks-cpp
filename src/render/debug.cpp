@@ -726,7 +726,7 @@ void RenderEntCollisionBoxes(
                 continue;
             }
 
-            const FAABB pbox_aabb = ent.GetRenderAABB();
+            const FAABB pbox_aabb = ToFAABB(ent.GetAABB());
             const FVec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + FVec2::New(1.0F, 1.0F);
             const SDL_FRect pbox_rect = WorldRectToScreen(
                 graphics,
@@ -853,7 +853,7 @@ void RenderEntLabels(
                 continue;
             }
 
-            const FAABB pbox_aabb = ent.GetRenderAABB();
+            const FAABB pbox_aabb = ToFAABB(ent.GetAABB());
             const FVec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + FVec2::New(1.0F, 1.0F);
             const SDL_FRect pbox_rect = WorldRectToScreen(
                 graphics,
@@ -918,7 +918,7 @@ void RenderEntRenderCenters(
                 renderer,
                 graphics,
                 pres,
-                ent.GetRenderCenter() + render_offset,
+                ToFVec2(ent.GetCenter()) + render_offset,
                 color
             );
         }
@@ -1482,7 +1482,7 @@ void RenderAudioEmitterOverlay(
         if (emitter.attached_ent_vid.has_value()) {
             const Ent* const attached = state.ents.GetEnt(*emitter.attached_ent_vid);
             if (attached != nullptr) {
-                anchor_world = GetNearestWorldPoint(state.stage, emitter.world_pos, attached->GetRenderCenter());
+                anchor_world = GetNearestWorldPoint(state.stage, emitter.world_pos, ToFVec2(attached->GetCenter()));
             }
         }
 

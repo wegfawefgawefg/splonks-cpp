@@ -25,7 +25,7 @@ void MaintainDoorSound(Ent& entrance, State& state) {
         state,
         entrance.vid,
         entrance.vid,
-        FVec2::New(0.0F, entrance.GetSize().y * 0.5F),
+        FVec2::New(0.0F, ToFVec2(entrance.size).y * 0.5F),
         audio_asset_ids::BoulderRoll,
         kDoorRumbleVolumeScale
     );
@@ -72,7 +72,7 @@ void StepEntLogicAsEntrance(
         (void)PlayAttachedSoundEmitter(
             state,
             entrance.vid,
-            FVec2::New(0.0F, entrance.GetSize().y * 0.5F),
+            FVec2::New(0.0F, ToFVec2(entrance.size).y * 0.5F),
             audio_asset_ids::BoulderLatch,
             params
         );

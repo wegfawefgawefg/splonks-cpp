@@ -191,8 +191,8 @@ void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
     (void)world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         const sim::FxVec2 spawn_center = bow.GetCenter() +
                                        (aim.sim_direction * sim::Scalar::from_int(12));
-        arrow.SetCenter(sim::PixelVec2(spawn_center.x.to_pixels_round(),
-                                          spawn_center.y.to_pixels_round()));
+        arrow.SetCenter(sim::PixelVec2(spawn_center.x.round_int(),
+                                          spawn_center.y.round_int()));
         arrow.vel = aim.sim_direction * ToFxScalar(kBowArrowSpeed);
         arrow.acc = sim::FxVec2::zero();
         arrow.facing = aim.facing;

@@ -56,6 +56,31 @@ The same rule applies to scalar helpers such as stage void-death Y. Keep the
 fixed helper as the default and use `ToFloat(stage.GetVoidDeathY())` in
 render/debug code instead of adding `GetFVoidDeathY()`.
 
+Also remove one-line alias wrappers that only rename another conversion or
+method. These are not abstractions; they hide the boundary and make the codebase
+look like it has more geometry APIs than it really does.
+
+Examples to remove:
+
+```cpp
+// Bad: entity render wrappers that only cast fields or fixed helpers.
+FVec2 Ent::GetRenderPos() const { return ToFVec2(pos); }
+void Ent::SetRenderPos(const FVec2& value) { pos = ToFxVec2(value); }
+FAABB Ent::GetRenderAABB() const { return ToFAABB(GetAABB()); }
+FVec2 Ent::GetRenderCenter() const { return ToFVec2(GetCenter()); }
+
+// Use the actual value and boundary conversion where it is needed.
+const FVec2 render_pos = ToFVec2(ent.pos);
+ent.pos = ToFxVec2(authored_pos);
+const FAABB render_aabb = ToFAABB(ent.GetAABB());
+const FVec2 render_center = ToFVec2(ent.GetCenter());
+```
+
+The same applies inside `gfxp`: do not wrap `ceil_int()`, `round_int()`, or
+`trunc_int()` with `to_pixels_ceil()`, `to_pixels_round()`, or
+`to_pixels_trunc()` when the wrapper does nothing but change the name. Call the
+real rounding method directly.
+
 ## Naming Rules
 
 Default gameplay lane:

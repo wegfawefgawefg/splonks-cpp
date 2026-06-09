@@ -82,7 +82,7 @@ sim::FxAABB SimTileAabbForTilePos(const IVec2& tile_pos) {
 }
 
 IVec2 ToWorldPixelTrunc(sim::FxVec2 point) {
-    return IVec2::New(point.x.to_pixels_trunc(), point.y.to_pixels_trunc());
+    return IVec2::New(point.x.trunc_int(), point.y.trunc_int());
 }
 
 sim::FxVec2 GetFallbackStrikePoint(const Ent& mattock) {
@@ -180,11 +180,11 @@ StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& aud
 MattockTileTargets GetMattockTileTargets(const Ent& holder, const Stage& stage) {
     const sim::FxAABB holder_aabb = holder.GetAABB();
     const int front_world_x = holder.facing == Side::Left
-                                  ? holder_aabb.tl.x.to_pixels_floor() - 1 -
+                                  ? holder_aabb.tl.x.floor_int() - 1 -
                                         kMattockForwardProbeBiasPixels
-                                  : holder_aabb.br.x.to_pixels_floor() + 1 +
+                                  : holder_aabb.br.x.floor_int() + 1 +
                                         kMattockForwardProbeBiasPixels;
-    const int strike_world_y = holder_aabb.br.y.to_pixels_floor() -
+    const int strike_world_y = holder_aabb.br.y.floor_int() -
                                kMattockVerticalProbeOffsetPixels;
     const FVec2 primary_probe_world = FVec2::New(
         static_cast<float>(front_world_x),
@@ -217,7 +217,7 @@ void AddMattockDebugAnnotations(
         .color = DebugAnnotationColor{0, 255, 255, 255},
     });
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-        .world_pos = mattock.GetRenderCenter(),
+        .world_pos = ToFVec2(mattock.GetCenter()),
         .text = "mattock cbox",
         .color = DebugAnnotationColor{0, 255, 255, 255},
     });
@@ -362,7 +362,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
             (void)PlayWorldSoundEmitter(state, ToFVec2(other_aabb.center()), audio_asset_ids::PotShatter);
         }
         if (Ent* const other_ent = state.ents.GetEntMut(other_ent_const->vid)) {
-            result.sound_pos = other_ent->GetRenderCenter();
+            result.sound_pos = ToFVec2(other_ent->GetCenter());
         } else {
             result.sound_pos = ToFVec2(other_aabb.center());
         }

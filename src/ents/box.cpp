@@ -23,7 +23,7 @@ constexpr float kBoxBreakawayImpactSpeed = 2.0F;
 
 Ent* SpawnEntAtTopLeft(EntType type_, const FVec2& pos, State& state) {
     return world_ops::SpawnEnt(state, type_, [pos](Ent& ent) {
-        ent.SetRenderPos(pos);
+        ent.pos = ToFxVec2(pos);
         ent.vel = sim::FxVec2::zero();
     });
 }
@@ -167,7 +167,7 @@ void OnDeathAsBox(std::size_t ent_idx, State& state, Audio& audio) {
 
     const Ent& box = state.ents.ents[ent_idx];
 
-    const FVec2 spawn_pos = box.GetRenderPos();
+    const FVec2 spawn_pos = ToFVec2(box.pos);
     SpawnBreakawayContainerShards(ToFVec2(box.GetCenter()), state);
 
     // Matches ClassicHD's actual open-crate roll order, with unimplemented Shotgun

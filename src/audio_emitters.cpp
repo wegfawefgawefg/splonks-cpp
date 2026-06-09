@@ -295,7 +295,7 @@ std::optional<VID> PlayAttachedSoundEmitter(
     emitter->attached_ent_vid = attached_ent_vid;
     emitter->attached_offset = attached_offset;
     if (const Ent* const attached = state.ents.GetEnt(attached_ent_vid)) {
-        emitter->world_pos = attached->GetRenderCenter() + attached_offset;
+        emitter->world_pos = ToFVec2(attached->GetCenter()) + attached_offset;
     }
     return emitter->vid;
 }
@@ -333,7 +333,7 @@ std::optional<VID> PlayEntCenterSoundEmitter(
     }
     return PlayWorldSoundEmitter(
         state,
-        ent.GetRenderCenter() + world_offset,
+        ToFVec2(ent.GetCenter()) + world_offset,
         audio_asset_id,
         ent_params
     );

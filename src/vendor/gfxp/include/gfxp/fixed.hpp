@@ -233,10 +233,6 @@ template <typename Raw, int FracBits> struct BasicFixed {
         return static_cast<int32_t>(quotient);
     }
 
-    [[nodiscard]] constexpr int32_t to_pixels_floor() const {
-        return floor_int();
-    }
-
     [[nodiscard]] constexpr int32_t ceil_int() const {
         const Raw quotient = static_cast<Raw>(raw / scale);
         const Raw remainder = static_cast<Raw>(raw % scale);
@@ -245,21 +241,9 @@ template <typename Raw, int FracBits> struct BasicFixed {
         return static_cast<int32_t>(quotient);
     }
 
-    [[nodiscard]] constexpr int32_t to_pixels_ceil() const {
-        return ceil_int();
-    }
-
     [[nodiscard]] constexpr int32_t round_int() const {
         const std::optional<int64_t> rounded = detail::div_round(raw, scale, Rounding::Nearest);
         return rounded ? static_cast<int32_t>(*rounded) : 0;
-    }
-
-    [[nodiscard]] constexpr int32_t to_pixels_round() const {
-        return round_int();
-    }
-
-    [[nodiscard]] constexpr int32_t to_pixels_trunc() const {
-        return trunc_int();
     }
 
     [[nodiscard]] constexpr BasicFixed abs() const {

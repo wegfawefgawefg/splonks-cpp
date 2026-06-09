@@ -66,8 +66,8 @@ sim::FxVec2 ArrowGravityAcceleration() {
 }
 
 void SnapArrowPositionToPixels(Ent& arrow) {
-    arrow.pos = sim::PixelVec2(arrow.pos.x.to_pixels_floor(),
-                               arrow.pos.y.to_pixels_floor());
+    arrow.pos = sim::PixelVec2(arrow.pos.x.floor_int(),
+                               arrow.pos.y.floor_int());
 }
 
 IVec2 ToStoredArrowOffsetPoint(sim::FxVec2 offset) {
@@ -135,8 +135,8 @@ int ComputeOpenSensorDistance(const Ent& trap, const State& state) {
     const int direction = DirectionForTrap(trap);
     const sim::FxVec2 start = GetSensorStart(trap);
     const IVec2 origin_tile = state.stage.GetTileCoordAtWc(IVec2::New(
-        start.x.to_pixels_trunc(),
-        start.y.to_pixels_trunc()
+        start.x.trunc_int(),
+        start.y.trunc_int()
     ));
     const TileStepRaycastResult ray = RaycastTileSteps(
         state.stage,
@@ -487,7 +487,7 @@ ents::common::ContactResult OnEntContactAsArrow(
 
     const sim::FxVec2 impact_velocity = arrow.vel;
     if (arrow.collide_sound.has_value()) {
-        (void)PlayWorldSoundEmitter(state, arrow.GetRenderCenter(), *arrow.collide_sound);
+        (void)PlayWorldSoundEmitter(state, ToFVec2(arrow.GetCenter()), *arrow.collide_sound);
     }
     const ents::common::DamageResult damage_result = ents::common::TryHitEnt(
         other_ent_idx,

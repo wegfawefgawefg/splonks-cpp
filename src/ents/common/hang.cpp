@@ -46,7 +46,7 @@ sim::FxAABB SimPointAabb(sim::Scalar x, sim::Scalar y) {
 }
 
 sim::Scalar HalfWidthFloor(const Ent& ent) {
-    return sim::Scalar::from_pixels((ent.size.x / 2).to_pixels_floor());
+    return sim::Scalar::from_pixels((ent.size.x / 2).floor_int());
 }
 
 void AddClimbDebugLabel(State& state, const FVec2& world_pos, const char* text) {
@@ -75,7 +75,7 @@ ClimbProbePoints GetClimbProbePointsAtPosition(
     const FVec2& pos,
     const JumpAndClimbTuning& tuning
 ) {
-    const FVec2 size = ent.GetSize();
+    const FVec2 size = ToFVec2(ent.size);
     const FVec2 center = pos + (size / 2.0F);
     const float probe_y =
         pos.y + std::min(tuning.climb_probe_bias_pixels, std::max(0.0F, size.y - 1.0F));
@@ -110,7 +110,7 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
     std::optional<IVec2> best_tile = std::nullopt;
     int best_hits = 0;
     float best_score = 0.0F;
-    const FVec2 ent_center = pos + (ent.GetSize() / 2.0F);
+    const FVec2 ent_center = pos + (ToFVec2(ent.size) / 2.0F);
 
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
@@ -214,7 +214,7 @@ std::optional<ClimbAnchor> GetClimbAnchor(
     const State& state,
     const JumpAndClimbTuning& tuning
 ) {
-    return GetClimbAnchorAtPosition(ent, ent.GetRenderPos(), state, tuning);
+    return GetClimbAnchorAtPosition(ent, ToFVec2(ent.pos), state, tuning);
 }
 
 std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
@@ -222,14 +222,14 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
     State& state,
     const JumpAndClimbTuning& tuning
 ) {
-    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, ent.GetRenderPos(), tuning);
+    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, ToFVec2(ent.pos), tuning);
     const sim::FxAABB aabb = ent.GetAABB();
     const std::array<IVec2, 3> normal_probe_points = {
         ToIVec2(probes.left),
         ToIVec2(probes.center),
         ToIVec2(probes.right),
     };
-    const int probe_y = (aabb.br.y + sim::Scalar::from_pixels(1)).to_pixels_floor();
+    const int probe_y = (aabb.br.y + sim::Scalar::from_pixels(1)).floor_int();
     const std::array<IVec2, 3> probe_points = {
         IVec2::New(FloorToInt(probes.left.x), probe_y),
         IVec2::New(FloorToInt(probes.center.x), probe_y),
@@ -246,8 +246,8 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
     }
 
     const std::array<IVec2, 2> edge_probe_points = {
-        IVec2::New((aabb.tl.x - sim::Scalar::from_pixels(1)).to_pixels_floor(), probe_y),
-        IVec2::New((aabb.br.x + sim::Scalar::from_pixels(1)).to_pixels_floor(), probe_y),
+        IVec2::New((aabb.tl.x - sim::Scalar::from_pixels(1)).floor_int(), probe_y),
+        IVec2::New((aabb.br.x + sim::Scalar::from_pixels(1)).floor_int(), probe_y),
     };
     for (const IVec2& edge_probe_point : edge_probe_points) {
         AddClimbDebugRect(state, ToVec2(edge_probe_point), DebugAnnotationColor{255, 240, 64, 255});
@@ -318,7 +318,7 @@ int GetAllowedClimbUpPixels(
 ) {
     int allowed_pixels = 0;
     for (int step = 1; step <= max_pixels; ++step) {
-        const FVec2 next_pos = ent.GetRenderPos() + FVec2::New(0.0F, -static_cast<float>(step));
+        const FVec2 next_pos = ToFVec2(ent.pos) + FVec2::New(0.0F, -static_cast<float>(step));
         if (!HasClimbableTileAtPosition(ent, next_pos, state, tuning)) {
             break;
         }
@@ -332,7 +332,7 @@ void AddClimbDebugAnnotations(const Ent& ent, State& state, const JumpAndClimbTu
         return;
     }
 
-    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, ent.GetRenderPos(), tuning);
+    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, ToFVec2(ent.pos), tuning);
     const std::array<std::pair<const char*, FVec2>, 3> probe_points = {{
         {"climb L", probes.left},
         {"climb C", probes.center},
@@ -383,8 +383,8 @@ bool IsBlockedForHangProbe(
     VID self_vid
 ) {
     if (check_tiles) {
-        const IVec2 tl_wc = IVec2::New(area.tl.x.to_pixels_floor(), area.tl.y.to_pixels_floor());
-        const IVec2 br_wc = IVec2::New(area.br.x.to_pixels_floor(), area.br.y.to_pixels_floor());
+        const IVec2 tl_wc = IVec2::New(area.tl.x.floor_int(), area.tl.y.floor_int());
+        const IVec2 br_wc = IVec2::New(area.br.x.floor_int(), area.br.y.floor_int());
         if (const std::optional<StageBorderSideKind> tl_side =
                 state.stage.GetOutOfBoundsSideForWorldPos(tl_wc)) {
             const Tile border_tile = state.stage.GetBorderTile(*tl_side);
@@ -577,8 +577,8 @@ bool CanGloveHangBelowCorner(
     const sim::Scalar side_x =
         left_side ? aabb.tl.x - sim::Scalar::from_pixels(1)
                   : aabb.br.x + sim::Scalar::from_pixels(1);
-    const int start_y = aabb.tl.y.to_pixels_floor() - 1;
-    const int end_y = aabb.br.y.to_pixels_floor();
+    const int start_y = aabb.tl.y.floor_int() - 1;
+    const int end_y = aabb.br.y.floor_int();
 
     for (int y = start_y; y <= end_y; ++y) {
         if (IsHdHangProbeBlocked(

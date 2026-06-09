@@ -84,7 +84,7 @@ void StartWait(Ent& thwomp, State& state) {
     AddEntShake(thwomp, kImpactShake);
     AddShake(
         state,
-        thwomp.GetRenderCenter(),
+        ToFVec2(thwomp.GetCenter()),
         kImpactTileShake,
         kImpactTileShake * 0.65F,
         0.0F,

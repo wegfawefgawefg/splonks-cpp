@@ -280,7 +280,7 @@ FVec2 GetDebugBotSpawnPos(const State& state) {
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal()) {
         if (primary->ent_vid.has_value()) {
             if (const Ent* const ent = state.ents.GetEnt(*primary->ent_vid)) {
-                return ent->GetRenderPos() + FVec2::New(12.0F, -2.0F);
+                return ToFVec2(ent->pos) + FVec2::New(12.0F, -2.0F);
             }
         }
     }

@@ -451,7 +451,7 @@ void MoveTeleportHolderToDestination(
     const Graphics& graphics
 ) {
     common::SetVisualCenterForEnt(holder, graphics, destination_center);
-    holder.pos = sim::PixelVec2(holder.pos.x.to_pixels_round(), holder.pos.y.to_pixels_round());
+    holder.pos = sim::PixelVec2(holder.pos.x.round_int(), holder.pos.y.round_int());
     holder.grounded = false;
     holder.hang_side.reset();
     SetMovementFlag(holder, EntMovementFlag::Climbing, false);
@@ -498,7 +498,7 @@ void AddTeleporterDebugAnnotations(
     const TeleportProbeCandidate* const chosen = FindFirstValidTeleportProbeCandidate(candidates);
 
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-        .world_pos = holder->GetRenderCenter(),
+        .world_pos = ToFVec2(holder->GetCenter()),
         .text = "teleporter dir (" + std::to_string(aim.direction.x) + ", " + std::to_string(aim.direction.y) + ")",
         .color = DebugAnnotationColor{0, 255, 255, 255},
     });

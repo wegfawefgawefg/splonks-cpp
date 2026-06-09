@@ -221,7 +221,7 @@ void DestroyCobraSpit(std::size_t ent_idx, State& state) {
         return;
     }
 
-    SpawnSpitImpact(state, spit.GetRenderCenter());
+    SpawnSpitImpact(state, ToFVec2(spit.GetCenter()));
     (void)world_ops::DeactivateEnt(state, spit.vid);
 }
 
@@ -323,7 +323,7 @@ void StepEntLogicAsCobraSpit(
 
     spit.counter_b -= sim::Scalar::from_int(1);
     if (spit.counter_b <= sim::Scalar::zero()) {
-        SpawnSpitTrail(state, spit.GetRenderCenter(), spit.GetRenderVel());
+        SpawnSpitTrail(state, ToFVec2(spit.GetCenter()), ToFVec2(spit.vel));
         spit.counter_b = ToFxScalar(kCobraSpitTrailIntervalFrames);
     }
 }

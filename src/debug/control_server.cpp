@@ -283,11 +283,11 @@ void WriteEntJson(std::ostringstream& out, const State& state, const Ent& ent) {
         << ",\"coyote_time\":" << ent.coyote_time
         << ",\"fall_timer\":" << ent.fall_timer
         << ",\"pos\":";
-    WriteVec2(out, ent.GetRenderPos());
+    WriteVec2(out, ToFVec2(ent.pos));
     out << ",\"vel\":";
-    WriteVec2(out, ent.GetRenderVel());
+    WriteVec2(out, ToFVec2(ent.vel));
     out << ",\"size\":";
-    WriteVec2(out, ent.GetSize());
+    WriteVec2(out, ToFVec2(ent.size));
     out << ",\"holding\":";
     WriteOptionalVid(out, ent.holding_vid);
     out << ",\"held_by\":";
@@ -646,7 +646,7 @@ std::optional<FVec2> GetPrimaryLocalPlayerCenter(const State& state) {
     if (ent == nullptr) {
         return std::nullopt;
     }
-    return ent->GetRenderCenter();
+    return ToFVec2(ent->GetCenter());
 }
 
 std::string HandleEntsCommand(const State& state, const std::vector<std::string>& parts) {
@@ -680,7 +680,7 @@ std::string HandleEntsCommand(const State& state, const std::vector<std::string>
             continue;
         }
         if (center.has_value()) {
-            const FVec2 delta = ent.GetRenderCenter() - *center;
+            const FVec2 delta = ToFVec2(ent.GetCenter()) - *center;
             const float dist_sq = delta.x * delta.x + delta.y * delta.y;
             if (dist_sq > radius * radius) {
                 continue;

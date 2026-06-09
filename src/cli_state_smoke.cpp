@@ -423,8 +423,8 @@ bool ApplyDetWorldOpsSmokeMutations(State& state, const char*& failed_step) {
         state,
         EntType::Rock,
         [](Ent& ent) {
-            ent.SetRenderPos(FVec2::New(96.0F, 64.0F));
-            ent.SetRenderVel(FVec2::New(1.0F, -2.0F));
+            ent.pos = ToFxVec2(FVec2::New(96.0F, 64.0F));
+            ent.vel = ToFxVec2(FVec2::New(1.0F, -2.0F));
             ent.acc = sim::FxVec2::zero();
         }
     );
@@ -579,7 +579,7 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
         return false;
     }
 
-    player->SetRenderPos(FVec2::New(4.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - player->GetSize().y));
+    player->pos = ToFxVec2(FVec2::New(4.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - ToFVec2(player->size).y));
     player->vel = sim::FxVec2::zero();
     player->acc = sim::FxVec2::zero();
     player->grounded = false;
@@ -590,7 +590,7 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
 
     const auto spawn = [&](EntType type, FVec2 pos) -> bool {
         Ent* const ent = world_ops::SpawnEnt(state, type, [&](Ent& spawned) {
-            spawned.SetRenderPos(pos);
+            spawned.pos = ToFxVec2(pos);
             spawned.vel = sim::FxVec2::zero();
             spawned.acc = sim::FxVec2::zero();
         });
@@ -647,8 +647,8 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
     state.stage.AddFluidTempGravity(IVec2::New(12, 11), ToFxVec2(1.25F, 0.0F));
 
     Ent* const box = world_ops::SpawnEnt(state, EntType::Box, [](Ent& ent) {
-        ent.SetRenderPos(FVec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize)));
-        ent.SetRenderVel(FVec2::New(0.0F, 0.0F));
+        ent.pos = ToFxVec2(FVec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize)));
+        ent.vel = ToFxVec2(FVec2::New(0.0F, 0.0F));
         ent.acc = sim::FxVec2::zero();
     });
     if (box == nullptr) {
@@ -656,9 +656,9 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
         return false;
     }
 
-    player->SetRenderPos(FVec2::New(
+    player->pos = ToFxVec2(FVec2::New(
         22.0F * static_cast<float>(kTileSize),
-        20.0F * static_cast<float>(kTileSize) - player->GetSize().y
+        20.0F * static_cast<float>(kTileSize) - ToFVec2(player->size).y
     ));
     player->vel = sim::FxVec2::zero();
     player->acc = sim::FxVec2::zero();
@@ -683,9 +683,9 @@ bool PrepareShopDetReplayScenario(State& state, const char*& failed_step) {
         return false;
     }
     player->money = 50000;
-    player->SetRenderPos(FVec2::New(
+    player->pos = ToFxVec2(FVec2::New(
         16.0F * static_cast<float>(kTileSize),
-        10.0F * static_cast<float>(kTileSize) - player->GetSize().y
+        10.0F * static_cast<float>(kTileSize) - ToFVec2(player->size).y
     ));
     player->vel = sim::FxVec2::zero();
     player->acc = sim::FxVec2::zero();
@@ -702,7 +702,7 @@ bool AddSecondLocalPlayerForDetReplay(State& state, Graphics& graphics) {
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal();
         primary != nullptr && primary->ent_vid.has_value()) {
         if (const Ent* const primary_ent = state.ents.GetEnt(*primary->ent_vid)) {
-            spawn_pos = primary_ent->GetRenderPos() + FVec2::New(16.0F, 0.0F);
+            spawn_pos = ToFVec2(primary_ent->pos) + FVec2::New(16.0F, 0.0F);
         }
     }
 
@@ -847,8 +847,8 @@ bool PlaceCarryTransitionSmokePlayers(State& state, Graphics& graphics, const ch
 
     const float tile = static_cast<float>(kTileSize);
     const float floor_y = 20.0F * tile;
-    p1->SetRenderPos(FVec2::New(8.0F * tile, floor_y - p1->GetSize().y));
-    p2->SetRenderPos(FVec2::New(9.0F * tile, floor_y - p2->GetSize().y));
+    p1->pos = ToFxVec2(FVec2::New(8.0F * tile, floor_y - ToFVec2(p1->size).y));
+    p2->pos = ToFxVec2(FVec2::New(9.0F * tile, floor_y - ToFVec2(p2->size).y));
     for (Ent* const player : {p1, p2}) {
         player->vel = sim::FxVec2::zero();
         player->acc = sim::FxVec2::zero();
@@ -2650,7 +2650,7 @@ bool AddSmokePlayer(State& state, Graphics& graphics, PlayerId player_id, FVec2 
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal();
         primary != nullptr && primary->ent_vid.has_value()) {
         if (const Ent* const primary_ent = state.ents.GetEnt(*primary->ent_vid)) {
-            spawn_pos = primary_ent->GetRenderPos() + offset;
+            spawn_pos = ToFVec2(primary_ent->pos) + offset;
         }
     }
     const std::optional<VID> player_vid =
@@ -2744,7 +2744,7 @@ bool RunRetainedReconnectSmoke() {
         return false;
     }
 
-    player->SetRenderPos(FVec2::New(128.0F, 192.0F));
+    player->pos = ToFxVec2(FVec2::New(128.0F, 192.0F));
     player->health = 277;
     player->money = 54321;
     (void)AddEffect(*player, EffectId::Gloves);
@@ -2753,12 +2753,12 @@ bool RunRetainedReconnectSmoke() {
     FillToolSlot(state.ent_tools.EnsureToolSlot(player->vid, 1), ToolKind::ThrowRope, 7, true);
 
     Ent* const held = world_ops::SpawnEnt(state, EntType::Rock, [](Ent& ent) {
-        ent.SetRenderPos(FVec2::New(136.0F, 192.0F));
-        ent.SetRenderVel(FVec2::New(1.0F, -2.0F));
+        ent.pos = ToFxVec2(FVec2::New(136.0F, 192.0F));
+        ent.vel = ToFxVec2(FVec2::New(1.0F, -2.0F));
         ent.counter_a = sim::Scalar::from_int(3);
     });
     Ent* const back = world_ops::SpawnEnt(state, EntType::Cape, [](Ent& ent) {
-        ent.SetRenderPos(FVec2::New(120.0F, 192.0F));
+        ent.pos = ToFxVec2(FVec2::New(120.0F, 192.0F));
         ent.counter_b = sim::Scalar::from_int(4);
     });
     if (held == nullptr || back == nullptr) {
@@ -2800,7 +2800,7 @@ bool RunRetainedReconnectSmoke() {
         return false;
     }
 
-    player->SetRenderPos(FVec2::New(16.0F, 16.0F));
+    player->pos = ToFxVec2(FVec2::New(16.0F, 16.0F));
     player->health = 1;
     player->money = 2;
     player->holding_vid.reset();
@@ -2822,7 +2822,7 @@ bool RunRetainedReconnectSmoke() {
     network::ApplyRetainedPlayerState(state, slot->player_id, *retained, spawn_pos, graphics);
     player = state.ents.GetEntMut(*slot->ent_vid);
     if (player == nullptr ||
-        player->GetRenderPos() != FVec2::New(128.0F, 192.0F) ||
+        ToFVec2(player->pos) != FVec2::New(128.0F, 192.0F) ||
         player->health != 277 ||
         player->money != 54321 ||
         !HasEffect(*player, EffectId::Gloves) ||

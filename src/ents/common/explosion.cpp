@@ -46,7 +46,7 @@ bool IsInSpelunkyExplosionFootprint(sim::FxVec2 world_delta) {
 
 std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, sim::FxVec2 center) {
     const IVec2 center_tile = stage.GetTileCoordAtWc(
-        IVec2::New(center.x.to_pixels_trunc(), center.y.to_pixels_trunc())
+        IVec2::New(center.x.trunc_int(), center.y.trunc_int())
     );
     std::vector<IVec2> result;
     result.reserve(13);

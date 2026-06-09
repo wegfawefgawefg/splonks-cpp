@@ -245,30 +245,6 @@ void Ent::SetAcc(sim::FxVec2 value) {
     acc = value;
 }
 
-FVec2 Ent::GetRenderPos() const {
-    return ToFVec2(pos);
-}
-
-FVec2 Ent::GetRenderVel() const {
-    return ToFVec2(vel);
-}
-
-FVec2 Ent::GetRenderAcc() const {
-    return ToFVec2(acc);
-}
-
-void Ent::SetRenderPos(const FVec2& value) {
-    pos = ToFxVec2(value);
-}
-
-void Ent::SetRenderVel(const FVec2& value) {
-    vel = ToFxVec2(value);
-}
-
-void Ent::SetRenderAcc(const FVec2& value) {
-    acc = ToFxVec2(value);
-}
-
 sim::FxAABB Ent::GetAABB() const {
     return sim::FxAABB::from_pos_size(pos, size - sim::FxVec2::from_pixels(1, 1));
 }
@@ -292,27 +268,6 @@ sim::FxAABB Ent::GetGroundProbe() const {
     sim::FxAABB feet = GetFeet();
     feet.br.y += ToFxScalar(kGroundProbeFractionalEpsilon);
     return feet;
-}
-
-std::tuple<FVec2, FVec2> Ent::GetRenderBounds() const {
-    const sim::FxAABB bounds = GetAABB();
-    return {ToFVec2(bounds.tl), ToFVec2(bounds.br)};
-}
-
-FAABB Ent::GetRenderAABB() const {
-    return ToFAABB(GetAABB());
-}
-
-FVec2 Ent::GetRenderCenter() const {
-    return ToFVec2(GetCenter());
-}
-
-void Ent::SetRenderCenter(const FVec2& center) {
-    SetCenter(ToFxVec2(center));
-}
-
-FVec2 Ent::GetSize() const {
-    return ToFVec2(size);
 }
 
 void Ent::IncTravelSound() {
@@ -366,7 +321,7 @@ void Ent::SetGrounded(const Stage& stage) {
 }
 
 std::tuple<FVec2, FVec2> Ent::GetTlAndTrCorners() const {
-    return {GetRenderPos(), ToFVec2(pos + sim::FxVec2{size.x, sim::Scalar::zero()})};
+    return {ToFVec2(pos), ToFVec2(pos + sim::FxVec2{size.x, sim::Scalar::zero()})};
 }
 
 HangHands Ent::GetHangHands() const {
@@ -378,8 +333,9 @@ HangHands Ent::GetHangHands() const {
 }
 
 HangHandBounds Ent::GetHangHandsBounds() const {
-    const auto [tl, _br] = GetRenderBounds();
-    const FVec2 right_edge = tl + FVec2::New(GetSize().x, 0.0F);
+    const sim::FxAABB bounds = GetAABB();
+    const FVec2 tl = ToFVec2(bounds.tl);
+    const FVec2 right_edge = tl + FVec2::New(ToFVec2(size).x, 0.0F);
     HangHandBounds hang_hands;
     hang_hands.left_tl = tl - kHangHandSize;
     hang_hands.left_br = tl;

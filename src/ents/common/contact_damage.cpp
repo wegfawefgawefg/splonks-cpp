@@ -288,7 +288,7 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
     bool hit_spikes = false;
     {
         const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
-        const int ent_bottom_y = ent_aabb.br.y.to_pixels_trunc();
+        const int ent_bottom_y = ent_aabb.br.y.trunc_int();
         const bool override_tile_portion_check =
             gfxp::length_sq(ent.vel) > ToFxScalar(kSpikeOverrideVelocitySq);
         const bool in_top_portion_of_tile = (ent_bottom_y % static_cast<int>(kTileSize)) < 4;

@@ -161,8 +161,8 @@ int FloorDiv(int numerator, int denominator) {
 
 IVec2 SnapWorldPointToTile(sim::FxVec2 point, const Stage& stage) {
     const int tile_size = static_cast<int>(kTileSize);
-    const int tile_x = FloorDiv(point.x.to_pixels_floor(), tile_size);
-    const int tile_y = FloorDiv(point.y.to_pixels_floor(), tile_size);
+    const int tile_x = FloorDiv(point.x.floor_int(), tile_size);
+    const int tile_y = FloorDiv(point.y.floor_int(), tile_size);
     return stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
 }
 

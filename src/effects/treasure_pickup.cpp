@@ -14,7 +14,7 @@
 namespace splonks::effects {
 
 void SpawnTreasurePickupSparkles(const Ent& pickup, State& state, Color3 color, int count) {
-    const FVec2 center = pickup.GetRenderCenter();
+    const FVec2 center = ToFVec2(pickup.GetCenter());
     const int particle_count = std::clamp(count, 1, 12);
     for (int i = 0; i < particle_count; ++i) {
         SpriteParticle particle{};

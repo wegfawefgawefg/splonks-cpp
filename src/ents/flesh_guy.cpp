@@ -78,8 +78,8 @@ IVec2 WorldPosToUnwrappedTileCoord(const FVec2& world_pos) {
 
 IVec2 WorldPosToUnwrappedTileCoord(sim::FxVec2 world_pos) {
     return IVec2::New(
-        FloorDiv(world_pos.x.to_pixels_floor(), static_cast<int>(kTileSize)),
-        FloorDiv(world_pos.y.to_pixels_floor(), static_cast<int>(kTileSize))
+        FloorDiv(world_pos.x.floor_int(), static_cast<int>(kTileSize)),
+        FloorDiv(world_pos.y.floor_int(), static_cast<int>(kTileSize))
     );
 }
 

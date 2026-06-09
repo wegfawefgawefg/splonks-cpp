@@ -159,8 +159,8 @@ FAABB ToFAABB(const sim::FxAABB& value) {
 }
 
 IAABB ToIAABBFloorCeil(const sim::FxAABB& value) {
-    return IAABB::New(IVec2::New(value.tl.x.to_pixels_floor(), value.tl.y.to_pixels_floor()),
-                      IVec2::New(value.br.x.to_pixels_ceil(), value.br.y.to_pixels_ceil()));
+    return IAABB::New(IVec2::New(value.tl.x.floor_int(), value.tl.y.floor_int()),
+                      IVec2::New(value.br.x.ceil_int(), value.br.y.ceil_int()));
 }
 
 FVec2 ToFMinDisplacement(sim::FxAABB aabb1, sim::FxAABB aabb2) {

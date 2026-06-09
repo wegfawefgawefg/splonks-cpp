@@ -41,7 +41,7 @@ void SpawnBatTrailSegment(State& state, const FVec2& from, const FVec2& to) {
 }
 
 IVec2 ToWorldPixelTrunc(sim::FxVec2 point) {
-    return IVec2::New(point.x.to_pixels_trunc(), point.y.to_pixels_trunc());
+    return IVec2::New(point.x.trunc_int(), point.y.trunc_int());
 }
 
 SwingStage GetSwingStage(const Ent& baseball_bat) {

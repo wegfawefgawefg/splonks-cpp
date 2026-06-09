@@ -21,7 +21,7 @@ int FloorDiv(int value, int divisor) {
 }
 
 int GetCellCoord(sim::Scalar value) {
-    return FloorDiv(value.to_pixels_floor(), static_cast<int>(kTileSize));
+    return FloorDiv(value.floor_int(), static_cast<int>(kTileSize));
 }
 
 std::int64_t MakeCellKey(int x, int y) {

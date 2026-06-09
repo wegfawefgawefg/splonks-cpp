@@ -24,7 +24,7 @@ struct Color3 {
 }
 
 [[nodiscard]] inline IVec2 ToPixelIVec2Round(FxVec2 value) {
-    return IVec2::New(value.x.to_pixels_round(), value.y.to_pixels_round());
+    return IVec2::New(value.x.round_int(), value.y.round_int());
 }
 
 namespace detail {

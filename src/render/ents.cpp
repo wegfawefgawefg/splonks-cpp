@@ -121,7 +121,7 @@ FVec2 GetSmoothedEntRenderPos(State& state, Graphics& graphics, const Ent& ent) 
     constexpr float kCorrectionResponse = 0.42F;
     constexpr float kSettledDistance = 0.20F;
     constexpr float kSnapDistance = 32.0F;
-    const FVec2 ent_render_pos = ent.GetRenderPos();
+    const FVec2 ent_render_pos = ToFVec2(ent.pos);
 
     if (state.stage_frame <= 1) {
         if (!graphics.ent_render_smoothing.empty() && state.stage_frame <= 1) {
@@ -244,10 +244,10 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 if (const Ent* const attached = state.ents.GetEnt(*ent.ent_a)) {
                     if (attached->active) {
                         SDL_SetRenderDrawColor(renderer, 132, 132, 132, 255);
-                        const FVec2 anchor_world = attached->GetRenderCenter() +
-                                                  FVec2::New(0.0F, (attached->GetSize().y * 0.5F) - 1.0F);
+                        const FVec2 anchor_world = ToFVec2(attached->GetCenter()) +
+                                                  FVec2::New(0.0F, (ToFVec2(attached->size).y * 0.5F) - 1.0F);
                         const FVec2 ball_world =
-                            GetNearestWorldPoint(state.stage, anchor_world, ent.GetRenderCenter());
+                            GetNearestWorldPoint(state.stage, anchor_world, ToFVec2(ent.GetCenter()));
                         for (const FVec2& render_offset : render_offsets) {
                             const FVec2 anchor_screen = WorldToScreen(graphics, anchor_world + render_offset);
                             const FVec2 ball_screen = WorldToScreen(graphics, ball_world + render_offset);
@@ -291,7 +291,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                     );
                 }
                 if (ent.stone) {
-                    const FAABB stone_overlay_aabb = ent.GetRenderAABB();
+                    const FAABB stone_overlay_aabb = ToFAABB(ent.GetAABB());
                     RenderStoneEntOverlay(
                         renderer,
                         state,

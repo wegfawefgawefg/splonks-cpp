@@ -144,7 +144,7 @@ void StepVerticalPingPong(Ent& platform) {
 
 void StepCircle(Ent& platform) {
     const sim::FxVec2 center = sim::PixelVec2(platform.point_a.x, platform.point_a.y);
-    const int radius = platform.threshold_a.to_pixels_round();
+    const int radius = platform.threshold_a.round_int();
     const int path_idx = PositiveModulo(
         platform.counter_a.trunc_int(),
         static_cast<int>(kCirclePath.size())

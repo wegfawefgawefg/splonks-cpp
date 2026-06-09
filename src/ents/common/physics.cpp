@@ -234,9 +234,9 @@ float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
     constexpr float kDefaultGroundFriction = 0.85F;
     const Ent& ent = state.ents.ents[ent_idx];
     const sim::FxAABB ent_aabb = ent.GetAABB();
-    const int support_y = (ent_aabb.br.y + sim::Scalar::from_int(1)).to_pixels_floor();
-    const int min_tile_x = FloorDiv(ent_aabb.tl.x.to_pixels_floor(), static_cast<int>(kTileSize));
-    const int max_tile_x = FloorDiv(ent_aabb.br.x.to_pixels_floor(), static_cast<int>(kTileSize));
+    const int support_y = (ent_aabb.br.y + sim::Scalar::from_int(1)).floor_int();
+    const int min_tile_x = FloorDiv(ent_aabb.tl.x.floor_int(), static_cast<int>(kTileSize));
+    const int max_tile_x = FloorDiv(ent_aabb.br.x.floor_int(), static_cast<int>(kTileSize));
     const int support_tile_y = FloorDiv(support_y, static_cast<int>(kTileSize));
 
     float friction = 0.0F;
