@@ -68,11 +68,7 @@ bool Stage::HasVoidDeathY() const {
     return border.void_death_y.has_value();
 }
 
-float Stage::GetVoidDeathY() const {
-    return static_cast<float>(border.void_death_y.value_or(0));
-}
-
-sim::Scalar Stage::GetSimVoidDeathY() const {
+sim::Scalar Stage::GetVoidDeathY() const {
     return sim::Scalar::from_pixels(border.void_death_y.value_or(0));
 }
 

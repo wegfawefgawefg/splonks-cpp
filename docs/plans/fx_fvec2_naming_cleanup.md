@@ -39,6 +39,23 @@ Do not grow helper pairs like `GetThing(...)` and `GetFThing(...)` just because
 one render call site needs a float. Render/debug/audio/UI code can call the
 fixed helper and convert the returned value locally.
 
+Important anti-pattern: do not "fix" a `GetSimThing(...)` name by creating a
+canonical `GetThing(...)` plus a mirror `GetFThing(...)`. That repeats the
+migration clutter under a new prefix. The intended cleanup is:
+
+```cpp
+// Good: one fixed helper, local presentation conversion.
+sim::FxVec2 GetCoreSizeWc(const Stage& stage);
+const FVec2 render_size = ToFVec2(GetCoreSizeWc(stage));
+
+// Bad: duplicate helper that only returns a float copy.
+FVec2 GetFCoreSizeWc(const Stage& stage);
+```
+
+The same rule applies to scalar helpers such as stage void-death Y. Keep the
+fixed helper as the default and use `ToFloat(stage.GetVoidDeathY())` in
+render/debug code instead of adding `GetFVoidDeathY()`.
+
 ## Naming Rules
 
 Default gameplay lane:
@@ -118,6 +135,9 @@ Progress:
   overloads for `GetVisualCenterForEnt(...)` and `GetEmitPointForEnt(...)`.
   Presentation callers now use the fixed helper and convert with `ToFVec2(...)`
   at the call site.
+- Completed 2026-06-09: documented and corrected the `GetFCoreSizeWc` /
+  `GetFStagePixelDims` / `GetFVoidDeathY` anti-pattern. Renaming away `Sim`
+  should not create new float mirror helpers.
 
 1. Rename the old float `Vec2` type to `FVec2`.
    - Update constructors and operators mechanically.

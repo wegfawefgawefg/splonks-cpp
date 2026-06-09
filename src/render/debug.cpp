@@ -788,7 +788,7 @@ void RenderVoidDeathLine(
         return;
     }
 
-    const float void_death_y = state.stage.GetVoidDeathY();
+    const float void_death_y = ToFloat(state.stage.GetVoidDeathY());
     std::vector<float> rendered_offset_y_values;
     for (const FVec2& render_offset : render_offsets) {
         bool already_rendered = false;

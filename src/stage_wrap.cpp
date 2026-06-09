@@ -15,20 +15,12 @@ namespace splonks {
 
 namespace {
 
-FVec2 GetCoreOriginWc(const Stage& stage) {
-    return ToVec2(stage.wrap_core_origin_tiles * kTileSize);
-}
-
-FVec2 GetCoreSizeWc(const Stage& stage) {
-    return ToVec2(stage.wrap_core_size_tiles * kTileSize);
-}
-
-sim::FxVec2 GetSimCoreOriginWc(const Stage& stage) {
+sim::FxVec2 GetCoreOriginWc(const Stage& stage) {
     const UVec2 origin = stage.wrap_core_origin_tiles * kTileSize;
     return sim::PixelVec2(static_cast<std::int32_t>(origin.x), static_cast<std::int32_t>(origin.y));
 }
 
-sim::FxVec2 GetSimCoreSizeWc(const Stage& stage) {
+sim::FxVec2 GetCoreSizeWc(const Stage& stage) {
     const UVec2 size = stage.wrap_core_size_tiles * kTileSize;
     return sim::PixelVec2(static_cast<std::int32_t>(size.x), static_cast<std::int32_t>(size.y));
 }
@@ -59,8 +51,8 @@ void ShiftStageSpawnsAndStamps(Stage& stage, const FVec2& delta) {
 }
 
 void WrapPosIntoCore(const Stage& stage, FVec2& pos) {
-    const FVec2 core_origin = GetCoreOriginWc(stage);
-    const FVec2 core_size = GetCoreSizeWc(stage);
+    const FVec2 core_origin = ToFVec2(GetCoreOriginWc(stage));
+    const FVec2 core_size = ToFVec2(GetCoreSizeWc(stage));
 
     if (stage.border.wrap_x && core_size.x > 0.0F) {
         while (pos.x < core_origin.x) {
@@ -82,8 +74,8 @@ void WrapPosIntoCore(const Stage& stage, FVec2& pos) {
 }
 
 void WrapPosIntoCore(const Stage& stage, sim::FxVec2& pos) {
-    const sim::FxVec2 core_origin = GetSimCoreOriginWc(stage);
-    const sim::FxVec2 core_size = GetSimCoreSizeWc(stage);
+    const sim::FxVec2 core_origin = GetCoreOriginWc(stage);
+    const sim::FxVec2 core_size = GetCoreSizeWc(stage);
 
     if (stage.border.wrap_x && core_size.x > sim::Scalar::zero()) {
         while (pos.x < core_origin.x) {

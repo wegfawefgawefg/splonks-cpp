@@ -109,7 +109,7 @@ void ApplyStageWrapAndVoidDeath(std::size_t ent_idx, State& state, Audio& audio)
         return;
     }
 
-    if (ent.GetAABB().br.y <= state.stage.GetSimVoidDeathY()) {
+    if (ent.GetAABB().br.y <= state.stage.GetVoidDeathY()) {
         return;
     }
 

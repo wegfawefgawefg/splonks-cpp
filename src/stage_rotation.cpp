@@ -31,11 +31,7 @@ float Smoothstep(float t) {
     return t * t * (3.0F - (2.0F * t));
 }
 
-FVec2 GetStagePixelDims(const Stage& stage) {
-    return FVec2::New(static_cast<float>(stage.GetWidth()), static_cast<float>(stage.GetHeight()));
-}
-
-sim::FxVec2 GetSimStagePixelDims(const Stage& stage) {
+sim::FxVec2 GetStagePixelDims(const Stage& stage) {
     return sim::PixelVec2(static_cast<int>(stage.GetWidth()), static_cast<int>(stage.GetHeight()));
 }
 
@@ -205,8 +201,8 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
     Stage& stage = state.stage;
     const int old_tile_width = static_cast<int>(stage.GetTileWidth());
     const int old_tile_height = static_cast<int>(stage.GetTileHeight());
-    const FVec2 old_dims = GetStagePixelDims(stage);
-    const sim::FxVec2 sim_old_dims = GetSimStagePixelDims(stage);
+    const FVec2 old_dims = ToFVec2(GetStagePixelDims(stage));
+    const sim::FxVec2 sim_old_dims = GetStagePixelDims(stage);
 
     stage.SyncTileInstanceMetadataGrid();
     stage.tiles = RotateGrid(stage.tiles, quarter_turns);
@@ -369,7 +365,7 @@ void StartStageRotation(State& state, Graphics& graphics, Audio& audio, int quar
     state.stage_rotation.elapsed_frames = 0;
     state.stage_rotation.duration_frames = kDefaultStageRotationFrames;
     state.stage_rotation.quarter_turns = normalized == 3 ? -1 : normalized;
-    state.stage_rotation.pivot = Half(GetSimStagePixelDims(state.stage));
+    state.stage_rotation.pivot = Half(GetStagePixelDims(state.stage));
     audio.PlayAudioAsset(audio_asset_ids::BigMachineRotate);
     SyncRenderRotation(state, graphics);
 }
