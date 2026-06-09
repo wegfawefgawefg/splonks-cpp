@@ -221,15 +221,6 @@ int GetIntegerStepDistance(FxScalar distance, unsigned int time) {
     return integer_distance;
 }
 
-int FloorDiv(int value, int divisor) {
-    const int quotient = value / divisor;
-    const int remainder = value % divisor;
-    if (remainder != 0 && ((remainder < 0) != (divisor < 0))) {
-        return quotient - 1;
-    }
-    return quotient;
-}
-
 float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
     constexpr float kDefaultGroundFriction = 0.85F;
     const Ent& ent = state.ents.ents[ent_idx];

@@ -165,7 +165,7 @@ void InitArrowTrapTestStage(State& state) {
 
     const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 3.0F * static_cast<float>(kTileSize) - 14.0F;
-    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtAuthoredPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 
     constexpr int kTrapRows = 32;
     constexpr int kFirstTrapY = 6;
@@ -179,7 +179,7 @@ void InitArrowTrapTestStage(State& state) {
             static_cast<float>(tile_y * static_cast<int>(kTileSize))
         );
         if (const std::optional<VID> trap_vid =
-                SpawnStageEntAtRenderTopLeft(state, EntType::ArrowTrap, left_pos)) {
+                SpawnStageEntAtAuthoredTopLeft(state, EntType::ArrowTrap, left_pos)) {
             if (Ent* const trap = state.ents.GetEntMut(*trap_vid)) {
                 trap->facing = Side::Right;
             }
@@ -190,7 +190,7 @@ void InitArrowTrapTestStage(State& state) {
             static_cast<float>(tile_y * static_cast<int>(kTileSize))
         );
         if (const std::optional<VID> trap_vid =
-                SpawnStageEntAtRenderTopLeft(state, EntType::ArrowTrap, right_pos)) {
+                SpawnStageEntAtAuthoredTopLeft(state, EntType::ArrowTrap, right_pos)) {
             if (Ent* const trap = state.ents.GetEntMut(*trap_vid)) {
                 trap->facing = Side::Left;
             }
@@ -202,7 +202,7 @@ void InitSpikeTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    SpawnPlayerAtRenderPosition(
+    SpawnPlayerAtAuthoredPosition(
         state,
         FVec2::New(
             2.0F * static_cast<float>(kTileSize),
@@ -210,7 +210,7 @@ void InitSpikeTestStage(State& state) {
         )
     );
 
-    (void)SpawnStageEntAtRenderTopLeft(
+    (void)SpawnStageEntAtAuthoredTopLeft(
         state,
         EntType::SpikeShoes,
         FVec2::New(
@@ -224,7 +224,7 @@ void InitTrapDoorTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    SpawnPlayerAtRenderPosition(
+    SpawnPlayerAtAuthoredPosition(
         state,
         FVec2::New(
             4.0F * static_cast<float>(kTileSize),
@@ -239,7 +239,7 @@ void InitTrapDoorTestStage(State& state) {
         static_cast<int>(ToFloat(GetEntSpec(EntType::Door).size.y));
     constexpr std::array<int, 4> kDropDoorXs{{18, 42, 66, 90}};
     for (const int door_x : kDropDoorXs) {
-        if (const std::optional<VID> door_vid = SpawnStageEntAtRenderTopLeft(
+        if (const std::optional<VID> door_vid = SpawnStageEntAtAuthoredTopLeft(
             state,
             EntType::Door,
             FVec2::New(
@@ -264,7 +264,7 @@ void InitCrusherTrapTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    SpawnPlayerAtRenderPosition(
+    SpawnPlayerAtAuthoredPosition(
         state,
         FVec2::New(
             2.0F * static_cast<float>(kTileSize),
@@ -272,7 +272,7 @@ void InitCrusherTrapTestStage(State& state) {
         )
     );
 
-    (void)SpawnStageEntAtRenderTopLeft(
+    (void)SpawnStageEntAtAuthoredTopLeft(
         state,
         EntType::ThwompTrap,
         FVec2::New(
@@ -289,7 +289,7 @@ void InitCrusherTrapTestStage(State& state) {
         IVec2::New(8, 3),
     }};
     for (const IVec2& tile_pos : kSquisherBlocks) {
-        (void)SpawnStageEntAtRenderTopLeft(
+        (void)SpawnStageEntAtAuthoredTopLeft(
             state,
             EntType::TrapBlock,
             FVec2::New(
@@ -303,7 +303,7 @@ void InitCrusherTrapTestStage(State& state) {
         const int count = 5 - row;
         for (int column = 0; column < count; ++column) {
             const int tile_x = 19 + row + column;
-            if (const std::optional<VID> block_vid = SpawnStageEntAtRenderTopLeft(
+            if (const std::optional<VID> block_vid = SpawnStageEntAtAuthoredTopLeft(
                 state,
                 EntType::TrapBlock,
                 FVec2::New(
@@ -333,7 +333,7 @@ void InitCrusherTrapTestStage(State& state) {
         if (row >= kStressHeight) {
             break;
         }
-        const std::optional<VID> block_vid = SpawnStageEntAtRenderTopLeft(
+        const std::optional<VID> block_vid = SpawnStageEntAtAuthoredTopLeft(
             state,
             EntType::TrapBlock,
             FVec2::New(

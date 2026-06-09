@@ -569,10 +569,6 @@ void RenderFluidBubble(
     SDL_SetTextureColorModFloat(bubble_texture, 1.0F, 1.0F, 1.0F);
 }
 
-bool ShouldRenderImmediateBorderBacking(const Stage& stage, int tile_x, int tile_y) {
-    return IsImmediateBorderRingTile(stage, tile_x, tile_y);
-}
-
 FVec2 GetShakeOffset(float shake_pixels) {
     if (shake_pixels <= 0.0F) {
         return FVec2::New(0.0F, 0.0F);
@@ -1595,7 +1591,7 @@ void RenderStageTileWrapperLayer(
                 const float border_shake = GetBorderTileShake(state.stage, tile_x, tile_y);
                 const FVec2 border_shake_offset = GetShakeOffset(border_shake);
                 if (border_shake > 0.0F &&
-                    ShouldRenderImmediateBorderBacking(state.stage, tile_x, tile_y)) {
+                    IsImmediateBorderRingTile(state.stage, tile_x, tile_y)) {
                     const Tile backing_tile =
                         GetBackwallFillTileForTileCoord(state.stage, tile_x, tile_y);
                     const TileSourceData* const backing_source_data =

@@ -59,23 +59,6 @@ struct MeatSlimeSurface {
     IVec2 tile_pos = IVec2::New(0, 0);
 };
 
-int FloorDiv(int value, int divisor) {
-    const int quotient = value / divisor;
-    const int remainder = value % divisor;
-    if (remainder != 0 && ((remainder < 0) != (divisor < 0))) {
-        return quotient - 1;
-    }
-    return quotient;
-}
-
-int FloorToTileCoord(float value) {
-    return FloorToInt(value / static_cast<float>(kTileSize));
-}
-
-IVec2 WorldPosToUnwrappedTileCoord(const FVec2& world_pos) {
-    return IVec2::New(FloorToTileCoord(world_pos.x), FloorToTileCoord(world_pos.y));
-}
-
 IVec2 WorldPosToUnwrappedTileCoord(FxVec2 world_pos) {
     return IVec2::New(
         FloorDiv(world_pos.x.floor_int(), static_cast<int>(kTileSize)),
@@ -137,13 +120,6 @@ std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurface(
     }
 
     return std::nullopt;
-}
-
-std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurfaceAtWorldPos(
-    const Stage& stage,
-    const FVec2& world_pos
-) {
-    return QueryCollidableTileOrBorderSurface(stage, WorldPosToUnwrappedTileCoord(world_pos));
 }
 
 std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurfaceAtWorldPos(

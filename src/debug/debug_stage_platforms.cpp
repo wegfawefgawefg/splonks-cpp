@@ -30,7 +30,7 @@ std::optional<VID> SpawnMovingPlatform(
     float counter_b = 1.0F,
     float threshold_a = 0.0F
 ) {
-    const std::optional<VID> vid = SpawnStageEntAtRenderTopLeft(state, EntType::MovingPlatform, pos);
+    const std::optional<VID> vid = SpawnStageEntAtAuthoredTopLeft(state, EntType::MovingPlatform, pos);
     if (!vid.has_value()) {
         return std::nullopt;
     }
@@ -174,7 +174,7 @@ void InitMovingPlatformTestStage(State& state) {
     const float circle_radius = 40.0F;
     const FVec2 right_platform_pos = circle_center + FVec2::New(circle_radius, 0.0F);
 
-    SpawnPlayerAtRenderPosition(state, FVec2::New(left_platform_pos.x + 6.0F, left_platform_pos.y - 14.0F));
+    SpawnPlayerAtAuthoredPosition(state, FVec2::New(left_platform_pos.x + 6.0F, left_platform_pos.y - 14.0F));
 
     (void)SpawnMovingPlatform(
         state,
@@ -230,7 +230,7 @@ void InitAudioTestStage(State& state) {
 
     const float player_spawn_x = 48.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 23.0F * static_cast<float>(kTileSize) - 14.0F;
-    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtAuthoredPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 }
 
 void InitParachuteTestStage(State& state) {
@@ -239,7 +239,7 @@ void InitParachuteTestStage(State& state) {
 
     const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 5.0F * static_cast<float>(kTileSize) - 14.0F;
-    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtAuthoredPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
     if (Ent* const player = GetPrimaryLocalPlayerMut(state)) {
         (void)AddEffect(*player, EffectId::Parachute, 1);
     }

@@ -556,10 +556,10 @@ Current state:
   animation interpolation.
 - Completed 2026-06-08. The normal stage-spawning API names now accept only
   fixed `FxVec2` positions. Render-position adapters were renamed to
-  `PlacePlayerAtRenderPosition(...)`, `SpawnPlayerAtRenderPosition(...)`,
-  `SpawnPlayerForPlayerIdAtRenderPosition(...)`,
-  `SpawnStageEntAtRenderTopLeft(...)`, and
-  `SpawnStageEntAtRenderCenter(...)`, and their callers are debug/test fixture
+  `PlacePlayerAtAuthoredPosition(...)`, `SpawnPlayerAtAuthoredPosition(...)`,
+  `SpawnPlayerForPlayerIdAtAuthoredPosition(...)`,
+  `SpawnStageEntAtAuthoredTopLeft(...)`, and
+  `SpawnStageEntAtAuthoredCenter(...)`, and their callers are debug/test fixture
   authoring paths.
 - Some of this is harmless authoring/construction code, but much of it is
   gameplay topology and join-state code.

@@ -35,7 +35,7 @@ void SpawnJetpackOnPlayer(State& state) {
     }
 
     const std::optional<VID> jetpack_vid =
-        SpawnStageEntAtRenderCenter(state, EntType::JetPack, ToFVec2(player->GetCenter()));
+        SpawnStageEntAtAuthoredCenter(state, EntType::JetPack, ToFVec2(player->GetCenter()));
     if (!jetpack_vid.has_value()) {
         return;
     }
@@ -68,7 +68,7 @@ void SpawnDebugMovingLight(State& state, int index, int count) {
     const FVec2 home = FVec2::New(std::lerp(min_x, max_x, u), std::lerp(min_y, max_y, v));
 
     const std::optional<VID> light_vid =
-        SpawnStageEntAtRenderCenter(state, EntType::DebugMovingLight, home);
+        SpawnStageEntAtAuthoredCenter(state, EntType::DebugMovingLight, home);
     if (!light_vid.has_value()) {
         return;
     }
@@ -132,7 +132,7 @@ void InitLightingStressTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    SpawnPlayerAtRenderPosition(
+    SpawnPlayerAtAuthoredPosition(
         state,
         FVec2::New(
             20.0F * static_cast<float>(kTileSize),

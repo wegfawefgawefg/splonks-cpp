@@ -60,22 +60,6 @@ FxAABB ShiftAabb(FxAABB aabb, FxVec2 delta) {
     return aabb;
 }
 
-FxVec2 GetAabbCenter(FxAABB aabb) {
-    return aabb.center();
-}
-
-int FloorDiv(int value, int divisor) {
-    if (divisor == 0) {
-        return 0;
-    }
-    int result = value / divisor;
-    const int remainder = value % divisor;
-    if ((remainder != 0) && ((value < 0) != (divisor < 0))) {
-        --result;
-    }
-    return result;
-}
-
 std::vector<FxVec2> GetQueryOffsets(const Stage& stage, FxAABB area) {
     std::vector<FxVec2> offsets;
     offsets.push_back(FxVec2::zero());
@@ -170,7 +154,7 @@ bool IsTileQueryClimbable(const Stage& stage, const WorldTileQueryResult& tile_q
 }
 
 FxAABB GetNearestWorldAabb(const Stage& stage, FxVec2 anchor, FxAABB aabb) {
-    const FxVec2 center = GetAabbCenter(aabb);
+    const FxVec2 center = aabb.center();
     const FxVec2 nearest_center = GetNearestWorldPoint(stage, anchor, center);
     return ShiftAabb(aabb, nearest_center - center);
 }
@@ -182,7 +166,7 @@ bool WorldAabbContainsPoint(const Stage& stage, FxAABB area, FxVec2 point) {
 }
 
 bool WorldAabbsIntersect(const Stage& stage, FxAABB area, FxAABB other) {
-    const FxVec2 anchor = GetAabbCenter(area);
+    const FxVec2 anchor = area.center();
     const FxAABB nearest_other = GetNearestWorldAabb(stage, anchor, other);
     return gfxp::aabbs_intersect(area, nearest_other);
 }

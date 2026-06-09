@@ -295,7 +295,7 @@ void AddDebugLocalPlayerBot(State& state, DebugPlayback& debug, const Graphics& 
         false
     );
 
-    const std::optional<VID> bot_vid = SpawnPlayerForPlayerIdAtRenderPosition(state, player_id, GetDebugBotSpawnPos(state));
+    const std::optional<VID> bot_vid = SpawnPlayerForPlayerIdAtAuthoredPosition(state, player_id, GetDebugBotSpawnPos(state));
     if (bot_vid.has_value()) {
         state.UpdateSidForEnt(bot_vid->id, graphics);
     }

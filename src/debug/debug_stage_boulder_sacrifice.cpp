@@ -96,9 +96,9 @@ void InitBoulderTestStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(9 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 14);
-    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtAuthoredPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 
-    const std::optional<VID> altar_left_vid = SpawnStageEntAtRenderTopLeft(
+    const std::optional<VID> altar_left_vid = SpawnStageEntAtAuthoredTopLeft(
         state,
         EntType::Altar,
         FVec2::New(4.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize))
@@ -109,7 +109,7 @@ void InitBoulderTestStage(State& state) {
         }
     }
 
-    const std::optional<VID> altar_right_vid = SpawnStageEntAtRenderTopLeft(
+    const std::optional<VID> altar_right_vid = SpawnStageEntAtAuthoredTopLeft(
         state,
         EntType::Altar,
         FVec2::New(5.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize))
@@ -120,12 +120,12 @@ void InitBoulderTestStage(State& state) {
         }
     }
 
-    const std::optional<VID> giant_tiki_head_vid = SpawnStageEntAtRenderTopLeft(
+    const std::optional<VID> giant_tiki_head_vid = SpawnStageEntAtAuthoredTopLeft(
         state,
         EntType::GiantTikiHead,
         FVec2::New(4.0F * static_cast<float>(kTileSize), 1.0F * static_cast<float>(kTileSize))
     );
-    const std::optional<VID> idol_vid = SpawnStageEntAtRenderTopLeft(
+    const std::optional<VID> idol_vid = SpawnStageEntAtAuthoredTopLeft(
         state,
         EntType::GoldIdol,
         FVec2::New(4.0F * static_cast<float>(kTileSize) + 10.0F, 4.0F * static_cast<float>(kTileSize))
@@ -140,43 +140,43 @@ void InitBoulderTestStage(State& state) {
         }
     }
 
-    (void)SpawnStageEntAtRenderCenter(
+    (void)SpawnStageEntAtAuthoredCenter(
         state,
         EntType::Rock,
         FVec2::New(12.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntAtRenderCenter(
+    (void)SpawnStageEntAtAuthoredCenter(
         state,
         EntType::GoldChunk,
         FVec2::New(14.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntAtRenderCenter(
+    (void)SpawnStageEntAtAuthoredCenter(
         state,
         EntType::EmeraldBig,
         FVec2::New(16.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntAtRenderCenter(
+    (void)SpawnStageEntAtAuthoredCenter(
         state,
         EntType::Caveman,
         FVec2::New(18.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
 
-    (void)SpawnStageEntAtRenderCenter(
+    (void)SpawnStageEntAtAuthoredCenter(
         state,
         EntType::Rock,
         FVec2::New(31.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntAtRenderCenter(
+    (void)SpawnStageEntAtAuthoredCenter(
         state,
         EntType::GoldBars,
         FVec2::New(33.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntAtRenderCenter(
+    (void)SpawnStageEntAtAuthoredCenter(
         state,
         EntType::SapphireBig,
         FVec2::New(35.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntAtRenderCenter(
+    (void)SpawnStageEntAtAuthoredCenter(
         state,
         EntType::Caveman,
         FVec2::New(37.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
@@ -193,7 +193,7 @@ void SpawnSacAltarTestCorpsePile(State& state) {
 
     for (int row = 0; row < kCorpseRows; ++row) {
         for (int col = 0; col < kCorpseColumns; ++col) {
-            const std::optional<VID> caveman_vid = SpawnStageEntAtRenderCenter(
+            const std::optional<VID> caveman_vid = SpawnStageEntAtAuthoredCenter(
                 state,
                 EntType::Caveman,
                 FVec2::New(
@@ -222,7 +222,7 @@ void SpawnSacAltarTestIdols(State& state) {
         static_cast<float>((kSacAltarTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
     constexpr std::array<float, 4> kIdolXTiles{44.0F, 46.5F, 49.0F, 51.5F};
     for (const float x_tile : kIdolXTiles) {
-        (void)SpawnStageEntAtRenderCenter(
+        (void)SpawnStageEntAtAuthoredCenter(
             state,
             EntType::GoldIdol,
             FVec2::New(x_tile * static_cast<float>(kTileSize), floor_center_y)
@@ -235,7 +235,7 @@ void SpawnSacAltarTestLivingDamsels(State& state) {
         static_cast<float>((kSacAltarTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
     constexpr std::array<float, 4> kDamselXTiles{16.5F, 18.5F, 20.5F, 22.5F};
     for (const float x_tile : kDamselXTiles) {
-        const std::optional<VID> damsel_vid = SpawnStageEntAtRenderCenter(
+        const std::optional<VID> damsel_vid = SpawnStageEntAtAuthoredCenter(
             state,
             EntType::Damsel,
             FVec2::New(x_tile * static_cast<float>(kTileSize), floor_center_y)
@@ -262,17 +262,17 @@ void SpawnSacAltarTestAltar(State& state, int left_x_tile) {
         static_cast<float>(left_x_tile) * static_cast<float>(kTileSize),
         23.0F * static_cast<float>(kTileSize) - 16.0F
     );
-    const std::optional<VID> altar_left_vid = SpawnStageEntAtRenderTopLeft(
+    const std::optional<VID> altar_left_vid = SpawnStageEntAtAuthoredTopLeft(
         state,
         EntType::SacAltar,
         altar_left_pos
     );
-    const std::optional<VID> altar_right_vid = SpawnStageEntAtRenderTopLeft(
+    const std::optional<VID> altar_right_vid = SpawnStageEntAtAuthoredTopLeft(
         state,
         EntType::SacAltar,
         altar_left_pos + FVec2::New(static_cast<float>(kTileSize), 0.0F)
     );
-    const std::optional<VID> altar_topper_vid = SpawnStageEntAtRenderTopLeft(
+    const std::optional<VID> altar_topper_vid = SpawnStageEntAtAuthoredTopLeft(
         state,
         EntType::SacAltarTopper,
         altar_left_pos + FVec2::New(0.0F, -static_cast<float>(kTileSize))
@@ -309,7 +309,7 @@ void InitSacAltarTestStage(State& state) {
 
     const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 23.0F * static_cast<float>(kTileSize) - 14.0F;
-    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtAuthoredPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 
     SpawnSacAltarTestAltar(state, 6);
     SpawnSacAltarTestAltar(state, 9);

@@ -67,10 +67,6 @@ FxAABB TileAabbForTilePos(const IVec2& tile_pos) {
     );
 }
 
-IVec2 ToWorldPixelTrunc(FxVec2 point) {
-    return IVec2::New(point.x.trunc_int(), point.y.trunc_int());
-}
-
 FxVec2 GetFallbackStrikePoint(const Ent& mattock) {
     const FxScalar direction =
         FxScalar::from_int(mattock.facing == Side::Left ? -1 : 1);
@@ -210,7 +206,7 @@ void AddMattockDebugAnnotations(
 
     if (holder == nullptr) {
         const FxVec2 fallback = GetFallbackStrikePoint(mattock);
-        const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToWorldPixelTrunc(fallback));
+        const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToPixelIVec2Trunc(fallback));
         state.AddDebugRectAnnotation(DebugRectAnnotation{
             .area = ToFAABB(TileAabbForTilePos(fallback_tile)),
             .color = DebugAnnotationColor{255, 0, 0, 255},
@@ -366,7 +362,7 @@ StrikeOutcome ComputeMattockStrikeOutcome(
 ) {
     if (holder == nullptr) {
         const FxVec2 fallback = GetFallbackStrikePoint(mattock);
-        const IVec2 tile_pos = state.stage.GetTileCoordAtWc(ToWorldPixelTrunc(fallback));
+        const IVec2 tile_pos = state.stage.GetTileCoordAtWc(ToPixelIVec2Trunc(fallback));
         return TryStrikeTileCoord(tile_pos, state, audio);
     }
 

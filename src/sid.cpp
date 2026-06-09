@@ -8,18 +8,6 @@ namespace splonks {
 
 namespace {
 
-int FloorDiv(int value, int divisor) {
-    if (divisor == 0) {
-        return 0;
-    }
-    int result = value / divisor;
-    const int remainder = value % divisor;
-    if ((remainder != 0) && ((value < 0) != (divisor < 0))) {
-        --result;
-    }
-    return result;
-}
-
 int GetCellCoord(FxScalar value) {
     return FloorDiv(value.floor_int(), static_cast<int>(kTileSize));
 }

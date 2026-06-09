@@ -27,6 +27,10 @@ struct FxColor3 {
     return IVec2::New(value.x.round_int(), value.y.round_int());
 }
 
+[[nodiscard]] inline IVec2 ToPixelIVec2Trunc(FxVec2 value) {
+    return IVec2::New(value.x.trunc_int(), value.y.trunc_int());
+}
+
 namespace detail {
 
 [[nodiscard]] inline std::uint64_t SqrtFloor(std::uint64_t value) {

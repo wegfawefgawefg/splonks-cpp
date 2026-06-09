@@ -40,10 +40,6 @@ void SpawnBatTrailSegment(State& state, const FVec2& from, const FVec2& to) {
     state.particles.Add(std::move(ribbon));
 }
 
-IVec2 ToWorldPixelTrunc(FxVec2 point) {
-    return IVec2::New(point.x.trunc_int(), point.y.trunc_int());
-}
-
 SwingStage GetSwingStage(const Ent& baseball_bat) {
     switch (baseball_bat.aframe_animator.current_frame) {
     case 0:
@@ -285,7 +281,7 @@ void StepBaseballBat(
     const FVec2 render_bat_emit_point = ToFVec2(bat_emit_point);
     if (baseball_bat.point_label_a != PointLabel::Target) {
         baseball_bat.point_label_a = PointLabel::Target;
-        baseball_bat.point_a = ToWorldPixelTrunc(bat_emit_point);
+        baseball_bat.point_a = ToPixelIVec2Trunc(bat_emit_point);
     } else {
         SpawnBatTrailSegment(state, ToVec2(baseball_bat.point_a), render_bat_emit_point);
         const FxVec2 nearest_emit_point = GetNearestWorldPoint(
@@ -293,7 +289,7 @@ void StepBaseballBat(
             PixelVec2(baseball_bat.point_a.x, baseball_bat.point_a.y),
             bat_emit_point
         );
-        baseball_bat.point_a = ToWorldPixelTrunc(nearest_emit_point);
+        baseball_bat.point_a = ToPixelIVec2Trunc(nearest_emit_point);
     }
 
     state.UpdateSidForEnt(ent_idx, graphics);

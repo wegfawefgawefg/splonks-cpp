@@ -41,6 +41,19 @@ struct UVec2 {
     }
 };
 
+inline int FloorDiv(int value, int divisor) {
+    if (divisor == 0) {
+        return 0;
+    }
+
+    int result = value / divisor;
+    const int remainder = value % divisor;
+    if (remainder != 0 && ((remainder < 0) != (divisor < 0))) {
+        --result;
+    }
+    return result;
+}
+
 struct Color3 {
     float r = 1.0F;
     float g = 1.0F;

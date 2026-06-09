@@ -1,10 +1,10 @@
 #include "ents/bow.hpp"
 
 #include "audio.hpp"
-#include "controls.hpp"
 #include "effects.hpp"
 #include "ent/spec.hpp"
 #include "ents/common/common.hpp"
+#include "ents/common/discrete_aim.hpp"
 #include "aframe_id.hpp"
 #include "fxp.hpp"
 #include "state.hpp"
@@ -22,13 +22,8 @@ constexpr float kBowFireCooldownFrames = 10.0F;
 constexpr float kBowArrowAmmo = 8.0F;
 constexpr float kBowArrowSpeed = 8.0F;
 constexpr std::uint32_t kBowArrowDamage = 2;
-constexpr float kDiagonalAimComponent = 0.707106769F;
 
-struct BowAim {
-    FxVec2 direction = FxVec2{FxScalar::from_int(1), FxScalar::zero()};
-    Side facing = Side::Right;
-    FxScalar rotation = FxScalar::zero();
-};
+using BowAim = common::DiscreteHeldWeaponAim;
 
 bool HasAmmo(const Ent& bow) {
     return bow.counter_b > FxScalar::zero();
@@ -67,95 +62,10 @@ void BuildHudEntryAsBow(
     entry.style = ammo > 0 ? HudEntryStyle::Normal : HudEntryStyle::Dimmed;
 }
 
-float NormalizeDegrees(float degrees) {
-    while (degrees > 180.0F) {
-        degrees -= 360.0F;
-    }
-    while (degrees <= -180.0F) {
-        degrees += 360.0F;
-    }
-    return degrees;
-}
-
-FxVec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
-    if (aim_x == 0 && aim_y == 0) {
-        return FxVec2{
-            FxScalar::from_int(facing == Side::Left ? -1 : 1),
-            FxScalar::zero(),
-        };
-    }
-    if (aim_x != 0 && aim_y != 0) {
-        return FxVec2{
-            FxScalar::from_int(aim_x) * ToFxScalar(kDiagonalAimComponent),
-            FxScalar::from_int(aim_y) * ToFxScalar(kDiagonalAimComponent),
-        };
-    }
-    return FxVec2{
-        FxScalar::from_int(aim_x),
-        FxScalar::from_int(aim_y),
-    };
-}
-
-float DiscreteAimWorldAngle(int aim_x, int aim_y, Side facing) {
-    if (aim_x == 0 && aim_y == 0) {
-        return facing == Side::Left ? 180.0F : 0.0F;
-    }
-    if (aim_x > 0) {
-        if (aim_y < 0) {
-            return -45.0F;
-        }
-        if (aim_y > 0) {
-            return 45.0F;
-        }
-        return 0.0F;
-    }
-    if (aim_x < 0) {
-        if (aim_y < 0) {
-            return -135.0F;
-        }
-        if (aim_y > 0) {
-            return 135.0F;
-        }
-        return 180.0F;
-    }
-    return aim_y < 0 ? -90.0F : 90.0F;
-}
-
 BowAim GetBowAim(const Ent& bow, const State& state) {
     const Ent* const holder =
         bow.held_by_vid.has_value() ? state.ents.GetEnt(*bow.held_by_vid) : nullptr;
-
-    int aim_x = 0;
-    int aim_y = 0;
-    Side facing = holder != nullptr ? holder->facing : bow.facing;
-    if (holder != nullptr) {
-        const controls::ControlIntent intent = controls::GetControlIntentForEnt(*holder, state);
-        if (intent.left && !intent.right) {
-            aim_x = -1;
-        } else if (intent.right && !intent.left) {
-            aim_x = 1;
-        }
-        if (intent.up && !intent.down) {
-            aim_y = -1;
-        } else if (intent.down && !intent.up) {
-            aim_y = 1;
-        }
-    }
-
-    if (aim_x < 0) {
-        facing = Side::Left;
-    } else if (aim_x > 0) {
-        facing = Side::Right;
-    }
-
-    const FxVec2 direction = DiscreteAimDirection(aim_x, aim_y, facing);
-    const float world_angle = DiscreteAimWorldAngle(aim_x, aim_y, facing);
-    const float base_angle = facing == Side::Left ? 180.0F : 0.0F;
-    return BowAim{
-        .direction = direction,
-        .facing = facing,
-        .rotation = ToFxScalar(NormalizeDegrees(world_angle - base_angle)),
-    };
+    return common::GetDiscreteHeldWeaponAim(bow, holder, state);
 }
 
 void ArmBow(Ent& bow, State& state) {

@@ -240,7 +240,7 @@ void PlacePlayerAtPosition(State& state, FxVec2 pos) {
     player->acc = FxVec2::zero();
 }
 
-void PlacePlayerAtRenderPosition(State& state, const FVec2& pos) {
+void PlacePlayerAtAuthoredPosition(State& state, const FVec2& pos) {
     PlacePlayerAtPosition(state, ToFxVec2(pos));
 }
 
@@ -293,7 +293,7 @@ void SpawnPlayer(State& state, FxVec2 pos) {
     state.controlled_ent_vid = player_vid;
 }
 
-void SpawnPlayerAtRenderPosition(State& state, const FVec2& pos) {
+void SpawnPlayerAtAuthoredPosition(State& state, const FVec2& pos) {
     SpawnPlayer(state, ToFxVec2(pos));
 }
 
@@ -317,7 +317,7 @@ std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, FxVe
     return std::nullopt;
 }
 
-std::optional<VID> SpawnPlayerForPlayerIdAtRenderPosition(
+std::optional<VID> SpawnPlayerForPlayerIdAtAuthoredPosition(
     State& state,
     PlayerId player_id,
     const FVec2& pos
@@ -345,7 +345,7 @@ std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, FxVec2 po
     return vid;
 }
 
-std::optional<VID> SpawnStageEntAtRenderTopLeft(State& state, EntType type_, const FVec2& pos) {
+std::optional<VID> SpawnStageEntAtAuthoredTopLeft(State& state, EntType type_, const FVec2& pos) {
     return SpawnStageEntAtTopLeft(state, type_, ToFxVec2(pos));
 }
 
@@ -366,7 +366,7 @@ std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, FxVec2 cen
     return vid;
 }
 
-std::optional<VID> SpawnStageEntAtRenderCenter(State& state, EntType type_, const FVec2& center) {
+std::optional<VID> SpawnStageEntAtAuthoredCenter(State& state, EntType type_, const FVec2& center) {
     return SpawnStageEntAtCenter(state, type_, ToFxVec2(center));
 }
 

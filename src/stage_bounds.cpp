@@ -18,19 +18,6 @@ int WrapCoordinate(int value, int size) {
     return wrapped;
 }
 
-int FloorDiv(int value, int divisor) {
-    if (divisor == 0) {
-        return 0;
-    }
-
-    int result = value / divisor;
-    const int remainder = value % divisor;
-    if (remainder != 0 && ((remainder < 0) != (divisor < 0))) {
-        result -= 1;
-    }
-    return result;
-}
-
 std::uint32_t GetTileRowWidth(const std::vector<std::vector<Tile>>& tiles) {
     if (tiles.empty()) {
         return 0;

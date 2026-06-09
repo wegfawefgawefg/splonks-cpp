@@ -6,19 +6,6 @@ namespace splonks {
 
 namespace {
 
-int FloorDiv(int value, int divisor) {
-    if (divisor == 0) {
-        return 0;
-    }
-
-    int result = value / divisor;
-    const int remainder = value % divisor;
-    if (remainder != 0 && ((remainder < 0) != (divisor < 0))) {
-        result -= 1;
-    }
-    return result;
-}
-
 float GetTileShakeFromGrid(const std::vector<std::vector<FxScalar>>& grid,
                            std::uint32_t x,
                            std::uint32_t y) {
