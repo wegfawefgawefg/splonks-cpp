@@ -41,12 +41,6 @@ constexpr float kCobwebOccupantSpeedThreshold = 0.05F;
 constexpr float kCobwebOccupantSpeedThresholdSq =
     kCobwebOccupantSpeedThreshold * kCobwebOccupantSpeedThreshold;
 
-using WebGunAim = common::DiscreteHeldWeaponAim;
-
-WebGunAim GetWebGunAim(const Ent& weapon, const Ent* holder, const State& state) {
-    return common::GetDiscreteHeldWeaponAim(weapon, holder, state);
-}
-
 IVec2 SnapWorldPointToTile(FxVec2 point, const Stage& stage) {
     const int tile_size = static_cast<int>(kTileSize);
     const int tile_x = FloorDiv(point.x.floor_int(), tile_size);
@@ -293,7 +287,8 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
         holder = state.ents.GetEntMut(*weapon.held_by_vid);
     }
 
-    const WebGunAim aim = GetWebGunAim(weapon, holder, state);
+    const common::DiscreteHeldWeaponAim aim =
+        common::GetDiscreteHeldWeaponAim(weapon, holder, state);
     weapon.facing = aim.facing;
     weapon.rotation = aim.rotation;
 
@@ -598,7 +593,8 @@ void StepEntLogicAsWebCannon(
         return;
     }
 
-    const WebGunAim aim = GetWebGunAim(weapon, holder, state);
+    const common::DiscreteHeldWeaponAim aim =
+        common::GetDiscreteHeldWeaponAim(weapon, holder, state);
     weapon.facing = aim.facing;
     weapon.rotation = aim.rotation;
 }
