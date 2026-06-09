@@ -71,7 +71,7 @@ sim::FxVec2 RandomChestLaunchVelocity(State& state) {
         state.drng.RandomIntInclusive(0, 3);
     return sim::FxVec2{
         sim::Scalar::from_int(launch_x),
-        sim::ToSimScalar(kChestLootLaunchY)
+        ToFxScalar(kChestLootLaunchY)
     };
 }
 
@@ -129,7 +129,7 @@ void SpawnChestTrapBomb(sim::FxVec2 spawn_center, State& state) {
         bomb.SetSimCenter(spawn_center);
         bomb.vel = RandomChestLaunchVelocity(state);
         bomb.acc = sim::FxVec2::zero();
-        bomb.counter_a = sim::ToSimScalar(kChestTrapFuseFrames);
+        bomb.counter_a = ToFxScalar(kChestTrapFuseFrames);
         SetAnim(bomb, aframe_ids::LiveGrenade);
     });
 }
@@ -281,7 +281,7 @@ bool TryOpenTreasureChestAt(
     }
 
     SetAnim(chest, aframe_ids::ChestOpen);
-    const FVec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
+    const FVec2 render_emit_pos = ToFVec2(emit_pos);
     SpawnChestSparkles(render_emit_pos, state);
     (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::ChestOpen);
 
@@ -366,7 +366,7 @@ bool TryOpenKeyChestWithKey(
     SetAnim(chest, aframe_ids::KeyChestOpen);
     const sim::FxVec2 emit_pos =
         common::GetEmitPointForEnt(chest, graphics, chest.GetSimCenter());
-    const FVec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
+    const FVec2 render_emit_pos = ToFVec2(emit_pos);
     SpawnChestSparkles(render_emit_pos, state);
     (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::Unlock);
     (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::ChestOpen);

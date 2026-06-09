@@ -149,7 +149,7 @@ void OnDeathAsBarrierEmitter(std::size_t ent_idx, State& state, Audio& audio) {
     DestroyBeamChildren(emitter, state);
     AddShake(
         state,
-        sim::ToRenderVec2(emitter.GetSimCenter()),
+        ToFVec2(emitter.GetSimCenter()),
         1.4F,
         2.0F,
         ShakeMask::ForegroundTiles | ShakeMask::BackgroundTiles | ShakeMask::Ents

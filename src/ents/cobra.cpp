@@ -113,8 +113,8 @@ bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& gra
 
 sim::FxVec2 CobraSpitVelocity(int direction) {
     return sim::FxVec2{
-        sim::ToSimScalar(kCobraSpitVelocityX) * sim::Scalar::from_int(direction),
-        sim::ToSimScalar(kCobraSpitVelocityY),
+        ToFxScalar(kCobraSpitVelocityX) * sim::Scalar::from_int(direction),
+        ToFxScalar(kCobraSpitVelocityY),
     };
 }
 
@@ -199,14 +199,14 @@ void FireCobraSpit(std::size_t ent_idx, State& state, Graphics& graphics) {
         spawned_spit.proj_contact_damage_type = DamageType::Attack;
         spawned_spit.proj_contact_damage_amount = kCobraVenomDamage;
         spawned_spit.proj_contact_timer = common::kProjContactDuration;
-        spawned_spit.counter_a = sim::ToSimScalar(kCobraSpitLifetimeFrames);
+        spawned_spit.counter_a = ToFxScalar(kCobraSpitLifetimeFrames);
         spawned_spit.counter_b = sim::Scalar::zero();
     });
     if (spit == nullptr) {
         return;
     }
 
-    const FVec2 render_spit_origin = sim::ToRenderVec2(spit_origin);
+    const FVec2 render_spit_origin = ToFVec2(spit_origin);
     (void)PlayWorldSoundEmitter(state, render_spit_origin, audio_asset_ids::Tube);
     SpawnSpitSpray(state, render_spit_origin, direction);
 }
@@ -324,7 +324,7 @@ void StepEntLogicAsCobraSpit(
     spit.counter_b -= sim::Scalar::from_int(1);
     if (spit.counter_b <= sim::Scalar::zero()) {
         SpawnSpitTrail(state, spit.GetRenderCenter(), spit.GetRenderVel());
-        spit.counter_b = sim::ToSimScalar(kCobraSpitTrailIntervalFrames);
+        spit.counter_b = ToFxScalar(kCobraSpitTrailIntervalFrames);
     }
 }
 

@@ -19,29 +19,6 @@ struct Color3 {
     Scalar b = Scalar::from_int(1);
 };
 
-[[nodiscard]] inline Scalar ToSimScalar(float value,
-                                        gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
-    return Scalar::from_float_for_boundary(value, rounding);
-}
-
-[[nodiscard]] inline float ToRenderScalar(Scalar value) {
-    return value.to_float();
-}
-
-[[nodiscard]] inline FxVec2 ToSimVec2(const splonks::FVec2& value,
-                                    gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
-    return FxVec2{ToSimScalar(value.x, rounding), ToSimScalar(value.y, rounding)};
-}
-
-[[nodiscard]] inline FxVec2 ToSimVec2(float x, float y,
-                                    gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
-    return FxVec2{ToSimScalar(x, rounding), ToSimScalar(y, rounding)};
-}
-
-[[nodiscard]] inline splonks::FVec2 ToRenderVec2(const FxVec2& value) {
-    return splonks::FVec2::New(value.x.to_float(), value.y.to_float());
-}
-
 [[nodiscard]] constexpr FxVec2 PixelVec2(std::int32_t x, std::int32_t y) {
     return FxVec2::from_pixels(x, y);
 }
@@ -91,15 +68,42 @@ namespace detail {
     return value / length;
 }
 
-[[nodiscard]] inline Color3 ToSimColor3(const splonks::Color3& value,
-                                        gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
-    return Color3{ToSimScalar(value.r, rounding),
-                  ToSimScalar(value.g, rounding),
-                  ToSimScalar(value.b, rounding)};
-}
-
-[[nodiscard]] inline splonks::Color3 ToRenderColor3(const Color3& value) {
-    return splonks::Color3::New(value.r.to_float(), value.g.to_float(), value.b.to_float());
-}
-
 } // namespace splonks::sim
+
+namespace splonks {
+
+[[nodiscard]] inline sim::Scalar ToFxScalar(float value,
+                                            gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
+    return sim::Scalar::from_float_for_boundary(value, rounding);
+}
+
+[[nodiscard]] inline float ToFloat(sim::Scalar value) {
+    return value.to_float();
+}
+
+[[nodiscard]] inline sim::FxVec2 ToFxVec2(const FVec2& value,
+                                          gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
+    return sim::FxVec2{ToFxScalar(value.x, rounding), ToFxScalar(value.y, rounding)};
+}
+
+[[nodiscard]] inline sim::FxVec2 ToFxVec2(float x, float y,
+                                          gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
+    return sim::FxVec2{ToFxScalar(x, rounding), ToFxScalar(y, rounding)};
+}
+
+[[nodiscard]] inline FVec2 ToFVec2(const sim::FxVec2& value) {
+    return FVec2::New(value.x.to_float(), value.y.to_float());
+}
+
+[[nodiscard]] inline sim::Color3 ToFxColor3(const Color3& value,
+                                            gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
+    return sim::Color3{ToFxScalar(value.r, rounding),
+                       ToFxScalar(value.g, rounding),
+                       ToFxScalar(value.b, rounding)};
+}
+
+[[nodiscard]] inline Color3 ToFColor3(const sim::Color3& value) {
+    return Color3::New(value.r.to_float(), value.g.to_float(), value.b.to_float());
+}
+
+} // namespace splonks

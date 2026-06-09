@@ -122,7 +122,7 @@ void StepEquippedParachute(Ent& owner, State& state, const Graphics& graphics) {
         RemoveEffect(owner, EffectId::Parachute);
     }
 
-    owner.vel.y = std::min(owner.vel.y, sim::ToSimScalar(kParachuteMaxFallSpeed));
+    owner.vel.y = std::min(owner.vel.y, ToFxScalar(kParachuteMaxFallSpeed));
     owner.fall_timer = 0;
     UpdateOpenParachuteVisual(owner, state, graphics);
 }
@@ -173,7 +173,7 @@ void OnUseAsCape(std::size_t ent_idx, State& state, Graphics& graphics, Audio& a
 
     cape.counter_a = sim::Scalar::from_int(1);
     if (!holder->grounded && holder->vel.y > sim::Scalar::zero()) {
-        holder->vel.y = std::min(holder->vel.y, sim::ToSimScalar(kCapeMaxFallSpeed));
+        holder->vel.y = std::min(holder->vel.y, ToFxScalar(kCapeMaxFallSpeed));
         holder->fall_timer = 0;
     }
 }

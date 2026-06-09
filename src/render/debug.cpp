@@ -1289,8 +1289,8 @@ void RenderFluidGravityOverlay(
     }
 
     const FVec2 global_gravity = FVec2::New(
-        sim::ToRenderScalar(state.settings.fluid.gravity_x),
-        sim::ToRenderScalar(state.settings.fluid.gravity_y)
+        ToFloat(state.settings.fluid.gravity_x),
+        ToFloat(state.settings.fluid.gravity_y)
     );
     char global_label[64];
     std::snprintf(
@@ -1337,10 +1337,10 @@ void RenderFluidGravityOverlay(
             const bool has_local_gravity =
                 state.stage.fluid_gravity_strength[grid_y][grid_x] != 0;
             const FVec2 temp_gravity =
-                sim::ToRenderVec2(state.stage.fluid_temp_gravity[grid_y][grid_x]);
+                ToFVec2(state.stage.fluid_temp_gravity[grid_y][grid_x]);
             const bool has_temp_gravity = Length(temp_gravity) > 0.01F;
             const FVec2 base_gravity = has_local_gravity
-                ? sim::ToRenderVec2(state.stage.fluid_gravity[grid_y][grid_x])
+                ? ToFVec2(state.stage.fluid_gravity[grid_y][grid_x])
                 : global_gravity;
             const FVec2 effective_gravity = base_gravity + temp_gravity;
             if (Length(effective_gravity) <= 0.01F && !has_local_gravity && !has_temp_gravity) {

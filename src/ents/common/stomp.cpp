@@ -67,7 +67,7 @@ void ApplyStompBounce(Ent& stomper, State& state) {
         : -kStompShortBounceVelocityY;
     const float bounce_impulse =
         GetModifiedEffectValue(stomper, EffectModifierTarget::StompBounceImpulse, base_bounce_impulse, &state);
-    stomper.vel.y = -sim::ToSimScalar(bounce_impulse);
+    stomper.vel.y = -ToFxScalar(bounce_impulse);
 }
 
 } // namespace
@@ -112,7 +112,7 @@ bool TryApplyStompContactToEnt(
         GetContactAabbForEnt(*stomped, graphics)
     );
     const sim::Scalar stomped_head_band_bottom =
-        stomped_aabb.tl.y + sim::ToSimScalar(kStompHeadHeight);
+        stomped_aabb.tl.y + ToFxScalar(kStompHeadHeight);
     if (stomper_aabb.br.y > stomped_head_band_bottom) {
         return false;
     }
@@ -149,12 +149,12 @@ bool TryApplyStompContactToEnt(
     const sim::FxVec2 stomp_delta =
         GetNearestWorldDelta(state.stage, stomper.GetSimAABB().center(), stomped->GetSimAABB().center());
     const sim::Scalar stomp_knockback_x =
-        stomp_delta.x < sim::Scalar::zero() ? -sim::ToSimScalar(kStompVictimKnockbackVelocityX)
-                                            : sim::ToSimScalar(kStompVictimKnockbackVelocityX);
+        stomp_delta.x < sim::Scalar::zero() ? -ToFxScalar(kStompVictimKnockbackVelocityX)
+                                            : ToFxScalar(kStompVictimKnockbackVelocityX);
     const KnockbackSpec knockback{
         .velocity = sim::FxVec2{
             stomp_knockback_x,
-            sim::ToSimScalar(kStompVictimKnockbackVelocityY),
+            ToFxScalar(kStompVictimKnockbackVelocityY),
         },
         .clear_velocity = true,
         .clear_acceleration = true,

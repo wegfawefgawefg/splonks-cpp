@@ -37,7 +37,7 @@ void SetBeeAnim(Ent& bee) {
     }
 
     SetAnim(bee, aframe_ids::BeeWalk);
-    bee.aframe_animator.animate = bee.vel.x.abs() > sim::ToSimScalar(kWalkAnimVelocityEpsilon);
+    bee.aframe_animator.animate = bee.vel.x.abs() > ToFxScalar(kWalkAnimVelocityEpsilon);
 }
 
 void UpdateBeeRotation(Ent& bee) {
@@ -46,8 +46,8 @@ void UpdateBeeRotation(Ent& bee) {
         return;
     }
 
-    bee.rotation = sim::ToSimScalar(std::clamp(
-        sim::ToRenderScalar(bee.vel.y) * kRotationDegreesPerYVelocity,
+    bee.rotation = ToFxScalar(std::clamp(
+        ToFloat(bee.vel.y) * kRotationDegreesPerYVelocity,
         kMinRotation,
         kMaxRotation
     ));
@@ -70,7 +70,7 @@ extern const EntSpec kFlappyBeeSpec{
     .can_be_stunned = true,
     .stun_recovers_on_ground = true,
     .stun_recovers_while_held = false,
-    .throw_velocity_scale = sim::ToSimScalar(0.1F),
+    .throw_velocity_scale = ToFxScalar(0.1F),
     .draw_layer = DrawLayer::Middle,
     .facing = Side::Right,
     .condition = EntCondition::Normal,
@@ -132,11 +132,11 @@ void ControlEntAsFlappyBee(
         common::AccelerateHorizontallyTowardSpeed(bee, state, target_speed, acc);
         bee.facing = Side::Right;
     } else if (!bee.grounded) {
-        bee.vel.x *= sim::ToSimScalar(kAirNoInputDamping);
+        bee.vel.x *= ToFxScalar(kAirNoInputDamping);
     }
 
     if (control.jump_pressed) {
-        bee.vel.y = -sim::ToSimScalar(kFlapImpulse);
+        bee.vel.y = -ToFxScalar(kFlapImpulse);
         bee.grounded = false;
         AudioEmitterPlayParams params;
         params.volume_scale = kFlapSoundVolumeScale;
@@ -175,7 +175,7 @@ void StepEntLogicAsFlappyBee(
         !loss_of_control &&
         bee.grounded &&
         (control.left != control.right) &&
-        bee.vel.x.abs() > sim::ToSimScalar(kWalkAnimVelocityEpsilon);
+        bee.vel.x.abs() > ToFxScalar(kWalkAnimVelocityEpsilon);
     SetMovementFlag(bee, EntMovementFlag::Walking, walking);
     SetMovementFlag(bee, EntMovementFlag::Running, false);
     SetMovementFlag(bee, EntMovementFlag::Climbing, false);
@@ -201,10 +201,10 @@ void StepEntPhysicsAsFlappyBee(
     common::PrePartialEulerStep(ent_idx, state, dt);
 
     Ent& bee = state.ents.ents[ent_idx];
-    bee.vel.x = gfxp::clamp(bee.vel.x, -sim::ToSimScalar(kMaxHorizontalSpeed),
-                            sim::ToSimScalar(kMaxHorizontalSpeed));
-    bee.vel.y = gfxp::clamp(bee.vel.y, -sim::ToSimScalar(kMaxRiseSpeed),
-                            sim::ToSimScalar(kMaxFallSpeed));
+    bee.vel.x = gfxp::clamp(bee.vel.x, -ToFxScalar(kMaxHorizontalSpeed),
+                            ToFxScalar(kMaxHorizontalSpeed));
+    bee.vel.y = gfxp::clamp(bee.vel.y, -ToFxScalar(kMaxRiseSpeed),
+                            ToFxScalar(kMaxFallSpeed));
 
     common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     common::ApplySpecGroundFriction(ent_idx, state);

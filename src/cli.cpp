@@ -908,8 +908,8 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintFieldDiff("acc", SimVec2DebugString(left->acc), SimVec2DebugString(right->acc));
     PrintFieldDiff("size", Vec2DebugString(left->GetSize()), Vec2DebugString(right->GetSize()));
     if (left->rotation != right->rotation) {
-        std::cout << "    rotation: " << sim::ToRenderScalar(left->rotation)
-                  << " != " << sim::ToRenderScalar(right->rotation) << '\n';
+        std::cout << "    rotation: " << ToFloat(left->rotation)
+                  << " != " << ToFloat(right->rotation) << '\n';
     }
     PrintNumericFieldDiff("coyote_time", left->coyote_time, right->coyote_time);
     PrintNumericFieldDiff("stun_timer", left->stun_timer, right->stun_timer);
@@ -930,18 +930,18 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintNumericFieldDiff("health", left->health, right->health);
     PrintNumericFieldDiff(
         "max_speed",
-        sim::ToRenderScalar(left->max_speed),
-        sim::ToRenderScalar(right->max_speed)
+        ToFloat(left->max_speed),
+        ToFloat(right->max_speed)
     );
     PrintNumericFieldDiff(
         "throw_velocity_scale",
-        sim::ToRenderScalar(left->throw_velocity_scale),
-        sim::ToRenderScalar(right->throw_velocity_scale)
+        ToFloat(left->throw_velocity_scale),
+        ToFloat(right->throw_velocity_scale)
     );
     PrintNumericFieldDiff(
         "buoyancy",
-        sim::ToRenderScalar(left->buoyancy),
-        sim::ToRenderScalar(right->buoyancy)
+        ToFloat(left->buoyancy),
+        ToFloat(right->buoyancy)
     );
     PrintFieldDiff("back_vid", OptionalVidDebugString(left->back_vid), OptionalVidDebugString(right->back_vid));
     PrintFieldDiff(
@@ -962,43 +962,43 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     PrintNumericFieldDiff("money", left->money, right->money);
     PrintNumericFieldDiff(
         "counter_a",
-        sim::ToRenderScalar(left->counter_a),
-        sim::ToRenderScalar(right->counter_a)
+        ToFloat(left->counter_a),
+        ToFloat(right->counter_a)
     );
     PrintNumericFieldDiff(
         "counter_b",
-        sim::ToRenderScalar(left->counter_b),
-        sim::ToRenderScalar(right->counter_b)
+        ToFloat(left->counter_b),
+        ToFloat(right->counter_b)
     );
     PrintNumericFieldDiff(
         "counter_c",
-        sim::ToRenderScalar(left->counter_c),
-        sim::ToRenderScalar(right->counter_c)
+        ToFloat(left->counter_c),
+        ToFloat(right->counter_c)
     );
     PrintNumericFieldDiff(
         "counter_d",
-        sim::ToRenderScalar(left->counter_d),
-        sim::ToRenderScalar(right->counter_d)
+        ToFloat(left->counter_d),
+        ToFloat(right->counter_d)
     );
     PrintNumericFieldDiff(
         "threshold_a",
-        sim::ToRenderScalar(left->threshold_a),
-        sim::ToRenderScalar(right->threshold_a)
+        ToFloat(left->threshold_a),
+        ToFloat(right->threshold_a)
     );
     PrintNumericFieldDiff(
         "threshold_b",
-        sim::ToRenderScalar(left->threshold_b),
-        sim::ToRenderScalar(right->threshold_b)
+        ToFloat(left->threshold_b),
+        ToFloat(right->threshold_b)
     );
     PrintNumericFieldDiff(
         "self_light",
-        sim::ToRenderScalar(left->self_light),
-        sim::ToRenderScalar(right->self_light)
+        ToFloat(left->self_light),
+        ToFloat(right->self_light)
     );
     PrintNumericFieldDiff(
         "light_strength",
-        sim::ToRenderScalar(left->light_strength),
-        sim::ToRenderScalar(right->light_strength)
+        ToFloat(left->light_strength),
+        ToFloat(right->light_strength)
     );
     PrintNumericFieldDiff("light_radius", left->light_radius, right->light_radius);
     PrintFieldDiff("point_a", IVec2DebugString(left->point_a), IVec2DebugString(right->point_a));
@@ -1015,18 +1015,18 @@ void PrintEntStateDiff(const Ent* left, const Ent* right) {
     );
     PrintNumericFieldDiff(
         "anim_time",
-        sim::ToRenderScalar(left->aframe_animator.current_time),
-        sim::ToRenderScalar(right->aframe_animator.current_time)
+        ToFloat(left->aframe_animator.current_time),
+        ToFloat(right->aframe_animator.current_time)
     );
     PrintNumericFieldDiff(
         "anim_scale",
-        sim::ToRenderScalar(left->aframe_animator.scale),
-        sim::ToRenderScalar(right->aframe_animator.scale)
+        ToFloat(left->aframe_animator.scale),
+        ToFloat(right->aframe_animator.scale)
     );
     PrintNumericFieldDiff(
         "anim_speed",
-        sim::ToRenderScalar(left->aframe_animator.speed),
-        sim::ToRenderScalar(right->aframe_animator.speed)
+        ToFloat(left->aframe_animator.speed),
+        ToFloat(right->aframe_animator.speed)
     );
 }
 

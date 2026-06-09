@@ -439,7 +439,7 @@ bool IsTryingToHangOnSide(const Ent& ent, const State& state, bool left_side) {
 void StartEntJump(Ent& ent, const JumpAndClimbTuning& tuning) {
     const float jump_impulse =
         GetModifiedEffectValue(ent, EffectModifierTarget::JumpImpulse, tuning.jump_impulse);
-    ent.vel.y = -sim::ToSimScalar(jump_impulse);
+    ent.vel.y = -ToFxScalar(jump_impulse);
     ent.jump_delay_frame_count = tuning.jump_delay_frames;
     ent.jump_hold_gravity_frames_remaining = tuning.jump_hold_gravity_frames;
     ent.jumped_this_frame = true;
@@ -463,7 +463,7 @@ void ApplyAirGravity(
     const controls::ControlIntent& control,
     const JumpAndClimbTuning& tuning
 ) {
-    float gravity = sim::ToRenderScalar(state.stage.gravity) * tuning.gravity_scale;
+    float gravity = ToFloat(state.stage.gravity) * tuning.gravity_scale;
     if (tuning.jump_hold_gravity_frames > 0 && ent.jump_hold_gravity_frames_remaining > 0 &&
         control.jump && ent.vel.y < sim::Scalar::zero()) {
         gravity = 0.0F;
@@ -472,7 +472,7 @@ void ApplyAirGravity(
         ent.jump_hold_gravity_frames_remaining = 0;
     }
 
-    ent.acc.y += sim::ToSimScalar(gravity);
+    ent.acc.y += ToFxScalar(gravity);
 }
 
 void DetachFromClimb(Ent& ent, const JumpAndClimbTuning& tuning) {
@@ -604,7 +604,7 @@ bool MovementFlagsHave(std::uint32_t movement_flags, EntMovementFlag movement_fl
 
 bool IsClaimCloseEnough(const Ent& ent, sim::FxVec2 claimed_pos) {
     const sim::FxVec2 delta = claimed_pos - ent.pos;
-    return gfxp::length_sq(delta) <= sim::ToSimScalar(
+    return gfxp::length_sq(delta) <= ToFxScalar(
                kLocomotionClaimMaxDistancePx * kLocomotionClaimMaxDistancePx);
 }
 
@@ -618,8 +618,8 @@ bool IsHostExternallyControllingLocomotion(const Ent& ent) {
 }
 
 bool IsClaimVelocityPlausible(const Ent& candidate) {
-    return candidate.vel.x.abs() <= sim::ToSimScalar(kLocomotionClaimMaxHorizontalVelocityPx) &&
-        candidate.vel.y.abs() <= sim::ToSimScalar(kLocomotionClaimMaxVerticalVelocityPx);
+    return candidate.vel.x.abs() <= ToFxScalar(kLocomotionClaimMaxHorizontalVelocityPx) &&
+        candidate.vel.y.abs() <= ToFxScalar(kLocomotionClaimMaxVerticalVelocityPx);
 }
 
 bool IsCandidateAabbFreeOfSolidTiles(const Ent& candidate, const State& state) {
@@ -680,8 +680,8 @@ bool IsPlausibleHangCandidate(
     if (candidate.grounded || candidate.IsClimbing()) {
         return false;
     }
-    if (current_ent.vel.y < sim::ToSimScalar(kLocomotionClaimUpwardVelocityGrace) &&
-        candidate.vel.y < sim::ToSimScalar(kLocomotionClaimUpwardVelocityGrace)) {
+    if (current_ent.vel.y < ToFxScalar(kLocomotionClaimUpwardVelocityGrace) &&
+        candidate.vel.y < ToFxScalar(kLocomotionClaimUpwardVelocityGrace)) {
         return false;
     }
     if (!IsCandidateAabbFreeOfSolidTiles(candidate, state)) {
@@ -764,8 +764,8 @@ bool IsPlausibleJumpCandidate(
         ) + 2.0F,
         6.0F
     );
-    return candidate.vel.y < sim::ToSimScalar(-0.5F) &&
-        candidate.vel.y >= -sim::ToSimScalar(allowed_impulse);
+    return candidate.vel.y < ToFxScalar(-0.5F) &&
+        candidate.vel.y >= -ToFxScalar(allowed_impulse);
 }
 
 bool TryCaptureHdHang(
@@ -953,8 +953,8 @@ bool TryApplySwimImpulse(Ent& ent, State& state, Audio& audio) {
         return false;
     }
 
-    const sim::Scalar swim_impulse_fixed = sim::ToSimScalar(swim_impulse);
-    const bool play_sound = ent.vel.y > -(swim_impulse_fixed * sim::ToSimScalar(0.5F));
+    const sim::Scalar swim_impulse_fixed = ToFxScalar(swim_impulse);
+    const bool play_sound = ent.vel.y > -(swim_impulse_fixed * ToFxScalar(0.5F));
     ent.vel.y = std::min(ent.vel.y, -swim_impulse_fixed);
     ent.grounded = false;
     ent.coyote_time = 0;
@@ -1006,7 +1006,7 @@ bool TryApplyPlausibleLocomotionClaim(
         MovementFlagsHave(claimed_movement_flags, EntMovementFlag::Climbing);
     const bool claimed_jump =
         !claimed_hanging && !claimed_climbing && !candidate.grounded &&
-        claimed_vel.y < sim::ToSimScalar(-0.5F);
+        claimed_vel.y < ToFxScalar(-0.5F);
 
     if (claimed_hanging && IsPlausibleHangCandidate(ent, candidate, state, claimed_hang_side)) {
         ent.pos = claimed_pos;
@@ -1188,10 +1188,10 @@ void JumpingAndClimbingStep(
                     const int max_climb_pixels = CeilToInt(tuning.climb_speed);
                     const int allowed_up_pixels =
                         GetAllowedClimbUpPixels(ent, state, tuning, max_climb_pixels);
-                    ent.vel.y = -gfxp::min(sim::ToSimScalar(tuning.climb_speed),
+                    ent.vel.y = -gfxp::min(ToFxScalar(tuning.climb_speed),
                                            sim::Scalar::from_int(allowed_up_pixels));
                 } else if (control.down && !control.up) {
-                    ent.vel.y = sim::ToSimScalar(tuning.climb_speed);
+                    ent.vel.y = ToFxScalar(tuning.climb_speed);
                 } else {
                     ent.vel.y = sim::Scalar::zero();
                 }
@@ -1207,9 +1207,9 @@ void JumpingAndClimbingStep(
                         ent.vel.y = sim::Scalar::zero();
                     } else {
                         if (control.left && !control.right) {
-                            ent.vel.x = -sim::ToSimScalar(tuning.climb_depart_horizontal_speed);
+                            ent.vel.x = -ToFxScalar(tuning.climb_depart_horizontal_speed);
                         } else if (control.right && !control.left) {
-                            ent.vel.x = sim::ToSimScalar(tuning.climb_depart_horizontal_speed);
+                            ent.vel.x = ToFxScalar(tuning.climb_depart_horizontal_speed);
                         }
                         StartEntJump(ent, tuning);
                         PlayJumpSoundsForEnt(state, ent);

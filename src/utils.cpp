@@ -149,13 +149,13 @@ bool AabbsIntersect(const FAABB& left, const FAABB& right) {
     return true;
 }
 
-sim::FxAABB ToSimAABB(const FAABB& value, gfxp::Rounding rounding) {
-    return sim::FxAABB::from_corners(sim::ToSimVec2(value.tl, rounding),
-                                   sim::ToSimVec2(value.br, rounding));
+sim::FxAABB ToFxAABB(const FAABB& value, gfxp::Rounding rounding) {
+    return sim::FxAABB::from_corners(ToFxVec2(value.tl, rounding),
+                                   ToFxVec2(value.br, rounding));
 }
 
 FAABB ToFAABB(const sim::FxAABB& value) {
-    return FAABB::New(sim::ToRenderVec2(value.tl), sim::ToRenderVec2(value.br));
+    return FAABB::New(ToFVec2(value.tl), ToFVec2(value.br));
 }
 
 IAABB ToIAABBFloorCeil(const sim::FxAABB& value) {
@@ -163,8 +163,8 @@ IAABB ToIAABBFloorCeil(const sim::FxAABB& value) {
                       IVec2::New(value.br.x.to_pixels_ceil(), value.br.y.to_pixels_ceil()));
 }
 
-FVec2 ToRenderMinDisplacement(sim::FxAABB aabb1, sim::FxAABB aabb2) {
-    return sim::ToRenderVec2(gfxp::min_displacement(aabb1, aabb2));
+FVec2 ToFMinDisplacement(sim::FxAABB aabb1, sim::FxAABB aabb2) {
+    return ToFVec2(gfxp::min_displacement(aabb1, aabb2));
 }
 
 } // namespace splonks

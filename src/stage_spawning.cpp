@@ -241,7 +241,7 @@ void PlacePlayerAtPosition(State& state, sim::FxVec2 pos) {
 }
 
 void PlacePlayerAtRenderPosition(State& state, const FVec2& pos) {
-    PlacePlayerAtPosition(state, sim::ToSimVec2(pos));
+    PlacePlayerAtPosition(state, ToFxVec2(pos));
 }
 
 void SnapAttachedItemsToPlayer(State& state) {
@@ -294,7 +294,7 @@ void SpawnPlayer(State& state, sim::FxVec2 pos) {
 }
 
 void SpawnPlayerAtRenderPosition(State& state, const FVec2& pos) {
-    SpawnPlayer(state, sim::ToSimVec2(pos));
+    SpawnPlayer(state, ToFxVec2(pos));
 }
 
 std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, sim::FxVec2 pos) {
@@ -322,7 +322,7 @@ std::optional<VID> SpawnPlayerForPlayerIdAtRenderPosition(
     PlayerId player_id,
     const FVec2& pos
 ) {
-    return SpawnPlayerForPlayerId(state, player_id, sim::ToSimVec2(pos));
+    return SpawnPlayerForPlayerId(state, player_id, ToFxVec2(pos));
 }
 
 std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, sim::FxVec2 pos) {
@@ -346,7 +346,7 @@ std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, sim::FxVe
 }
 
 std::optional<VID> SpawnStageEntAtRenderTopLeft(State& state, EntType type_, const FVec2& pos) {
-    return SpawnStageEntAtTopLeft(state, type_, sim::ToSimVec2(pos));
+    return SpawnStageEntAtTopLeft(state, type_, ToFxVec2(pos));
 }
 
 std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, sim::FxVec2 center) {
@@ -367,7 +367,7 @@ std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, sim::FxVec
 }
 
 std::optional<VID> SpawnStageEntAtRenderCenter(State& state, EntType type_, const FVec2& center) {
-    return SpawnStageEntAtCenter(state, type_, sim::ToSimVec2(center));
+    return SpawnStageEntAtCenter(state, type_, ToFxVec2(center));
 }
 
 void SpawnAuthoredStageEnts(State& state) {
@@ -389,9 +389,9 @@ void SpawnAuthoredStageEnts(State& state) {
 
         SetEntAs(*ent, spawn.type_);
         ent->stage_spawn_index = static_cast<std::uint32_t>(i);
-        ent->pos = sim::ToSimVec2(spawn.pos);
+        ent->pos = ToFxVec2(spawn.pos);
         if (spawn.size_override.has_value()) {
-            ent->size = sim::ToSimVec2(*spawn.size_override);
+            ent->size = ToFxVec2(*spawn.size_override);
         }
         ent->facing = spawn.facing;
         ent->vel = sim::FxVec2::zero();

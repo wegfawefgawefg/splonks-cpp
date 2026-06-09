@@ -23,7 +23,7 @@ constexpr float kBlockTrailSmokeDistInterval = 14.0F;
 constexpr float kBlockPushAcc = 0.2F;
 
 void StepControlledBlock(Ent& block, const controls::ControlIntent& control) {
-    const sim::Scalar move_acc = sim::ToSimScalar(kControlledBlockMoveAcc);
+    const sim::Scalar move_acc = ToFxScalar(kControlledBlockMoveAcc);
     if (block.attack_delay_countdown > 0) {
         block.attack_delay_countdown -= 1;
     }
@@ -38,8 +38,8 @@ void StepControlledBlock(Ent& block, const controls::ControlIntent& control) {
 
     if (control.attack_pressed && block.grounded && block.attack_delay_countdown == 0) {
         block.vel.x = block.facing == Side::Left
-                          ? -sim::ToSimScalar(kControlledBlockSlideVel)
-                          : sim::ToSimScalar(kControlledBlockSlideVel);
+                          ? -ToFxScalar(kControlledBlockSlideVel)
+                          : ToFxScalar(kControlledBlockSlideVel);
         block.attack_delay_countdown = kControlledBlockSlideCooldownFrames;
     }
 }
@@ -125,7 +125,7 @@ void SpawnBlockTrailSmoke(State& state, const FVec2& pos, Side facing) {
 
 FVec2 GetBlockTrailingBottomCorner(const Ent& block) {
     const sim::FxAABB aabb = block.GetSimAABB();
-    return sim::ToRenderVec2(block.facing == Side::Right
+    return ToFVec2(block.facing == Side::Right
                                  ? sim::FxVec2{aabb.tl.x, aabb.br.y}
                                  : sim::FxVec2{aabb.br.x, aabb.br.y});
 }
@@ -145,7 +145,7 @@ extern const EntSpec kBlockSpec{
     .pushable = true,
     .vanish_on_death = true,
     .can_be_stunned = false,
-    .push_acc = sim::ToSimScalar(kBlockPushAcc),
+    .push_acc = ToFxScalar(kBlockPushAcc),
     .draw_layer = DrawLayer::Middle,
     .facing = Side::Left,
     .condition = EntCondition::Normal,
@@ -214,7 +214,7 @@ void StepEntLogicAsBlock(
     if (ent.grounded && ent.dist_traveled_this_frame > sim::Scalar::zero()) {
         ent.counter_c -= ent.dist_traveled_this_frame;
         while (ent.counter_c <= sim::Scalar::zero()) {
-            ent.counter_c += sim::ToSimScalar(kBlockTrailSmokeDistInterval);
+            ent.counter_c += ToFxScalar(kBlockTrailSmokeDistInterval);
             SpawnBlockTrailSmoke(state, GetBlockTrailingBottomCorner(ent), ent.facing);
         }
     }
@@ -227,7 +227,7 @@ void OnDeathAsBlock(std::size_t ent_idx, State& state, Audio& audio) {
     }
     Ent& block = state.ents.ents[ent_idx];
     SpawnBlockDeathParticles(
-        sim::ToRenderVec2(block.GetSimCenter()),
+        ToFVec2(block.GetSimCenter()),
         state.stage.block_anim_id,
         state
     );

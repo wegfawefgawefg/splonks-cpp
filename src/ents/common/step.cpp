@@ -64,8 +64,8 @@ void StepStunTimer(std::size_t ent_idx, State& state) {
 }
 
 void AccelerateHorizontallyTowardSpeed(Ent& ent, float target_speed, float max_acceleration) {
-    const sim::Scalar delta = sim::ToSimScalar(target_speed) - ent.vel.x;
-    const sim::Scalar max_acc = sim::ToSimScalar(max_acceleration);
+    const sim::Scalar delta = ToFxScalar(target_speed) - ent.vel.x;
+    const sim::Scalar max_acc = ToFxScalar(max_acceleration);
     ent.acc.x += gfxp::clamp(delta, -max_acc, max_acc);
 }
 
@@ -83,7 +83,7 @@ void AccelerateHorizontallyTowardSpeed(
 }
 
 void DecelerateHorizontallyToStop(Ent& ent, float max_acceleration, float snap_speed) {
-    if (ent.vel.x.abs() <= sim::ToSimScalar(snap_speed)) {
+    if (ent.vel.x.abs() <= ToFxScalar(snap_speed)) {
         ent.vel.x = sim::Scalar::zero();
         return;
     }
@@ -163,8 +163,8 @@ void DoThrownByStep(std::size_t ent_idx, State& state) {
     }
 
     const bool settled_on_ground =
-        ent.grounded && ent.vel.x.abs() <= sim::ToSimScalar(kProjSettleSpeedThreshold) &&
-        ent.vel.y.abs() <= sim::ToSimScalar(kProjSettleSpeedThreshold);
+        ent.grounded && ent.vel.x.abs() <= ToFxScalar(kProjSettleSpeedThreshold) &&
+        ent.vel.y.abs() <= ToFxScalar(kProjSettleSpeedThreshold);
     if (settled_on_ground) {
         ent.proj_contact_timer -= 1;
         if (ent.proj_contact_timer == 0) {

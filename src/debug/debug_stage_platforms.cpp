@@ -43,9 +43,9 @@ std::optional<VID> SpawnMovingPlatform(
     platform->ai_state = mode;
     platform->point_a = point_a;
     platform->point_b = point_b;
-    platform->counter_a = sim::ToSimScalar(counter_a);
-    platform->counter_b = sim::ToSimScalar(counter_b);
-    platform->threshold_a = sim::ToSimScalar(threshold_a);
+    platform->counter_a = ToFxScalar(counter_a);
+    platform->counter_b = ToFxScalar(counter_b);
+    platform->threshold_a = ToFxScalar(threshold_a);
     return vid;
 }
 
@@ -198,7 +198,7 @@ void InitMovingPlatformTestStage(State& state) {
     if (icy_platform_vid.has_value()) {
         if (Ent* const icy_platform = state.ents.GetEntMut(*icy_platform_vid)) {
             icy_platform->size = sim::FxVec2::from_pixels(64, 16);
-            icy_platform->support_ground_friction = sim::ToSimScalar(1.0F);
+            icy_platform->support_ground_friction = ToFxScalar(1.0F);
             icy_platform->can_be_hung_on = false;
             icy_platform->aframe_animator = AFrameAnimator::New(aframe_ids::IceBlock);
         }

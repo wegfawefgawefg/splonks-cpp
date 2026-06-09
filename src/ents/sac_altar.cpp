@@ -106,7 +106,7 @@ void SpawnBallAndChainPunishment(State& state, const Ent* altar_context) {
         [&](Ent& spawned_ball) {
             spawned_ball.SetSimCenter(
                 player->GetSimCenter() +
-                sim::FxVec2{sim::Scalar::zero(), sim::ToSimScalar(kBallAndChainSpawnOffsetY)}
+                sim::FxVec2{sim::Scalar::zero(), ToFxScalar(kBallAndChainSpawnOffsetY)}
             );
             spawned_ball.ent_a = player->vid;
             spawned_ball.vel = player->vel;
@@ -246,13 +246,13 @@ sim::FxVec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphi
 FVec2 GetAltarSoundPos(const Ent& altar, const State& state, const Graphics& graphics) {
     if (altar.ent_a.has_value()) {
         if (const Ent* const topper = state.ents.GetEnt(*altar.ent_a)) {
-            return sim::ToRenderVec2(
+            return ToFVec2(
                 common::GetVisualCenterForEnt(*topper, graphics, topper->GetSimCenter())
             );
         }
     }
 
-    return sim::ToRenderVec2(
+    return ToFVec2(
         common::GetVisualCenterForEnt(
             altar,
             graphics,
@@ -276,7 +276,7 @@ void TriggerTopperSacAnim(Ent& altar, State& state) {
     topper->aframe_animator.loop = false;
     topper->aframe_animator.animate = true;
     topper->aframe_animator.finished = false;
-    topper->counter_b = sim::ToSimScalar(kTopperSacAnimHoldFrames);
+    topper->counter_b = ToFxScalar(kTopperSacAnimHoldFrames);
 }
 
 void SpawnSacrificeSmoke(State& state, const FVec2& pos) {
@@ -427,7 +427,7 @@ void DeactivateAltarEnt(Ent& ent, State& state) {
 }
 
 void SpawnAltarBreakEffects(const Ent& ent, State& state) {
-    const FVec2 center = sim::ToRenderVec2(ent.GetSimCenter());
+    const FVec2 center = ToFVec2(ent.GetSimCenter());
     SpawnSacrificeSmoke(state, center);
     SpawnSacrificeBodySmoke(state, center);
     SpawnSacrificeSparks(state, center);
@@ -467,15 +467,15 @@ void DeactivateLinkedAltarPieces(Ent& owner, State& state) {
 
 bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
     const sim::FxVec2 emit_pos = GetAltarEffectPos(altar, state, graphics);
-    const FVec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
+    const FVec2 render_emit_pos = ToFVec2(emit_pos);
 
     if (state.sac_altar_reward_tier == 0 && state.sac_altar_favor >= kAccessoryRewardFavor) {
         const EntType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
         Ent* const reward = world_ops::SpawnEnt(state, reward_type, [&](Ent& spawned_reward) {
             spawned_reward.SetSimCenter(emit_pos + sim::PixelVec2(0, -3));
             spawned_reward.vel = sim::FxVec2{
-                RandomSimScalar(state.drng, sim::ToSimScalar(-0.55F), sim::ToSimScalar(0.55F)),
-                sim::ToSimScalar(-1.7F),
+                RandomSimScalar(state.drng, ToFxScalar(-0.55F), ToFxScalar(0.55F)),
+                ToFxScalar(-1.7F),
             };
             spawned_reward.acc = sim::FxVec2::zero();
         });
@@ -537,7 +537,7 @@ void SacrificeVictim(
         (render_victim_aabb.tl.x + render_victim_aabb.br.x) * 0.5F,
         render_victim_aabb.br.y - 2.0F
     );
-    const FVec2 altar_emit = sim::ToRenderVec2(GetAltarEffectPos(altar, state, graphics));
+    const FVec2 altar_emit = ToFVec2(GetAltarEffectPos(altar, state, graphics));
     const FVec2 altar_sound = GetAltarSoundPos(altar, state, graphics);
 
     common::DropHeldItemFromEnt(victim, state);
@@ -598,7 +598,7 @@ bool TryDepositStoredFavor(
         return false;
     }
 
-    const FVec2 altar_emit = sim::ToRenderVec2(GetAltarEffectPos(*owner, state, graphics));
+    const FVec2 altar_emit = ToFVec2(GetAltarEffectPos(*owner, state, graphics));
     const FVec2 altar_sound = GetAltarSoundPos(*owner, state, graphics);
     ApplySacAltarFavorDelta(state, favor, owner);
     TriggerTopperSacAnim(*owner, state);
@@ -630,7 +630,7 @@ void OnDeathAsSacAltarPiece(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     ApplySacAltarFavorDelta(state, -kAltarBreakFavorPenalty, owner);
-    const FVec2 owner_center = sim::ToRenderVec2(owner->GetSimCenter());
+    const FVec2 owner_center = ToFVec2(owner->GetSimCenter());
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !BelongsToOwnerAltar(ent, *owner)) {
             continue;

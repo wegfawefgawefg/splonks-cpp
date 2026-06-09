@@ -129,9 +129,9 @@ void MaybeWallHopWhileIdle(Ent& caveman, const State& state, const Graphics& gra
         return;
     }
 
-    caveman.vel.y = sim::ToSimScalar(kCavemanWallHopSpeedY);
-    caveman.vel.x = caveman.facing == Side::Left ? -sim::ToSimScalar(kCavemanWallHopSpeedX)
-                                                 : sim::ToSimScalar(kCavemanWallHopSpeedX);
+    caveman.vel.y = ToFxScalar(kCavemanWallHopSpeedY);
+    caveman.vel.x = caveman.facing == Side::Left ? -ToFxScalar(kCavemanWallHopSpeedX)
+                                                 : ToFxScalar(kCavemanWallHopSpeedX);
     caveman.counter_a =
         gfxp::max(sim::Scalar::zero(), caveman.counter_a - sim::Scalar::from_int(10));
 }
@@ -163,7 +163,7 @@ void StepEntLogicAsCaveman(
             FaceTowards(caveman, player->GetSimCenter(), state.stage);
         }
         if (caveman.grounded) {
-            caveman.vel.y = sim::ToSimScalar(kCavemanAlertHopSpeedY);
+            caveman.vel.y = ToFxScalar(kCavemanAlertHopSpeedY);
             caveman.grounded = false;
         }
         (void)PlayEntSoundEmitter(state, caveman, audio_asset_ids::CavemanNotice);

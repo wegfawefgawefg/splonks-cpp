@@ -119,13 +119,13 @@ struct FluidSettings {
     sim::Scalar transfer_per_step = sim::Scalar::from_int(1);
     sim::Scalar gravity_x = sim::Scalar::zero();
     sim::Scalar gravity_y = sim::Scalar::from_int(1);
-    sim::Scalar pressure_strength = sim::ToSimScalar(0.35F);
-    sim::Scalar velocity_damping = sim::ToSimScalar(0.88F);
-    sim::Scalar temp_gravity_decay = sim::ToSimScalar(0.92F);
+    sim::Scalar pressure_strength = ToFxScalar(0.35F);
+    sim::Scalar velocity_damping = ToFxScalar(0.88F);
+    sim::Scalar temp_gravity_decay = ToFxScalar(0.92F);
     bool temporal_smoothing_enabled = false;
-    sim::Scalar temporal_smoothing_response = sim::ToSimScalar(0.35F);
-    sim::Scalar render_cutoff_amount = sim::ToSimScalar(0.004F);
-    sim::Scalar water_alpha = sim::ToSimScalar(0.69F);
+    sim::Scalar temporal_smoothing_response = ToFxScalar(0.35F);
+    sim::Scalar render_cutoff_amount = ToFxScalar(0.004F);
+    sim::Scalar water_alpha = ToFxScalar(0.69F);
     bool lighting_enabled = true;
     sim::Scalar lighting_strength = sim::Scalar::from_int(1);
 
@@ -133,15 +133,15 @@ struct FluidSettings {
 };
 
 struct WaterEffectSettings {
-    sim::Scalar gravity_scale = sim::ToSimScalar(0.35F);
-    sim::Scalar velocity_damping_x = sim::ToSimScalar(0.82F);
-    sim::Scalar velocity_damping_y = sim::ToSimScalar(0.55F);
-    sim::Scalar move_speed_scale = sim::ToSimScalar(0.5F);
-    sim::Scalar max_fall_speed = sim::ToSimScalar(1.35F);
-    sim::Scalar buoyancy_strength = sim::ToSimScalar(0.55F);
+    sim::Scalar gravity_scale = ToFxScalar(0.35F);
+    sim::Scalar velocity_damping_x = ToFxScalar(0.82F);
+    sim::Scalar velocity_damping_y = ToFxScalar(0.55F);
+    sim::Scalar move_speed_scale = ToFxScalar(0.5F);
+    sim::Scalar max_fall_speed = ToFxScalar(1.35F);
+    sim::Scalar buoyancy_strength = ToFxScalar(0.55F);
     sim::Scalar fall_timer_rate = sim::Scalar::zero();
     sim::Scalar stomp_damage_scale = sim::Scalar::zero();
-    sim::Scalar swim_impulse = sim::ToSimScalar(8.70F);
+    sim::Scalar swim_impulse = ToFxScalar(8.70F);
 
     static WaterEffectSettings New();
 };
@@ -185,7 +185,7 @@ struct DebugUiSettings {
 struct PlayerTuningState {
     sim::Scalar gravity_scale = sim::Scalar::from_int(1);
     sim::Scalar max_fall_speed = sim::Scalar::from_int(9);
-    sim::Scalar jump_impulse = sim::ToSimScalar(4.5F);
+    sim::Scalar jump_impulse = ToFxScalar(4.5F);
     sim::Scalar spring_shoes_jump_impulse_bonus = sim::Scalar::from_int(1);
     int jump_hold_frames = 0;
     int coyote_frames = 6;
@@ -194,17 +194,17 @@ struct PlayerTuningState {
     int fall_damage_medium_frames = 64;
     int fall_damage_heavy_frames = 96;
 
-    sim::Scalar walk_speed = sim::ToSimScalar(2.5F);
+    sim::Scalar walk_speed = ToFxScalar(2.5F);
     sim::Scalar run_speed = sim::Scalar::from_int(4);
-    sim::Scalar move_acc = sim::ToSimScalar(0.5F);
-    sim::Scalar run_acc = sim::ToSimScalar(0.5F);
+    sim::Scalar move_acc = ToFxScalar(0.5F);
+    sim::Scalar run_acc = ToFxScalar(0.5F);
     sim::Scalar ground_friction_scale = sim::Scalar::from_int(1);
-    sim::Scalar air_friction = sim::ToSimScalar(0.85F);
+    sim::Scalar air_friction = ToFxScalar(0.85F);
 
     sim::Scalar climb_speed = sim::Scalar::from_int(3);
     sim::Scalar climb_depart_horizontal_speed = sim::Scalar::from_int(4);
     sim::Scalar climb_probe_bias_pixels = sim::Scalar::from_int(8);
-    sim::Scalar climb_probe_x_scale = sim::ToSimScalar(0.5F);
+    sim::Scalar climb_probe_x_scale = ToFxScalar(0.5F);
     int climb_required_probe_hits = 2;
     int climb_detach_cooldown = 5;
     int hang_drop_cooldown = 5;

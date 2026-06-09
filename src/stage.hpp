@@ -197,7 +197,7 @@ struct Stage {
     std::vector<StageGenAnnotation> stagegen_annotations;
     std::vector<StageLight> lights;
     AFrameId block_anim_id = aframe_ids::CaveBlock;
-    sim::Scalar gravity = sim::ToSimScalar(kDefaultStageGravity);
+    sim::Scalar gravity = ToFxScalar(kDefaultStageGravity);
     StageBorder border{};
     bool camera_clamp_enabled = true;
     FVec2 camera_clamp_margin = FVec2::New(0.0F, 0.0F);

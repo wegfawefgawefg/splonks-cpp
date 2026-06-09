@@ -132,7 +132,7 @@ bool DrawEntEffectsEditor(Ent& ent) {
                 effect.count = count;
                 changed = true;
             }
-            float effect_value = sim::ToRenderScalar(effect.value);
+            float effect_value = ToFloat(effect.value);
             if (ImGui::DragFloat(
                 "Value##effect_value",
                 &effect_value,
@@ -141,7 +141,7 @@ bool DrawEntEffectsEditor(Ent& ent) {
                 1000.0F,
                 "%.2f"
             )) {
-                effect.value = sim::ToSimScalar(effect_value);
+                effect.value = ToFxScalar(effect_value);
                 changed = true;
             }
             int frames_remaining = static_cast<int>(effect.frames_remaining);
@@ -742,9 +742,9 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
     }
     ent_state_changed |= ImGui::Checkbox("Crusher/Pusher", &ent.crusher_pusher);
     ent_state_changed |= ImGui::Checkbox("Pushable", &ent.pushable);
-    float push_acc = sim::ToRenderScalar(ent.push_acc);
+    float push_acc = ToFloat(ent.push_acc);
     if (ImGui::DragFloat("Push Acc", &push_acc, 0.01F, 0.0F, 5.0F, "%.2f")) {
-        ent.push_acc = sim::ToSimScalar(push_acc);
+        ent.push_acc = ToFxScalar(push_acc);
         ent_state_changed = true;
     }
     if (peer_mutation_disabled) {

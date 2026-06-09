@@ -47,7 +47,7 @@ void ResizeEntPreservingBottomCenter(Ent& ent, const FVec2& new_size) {
         ent.size.x / sim::Scalar::from_int(2),
         ent.size.y,
     };
-    ent.size = sim::ToSimVec2(new_size);
+    ent.size = ToFxVec2(new_size);
     ent.pos = bottom_center - sim::FxVec2{
         ent.size.x / sim::Scalar::from_int(2),
         ent.size.y,
@@ -96,9 +96,9 @@ bool IsPlayerInWakeRange(const Ent& ent, const State& state) {
         return false;
     }
 
-    return player_delta->x.abs() <= sim::ToSimScalar(kWakeHorizontalDistance) &&
-           player_delta->y >= -sim::ToSimScalar(kWakeVerticalAbove) &&
-           player_delta->y <= sim::ToSimScalar(kWakeVerticalBelow);
+    return player_delta->x.abs() <= ToFxScalar(kWakeHorizontalDistance) &&
+           player_delta->y >= -ToFxScalar(kWakeVerticalAbove) &&
+           player_delta->y <= ToFxScalar(kWakeVerticalBelow);
 }
 
 bool IsPlayerOutsideReturnRange(const Ent& ent, const State& state) {
@@ -107,8 +107,8 @@ bool IsPlayerOutsideReturnRange(const Ent& ent, const State& state) {
         return true;
     }
 
-    return player_delta->x.abs() > sim::ToSimScalar(kReturnHorizontalDistance) ||
-           player_delta->y.abs() > sim::ToSimScalar(kReturnVerticalDistance);
+    return player_delta->x.abs() > ToFxScalar(kReturnHorizontalDistance) ||
+           player_delta->y.abs() > ToFxScalar(kReturnVerticalDistance);
 }
 
 void FaceNearestPlayerIfAny(Ent& ent, const State& state) {
@@ -180,7 +180,7 @@ void DropLooseSkull(sim::FxVec2 center, State& state) {
         skull.SetSimCenter(center);
         skull.vel = sim::FxVec2{
             RandomSimScalar(state.drng, sim::Scalar::from_int(-1), sim::Scalar::from_int(1)),
-            RandomSimScalar(state.drng, sim::ToSimScalar(-1.8F), sim::ToSimScalar(-0.8F)),
+            RandomSimScalar(state.drng, ToFxScalar(-1.8F), ToFxScalar(-0.8F)),
         };
         skull.acc = sim::FxVec2::zero();
     });
@@ -275,7 +275,7 @@ void OnDeathAsSkull(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& skull = state.ents.ents[ent_idx];
-    SpawnSkullBreakEffects(sim::ToRenderVec2(skull.GetSimCenter()), state);
+    SpawnSkullBreakEffects(ToFVec2(skull.GetSimCenter()), state);
 }
 
 void OnDeathAsSkeleton(std::size_t ent_idx, State& state, Audio& audio) {
@@ -286,7 +286,7 @@ void OnDeathAsSkeleton(std::size_t ent_idx, State& state, Audio& audio) {
 
     const Ent& skeleton = state.ents.ents[ent_idx];
     const sim::FxVec2 center = skeleton.GetSimCenter();
-    SpawnSkeletonDeathEffects(sim::ToRenderVec2(center), state);
+    SpawnSkeletonDeathEffects(ToFVec2(center), state);
     DropLooseSkull(center, state);
     (void)world_ops::DeactivateEnt(state, skeleton.vid);
 }

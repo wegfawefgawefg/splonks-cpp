@@ -186,8 +186,8 @@ void AddBuyPromptsForPlayer(State& state, const Graphics& graphics) {
         FindOverlappingBuyableEnts(state, graphics, buyer_idx);
     for (const OverlappingBuyableEnt& overlap : overlaps) {
         const Ent& item = state.ents.ents[overlap.ent_idx];
-        const FVec2 prompt_tl = sim::ToRenderVec2(overlap.nearest_aabb.tl);
-        const FVec2 prompt_br = sim::ToRenderVec2(overlap.nearest_aabb.br);
+        const FVec2 prompt_tl = ToFVec2(overlap.nearest_aabb.tl);
+        const FVec2 prompt_br = ToFVec2(overlap.nearest_aabb.br);
         state.AddWorldPrompt(WorldPrompt{
             .world_pos = FVec2::New((prompt_tl.x + prompt_br.x) * 0.5F, prompt_tl.y - 6.0F),
             .action_text = "RB",

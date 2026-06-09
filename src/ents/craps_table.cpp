@@ -40,7 +40,7 @@ TableState GetTableState(const Ent& table) {
 sim::FxVec2 PrizeLaunchVelocity() {
     return sim::FxVec2{
         sim::Scalar::zero(),
-        sim::ToSimScalar(-2.25F),
+        ToFxScalar(-2.25F),
     };
 }
 
@@ -80,7 +80,7 @@ void LockPrize(Ent& prize) {
     prize.can_collide = false;
     prize.can_be_picked_up = false;
     prize.can_be_hit = false;
-    prize.alpha = sim::ToSimScalar(kPrizeAlphaLocked);
+    prize.alpha = ToFxScalar(kPrizeAlphaLocked);
 }
 
 void UnlockPrize(Ent& prize) {
@@ -125,7 +125,7 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
     dice.grounded = false;
     dice.counter_a = sim::Scalar::from_int(RollDicePairTotal(state));
     dice.counter_b = sim::Scalar::from_int(kDiceRollState);
-    dice.rotation = sim::ToSimScalar(static_cast<float>(state.drng.RandomIntInclusive(0, 359)));
+    dice.rotation = ToFxScalar(static_cast<float>(state.drng.RandomIntInclusive(0, 359)));
 
     dice.SetSimCenter(table.GetSimCenter() + sim::FxVec2::from_pixels(0, -10));
     dice.vel = DiceLaunchVelocity(state);
@@ -133,8 +133,8 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
 }
 
 bool DiceHasSettled(const Ent& dice) {
-    return dice.grounded && dice.vel.x.abs() <= sim::ToSimScalar(kDiceSettleSpeed) &&
-           dice.vel.y.abs() <= sim::ToSimScalar(kDiceSettleSpeed) && dice.counter_b <= sim::Scalar::zero();
+    return dice.grounded && dice.vel.x.abs() <= ToFxScalar(kDiceSettleSpeed) &&
+           dice.vel.y.abs() <= ToFxScalar(kDiceSettleSpeed) && dice.counter_b <= sim::Scalar::zero();
 }
 
 void PayCrapsResult(
@@ -167,13 +167,13 @@ void PayCrapsResult(
         (void)PlayEntCenterSoundEmitter(state, table, audio_asset_ids::UiCant);
         table.counter_c = sim::Scalar::from_int(-1);
     }
-    table.counter_b = sim::ToSimScalar(kResultPromptFrames);
+    table.counter_b = ToFxScalar(kResultPromptFrames);
     SetTableState(table, TableState::Result);
 }
 
 void AddCrapsPrompt(Ent& table, State& state, const char* message, std::uint32_t quantity) {
     state.AddWorldPrompt(WorldPrompt{
-        .world_pos = sim::ToRenderVec2(table.GetSimCenter() + sim::FxVec2::from_pixels(0, -24)),
+        .world_pos = ToFVec2(table.GetSimCenter() + sim::FxVec2::from_pixels(0, -24)),
         .action_text = quantity > 0 ? "RB" : "",
         .message_text = message,
         .show_down_arrow = true,

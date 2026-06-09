@@ -81,7 +81,7 @@ void HandleGiantSpiderDeath(std::size_t ent_idx, State& state, Audio& audio) {
 
     const Ent& giant_spider = state.ents.ents[ent_idx];
     const sim::FxVec2 center = giant_spider.GetSimCenter();
-    SpawnDamageEffectAnimBurst(aframe_ids::BloodBall, sim::ToRenderVec2(center), state);
+    SpawnDamageEffectAnimBurst(aframe_ids::BloodBall, ToFVec2(center), state);
     SpawnGiantSpiderLoot(center, state);
 }
 
@@ -110,7 +110,7 @@ void StepPassiveSpider(Ent& ent, State& state) {
 
     if (ent.counter_a > sim::Scalar::zero()) {
         ent.counter_a -= sim::Scalar::from_int(1);
-        if (ent.vel.x.abs() < sim::ToSimScalar(kSpiderIdleSpeedThreshold)) {
+        if (ent.vel.x.abs() < ToFxScalar(kSpiderIdleSpeedThreshold)) {
             ent.vel.x = sim::Scalar::zero();
         }
         return;
@@ -121,7 +121,7 @@ void StepPassiveSpider(Ent& ent, State& state) {
     }
 
     ent.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(2, 4));
-    ent.vel.x = sim::ToSimScalar(
+    ent.vel.x = ToFxScalar(
         ent.facing == Side::Left ? -kPassiveSpiderHopSpeedX : kPassiveSpiderHopSpeedX
     );
     ent.counter_a = sim::Scalar::from_int(state.drng.RandomIntInclusive(
@@ -150,7 +150,7 @@ void TryHopTowardPlayer(
 
     FaceTowardNearestPlayer(ent, state);
     ent.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(hop_speed_y_min, hop_speed_y_max));
-    ent.vel.x = sim::ToSimScalar(ent.facing == Side::Left ? -hop_speed_x : hop_speed_x);
+    ent.vel.x = ToFxScalar(ent.facing == Side::Left ? -hop_speed_x : hop_speed_x);
     ent.counter_a = sim::Scalar::from_int(state.drng.RandomIntInclusive(
         kAggroSpiderCooldownMinFrames,
         kAggroSpiderCooldownMaxFrames
@@ -176,7 +176,7 @@ void StepAggroSpider(
 
     if (ent.counter_a > sim::Scalar::zero()) {
         ent.counter_a -= sim::Scalar::from_int(1);
-        if (ent.vel.x.abs() < sim::ToSimScalar(kSpiderIdleSpeedThreshold)) {
+        if (ent.vel.x.abs() < ToFxScalar(kSpiderIdleSpeedThreshold)) {
             ent.vel.x = sim::Scalar::zero();
         }
         return;

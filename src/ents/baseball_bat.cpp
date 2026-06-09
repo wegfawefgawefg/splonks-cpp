@@ -282,7 +282,7 @@ void StepBaseballBat(
 
     const sim::FxVec2 bat_emit_point =
         common::GetEmitPointForEnt(baseball_bat, graphics, baseball_bat.GetSimCenter());
-    const FVec2 render_bat_emit_point = sim::ToRenderVec2(bat_emit_point);
+    const FVec2 render_bat_emit_point = ToFVec2(bat_emit_point);
     if (baseball_bat.point_label_a != PointLabel::Target) {
         baseball_bat.point_label_a = PointLabel::Target;
         baseball_bat.point_a = ToWorldPixelTrunc(bat_emit_point);

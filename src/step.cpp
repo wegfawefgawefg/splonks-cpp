@@ -307,16 +307,16 @@ void RefreshPlayableCharacterLamp(State& state) {
         if (!emits_lamp || ent.condition == EntCondition::Dead) {
             ent.light_strength = sim::Scalar::zero();
             ent.light_radius = 0;
-            ent.light_color = sim::ToSimColor3(Color3::White());
+            ent.light_color = ToFxColor3(Color3::White());
             continue;
         }
 
-        ent.light_strength = sim::ToSimScalar(
+        ent.light_strength = ToFxScalar(
             kPlayerLampLightStrength *
             std::max(state.settings.post_process.player_lamp_strength, 0.0F)
         );
         ent.light_radius = kPlayerLampLightRadius;
-        ent.light_color = sim::ToSimColor3(Color3::White());
+        ent.light_color = ToFxColor3(Color3::White());
     }
 }
 

@@ -45,7 +45,7 @@ void OnDeath(std::size_t ent_idx, State& state, Audio& audio) {
         EffectHookContext{
             .type = EffectHookType::Death,
             .target_vid = ent.vid,
-            .world_pos = sim::ToRenderVec2(ent.GetSimCenter()),
+            .world_pos = ToFVec2(ent.GetSimCenter()),
         }
     );
     if (ent.health > 0 && ent.condition != EntCondition::Dead) {
@@ -77,7 +77,7 @@ EntDamageEffectResult ApplyDamageEffect(
     }
     if (damage_applied && !ent.stone) {
         if (ent.damage_anim.has_value()) {
-            SpawnDamageEffectAnimBurst(*ent.damage_anim, sim::ToRenderVec2(ent.GetSimCenter()), state);
+            SpawnDamageEffectAnimBurst(*ent.damage_anim, ToFVec2(ent.GetSimCenter()), state);
         }
         if (ent.damage_sound.has_value()) {
             (void)PlayEntCenterSoundEmitter(state, ent, *ent.damage_sound);

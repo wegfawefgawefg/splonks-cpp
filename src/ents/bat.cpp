@@ -126,7 +126,7 @@ void ControlEntAsBat(
     bat.ai_state = EntAiState::Pursuing;
     SetAnim(bat, aframe_ids::FlyingBat);
     bat.acc = sim::FxVec2::zero();
-    const sim::Scalar chase_speed = sim::ToSimScalar(kChaseSpeed);
+    const sim::Scalar chase_speed = ToFxScalar(kChaseSpeed);
     if (control.left) {
         bat.acc.x -= chase_speed;
     }
@@ -140,7 +140,7 @@ void ControlEntAsBat(
         bat.acc.y += chase_speed;
     }
     if (!steering) {
-        bat.vel = bat.vel * sim::ToSimScalar(0.8F);
+        bat.vel = bat.vel * ToFxScalar(0.8F);
     }
     if (bat.vel.x < sim::Scalar::zero()) {
         bat.facing = Side::Left;
@@ -221,7 +221,7 @@ void StepEntLogicAsBat(
             //  go to the target
             mutable_bat.ai_state = EntAiState::Pursuing;
             mutable_bat.acc += sim::NormalizeOrZero(*target_position - mutable_bat.pos) *
-                               sim::ToSimScalar(kChaseSpeed);
+                               ToFxScalar(kChaseSpeed);
             SetAnim(mutable_bat, aframe_ids::FlyingBat);
         } else {
             //  Go Back To Your Perch, (straight up from here lol)
@@ -288,12 +288,12 @@ void StepEntPhysicsAsBat(
     if (bat_condition != EntCondition::Normal) {
         common::ApplySpecGroundFriction(ent_idx, state);
     } else if (controlled) {
-        const sim::Scalar chase_max_speed = sim::ToSimScalar(kChaseMaxSpeed);
+        const sim::Scalar chase_max_speed = ToFxScalar(kChaseMaxSpeed);
         bat.vel.x = gfxp::clamp(bat.vel.x, -chase_max_speed, chase_max_speed);
         bat.vel.y = gfxp::clamp(bat.vel.y, -chase_max_speed, chase_max_speed);
     } else if (bat.ai_state == EntAiState::Pursuing ||
         bat.ai_state == EntAiState::Returning) {
-        const sim::Scalar chase_max_speed = sim::ToSimScalar(kChaseMaxSpeed);
+        const sim::Scalar chase_max_speed = ToFxScalar(kChaseMaxSpeed);
         bat.vel.x = gfxp::clamp(bat.vel.x, -chase_max_speed, chase_max_speed);
         bat.vel.y = gfxp::clamp(bat.vel.y, -chase_max_speed, chase_max_speed);
     }

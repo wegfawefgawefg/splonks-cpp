@@ -66,23 +66,23 @@ std::uint32_t ClampTuningFrames(int value) {
 
 PlayerControlTuning MakePlayerControlTuning(const PlayerTuningState& tuning) {
     return PlayerControlTuning{
-        .move_acc = sim::ToRenderScalar(tuning.move_acc),
-        .run_acc = sim::ToRenderScalar(tuning.run_acc),
+        .move_acc = ToFloat(tuning.move_acc),
+        .run_acc = ToFloat(tuning.run_acc),
     };
 }
 
 PlayerPhysicsTuning MakePlayerPhysicsTuning(const PlayerTuningState& tuning) {
     return PlayerPhysicsTuning{
         .jump_and_climb = common::JumpAndClimbTuning{
-            .gravity_scale = sim::ToRenderScalar(tuning.gravity_scale),
-            .jump_impulse = sim::ToRenderScalar(tuning.jump_impulse),
+            .gravity_scale = ToFloat(tuning.gravity_scale),
+            .jump_impulse = ToFloat(tuning.jump_impulse),
             .spring_shoes_jump_impulse_bonus =
-                sim::ToRenderScalar(tuning.spring_shoes_jump_impulse_bonus),
-            .climb_speed = sim::ToRenderScalar(tuning.climb_speed),
+                ToFloat(tuning.spring_shoes_jump_impulse_bonus),
+            .climb_speed = ToFloat(tuning.climb_speed),
             .climb_depart_horizontal_speed =
-                sim::ToRenderScalar(tuning.climb_depart_horizontal_speed),
-            .climb_probe_bias_pixels = sim::ToRenderScalar(tuning.climb_probe_bias_pixels),
-            .climb_probe_x_scale = sim::ToRenderScalar(tuning.climb_probe_x_scale),
+                ToFloat(tuning.climb_depart_horizontal_speed),
+            .climb_probe_bias_pixels = ToFloat(tuning.climb_probe_bias_pixels),
+            .climb_probe_x_scale = ToFloat(tuning.climb_probe_x_scale),
             .climb_required_probe_hits = ClampTuningFrames(tuning.climb_required_probe_hits),
             .coyote_time_frames = ClampTuningFrames(tuning.coyote_frames),
             .jump_delay_frames = ClampTuningFrames(tuning.jump_delay_frames),
@@ -93,11 +93,11 @@ PlayerPhysicsTuning MakePlayerPhysicsTuning(const PlayerTuningState& tuning) {
             .hang_wall_release_cooldown_frames = ClampTuningFrames(tuning.hang_wall_release_cooldown),
             .auto_ledge_grab = tuning.auto_ledge_grab,
         },
-        .max_walk_speed = sim::ToRenderScalar(tuning.walk_speed),
-        .max_run_speed = sim::ToRenderScalar(tuning.run_speed),
-        .max_speed = sim::ToRenderScalar(tuning.max_fall_speed),
-        .air_friction = sim::ToRenderScalar(tuning.air_friction),
-        .ground_friction_scale = sim::ToRenderScalar(tuning.ground_friction_scale),
+        .max_walk_speed = ToFloat(tuning.walk_speed),
+        .max_run_speed = ToFloat(tuning.run_speed),
+        .max_speed = ToFloat(tuning.max_fall_speed),
+        .air_friction = ToFloat(tuning.air_friction),
+        .ground_friction_scale = ToFloat(tuning.ground_friction_scale),
         .fall_damage_min_frames = ClampTuningFrames(tuning.fall_damage_light_frames),
         .fall_damage_medium_frames = ClampTuningFrames(tuning.fall_damage_medium_frames),
         .fall_damage_heavy_frames = ClampTuningFrames(tuning.fall_damage_heavy_frames),
@@ -161,7 +161,7 @@ void UpdateClimbAnimPlayback(Ent& player, const Graphics& graphics) {
     animator.ResetSpeed();
     animator.finished = false;
 
-    if (player.vel.y.abs() <= sim::ToSimScalar(kClimbAnimVelocityEpsilon)) {
+    if (player.vel.y.abs() <= ToFxScalar(kClimbAnimVelocityEpsilon)) {
         animator.animate = false;
         return;
     }
@@ -278,7 +278,7 @@ void ApplyClassicFallDamageOnLanding(
         mutable_player.vel.y = sim::Scalar::zero();
         mutable_player.grounded = true;
     } else {
-        mutable_player.vel.y = sim::ToSimScalar(kFallDamageBounceVelocityY);
+        mutable_player.vel.y = ToFxScalar(kFallDamageBounceVelocityY);
         mutable_player.grounded = false;
     }
     SpawnFallDamagePoofs(mutable_player, state);
@@ -313,17 +313,17 @@ void ControlEntAsPlayerWithTuning(
     } else if (!(intent.left && intent.right)) {
         if (intent.run) {
             if (intent.left) {
-                player.acc.x = -sim::ToSimScalar(tuning.run_acc);
+                player.acc.x = -ToFxScalar(tuning.run_acc);
             }
             if (intent.right) {
-                player.acc.x = sim::ToSimScalar(tuning.run_acc);
+                player.acc.x = ToFxScalar(tuning.run_acc);
             }
         } else {
             if (intent.left) {
-                player.acc.x = -sim::ToSimScalar(tuning.move_acc);
+                player.acc.x = -ToFxScalar(tuning.move_acc);
             }
             if (intent.right) {
-                player.acc.x = sim::ToSimScalar(tuning.move_acc);
+                player.acc.x = ToFxScalar(tuning.move_acc);
             }
         }
     }
@@ -478,8 +478,8 @@ void StepEntLogicAsPlayer(
                     player.facing = control.left ? Side::Left : Side::Right;
                 }
                 const bool moving_with_input =
-                    (control.left && player.vel.x < -sim::ToSimScalar(kPlayerWalkAnimVelocityEpsilon)) ||
-                    (control.right && player.vel.x > sim::ToSimScalar(kPlayerWalkAnimVelocityEpsilon));
+                    (control.left && player.vel.x < -ToFxScalar(kPlayerWalkAnimVelocityEpsilon)) ||
+                    (control.right && player.vel.x > ToFxScalar(kPlayerWalkAnimVelocityEpsilon));
                 const bool walking_horizontally =
                     player.grounded &&
                     moving_with_input &&
@@ -593,7 +593,7 @@ void StepEntPhysicsAsPlayerWithTuning(
     const bool has_punish_ball = PlayerHasPunishBall(ent, state);
     const bool holding_punish_ball = PlayerIsHoldingPunishBall(ent, state);
     if (has_punish_ball && !holding_punish_ball && !ent.IsClimbing()) {
-        ent.acc.y += sim::ToSimScalar(kPunishBallDraggedExtraGravity);
+        ent.acc.y += ToFxScalar(kPunishBallDraggedExtraGravity);
     }
 
     if (ent.IsClimbing()) {
@@ -602,8 +602,8 @@ void StepEntPhysicsAsPlayerWithTuning(
 
     ent.vel += ent.acc;
     if (has_punish_ball && !holding_punish_ball && ent.jumped_this_frame &&
-        ent.vel.y < -sim::ToSimScalar(kPunishBallDraggedJumpImpulse)) {
-        ent.vel.y = -sim::ToSimScalar(kPunishBallDraggedJumpImpulse);
+        ent.vel.y < -ToFxScalar(kPunishBallDraggedJumpImpulse)) {
+        ent.vel.y = -ToFxScalar(kPunishBallDraggedJumpImpulse);
     }
     const controls::ControlIntent control =
         controls::GetControlIntentForEnt(ent, state);
@@ -619,23 +619,23 @@ void StepEntPhysicsAsPlayerWithTuning(
     );
     if (!externally_launched_player) {
         if (control.run) {
-            const sim::Scalar max_speed = sim::ToSimScalar(max_run_speed * move_speed_scale);
+            const sim::Scalar max_speed = ToFxScalar(max_run_speed * move_speed_scale);
             ent.vel.x = std::clamp(ent.vel.x, -max_speed, max_speed);
         } else {
-            const sim::Scalar max_speed = sim::ToSimScalar(max_walk_speed * move_speed_scale);
+            const sim::Scalar max_speed = ToFxScalar(max_walk_speed * move_speed_scale);
             ent.vel.x = std::clamp(ent.vel.x, -max_speed, max_speed);
         }
     }
     const float max_fall_speed =
         GetModifiedEffectValue(ent, EffectModifierTarget::MaxFallSpeed, tuning.max_speed, &state);
-    ent.vel.y = std::min(ent.vel.y, sim::ToSimScalar(max_fall_speed));
+    ent.vel.y = std::min(ent.vel.y, ToFxScalar(max_fall_speed));
     StepPlayerFallTimer(ent, state);
     gear_items::StepEquippedPassiveItems(ent_idx, state, graphics);
 
     common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     common::ApplySpecGroundFriction(ent_idx, state, tuning.ground_friction_scale);
     if (!ent.grounded && !externally_launched_player) {
-        ent.vel.x *= sim::ToSimScalar(tuning.air_friction);
+        ent.vel.x *= ToFxScalar(tuning.air_friction);
     }
     ApplyClassicFallDamageOnLanding(ent_idx, state, audio, tuning);
     common::PostPartialEulerStep(ent_idx, state, dt);

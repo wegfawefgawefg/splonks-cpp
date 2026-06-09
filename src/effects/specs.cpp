@@ -84,32 +84,32 @@ const EffectModifier kInWaterModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::GravityScale,
         .op = EffectModifierOp::Multiply,
-        .value = sim::ToSimScalar(0.35F),
+        .value = ToFxScalar(0.35F),
     },
     EffectModifier{
         .target = EffectModifierTarget::VelocityDampingX,
         .op = EffectModifierOp::Multiply,
-        .value = sim::ToSimScalar(0.82F),
+        .value = ToFxScalar(0.82F),
     },
     EffectModifier{
         .target = EffectModifierTarget::VelocityDampingY,
         .op = EffectModifierOp::Multiply,
-        .value = sim::ToSimScalar(0.55F),
+        .value = ToFxScalar(0.55F),
     },
     EffectModifier{
         .target = EffectModifierTarget::MoveSpeedScale,
         .op = EffectModifierOp::Multiply,
-        .value = sim::ToSimScalar(0.5F),
+        .value = ToFxScalar(0.5F),
     },
     EffectModifier{
         .target = EffectModifierTarget::MaxFallSpeed,
         .op = EffectModifierOp::Min,
-        .value = sim::ToSimScalar(1.35F),
+        .value = ToFxScalar(1.35F),
     },
     EffectModifier{
         .target = EffectModifierTarget::BuoyancyStrength,
         .op = EffectModifierOp::Max,
-        .value = sim::ToSimScalar(0.55F),
+        .value = ToFxScalar(0.55F),
     },
     EffectModifier{
         .target = EffectModifierTarget::FallTimerRate,
@@ -124,7 +124,7 @@ const EffectModifier kInWaterModifiers[]{
     EffectModifier{
         .target = EffectModifierTarget::SwimImpulse,
         .op = EffectModifierOp::Max,
-        .value = sim::ToSimScalar(8.70F),
+        .value = ToFxScalar(8.70F),
     },
 };
 

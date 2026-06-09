@@ -33,13 +33,13 @@ bool IsInSpelunkyExplosionFootprint(const IVec2& tile_delta) {
 bool IsInSpelunkyExplosionFootprint(sim::FxVec2 world_delta) {
     const sim::Scalar abs_x = world_delta.x.abs();
     const sim::Scalar abs_y = world_delta.y.abs();
-    const sim::Scalar diagonal_limit = sim::ToSimScalar(1.5F * static_cast<float>(kTileSize));
+    const sim::Scalar diagonal_limit = ToFxScalar(1.5F * static_cast<float>(kTileSize));
     if (abs_x <= diagonal_limit && abs_y <= diagonal_limit) {
         return true;
     }
 
-    const sim::Scalar centerline_limit = sim::ToSimScalar(0.5F * static_cast<float>(kTileSize));
-    const sim::Scalar cross_limit = sim::ToSimScalar(2.5F * static_cast<float>(kTileSize));
+    const sim::Scalar centerline_limit = ToFxScalar(0.5F * static_cast<float>(kTileSize));
+    const sim::Scalar cross_limit = ToFxScalar(2.5F * static_cast<float>(kTileSize));
     return (abs_x <= centerline_limit && abs_y <= cross_limit) ||
            (abs_y <= centerline_limit && abs_x <= cross_limit);
 }
@@ -76,7 +76,7 @@ void DoExplosion(
     State& state,
     Audio& audio
 ) {
-    const FVec2 render_center = sim::ToRenderVec2(center);
+    const FVec2 render_center = ToFVec2(center);
     const float effect_size = size * 0.5F * static_cast<float>(kTileSize);
     {
         SpriteParticle effect{};
@@ -138,7 +138,7 @@ void DoExplosion(
     const std::vector<IVec2> explosion_tiles = BuildExplosionFootprintTiles(state.stage, center);
     BreakStageTilesAtCoords(explosion_tiles, state, audio);
 
-    const sim::Scalar explosion_size = sim::ToSimScalar(size * static_cast<float>(kTileSize));
+    const sim::Scalar explosion_size = ToFxScalar(size * static_cast<float>(kTileSize));
     const sim::FxAABB area = sim::FxAABB::from_corners(
         center - sim::FxVec2{explosion_size, explosion_size},
         center + sim::FxVec2{explosion_size, explosion_size}
@@ -146,7 +146,7 @@ void DoExplosion(
 
     const VID this_vid = state.ents.GetVid(ent_idx);
     const std::vector<VID> results = QueryEntsInAabb(state, area, this_vid);
-    const sim::Scalar sim_push_magnitude = sim::ToSimScalar(push_magnitude);
+    const sim::Scalar sim_push_magnitude = ToFxScalar(push_magnitude);
     for (const VID& vid : results) {
         if (Ent* const ent = state.ents.GetEntMut(vid)) {
             const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, center, ent->GetSimCenter());

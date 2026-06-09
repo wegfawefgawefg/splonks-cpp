@@ -39,10 +39,10 @@ constexpr int kTopSmokeIntervalFrames = 8;
 constexpr int kSealSmokeCount = 8;
 constexpr int kSealShardCount = 5;
 constexpr float kDoorSealWaitFrames = 100.0F;
-const sim::Scalar kSimRightSensorMinX = sim::ToSimScalar(kRightSensorMinX);
-const sim::Scalar kSimRightSensorMaxX = sim::ToSimScalar(kRightSensorMaxX);
-const sim::Scalar kSimRightSensorMinY = sim::ToSimScalar(kRightSensorMinY);
-const sim::Scalar kSimRightSensorMaxY = sim::ToSimScalar(kRightSensorMaxY);
+const sim::Scalar kSimRightSensorMinX = ToFxScalar(kRightSensorMinX);
+const sim::Scalar kSimRightSensorMaxX = ToFxScalar(kRightSensorMaxX);
+const sim::Scalar kSimRightSensorMinY = ToFxScalar(kRightSensorMinY);
+const sim::Scalar kSimRightSensorMaxY = ToFxScalar(kRightSensorMaxY);
 
 bool IsRumbling(const Ent& door) {
     return door.ai_state == EntAiState::Pursuing;
@@ -70,12 +70,12 @@ float GetMoveDirection(const Ent& door) {
 
 FVec2 GetTopEmitPos(const Ent& door) {
     const sim::FxAABB aabb = door.GetSimAABB();
-    return sim::ToRenderVec2(sim::FxVec2{aabb.center().x, aabb.tl.y});
+    return ToFVec2(sim::FxVec2{aabb.center().x, aabb.tl.y});
 }
 
 FVec2 GetBottomEmitPos(const Ent& door) {
     const sim::FxAABB aabb = door.GetSimAABB();
-    return sim::ToRenderVec2(sim::FxVec2{aabb.center().x, aabb.br.y});
+    return ToFVec2(sim::FxVec2{aabb.center().x, aabb.br.y});
 }
 
 FVec2 GetTrailingEmitPos(const Ent& door) {
@@ -87,7 +87,7 @@ FVec2 GetLeadingEmitPos(const Ent& door) {
 }
 
 void SetDoorShake(Ent& door, float amount) {
-    door.shake = std::max(door.shake, sim::ToSimScalar(amount));
+    door.shake = std::max(door.shake, ToFxScalar(amount));
 }
 
 void SpawnSmokeParticle(
@@ -202,7 +202,7 @@ void StartRumble(Ent& door, State& state) {
     door.ai_state = EntAiState::Pursuing;
     door.vel = sim::FxVec2::zero();
     door.acc = sim::FxVec2::zero();
-    door.counter_b = sim::ToSimScalar(kRumbleFrames);
+    door.counter_b = ToFxScalar(kRumbleFrames);
     SetDoorShake(door, kRumbleDoorShake);
     MaintainDoorRumbleSound(door, state);
 }
@@ -223,7 +223,7 @@ void StartDrop(Ent& door, State& state) {
     door.render_enabled = true;
     door.vel = sim::FxVec2{
         sim::Scalar::zero(),
-        sim::ToSimScalar(GetMoveDirection(door) * kDropStartVelocity),
+        ToFxScalar(GetMoveDirection(door) * kDropStartVelocity),
     };
     door.acc = sim::FxVec2::zero();
     SetDoorShake(door, kDropStartDoorShake);
@@ -243,7 +243,7 @@ void SealDoor(Ent& door, State& state, Audio& audio) {
     door.ai_state = EntAiState::Returning;
     door.vel = sim::FxVec2::zero();
     door.acc = sim::FxVec2::zero();
-    door.counter_a = sim::ToSimScalar(kDoorSealWaitFrames);
+    door.counter_a = ToFxScalar(kDoorSealWaitFrames);
     (void)StopOwnedSoundEmitter(
         state,
         audio,
@@ -377,13 +377,13 @@ void StepEntPhysicsAsDoor(
     const bool was_grounded = door.grounded;
     const sim::Scalar pre_vel_y = door.vel.y;
     const float move_direction = GetMoveDirection(door);
-    door.acc.y += sim::ToSimScalar(move_direction * kDropGravity);
+    door.acc.y += ToFxScalar(move_direction * kDropGravity);
     common::PrePartialEulerStep(ent_idx, state, dt);
     if (move_direction > 0.0F) {
         door.vel.y = gfxp::clamp(door.vel.y, sim::Scalar::zero(),
-                                 sim::ToSimScalar(kDropMaxVelocity));
+                                 ToFxScalar(kDropMaxVelocity));
     } else {
-        door.vel.y = gfxp::clamp(door.vel.y, -sim::ToSimScalar(kDropMaxVelocity),
+        door.vel.y = gfxp::clamp(door.vel.y, -ToFxScalar(kDropMaxVelocity),
                                  sim::Scalar::zero());
     }
     if (HasTargetTopY(door)) {

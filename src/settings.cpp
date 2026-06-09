@@ -48,7 +48,7 @@ float ParseFloat(const std::string& value, float fallback) {
 }
 
 sim::Scalar ParseSimScalar(const std::string& value, sim::Scalar fallback) {
-    return sim::ToSimScalar(ParseFloat(value, sim::ToRenderScalar(fallback)));
+    return ToFxScalar(ParseFloat(value, ToFloat(fallback)));
 }
 
 } // namespace
@@ -157,13 +157,13 @@ FluidSettings FluidSettings::New() {
     result.transfer_per_step = sim::Scalar::from_int(1);
     result.gravity_x = sim::Scalar::zero();
     result.gravity_y = sim::Scalar::from_int(1);
-    result.pressure_strength = sim::ToSimScalar(0.35F);
-    result.velocity_damping = sim::ToSimScalar(0.88F);
-    result.temp_gravity_decay = sim::ToSimScalar(0.92F);
+    result.pressure_strength = ToFxScalar(0.35F);
+    result.velocity_damping = ToFxScalar(0.88F);
+    result.temp_gravity_decay = ToFxScalar(0.92F);
     result.temporal_smoothing_enabled = false;
-    result.temporal_smoothing_response = sim::ToSimScalar(0.35F);
-    result.render_cutoff_amount = sim::ToSimScalar(0.004F);
-    result.water_alpha = sim::ToSimScalar(0.69F);
+    result.temporal_smoothing_response = ToFxScalar(0.35F);
+    result.render_cutoff_amount = ToFxScalar(0.004F);
+    result.water_alpha = ToFxScalar(0.69F);
     result.lighting_enabled = true;
     result.lighting_strength = sim::Scalar::from_int(1);
     return result;
@@ -171,15 +171,15 @@ FluidSettings FluidSettings::New() {
 
 WaterEffectSettings WaterEffectSettings::New() {
     WaterEffectSettings result;
-    result.gravity_scale = sim::ToSimScalar(0.35F);
-    result.velocity_damping_x = sim::ToSimScalar(0.82F);
-    result.velocity_damping_y = sim::ToSimScalar(0.55F);
-    result.move_speed_scale = sim::ToSimScalar(0.5F);
-    result.max_fall_speed = sim::ToSimScalar(1.35F);
-    result.buoyancy_strength = sim::ToSimScalar(0.55F);
+    result.gravity_scale = ToFxScalar(0.35F);
+    result.velocity_damping_x = ToFxScalar(0.82F);
+    result.velocity_damping_y = ToFxScalar(0.55F);
+    result.move_speed_scale = ToFxScalar(0.5F);
+    result.max_fall_speed = ToFxScalar(1.35F);
+    result.buoyancy_strength = ToFxScalar(0.55F);
     result.fall_timer_rate = sim::Scalar::zero();
     result.stomp_damage_scale = sim::Scalar::zero();
-    result.swim_impulse = sim::ToSimScalar(8.70F);
+    result.swim_impulse = ToFxScalar(8.70F);
     return result;
 }
 
@@ -709,7 +709,7 @@ bool SaveSettings(const Settings& settings) {
         return false;
     }
     const auto write_sim_scalar = [&](const char* key, sim::Scalar value) {
-        output << key << "=" << sim::ToRenderScalar(value) << "\n";
+        output << key << "=" << ToFloat(value) << "\n";
     };
 
     output << "video.resolution_w=" << settings.video.resolution.x << "\n";

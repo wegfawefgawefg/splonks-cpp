@@ -22,8 +22,8 @@ bool IsStoreLightBroken(const Ent& ent) {
 
 void AttachStoreLight(Ent& ent, State& state, int radius) {
     (void)state;
-    ent.light_strength = sim::ToSimScalar(kStoreLightStrength);
-    ent.light_color = sim::ToSimColor3(kStoreLightColor);
+    ent.light_strength = ToFxScalar(kStoreLightStrength);
+    ent.light_color = ToFxColor3(kStoreLightColor);
     ent.light_radius = radius;
 }
 
@@ -71,8 +71,8 @@ extern const EntSpec kStoreLightSpec{
     .hurt_on_contact = false,
     .can_be_stomped = false,
     .can_be_stunned = false,
-    .light_strength = sim::ToSimScalar(kStoreLightStrength),
-    .light_color = sim::ToSimColor3(kStoreLightColor),
+    .light_strength = ToFxScalar(kStoreLightStrength),
+    .light_color = ToFxColor3(kStoreLightColor),
     .light_radius = kStoreLightRadius,
     .draw_layer = DrawLayer::Middle,
     .facing = Side::Left,

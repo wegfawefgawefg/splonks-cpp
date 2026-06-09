@@ -112,7 +112,7 @@ bool TryApplyPushEntAction(
         return false;
     }
 
-    pushed->acc.x += sim::ToSimScalar(push_acc_delta);
+    pushed->acc.x += ToFxScalar(push_acc_delta);
     return true;
 }
 

@@ -45,8 +45,8 @@ void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount
     }
 
     const float radius_world = radius_tiles * static_cast<float>(kTileSize);
-    const sim::Scalar radius_world_sim = sim::ToSimScalar(radius_world);
-    const sim::FxVec2 world_pos_sim = sim::ToSimVec2(world_pos);
+    const sim::Scalar radius_world_sim = ToFxScalar(radius_world);
+    const sim::FxVec2 world_pos_sim = ToFxVec2(world_pos);
     const sim::FxAABB area = sim::FxAABB::from_corners(
         world_pos_sim - sim::FxVec2{radius_world_sim, radius_world_sim},
         world_pos_sim + sim::FxVec2{radius_world_sim, radius_world_sim}
@@ -59,7 +59,7 @@ void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount
 
         const sim::FxVec2 nearest_center =
             GetNearestWorldPoint(state.stage, world_pos_sim, ent->GetSimCenter());
-        const FVec2 delta = sim::ToRenderVec2(nearest_center - world_pos_sim);
+        const FVec2 delta = ToFVec2(nearest_center - world_pos_sim);
         if (radius_world > 0.0F) {
             const int radius_scaled =
                 std::max(1, RoundToInt(radius_world * static_cast<float>(kEntShakeDistanceScale)));

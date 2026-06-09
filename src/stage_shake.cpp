@@ -91,7 +91,7 @@ void AddTileShakeToGrid(Stage& stage, TileShakeGrid& grid, const IVec2& pos, flo
         return;
     }
     const sim::Scalar max_tile_shake = sim::Scalar::from_int(8);
-    const sim::Scalar shake_amount = sim::ToSimScalar(amount);
+    const sim::Scalar shake_amount = ToFxScalar(amount);
     sim::Scalar& shake =
         grid[static_cast<std::size_t>(resolved->y)][static_cast<std::size_t>(resolved->x)];
     shake = std::clamp(shake + shake_amount, sim::Scalar::zero(), max_tile_shake);
@@ -143,7 +143,7 @@ void AddTileShakeAreaToGrid(Stage& stage, TileShakeGrid& grid, const IVec2& pos,
             }
             sim::Scalar& contribution = contributions[static_cast<std::size_t>(resolved->y)]
                                                      [static_cast<std::size_t>(resolved->x)];
-            contribution = std::max(contribution, sim::ToSimScalar(magnitude * falloff));
+            contribution = std::max(contribution, ToFxScalar(magnitude * falloff));
             touched[static_cast<std::size_t>(resolved->y)][static_cast<std::size_t>(resolved->x)] = true;
         }
     }
@@ -162,7 +162,7 @@ void AddTileShakeAreaToGrid(Stage& stage, TileShakeGrid& grid, const IVec2& pos,
 
 void AttenuateTileShakeGrid(TileShakeGrid& grid, const std::vector<std::vector<Tile>>& tiles, float amount) {
     SyncTileShakeGridToTiles(grid, tiles);
-    const sim::Scalar attenuation = sim::ToSimScalar(amount);
+    const sim::Scalar attenuation = ToFxScalar(amount);
     for (std::vector<sim::Scalar>& row : grid) {
         for (sim::Scalar& shake : row) {
             shake = std::max(sim::Scalar::zero(), shake - attenuation);

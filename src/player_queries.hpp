@@ -121,7 +121,7 @@ inline std::optional<VID> FindNearestPlayerVid(
     FVec2 world_pos,
     bool require_normal_condition = true
 ) {
-    return FindNearestPlayerVid(state, sim::ToSimVec2(world_pos), require_normal_condition);
+    return FindNearestPlayerVid(state, ToFxVec2(world_pos), require_normal_condition);
 }
 
 inline const Ent* FindNearestPlayer(
@@ -149,7 +149,7 @@ inline const Ent* FindNearestPlayer(
     FVec2 world_pos,
     bool require_normal_condition = true
 ) {
-    return FindNearestPlayer(state, sim::ToSimVec2(world_pos), require_normal_condition);
+    return FindNearestPlayer(state, ToFxVec2(world_pos), require_normal_condition);
 }
 
 inline Ent* FindNearestPlayerMut(
@@ -157,7 +157,7 @@ inline Ent* FindNearestPlayerMut(
     FVec2 world_pos,
     bool require_normal_condition = true
 ) {
-    return FindNearestPlayerMut(state, sim::ToSimVec2(world_pos), require_normal_condition);
+    return FindNearestPlayerMut(state, ToFxVec2(world_pos), require_normal_condition);
 }
 
 } // namespace splonks

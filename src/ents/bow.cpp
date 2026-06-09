@@ -100,8 +100,8 @@ sim::FxVec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
     }
     if (aim_x != 0 && aim_y != 0) {
         return sim::FxVec2{
-            sim::Scalar::from_int(aim_x) * sim::ToSimScalar(kDiagonalAimComponent),
-            sim::Scalar::from_int(aim_y) * sim::ToSimScalar(kDiagonalAimComponent),
+            sim::Scalar::from_int(aim_x) * ToFxScalar(kDiagonalAimComponent),
+            sim::Scalar::from_int(aim_y) * ToFxScalar(kDiagonalAimComponent),
         };
     }
     return sim::FxVec2{
@@ -169,7 +169,7 @@ BowAim GetBowAim(const Ent& bow, const State& state) {
         .direction = direction,
         .sim_direction = DiscreteSimAimDirection(aim_x, aim_y, facing),
         .facing = facing,
-        .rotation = sim::ToSimScalar(NormalizeDegrees(world_angle - base_angle)),
+        .rotation = ToFxScalar(NormalizeDegrees(world_angle - base_angle)),
     };
 }
 
@@ -178,7 +178,7 @@ void ArmBow(Ent& bow, State& state) {
         return;
     }
 
-    bow.counter_a = sim::ToSimScalar(kBowFireCooldownFrames);
+    bow.counter_a = ToFxScalar(kBowFireCooldownFrames);
     bow.ent_a = bow.held_by_vid;
     const BowAim aim = GetBowAim(bow, state);
     bow.facing = aim.facing;
@@ -193,7 +193,7 @@ void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
                                        (aim.sim_direction * sim::Scalar::from_int(12));
         arrow.SetSimCenter(sim::PixelVec2(spawn_center.x.to_pixels_round(),
                                           spawn_center.y.to_pixels_round()));
-        arrow.vel = aim.sim_direction * sim::ToSimScalar(kBowArrowSpeed);
+        arrow.vel = aim.sim_direction * ToFxScalar(kBowArrowSpeed);
         arrow.acc = sim::FxVec2::zero();
         arrow.facing = aim.facing;
         arrow.rotation = aim.rotation;
@@ -220,7 +220,7 @@ void FireBow(Ent& bow, State& state) {
     bow.counter_b -= sim::Scalar::from_int(1);
     bow.ent_a.reset();
     SetAnim(bow, GetLooseAnimId(bow));
-    (void)PlayWorldSoundEmitter(state, sim::ToRenderVec2(bow.GetSimCenter()), audio_asset_ids::Throw);
+    (void)PlayWorldSoundEmitter(state, ToFVec2(bow.GetSimCenter()), audio_asset_ids::Throw);
 }
 
 } // namespace

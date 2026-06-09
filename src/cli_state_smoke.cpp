@@ -112,7 +112,7 @@ std::string DescribeEntEffects(const BoxedEntEffects& effects_box) {
         output << " [" << i
                << " id=" << static_cast<int>(effect.id)
                << " count=" << effect.count
-               << " value=" << sim::ToRenderScalar(effect.value)
+               << " value=" << ToFloat(effect.value)
                << " frames=" << effect.frames_remaining
                << "]";
     }
@@ -267,16 +267,16 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << "/" << b.vel.x.raw_value() << "," << b.vel.y.raw_value()
                    << " acc " << a.acc.x.raw_value() << "," << a.acc.y.raw_value()
                    << "/" << b.acc.x.raw_value() << "," << b.acc.y.raw_value()
-                   << " size " << sim::ToRenderScalar(a.size.x) << ","
-                   << sim::ToRenderScalar(a.size.y)
-                   << "/" << sim::ToRenderScalar(b.size.x) << ","
-                   << sim::ToRenderScalar(b.size.y)
+                   << " size " << ToFloat(a.size.x) << ","
+                   << ToFloat(a.size.y)
+                   << "/" << ToFloat(b.size.x) << ","
+                   << ToFloat(b.size.y)
                    << " grounded " << a.grounded << "/" << b.grounded
                    << " holding " << a.holding << "/" << b.holding
                    << " wanted " << a.wanted << "/" << b.wanted
                    << " render " << a.render_enabled << "/" << b.render_enabled
-                   << " rotation " << sim::ToRenderScalar(a.rotation) << "/"
-                   << sim::ToRenderScalar(b.rotation)
+                   << " rotation " << ToFloat(a.rotation) << "/"
+                   << ToFloat(b.rotation)
                    << " coyote " << a.coyote_time << "/" << b.coyote_time
                    << " stun " << a.stun_timer << "/" << b.stun_timer
                    << " fall " << a.fall_timer << "/" << b.fall_timer
@@ -297,20 +297,20 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << " held_by "
                    << (a.held_by_vid.has_value() ? static_cast<int>(a.held_by_vid->id) : -1)
                    << "/" << (b.held_by_vid.has_value() ? static_cast<int>(b.held_by_vid->id) : -1)
-                   << " counters " << sim::ToRenderScalar(a.counter_a) << ","
-                   << sim::ToRenderScalar(a.counter_b) << ","
-                   << sim::ToRenderScalar(a.counter_c) << ","
-                   << sim::ToRenderScalar(a.counter_d) << "/"
-                   << sim::ToRenderScalar(b.counter_a) << ","
-                   << sim::ToRenderScalar(b.counter_b) << ","
-                   << sim::ToRenderScalar(b.counter_c) << ","
-                   << sim::ToRenderScalar(b.counter_d)
-                   << " thresholds " << sim::ToRenderScalar(a.threshold_a) << ","
-                   << sim::ToRenderScalar(a.threshold_b) << "/"
-                   << sim::ToRenderScalar(b.threshold_a) << ","
-                   << sim::ToRenderScalar(b.threshold_b)
-                   << " lights " << sim::ToRenderScalar(a.light_strength) << ","
-                   << a.light_radius << "/" << sim::ToRenderScalar(b.light_strength) << ","
+                   << " counters " << ToFloat(a.counter_a) << ","
+                   << ToFloat(a.counter_b) << ","
+                   << ToFloat(a.counter_c) << ","
+                   << ToFloat(a.counter_d) << "/"
+                   << ToFloat(b.counter_a) << ","
+                   << ToFloat(b.counter_b) << ","
+                   << ToFloat(b.counter_c) << ","
+                   << ToFloat(b.counter_d)
+                   << " thresholds " << ToFloat(a.threshold_a) << ","
+                   << ToFloat(a.threshold_b) << "/"
+                   << ToFloat(b.threshold_a) << ","
+                   << ToFloat(b.threshold_b)
+                   << " lights " << ToFloat(a.light_strength) << ","
+                   << a.light_radius << "/" << ToFloat(b.light_strength) << ","
                    << b.light_radius
                    << " points " << a.point_a.x << "," << a.point_a.y
                    << "/" << b.point_a.x << "," << b.point_a.y
@@ -318,8 +318,8 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << "/" << b.aframe_animator.anim_id
                    << " frame " << a.aframe_animator.current_frame
                    << "/" << b.aframe_animator.current_frame
-                   << " time " << sim::ToRenderScalar(a.aframe_animator.current_time)
-                   << "/" << sim::ToRenderScalar(b.aframe_animator.current_time)
+                   << " time " << ToFloat(a.aframe_animator.current_time)
+                   << "/" << ToFloat(b.aframe_animator.current_time)
                    << " effects " << DescribeEntEffects(a.effects)
                    << " / " << DescribeEntEffects(b.effects);
             return output.str();
@@ -619,9 +619,9 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
 
     state.settings.fluid.simulation_enabled = true;
     state.settings.fluid.simulation_interval_frames = 1;
-    state.settings.fluid.transfer_per_step = sim::ToSimScalar(0.55F);
-    state.settings.fluid.pressure_strength = sim::ToSimScalar(0.65F);
-    state.settings.fluid.velocity_damping = sim::ToSimScalar(0.86F);
+    state.settings.fluid.transfer_per_step = ToFxScalar(0.55F);
+    state.settings.fluid.pressure_strength = ToFxScalar(0.65F);
+    state.settings.fluid.velocity_damping = ToFxScalar(0.86F);
     state.settings.fluid.gravity_x = sim::Scalar::zero();
     state.settings.fluid.gravity_y = sim::Scalar::from_int(1);
 
@@ -643,8 +643,8 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
             state.stage.SetFluidTile(IVec2::New(x, y), Tile::WaterSwim);
         }
     }
-    state.stage.SetFluidGravityOverride(IVec2::New(9, 11), sim::ToSimVec2(0.35F, 1.0F));
-    state.stage.AddFluidTempGravity(IVec2::New(12, 11), sim::ToSimVec2(1.25F, 0.0F));
+    state.stage.SetFluidGravityOverride(IVec2::New(9, 11), ToFxVec2(0.35F, 1.0F));
+    state.stage.AddFluidTempGravity(IVec2::New(12, 11), ToFxVec2(1.25F, 0.0F));
 
     Ent* const box = world_ops::SpawnEnt(state, EntType::Box, [](Ent& ent) {
         ent.SetRenderPos(FVec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize)));
@@ -1624,10 +1624,10 @@ bool RunJoinBarrierProtocolSmoke() {
     join_accept.assigned_player_ids[1] = 8;
     join_accept.host_player_id = 1;
     join_accept.stage_instance_id = 44;
-    join_accept.remote_spawn_x = sim::ToSimScalar(123.25F);
-    join_accept.remote_spawn_y = sim::ToSimScalar(45.5F);
-    join_accept.host_spawn_x = sim::ToSimScalar(32.75F);
-    join_accept.host_spawn_y = sim::ToSimScalar(64.125F);
+    join_accept.remote_spawn_x = ToFxScalar(123.25F);
+    join_accept.remote_spawn_y = ToFxScalar(45.5F);
+    join_accept.host_spawn_x = ToFxScalar(32.75F);
+    join_accept.host_spawn_y = ToFxScalar(64.125F);
     join_accept.stage_seed = 9876U;
     join_accept.lockstep_start_frame = 120;
     join_accept.content_hash = join_request.content_hash;
@@ -1800,7 +1800,7 @@ bool RunJoinBarrierProtocolSmoke() {
     topology.barrier_frame = host.net_session.lockstep_next_frame_to_step;
     topology.player_count = 1;
     topology.player_ids[0] = 6;
-    const sim::FxVec2 topology_pos = sim::ToSimVec2(FVec2::New(128.0F, 64.0F));
+    const sim::FxVec2 topology_pos = ToFxVec2(FVec2::New(128.0F, 64.0F));
     topology.player_pos_x_raw[0] = topology_pos.x.raw_value();
     topology.player_pos_y_raw[0] = topology_pos.y.raw_value();
     topology.removed_player_count = 1;
@@ -2776,7 +2776,7 @@ bool RunRetainedReconnectSmoke() {
     const network::NetRetainedPlayerState* const retained =
         network::FindRetainedPlayerState(state, slot->player_id);
     if (retained == nullptr ||
-        retained->last_pos != sim::ToSimVec2(FVec2::New(128.0F, 192.0F)) ||
+        retained->last_pos != ToFxVec2(FVec2::New(128.0F, 192.0F)) ||
         retained->health != 277 ||
         retained->money != 54321 ||
         !retained->held_item.valid ||
@@ -3900,10 +3900,10 @@ bool CheckStateFingerprintSmoke() {
         }
         presentation_ent->render_enabled = !presentation_ent->render_enabled;
         presentation_ent->draw_layer = DrawLayer::Foreground;
-        presentation_ent->light_strength += sim::ToSimScalar(0.5F);
+        presentation_ent->light_strength += ToFxScalar(0.5F);
         presentation_ent->light_radius += 2;
         presentation_ent->aframe_animator.current_frame += 1;
-        presentation_ent->aframe_animator.current_time += sim::ToSimScalar(0.375F);
+        presentation_ent->aframe_animator.current_time += ToFxScalar(0.375F);
         presentation_ent->aframe_animator.finished = !presentation_ent->aframe_animator.finished;
         const CanonicalStateFingerprint left_network =
             ComputeNetworkStateFingerprint(presentation_left);

@@ -158,7 +158,7 @@ void SpawnBoulderTrailPebbles(State& state, const FVec2& pos, Side facing) {
 void UpdateBoulderAnim(Ent& boulder) {
     const bool is_rolling =
         boulder.ai_state == EntAiState::Disturbed &&
-        boulder.vel.x.abs() > sim::ToSimScalar(kBoulderRollingSpeedThreshold);
+        boulder.vel.x.abs() > ToFxScalar(kBoulderRollingSpeedThreshold);
     SetAnim(boulder, is_rolling ? kBoulderRollAnimId : kBoulderAnimId);
 }
 
@@ -166,33 +166,33 @@ void PlayBoulderImpactSoundIfReady(Ent& boulder, State& state) {
     if (boulder.counter_a > sim::Scalar::zero()) {
         return;
     }
-    boulder.counter_a = sim::ToSimScalar(kBoulderImpactSoundCooldownFrames);
+    boulder.counter_a = ToFxScalar(kBoulderImpactSoundCooldownFrames);
     state.frame_pause += 2;
     (void)PlayWorldSoundEmitter(state, GetBoulderBottomCenter(boulder), audio_asset_ids::BoulderHitGround);
 }
 
 FVec2 GetBoulderTrailingBottomCorner(const Ent& boulder) {
     const sim::FxAABB aabb = boulder.GetSimAABB();
-    return sim::ToRenderVec2(boulder.facing == Side::Right
+    return ToFVec2(boulder.facing == Side::Right
                                  ? sim::FxVec2{aabb.tl.x, aabb.br.y}
                                  : sim::FxVec2{aabb.br.x, aabb.br.y});
 }
 
 FVec2 GetBoulderLeadingBottomCorner(const Ent& boulder) {
     const sim::FxAABB aabb = boulder.GetSimAABB();
-    return sim::ToRenderVec2(boulder.facing == Side::Right
+    return ToFVec2(boulder.facing == Side::Right
                                  ? sim::FxVec2{aabb.br.x, aabb.br.y}
                                  : sim::FxVec2{aabb.tl.x, aabb.br.y});
 }
 
 FVec2 GetBoulderBottomCenter(const Ent& boulder) {
     const sim::FxAABB aabb = boulder.GetSimAABB();
-    return sim::ToRenderVec2(sim::FxVec2{aabb.center().x, aabb.br.y});
+    return ToFVec2(sim::FxVec2{aabb.center().x, aabb.br.y});
 }
 
 FVec2 GetBoulderFrontFaceCenter(const Ent& boulder) {
     const sim::FxAABB aabb = boulder.GetSimAABB();
-    return sim::ToRenderVec2(boulder.facing == Side::Right
+    return ToFVec2(boulder.facing == Side::Right
                                  ? sim::FxVec2{aabb.br.x, aabb.center().y}
                                  : sim::FxVec2{aabb.tl.x, aabb.center().y});
 }
@@ -360,7 +360,7 @@ void OnDeathAsBoulder(std::size_t ent_idx, State& state, Audio& audio) {
         return;
     }
     Ent& boulder = state.ents.ents[ent_idx];
-    SpawnBoulderBreakEffects(sim::ToRenderVec2(boulder.GetSimCenter()), state);
+    SpawnBoulderBreakEffects(ToFVec2(boulder.GetSimCenter()), state);
     (void)world_ops::DeactivateEnt(state, boulder.vid);
 }
 
@@ -375,7 +375,7 @@ void StepEntLogicAsBoulder(
     (void)audio;
     (void)dt;
     Ent& boulder = state.ents.ents[ent_idx];
-    boulder.max_speed = sim::ToSimScalar(kBoulderRollVelocity);
+    boulder.max_speed = ToFxScalar(kBoulderRollVelocity);
 
     if (boulder.ai_state == EntAiState::Idle && boulder.grounded) {
         boulder.ai_state = EntAiState::Disturbed;
@@ -391,8 +391,8 @@ void StepEntLogicAsBoulder(
         return;
     }
 
-    boulder.vel.x = boulder.facing == Side::Right ? sim::ToSimScalar(kBoulderRollVelocity)
-                                                  : -sim::ToSimScalar(kBoulderRollVelocity);
+    boulder.vel.x = boulder.facing == Side::Right ? ToFxScalar(kBoulderRollVelocity)
+                                                  : -ToFxScalar(kBoulderRollVelocity);
     UpdateBoulderAnim(boulder);
 }
 
@@ -421,7 +421,7 @@ void StepEntPhysicsAsBoulder(
                 GetBoulderFrontFaceCenter(boulder),
                 audio_asset_ids::BoulderTileCrash
             );
-            boulder.counter_a = sim::ToSimScalar(kBoulderImpactSoundCooldownFrames);
+            boulder.counter_a = ToFxScalar(kBoulderImpactSoundCooldownFrames);
         }
         if (will_break_tiles) {
             AddBoulderBreakShake(state, boulder);
@@ -439,8 +439,8 @@ void StepEntPhysicsAsBoulder(
 
     if (boulder.ai_state == EntAiState::Disturbed) {
         const bool hard_stopped_this_frame =
-            pre_physics_vel_x.abs() > sim::ToSimScalar(kBoulderRollingSpeedThreshold) &&
-            boulder.vel.x.abs() <= sim::ToSimScalar(kBoulderRollingSpeedThreshold) &&
+            pre_physics_vel_x.abs() > ToFxScalar(kBoulderRollingSpeedThreshold) &&
+            boulder.vel.x.abs() <= ToFxScalar(kBoulderRollingSpeedThreshold) &&
             boulder.grounded &&
             boulder.dist_traveled_this_frame <= sim::Scalar::zero();
         if (hard_stopped_this_frame) {
@@ -453,7 +453,7 @@ void StepEntPhysicsAsBoulder(
             const sim::Scalar dist_traveled = boulder.dist_traveled_this_frame;
             boulder.counter_c -= dist_traveled;
             while (boulder.counter_c <= sim::Scalar::zero()) {
-                boulder.counter_c += sim::ToSimScalar(kBoulderTrailSmokeDistInterval);
+                boulder.counter_c += ToFxScalar(kBoulderTrailSmokeDistInterval);
                 SpawnBoulderTrailSmoke(
                     state,
                     GetBoulderTrailingBottomCorner(boulder),
@@ -463,7 +463,7 @@ void StepEntPhysicsAsBoulder(
 
             boulder.counter_d -= dist_traveled;
             while (boulder.counter_d <= sim::Scalar::zero()) {
-                boulder.counter_d += sim::ToSimScalar(kBoulderTrailPebbleDistInterval);
+                boulder.counter_d += ToFxScalar(kBoulderTrailPebbleDistInterval);
                 SpawnBoulderTrailPebbles(
                     state,
                     GetBoulderLeadingBottomCorner(boulder),
@@ -480,7 +480,7 @@ void StepEntPhysicsAsBoulder(
             boulder.counter_b = sim::Scalar::zero();
         }
 
-        if (boulder.counter_b >= sim::ToSimScalar(kBoulderRestFrames)) {
+        if (boulder.counter_b >= ToFxScalar(kBoulderRestFrames)) {
                 boulder.ai_state = EntAiState::Returning;
             boulder.vel.x = sim::Scalar::zero();
         }

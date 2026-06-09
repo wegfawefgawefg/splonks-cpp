@@ -29,11 +29,11 @@ constexpr float kPiranhaBiteDistance = 12.0F;
 
 bool IsPiranhaInWater(const Ent& piranha, const State& state) {
     const sim::FxVec2 center = piranha.GetSimCenter();
-    const float cutoff = sim::ToRenderScalar(state.settings.fluid.render_cutoff_amount);
+    const float cutoff = ToFloat(state.settings.fluid.render_cutoff_amount);
     return IsWaterAtWorldPos(state.stage, center, cutoff) ||
            IsWaterAtWorldPos(
                state.stage,
-               center + sim::FxVec2{sim::Scalar::zero(), piranha.size.y * sim::ToSimScalar(0.35F)},
+               center + sim::FxVec2{sim::Scalar::zero(), piranha.size.y * ToFxScalar(0.35F)},
                cutoff
            );
 }
@@ -46,17 +46,17 @@ std::optional<sim::FxVec2> FindPiranhaTarget(const Ent& piranha, const State& st
 
     const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, piranha.GetSimCenter(), player->GetSimCenter());
     if (gfxp::length_sq(delta) >
-        sim::ToSimScalar(kPiranhaTargetDistance * kPiranhaTargetDistance)) {
+        ToFxScalar(kPiranhaTargetDistance * kPiranhaTargetDistance)) {
         return std::nullopt;
     }
     return piranha.GetSimCenter() + delta;
 }
 
 void PatrolWater(Ent& piranha) {
-    const sim::Scalar swim_acc = sim::ToSimScalar(kPiranhaSwimAcceleration);
+    const sim::Scalar swim_acc = ToFxScalar(kPiranhaSwimAcceleration);
     const sim::Scalar target_x = piranha.facing == Side::Left
-                                     ? -sim::ToSimScalar(kPiranhaMaxSwimSpeed)
-                                     : sim::ToSimScalar(kPiranhaMaxSwimSpeed);
+                                     ? -ToFxScalar(kPiranhaMaxSwimSpeed)
+                                     : ToFxScalar(kPiranhaMaxSwimSpeed);
     piranha.acc.x += gfxp::clamp(target_x - piranha.vel.x, -swim_acc, swim_acc);
     piranha.acc.y += gfxp::clamp(-piranha.vel.y, -swim_acc, swim_acc);
 }
@@ -64,7 +64,7 @@ void PatrolWater(Ent& piranha) {
 void ChaseTarget(Ent& piranha, sim::FxVec2 target, const Stage& stage) {
     const sim::FxVec2 delta = GetNearestWorldDelta(stage, piranha.GetSimCenter(), target);
     const sim::FxVec2 direction = sim::NormalizeOrZero(delta);
-    piranha.acc += direction * sim::ToSimScalar(kPiranhaChaseAcceleration);
+    piranha.acc += direction * ToFxScalar(kPiranhaChaseAcceleration);
     if (delta.x < sim::Scalar::zero()) {
         piranha.facing = Side::Left;
     } else if (delta.x > sim::Scalar::zero()) {
@@ -80,7 +80,7 @@ struct SwimProbeResult {
 SwimProbeResult QuerySwimProbes(const Ent& piranha, const State& state) {
     const sim::FxAABB aabb = piranha.GetSimAABB();
     const sim::FxVec2 center = piranha.GetSimCenter();
-    const float cutoff = sim::ToRenderScalar(state.settings.fluid.render_cutoff_amount);
+    const float cutoff = ToFloat(state.settings.fluid.render_cutoff_amount);
     return SwimProbeResult{
         .center = IsWaterAtWorldPos(state.stage, center, cutoff),
         .bottom = IsWaterAtWorldPos(state.stage, sim::FxVec2{center.x, aabb.br.y}, cutoff),
@@ -115,7 +115,7 @@ void StepEntLogicAsPiranha(
     bool biting = false;
     if (const std::optional<sim::FxVec2> target = FindPiranhaTarget(piranha, state)) {
         biting = gfxp::length_sq(GetNearestWorldDelta(state.stage, piranha.GetSimCenter(), *target)) <=
-                 sim::ToSimScalar(kPiranhaBiteDistance * kPiranhaBiteDistance);
+                 ToFxScalar(kPiranhaBiteDistance * kPiranhaBiteDistance);
         ChaseTarget(piranha, *target, state.stage);
     } else {
         PatrolWater(piranha);
@@ -147,22 +147,22 @@ void StepEntPhysicsAsPiranha(
 
     const sim::FxVec2 old_pos = piranha.pos;
     common::PrePartialEulerStep(ent_idx, state, dt);
-    piranha.vel = piranha.vel * sim::ToSimScalar(kPiranhaWaterDamping);
-    const sim::Scalar max_swim_speed = sim::ToSimScalar(kPiranhaMaxSwimSpeed);
+    piranha.vel = piranha.vel * ToFxScalar(kPiranhaWaterDamping);
+    const sim::Scalar max_swim_speed = ToFxScalar(kPiranhaMaxSwimSpeed);
     piranha.vel.x = gfxp::clamp(piranha.vel.x, -max_swim_speed, max_swim_speed);
     piranha.vel.y = gfxp::clamp(piranha.vel.y, -max_swim_speed, max_swim_speed);
 
     const SwimProbeResult swim_probe = QuerySwimProbes(piranha, state);
     if (!swim_probe.center || !swim_probe.bottom) {
         if (swim_probe.bottom) {
-            piranha.vel.y = gfxp::max(piranha.vel.y, sim::ToSimScalar(kPiranhaSurfaceDiveSpeed));
-            piranha.vel.x *= sim::ToSimScalar(0.75F);
+            piranha.vel.y = gfxp::max(piranha.vel.y, ToFxScalar(kPiranhaSurfaceDiveSpeed));
+            piranha.vel.x *= ToFxScalar(0.75F);
             common::DoEntCollisions(ent_idx, state, graphics, audio);
             common::PostPartialEulerStep(ent_idx, state, dt);
             return;
         }
         piranha.pos = old_pos;
-        piranha.vel = -piranha.vel * sim::ToSimScalar(0.5F);
+        piranha.vel = -piranha.vel * ToFxScalar(0.5F);
         piranha.facing = piranha.facing == Side::Left ? Side::Right : Side::Left;
     }
 

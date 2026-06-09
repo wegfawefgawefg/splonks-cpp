@@ -56,8 +56,8 @@ void SpawnEntPhaseParticleAt(
     particle.size = FVec2::New(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h)
-    ) * sim::ToRenderScalar(ent.aframe_animator.scale);
-    particle.rot = sim::ToRenderScalar(ent.rotation);
+    ) * ToFloat(ent.aframe_animator.scale);
+    particle.rot = ToFloat(ent.rotation);
     particle.alpha = 0.85F;
     particle.tint_r = tint_r;
     particle.tint_g = tint_g;

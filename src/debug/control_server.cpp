@@ -296,10 +296,10 @@ void WriteEntJson(std::ostringstream& out, const State& state, const Ent& ent) {
     WriteOptionalVid(out, ent.back_vid);
     out << ",\"ent_a\":";
     WriteOptionalVid(out, ent.ent_a);
-    out << ",\"counters\":{\"a\":" << sim::ToRenderScalar(ent.counter_a)
-        << ",\"b\":" << sim::ToRenderScalar(ent.counter_b)
-        << ",\"c\":" << sim::ToRenderScalar(ent.counter_c)
-        << ",\"d\":" << sim::ToRenderScalar(ent.counter_d)
+    out << ",\"counters\":{\"a\":" << ToFloat(ent.counter_a)
+        << ",\"b\":" << ToFloat(ent.counter_b)
+        << ",\"c\":" << ToFloat(ent.counter_c)
+        << ",\"d\":" << ToFloat(ent.counter_d)
         << "}";
     out << ",\"use\":{\"down\":" << (ent.use_state.down ? "true" : "false")
         << ",\"pressed\":" << (ent.use_state.pressed ? "true" : "false")
@@ -315,12 +315,12 @@ void WriteEntJson(std::ostringstream& out, const State& state, const Ent& ent) {
         << ",\"can_apply_proj_contact\":"
         << (ent.can_apply_proj_contact ? "true" : "false")
         << ",\"proj_contact_timer\":" << ent.proj_contact_timer
-        << ",\"rotation\":" << sim::ToRenderScalar(ent.rotation)
+        << ",\"rotation\":" << ToFloat(ent.rotation)
         << ",\"facing\":" << JsonString(ent.facing == Side::Right ? "right" : "left")
         << ",\"anim\":{\"id\":" << ent.aframe_animator.anim_id
         << ",\"frame\":" << ent.aframe_animator.current_frame
-        << ",\"time\":" << sim::ToRenderScalar(ent.aframe_animator.current_time)
-        << ",\"speed\":" << sim::ToRenderScalar(ent.aframe_animator.speed)
+        << ",\"time\":" << ToFloat(ent.aframe_animator.current_time)
+        << ",\"speed\":" << ToFloat(ent.aframe_animator.speed)
         << ",\"animate\":" << (ent.aframe_animator.animate ? "true" : "false")
         << ",\"loop\":" << (ent.aframe_animator.loop ? "true" : "false")
         << ",\"finished\":" << (ent.aframe_animator.finished ? "true" : "false")
@@ -1181,7 +1181,7 @@ std::string HandleFingerprintCommand(const State& state) {
     double fluid_sum = 0.0;
     for (const std::vector<sim::Scalar>& row : state.stage.fluid_amount) {
         for (const sim::Scalar amount : row) {
-            fluid_sum += static_cast<double>(sim::ToRenderScalar(amount));
+            fluid_sum += static_cast<double>(ToFloat(amount));
         }
     }
     std::ostringstream out;

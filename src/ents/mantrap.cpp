@@ -85,7 +85,7 @@ bool TryEatOverlappingEnt(
 
         FaceTarget(mantrap, *target, state.stage);
         mantrap.vel.x = sim::Scalar::zero();
-        mantrap.counter_b = sim::ToSimScalar(kMantrapEatFrames);
+        mantrap.counter_b = ToFxScalar(kMantrapEatFrames);
         SetAnim(mantrap, aframe_ids::MantrapEat);
         const common::DamageResult damage_result =
             common::TryDamageEnt(target_vid.id, state, audio, DamageType::Attack, kMantrapEatDamage);

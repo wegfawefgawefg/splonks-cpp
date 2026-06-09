@@ -51,18 +51,18 @@ sim::FxVec2 GetSensorStart(const Ent& trap) {
 
 bool ShouldTriggerOnEnt(const Ent& ent) {
     return gfxp::length_sq(ent.vel) >
-           sim::ToSimScalar(kArrowTrapMovingEntSpeedSq);
+           ToFxScalar(kArrowTrapMovingEntSpeedSq);
 }
 
 sim::FxVec2 ArrowLaunchVelocity(int direction) {
     return sim::FxVec2{
-        sim::Scalar::from_int(direction) * sim::ToSimScalar(kArrowTrapArrowSpeed),
+        sim::Scalar::from_int(direction) * ToFxScalar(kArrowTrapArrowSpeed),
         sim::Scalar::zero()
     };
 }
 
 sim::FxVec2 ArrowGravityAcceleration() {
-    return sim::FxVec2{sim::Scalar::zero(), sim::ToSimScalar(kArrowGravity)};
+    return sim::FxVec2{sim::Scalar::zero(), ToFxScalar(kArrowGravity)};
 }
 
 void SnapArrowPositionToPixels(Ent& arrow) {
@@ -270,7 +270,7 @@ void FireTrap(std::size_t ent_idx, State& state, Audio& audio) {
         return;
     }
     trap.counter_a = sim::Scalar::from_int(1);
-    (void)PlayWorldSoundEmitter(state, sim::ToRenderVec2(arrow_center), audio_asset_ids::Throw);
+    (void)PlayWorldSoundEmitter(state, ToFVec2(arrow_center), audio_asset_ids::Throw);
 }
 
 void StepEntLogicAsArrowTrap(
@@ -348,18 +348,18 @@ void StepEntLogicAsArrow(
         return;
     }
 
-    if (gfxp::length_sq(arrow.vel) > sim::ToSimScalar(kArrowRotationVelocityEpsilonSq)) {
+    if (gfxp::length_sq(arrow.vel) > ToFxScalar(kArrowRotationVelocityEpsilonSq)) {
         if (arrow.proj_contact_timer > 0) {
             arrow.proj_contact_damage_amount = kArrowDamage;
         }
-        if (arrow.vel.x.abs() > sim::ToSimScalar(kArrowRotationVelocityEpsilon)) {
+        if (arrow.vel.x.abs() > ToFxScalar(kArrowRotationVelocityEpsilon)) {
             arrow.facing = arrow.vel.x < sim::Scalar::zero() ? Side::Left : Side::Right;
         }
         arrow.rotation = ArrowRotationFromVelocity(arrow.vel, arrow.facing);
     }
     const float gravity_scale =
         GetModifiedEffectValue(arrow, EffectModifierTarget::GravityScale, 1.0F);
-    arrow.acc.y += sim::ToSimScalar(kArrowGravity * gravity_scale);
+    arrow.acc.y += ToFxScalar(kArrowGravity * gravity_scale);
 }
 
 bool CanArrowHitEnt(const Ent& arrow, const Ent& other) {
@@ -498,7 +498,7 @@ ents::common::ContactResult OnEntContactAsArrow(
         ents::common::HitOptions{
             .source_vid = arrow.vid,
             .knockback = ents::common::KnockbackSpec{
-                .velocity = arrow.vel * sim::ToSimScalar(kArrowImpactVelocityScale),
+                .velocity = arrow.vel * ToFxScalar(kArrowImpactVelocityScale),
                 .clear_velocity = false,
                 .clear_acceleration = true,
                 .thrown_by = arrow.thrown_by,

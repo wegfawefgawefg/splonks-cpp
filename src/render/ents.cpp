@@ -93,9 +93,9 @@ Color3 GetEntLightingColor(State& state, const Ent& ent, Graphics& graphics) {
     const FVec2 visual_center =
         ents::common::GetVisualCenterForEnt(ent, graphics, ent.GetRenderCenter());
     Color3 color = SampleForegroundLightColorForRender(state, visual_center);
-    const float self_light = sim::ToRenderScalar(ent.self_light);
+    const float self_light = ToFloat(ent.self_light);
     if (self_light > 0.0F) {
-        color = color + (sim::ToRenderColor3(ent.light_color) * self_light);
+        color = color + (ToFColor3(ent.light_color) * self_light);
     }
     return ClampRenderColor(color);
 }
@@ -216,9 +216,9 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 static_cast<float>(aframe->sample_rect.h)
             );
             const FVec2 sprite_scaled_size =
-                sprite_world_size * sim::ToRenderScalar(ent.aframe_animator.scale);
+                sprite_world_size * ToFloat(ent.aframe_animator.scale);
             Ent render_ent = ent;
-            render_ent.pos = sim::ToSimVec2(GetSmoothedEntRenderPos(state, graphics, ent));
+            render_ent.pos = ToFxVec2(GetSmoothedEntRenderPos(state, graphics, ent));
             const FVec2 render_position =
                 ents::common::GetSpriteTopLeftForEnt(render_ent, *aframe);
 
@@ -231,7 +231,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
             const SDL_FlipMode flip =
                 ent.facing == Side::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
             const Uint8 ent_alpha = static_cast<Uint8>(
-                std::clamp(sim::ToRenderScalar(ent.alpha), 0.0F, 1.0F) * 255.0F);
+                std::clamp(ToFloat(ent.alpha), 0.0F, 1.0F) * 255.0F);
             const Color3 ent_brightness = GetEntLightingColor(state, ent, graphics);
             SDL_SetTextureAlphaMod(sprite_texture, ent_alpha);
             SDL_SetTextureColorModFloat(
@@ -258,13 +258,13 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 }
             }
             for (const FVec2& render_offset : render_offsets) {
-                const FVec2 shake_offset = GetShakeOffset(sim::ToRenderScalar(ent.shake));
+                const FVec2 shake_offset = GetShakeOffset(ToFloat(ent.shake));
                 SDL_FRect dst = WorldRectToScreen(
                     graphics,
                     render_position + render_offset + shake_offset,
                     sprite_scaled_size
                 );
-                const float rotation = sim::ToRenderScalar(ent.rotation);
+                const float rotation = ToFloat(ent.rotation);
                 if (std::abs(rotation) <= 0.01F) {
                     RenderWorldTextureRotated(renderer, graphics, sprite_texture, &src, dst, 0.0, nullptr, flip);
                 } else {

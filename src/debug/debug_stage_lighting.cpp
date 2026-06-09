@@ -79,16 +79,16 @@ void SpawnDebugMovingLight(State& state, int index, int count) {
     }
 
     light->point_a = IVec2::New(static_cast<int>(std::round(home.x)), static_cast<int>(std::round(home.y)));
-    light->counter_a = sim::ToSimScalar(static_cast<float>(index) * 0.67F);
-    light->counter_b = sim::ToSimScalar(0.018F + (static_cast<float>(index % 7) * 0.003F));
-    light->counter_c = sim::ToSimScalar(static_cast<float>(index % 11) * 0.41F);
-    light->threshold_a = sim::ToSimScalar(8.0F + static_cast<float>((index * 5) % 22));
-    light->threshold_b = sim::ToSimScalar(8.0F + static_cast<float>((index * 7) % 18));
+    light->counter_a = ToFxScalar(static_cast<float>(index) * 0.67F);
+    light->counter_b = ToFxScalar(0.018F + (static_cast<float>(index % 7) * 0.003F));
+    light->counter_c = ToFxScalar(static_cast<float>(index % 11) * 0.41F);
+    light->threshold_a = ToFxScalar(8.0F + static_cast<float>((index * 5) % 22));
+    light->threshold_b = ToFxScalar(8.0F + static_cast<float>((index * 7) % 18));
     const std::size_t color_index =
         static_cast<std::size_t>(index) % kDebugLightColors.size();
-    light->light_color = sim::ToSimColor3(kDebugLightColors[color_index]);
-    light->self_light = sim::ToSimScalar(0.65F);
-    light->light_strength = sim::ToSimScalar(0.85F + static_cast<float>(index % 5) * 0.08F);
+    light->light_color = ToFxColor3(kDebugLightColors[color_index]);
+    light->self_light = ToFxScalar(0.65F);
+    light->light_strength = ToFxScalar(0.85F + static_cast<float>(index % 5) * 0.08F);
     light->light_radius = 5 + (index % 5);
 }
 

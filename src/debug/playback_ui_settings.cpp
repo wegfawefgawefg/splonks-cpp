@@ -30,11 +30,11 @@ bool SliderSimScalar(
     float max_value,
     const char* format
 ) {
-    float edit_value = sim::ToRenderScalar(value);
+    float edit_value = ToFloat(value);
     if (!ImGui::SliderFloat(label, &edit_value, min_value, max_value, format)) {
         return false;
     }
-    value = sim::ToSimScalar(edit_value);
+    value = ToFxScalar(edit_value);
     return true;
 }
 
@@ -46,11 +46,11 @@ bool DragSimScalar(
     float max_value,
     const char* format
 ) {
-    float edit_value = sim::ToRenderScalar(value);
+    float edit_value = ToFloat(value);
     if (!ImGui::DragFloat(label, &edit_value, speed, min_value, max_value, format)) {
         return false;
     }
-    value = sim::ToSimScalar(edit_value);
+    value = ToFxScalar(edit_value);
     return true;
 }
 
@@ -392,8 +392,8 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     }
     ImGui::Text(
         "Global Gravity: (%.2f, %.2f)",
-        sim::ToRenderScalar(fluid.gravity_x),
-        sim::ToRenderScalar(fluid.gravity_y)
+        ToFloat(fluid.gravity_x),
+        ToFloat(fluid.gravity_y)
     );
     ImGui::SliderFloat("Brush Gravity X", &brush.paint_gravity_x, -4.0F, 4.0F, "%.2f");
     ImGui::SameLine();

@@ -18,10 +18,10 @@ constexpr sim::Scalar kZero = sim::Scalar::zero();
 constexpr sim::Scalar kOne = sim::Scalar::from_int(1);
 constexpr sim::Scalar kFour = sim::Scalar::from_int(4);
 const sim::Scalar kMinFluidAmount =
-    sim::ToSimScalar(0.0001F, gfxp::Rounding::Ceil);
+    ToFxScalar(0.0001F, gfxp::Rounding::Ceil);
 const sim::Scalar kVelocityClamp = sim::Scalar::from_int(8);
 const sim::Scalar kGravityEpsilon =
-    sim::ToSimScalar(0.0001F, gfxp::Rounding::Ceil);
+    ToFxScalar(0.0001F, gfxp::Rounding::Ceil);
 
 struct FluidTransferProposal {
     IVec2 source = IVec2::New(0, 0);
@@ -235,7 +235,7 @@ void AddFluidTransferProposalsForCell(
         const sim::Scalar velocity_score =
             ClampScalar(Dot(source_velocity, direction), kZero, kVelocityClamp);
         const sim::Scalar directional_pressure_gate =
-            (!has_gravity || Dot(direction, gravity_direction) >= sim::ToSimScalar(-0.05F))
+            (!has_gravity || Dot(direction, gravity_direction) >= ToFxScalar(-0.05F))
             ? kOne
             : kZero;
         const sim::Scalar pressure_gate =

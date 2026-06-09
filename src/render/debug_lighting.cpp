@@ -162,7 +162,7 @@ void RenderLightOverlay(
         }
 
         for (const Ent& ent : state.ents.ents) {
-            const float light_strength = sim::ToRenderScalar(ent.light_strength);
+            const float light_strength = ToFloat(ent.light_strength);
             if (!ent.active || !ent.render_enabled ||
                 ent.condition == EntCondition::Dead ||
                 light_strength <= 0.0F || ent.light_radius <= 0) {
@@ -175,7 +175,7 @@ void RenderLightOverlay(
                 ent.GetRenderCenter() + render_offset,
                 ent.light_radius,
                 light_strength,
-                sim::ToRenderColor3(ent.light_color),
+                ToFColor3(ent.light_color),
                 GetEntTypeName(ent.type_)
             );
         }

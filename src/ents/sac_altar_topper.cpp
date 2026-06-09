@@ -73,10 +73,10 @@ void StepEntLogicAsSacAltarTopper(
         topper.counter_a -= sim::Scalar::from_int(1);
     }
     if (topper.counter_a <= sim::Scalar::zero()) {
-        topper.counter_a = sim::ToSimScalar(kIdleSmokeIntervalFrames);
+        topper.counter_a = ToFxScalar(kIdleSmokeIntervalFrames);
         const sim::FxVec2 emit_pos =
             ents::common::GetEmitPointForEnt(topper, graphics, topper.GetSimCenter());
-        SpawnTopperSmoke(state, sim::ToRenderVec2(emit_pos), 0.0F);
+        SpawnTopperSmoke(state, ToFVec2(emit_pos), 0.0F);
     }
 }
 

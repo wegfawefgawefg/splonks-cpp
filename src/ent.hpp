@@ -72,14 +72,14 @@ struct Ent {
     sim::FxVec2 pos;
     sim::FxVec2 vel;
     sim::FxVec2 acc;
-    sim::Scalar max_speed = sim::ToSimScalar(7.0F);
+    sim::Scalar max_speed = ToFxScalar(7.0F);
     std::uint32_t jump_hold_gravity_frames_remaining = 0;
     sim::Scalar throw_velocity_scale = sim::Scalar::from_int(1);
     sim::Scalar buoyancy = sim::Scalar::zero();
     sim::FxVec2 size;
     sim::Scalar self_light = sim::Scalar::zero();
     sim::Scalar light_strength = sim::Scalar::zero();
-    sim::Color3 light_color = sim::ToSimColor3(Color3::White());
+    sim::Color3 light_color = ToFxColor3(Color3::White());
     int light_radius = 0;
     sim::Scalar dist_traveled_this_frame = sim::Scalar::zero();
     Side facing = Side::Left;
@@ -115,7 +115,7 @@ struct Ent {
     bool hurt_on_contact = false;
     bool vanish_on_death = false;
     bool affected_by_ground_friction = true;
-    sim::Scalar support_ground_friction = sim::ToSimScalar(0.85F);
+    sim::Scalar support_ground_friction = ToFxScalar(0.85F);
     sim::Scalar push_acc = sim::Scalar::zero();
     std::optional<AFrameId> damage_anim = std::nullopt;
     std::optional<AudioAssetId> damage_sound = std::nullopt;

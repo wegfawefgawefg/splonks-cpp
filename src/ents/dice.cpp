@@ -52,12 +52,12 @@ void StepEntLogicAsDice(
         return;
     }
 
-    if (!dice.grounded || dice.vel.x.abs() > sim::ToSimScalar(kSettleSpeed) ||
-        dice.vel.y.abs() > sim::ToSimScalar(kSettleSpeed)) {
+    if (!dice.grounded || dice.vel.x.abs() > ToFxScalar(kSettleSpeed) ||
+        dice.vel.y.abs() > ToFxScalar(kSettleSpeed)) {
         dice.counter_a = sim::Scalar::from_int(RollDicePairTotal(state));
-        dice.rotation = sim::ToSimScalar(
-            WrapRotationDegrees(sim::ToRenderScalar(dice.rotation) + 24.0F +
-                                sim::ToRenderScalar(dice.vel.x.abs()) * 8.0F)
+        dice.rotation = ToFxScalar(
+            WrapRotationDegrees(ToFloat(dice.rotation) + 24.0F +
+                                ToFloat(dice.vel.x.abs()) * 8.0F)
         );
         return;
     }

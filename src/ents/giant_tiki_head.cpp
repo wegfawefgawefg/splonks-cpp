@@ -146,7 +146,7 @@ void StepEntLogicAsGiantTikiHead(
         }
 
         head.ai_state = EntAiState::Disturbed;
-        head.counter_a = sim::ToSimScalar(kBoulderReleaseDelayFrames);
+        head.counter_a = ToFxScalar(kBoulderReleaseDelayFrames);
         SetAnim(head, HashAFrameIdConstexpr("giant_tiki_head_hole"));
         (void)PlayAttachedSoundEmitter(
             state,

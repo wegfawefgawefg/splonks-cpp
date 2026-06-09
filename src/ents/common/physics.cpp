@@ -272,7 +272,7 @@ float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
             continue;
         }
 
-        const float other_friction = sim::ToRenderScalar(other->support_ground_friction);
+        const float other_friction = ToFloat(other->support_ground_friction);
         friction = found_support_surface ? std::min(friction, other_friction) : other_friction;
         found_support_surface = true;
     }
@@ -552,7 +552,7 @@ void MoveEntPixelStep(
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Horizontal,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = sim::ToRenderScalar(ent.vel.x),
+                    .impact_velocity = ToFloat(ent.vel.x),
                     .direction = 1,
                     .mover_vid = ent.vid,
                 };
@@ -643,7 +643,7 @@ void MoveEntPixelStep(
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Horizontal,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = sim::ToRenderScalar(ent.vel.x),
+                    .impact_velocity = ToFloat(ent.vel.x),
                     .direction = -1,
                     .mover_vid = ent.vid,
                 };
@@ -742,7 +742,7 @@ void MoveEntPixelStep(
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Vertical,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = sim::ToRenderScalar(ent.vel.y),
+                    .impact_velocity = ToFloat(ent.vel.y),
                     .direction = 1,
                     .mover_vid = ent.vid,
                 };
@@ -842,7 +842,7 @@ void MoveEntPixelStep(
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Vertical,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = sim::ToRenderScalar(ent.vel.y),
+                    .impact_velocity = ToFloat(ent.vel.y),
                     .direction = -1,
                     .mover_vid = ent.vid,
                 };
@@ -962,13 +962,13 @@ void ApplyGravity(std::size_t ent_idx, State& state, float dt) {
     const float gravity_scale =
         GetModifiedEffectValue(ent, EffectModifierTarget::GravityScale, 1.0F, &state);
     if (gravity_scale != 0.0F) {
-        ent.acc.y += state.stage.gravity * sim::ToSimScalar(gravity_scale);
+        ent.acc.y += state.stage.gravity * ToFxScalar(gravity_scale);
     }
     const float buoyancy_strength =
         GetModifiedEffectValue(ent, EffectModifierTarget::BuoyancyStrength, 0.0F, &state);
-    const float buoyancy = sim::ToRenderScalar(ent.buoyancy);
+    const float buoyancy = ToFloat(ent.buoyancy);
     if (buoyancy > 0.0F && buoyancy_strength > 0.0F) {
-        ent.acc.y -= state.stage.gravity * ent.buoyancy * sim::ToSimScalar(buoyancy_strength);
+        ent.acc.y -= state.stage.gravity * ent.buoyancy * ToFxScalar(buoyancy_strength);
     }
 }
 
@@ -977,17 +977,17 @@ void ApplyEffectVelocityModifiers(Ent& ent, const State& state) {
         GetModifiedEffectValue(ent, EffectModifierTarget::VelocityDampingX, 1.0F, &state);
     const float damping_y =
         GetModifiedEffectValue(ent, EffectModifierTarget::VelocityDampingY, 1.0F, &state);
-    ent.vel.x *= sim::ToSimScalar(std::clamp(damping_x, 0.0F, 1.0F));
-    ent.vel.y *= sim::ToSimScalar(std::clamp(damping_y, 0.0F, 1.0F));
+    ent.vel.x *= ToFxScalar(std::clamp(damping_x, 0.0F, 1.0F));
+    ent.vel.y *= ToFxScalar(std::clamp(damping_y, 0.0F, 1.0F));
 
     const float max_fall_speed =
         GetModifiedEffectValue(
             ent,
             EffectModifierTarget::MaxFallSpeed,
-            sim::ToRenderScalar(ent.max_speed),
+            ToFloat(ent.max_speed),
             &state
         );
-    ent.vel.y = std::min(ent.vel.y, sim::ToSimScalar(max_fall_speed));
+    ent.vel.y = std::min(ent.vel.y, ToFxScalar(max_fall_speed));
 }
 
 void PostPartialEulerStep(std::size_t ent_idx, State& state, float dt) {
@@ -1015,7 +1015,7 @@ void ApplyGroundFriction(std::size_t ent_idx, State& state, float friction_scale
     Ent& ent = state.ents.ents[ent_idx];
     ent.SetGrounded(state.stage);
     if (ent.grounded) {
-        ent.vel.x *= sim::ToSimScalar(std::clamp(
+        ent.vel.x *= ToFxScalar(std::clamp(
             GetGroundFrictionMultiplier(ent_idx, state) * friction_scale,
             0.0F,
             1.0F

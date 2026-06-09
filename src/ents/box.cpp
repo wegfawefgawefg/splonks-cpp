@@ -36,7 +36,7 @@ EntType RandomTeleporterVariant(State& state) {
 
 void StepControlledBox(Ent& box, const controls::ControlIntent& control) {
     const sim::Scalar move_acc =
-        sim::ToSimScalar(box.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
+        ToFxScalar(box.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
     if (box.attack_delay_countdown > 0) {
         box.attack_delay_countdown -= 1;
     }
@@ -50,13 +50,13 @@ void StepControlledBox(Ent& box, const controls::ControlIntent& control) {
     }
 
     if (control.jump_pressed && box.grounded) {
-        box.vel.y = -sim::ToSimScalar(kControlledJumpVel);
+        box.vel.y = -ToFxScalar(kControlledJumpVel);
         box.grounded = false;
     }
 
     if (control.attack_pressed && box.grounded && box.attack_delay_countdown == 0) {
-        box.vel.x = box.facing == Side::Left ? -sim::ToSimScalar(kControlledSlideVel)
-                                             : sim::ToSimScalar(kControlledSlideVel);
+        box.vel.x = box.facing == Side::Left ? -ToFxScalar(kControlledSlideVel)
+                                             : ToFxScalar(kControlledSlideVel);
         box.attack_delay_countdown = kControlledSlideCooldownFrames;
     }
 }
@@ -131,7 +131,7 @@ extern const EntSpec kBoxSpec{
     .can_be_stomped = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
-    .buoyancy = sim::ToSimScalar(1.0F),
+    .buoyancy = ToFxScalar(1.0F),
     .draw_layer = DrawLayer::Foreground,
     .facing = Side::Left,
     .condition = EntCondition::Normal,
@@ -168,7 +168,7 @@ void OnDeathAsBox(std::size_t ent_idx, State& state, Audio& audio) {
     const Ent& box = state.ents.ents[ent_idx];
 
     const FVec2 spawn_pos = box.GetRenderPos();
-    SpawnBreakawayContainerShards(sim::ToRenderVec2(box.GetSimCenter()), state);
+    SpawnBreakawayContainerShards(ToFVec2(box.GetSimCenter()), state);
 
     // Matches ClassicHD's actual open-crate roll order, with unimplemented Shotgun
     // intentionally substituted by Pistol for now. HD/2 use the same common

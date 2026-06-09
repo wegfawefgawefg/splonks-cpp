@@ -332,7 +332,7 @@ std::vector<LiveLightSource> BuildLiveLightSources(State& state) {
     }
 
     for (const Ent& light_ent : state.ents.ents) {
-        const float light_strength = sim::ToRenderScalar(light_ent.light_strength);
+        const float light_strength = ToFloat(light_ent.light_strength);
         if (!light_ent.active || !light_ent.render_enabled ||
             light_ent.condition == EntCondition::Dead ||
             light_strength <= 0.0F || light_ent.light_radius <= 0) {
@@ -342,7 +342,7 @@ std::vector<LiveLightSource> BuildLiveLightSources(State& state) {
             .world_pos = light_ent.GetRenderCenter(),
             .radius = light_ent.light_radius,
             .source = light_strength,
-            .color = sim::ToRenderColor3(light_ent.light_color),
+            .color = ToFColor3(light_ent.light_color),
         });
     }
 

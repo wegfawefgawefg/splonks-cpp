@@ -171,7 +171,7 @@ void BreakStageTilesInRectWc(
         audio,
         override_break_sound,
         suppress_tile_break_sound,
-        sim::ToRenderVec2(area.center()),
+        ToFVec2(area.center()),
         suppress_drop_spawns
     );
 }

@@ -346,8 +346,8 @@ void SpawnTelefragPhaseParticle(
     particle.size = FVec2::New(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h)
-    ) * sim::ToRenderScalar(ent.aframe_animator.scale);
-    particle.rot = sim::ToRenderScalar(ent.rotation);
+    ) * ToFloat(ent.aframe_animator.scale);
+    particle.rot = ToFloat(ent.rotation);
     particle.alpha = 0.85F;
     particle.tint_r = tint_r;
     particle.tint_g = tint_g;
@@ -535,7 +535,7 @@ void AddTeleporterDebugAnnotations(
         }
 
         state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-            .world_pos = sim::ToRenderVec2(candidate.destination_center),
+            .world_pos = ToFVec2(candidate.destination_center),
             .text = text,
             .color = color,
         });
@@ -583,7 +583,7 @@ void OnUseAsTeleporter(std::size_t ent_idx, State& state, Graphics& graphics, Au
         ents::common::GetVisualCenterForEnt(*holder, graphics, holder->GetSimCenter());
     AddEntShake(*holder, 0.5F);
     AddEntShake(teleporter, 0.5F);
-    ApplyTeleportAreaShake(state, sim::ToRenderVec2(source_center), 8.0F, 8.0F, 1.0F, 1.5F);
+    ApplyTeleportAreaShake(state, ToFVec2(source_center), 8.0F, 8.0F, 1.0F, 1.5F);
     SpawnTelefragSplitEffect(*holder, graphics, aim.direction, state);
     SpawnTelefragSplitEffect(teleporter, graphics, aim.direction, state);
 
@@ -594,7 +594,7 @@ void OnUseAsTeleporter(std::size_t ent_idx, State& state, Graphics& graphics, Au
             AddEntShake(teleporter, 0.5F);
             ApplyTeleportAreaShake(
                 state,
-                sim::ToRenderVec2(blocked->destination_center),
+                ToFVec2(blocked->destination_center),
                 8.0F,
                 8.0F,
                 1.0F,
@@ -617,7 +617,7 @@ void OnUseAsTeleporter(std::size_t ent_idx, State& state, Graphics& graphics, Au
     AddEntShake(teleporter, 0.5F);
     ApplyTeleportAreaShake(
         state,
-        sim::ToRenderVec2(chosen->destination_center),
+        ToFVec2(chosen->destination_center),
         8.0F,
         8.0F,
         1.0F,

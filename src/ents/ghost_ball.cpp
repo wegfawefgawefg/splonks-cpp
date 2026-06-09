@@ -60,7 +60,7 @@ void StepEntLogicAsGhostBall(
         }
     }
     ghost_ball.acc = sim::NormalizeOrZero(target_position - ghost_ball.pos) *
-                     sim::ToSimScalar(kChaseSpeed);
+                     ToFxScalar(kChaseSpeed);
 }
 
 /** generalize this to all square or rectangular ents somehow */

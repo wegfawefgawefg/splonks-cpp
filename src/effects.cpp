@@ -220,9 +220,9 @@ float GetModifiedEffectValue(
     float base_value,
     const State* state
 ) {
-    sim::Scalar value = sim::ToSimScalar(base_value);
+    sim::Scalar value = ToFxScalar(base_value);
     if (ent.effects.get() == nullptr) {
-        return sim::ToRenderScalar(value);
+        return ToFloat(value);
     }
     for (std::size_t effect_index = 0; effect_index < ent.effects->count; ++effect_index) {
         const EffectInstance& effect = ent.effects->effects[effect_index];
@@ -233,7 +233,7 @@ float GetModifiedEffectValue(
             }
         }
     }
-    return sim::ToRenderScalar(value);
+    return ToFloat(value);
 }
 
 void ApplyEffectHookToEnt(Ent& ent, State& state, Audio* audio, const EffectHookContext& hook) {

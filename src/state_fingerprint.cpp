@@ -108,7 +108,7 @@ struct FingerprintWriter {
     }
 
     void AddQuantizedFloat(float value_) {
-        AddFixedScalar(sim::ToSimScalar(value_));
+        AddFixedScalar(ToFxScalar(value_));
     }
 
     void AddString(const std::string& text) {
@@ -117,7 +117,7 @@ struct FingerprintWriter {
     }
 
     void AddVec2(const FVec2& vec) {
-        const sim::FxVec2 fixed = sim::ToSimVec2(vec);
+        const sim::FxVec2 fixed = ToFxVec2(vec);
         AddFixedScalar(fixed.x);
         AddFixedScalar(fixed.y);
     }

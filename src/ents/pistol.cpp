@@ -107,7 +107,7 @@ void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio
     const std::optional<VID> owner_vid = pistol.held_by_vid.has_value() ? pistol.held_by_vid
                                                                         : pistol.use_state.user_vid;
 
-    const FVec2 render_muzzle_pos = sim::ToRenderVec2(muzzle_pos);
+    const FVec2 render_muzzle_pos = ToFVec2(muzzle_pos);
     (void)PlayWorldSoundEmitter(state, render_muzzle_pos, audio_asset_ids::PistolShoot);
     const Color3 muzzle_light_color = Color3::New(1.0F, 0.72F, 0.34F);
     AddTransientLight(state, render_muzzle_pos, 1.4F, muzzle_light_color, 5, 4);
@@ -165,7 +165,7 @@ void OnUseAsPistol(std::size_t ent_idx, State& state, Graphics& graphics, Audio&
         return;
     }
 
-    pistol.counter_a = sim::ToSimScalar(kPistolFireCooldownFrames);
+    pistol.counter_a = ToFxScalar(kPistolFireCooldownFrames);
     pistol.counter_b -= sim::Scalar::from_int(1);
     FirePistolShot(ent_idx, state, graphics, audio);
 

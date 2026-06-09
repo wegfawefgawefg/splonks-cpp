@@ -183,8 +183,8 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
             const FVec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
             const FVec2 gravity =
                 (mouse_world - StageCenterWorld(state.stage)) / kGravityPickerScalePx;
-            state.settings.fluid.gravity_x = sim::ToSimScalar(std::clamp(gravity.x, -4.0F, 4.0F));
-            state.settings.fluid.gravity_y = sim::ToSimScalar(std::clamp(gravity.y, -4.0F, 4.0F));
+            state.settings.fluid.gravity_x = ToFxScalar(std::clamp(gravity.x, -4.0F, 4.0F));
+            state.settings.fluid.gravity_y = ToFxScalar(std::clamp(gravity.y, -4.0F, 4.0F));
         }
         return;
     }
@@ -215,7 +215,7 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
             if (brush.mode == DebugFluidBrushState::Mode::PermanentGravity) {
                 if (paint_water) {
                     state.stage.SetFluidGravityOverride(
-                        wrapped, sim::ToSimVec2(brush.paint_gravity_x, brush.paint_gravity_y));
+                        wrapped, ToFxVec2(brush.paint_gravity_x, brush.paint_gravity_y));
                 } else if (erase_fluid) {
                     state.stage.ClearFluidGravityOverride(wrapped);
                 }
@@ -225,7 +225,7 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
                 if (paint_water) {
                     state.stage.AddFluidTempGravity(
                         wrapped,
-                        sim::ToSimVec2(
+                        ToFxVec2(
                             brush.paint_gravity_x * falloff,
                             brush.paint_gravity_y * falloff));
                 } else if (erase_fluid) {

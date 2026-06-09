@@ -346,7 +346,7 @@ void SyncRenderRotation(State& state, Graphics& graphics) {
     const float denom = static_cast<float>(std::max(1, state.stage_rotation.duration_frames));
     const float t = static_cast<float>(state.stage_rotation.elapsed_frames) / denom;
     graphics.world_rotation_active = true;
-    graphics.world_rotation_pivot = sim::ToRenderVec2(state.stage_rotation.pivot);
+    graphics.world_rotation_pivot = ToFVec2(state.stage_rotation.pivot);
     graphics.world_rotation_degrees =
         static_cast<float>(state.stage_rotation.quarter_turns * 90) * Smoothstep(t);
 }

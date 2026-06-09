@@ -121,7 +121,7 @@ void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio
         }
     }
     if (refill_fuel) {
-        jetpack.counter_a = sim::ToSimScalar(kFuel);
+        jetpack.counter_a = ToFxScalar(kFuel);
     }
     if (jetpack.counter_a <= sim::Scalar::zero()) {
         return;
@@ -129,9 +129,9 @@ void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio
 
     if (held_by_vid.has_value()) {
         if (Ent* const holder = state.ents.GetEntMut(*held_by_vid)) {
-            const sim::Scalar jetpack_max_upspeed = sim::ToSimScalar(-2.0F);
+            const sim::Scalar jetpack_max_upspeed = ToFxScalar(-2.0F);
             if (holder->vel.y > jetpack_max_upspeed) {
-                holder->acc.y = sim::ToSimScalar(-0.6F);
+                holder->acc.y = ToFxScalar(-0.6F);
                 holder->vel.y = std::min(holder->vel.y, jetpack_max_upspeed);
             }
             if (!holder->IsHanging()) {

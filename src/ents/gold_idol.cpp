@@ -60,18 +60,18 @@ std::optional<VID> GetRewardTargetVid(const Ent& idol, const State& state) {
 
 FVec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& state, const Ent& idol) {
     if (!target_vid.has_value()) {
-        return sim::ToRenderVec2(idol.GetSimCenter());
+        return ToFVec2(idol.GetSimCenter());
     }
 
     const Ent* const target = state.ents.GetEnt(*target_vid);
     if (target == nullptr || !target->active) {
-        return sim::ToRenderVec2(idol.GetSimCenter());
+        return ToFVec2(idol.GetSimCenter());
     }
 
     const sim::FxAABB target_aabb = target->GetSimAABB();
-    return sim::ToRenderVec2(sim::FxVec2{
+    return ToFVec2(sim::FxVec2{
         target_aabb.center().x,
-        target_aabb.tl.y + target->size.y * sim::ToSimScalar(kRewardParticleYOffsetFactor),
+        target_aabb.tl.y + target->size.y * ToFxScalar(kRewardParticleYOffsetFactor),
     });
 }
 

@@ -34,21 +34,21 @@ void StepControlledPot(Ent& pot, const controls::ControlIntent& control) {
     }
 
     if (control.left && !control.right) {
-        pot.acc.x -= sim::ToSimScalar(pot.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
+        pot.acc.x -= ToFxScalar(pot.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
         pot.facing = Side::Left;
     } else if (control.right && !control.left) {
-        pot.acc.x += sim::ToSimScalar(pot.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
+        pot.acc.x += ToFxScalar(pot.grounded ? kControlledMoveAcc : kControlledAirMoveAcc);
         pot.facing = Side::Right;
     }
 
     if (control.jump_pressed && pot.grounded) {
-        pot.vel.y = -sim::ToSimScalar(kControlledJumpVel);
+        pot.vel.y = -ToFxScalar(kControlledJumpVel);
         pot.grounded = false;
     }
 
     if (control.attack_pressed && pot.grounded && pot.attack_delay_countdown == 0) {
-        pot.vel.x = pot.facing == Side::Left ? -sim::ToSimScalar(kControlledSlideVel)
-                                             : sim::ToSimScalar(kControlledSlideVel);
+        pot.vel.x = pot.facing == Side::Left ? -ToFxScalar(kControlledSlideVel)
+                                             : ToFxScalar(kControlledSlideVel);
         pot.attack_delay_countdown = kControlledSlideCooldownFrames;
     }
 }
@@ -123,7 +123,7 @@ extern const EntSpec kPotSpec{
     .can_be_stomped = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
-    .buoyancy = sim::ToSimScalar(0.35F),
+    .buoyancy = ToFxScalar(0.35F),
     .draw_layer = DrawLayer::Foreground,
     .facing = Side::Left,
     .condition = EntCondition::Normal,
@@ -159,7 +159,7 @@ void OnDeathAsPot(std::size_t ent_idx, State& state, Audio& audio) {
     const Ent& pot = state.ents.ents[ent_idx];
 
     const sim::FxVec2 spawn_pos = pot.pos;
-    SpawnBreakawayContainerShards(sim::ToRenderVec2(pot.GetSimCenter()), state);
+    SpawnBreakawayContainerShards(ToFVec2(pot.GetSimCenter()), state);
     const sim::FxVec2 spider_spawn_pos = pot.pos + sim::PixelVec2(-8, -8);
 
     sim::FxVec2 snake_spawn_pos = pot.pos + sim::PixelVec2(-8, -8);

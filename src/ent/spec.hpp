@@ -40,14 +40,14 @@ struct EntSpec {
     bool stun_recovers_on_ground = true;
     bool stun_recovers_while_held = true;
     bool affected_by_ground_friction = true;
-    sim::Scalar support_ground_friction = sim::ToSimScalar(0.85F);
+    sim::Scalar support_ground_friction = ToFxScalar(0.85F);
     sim::Scalar push_acc = sim::Scalar::zero();
     sim::Scalar throw_velocity_scale = sim::Scalar::from_int(1);
     sim::Scalar buoyancy = sim::Scalar::zero();
     sim::Scalar alpha = sim::Scalar::from_int(1);
     sim::Scalar self_light = sim::Scalar::zero();
     sim::Scalar light_strength = sim::Scalar::zero();
-    sim::Color3 light_color = sim::ToSimColor3(Color3::White());
+    sim::Color3 light_color = ToFxColor3(Color3::White());
     int light_radius = 0;
     bool preserve_held_aim = false;
     bool predict_local_attach_use = false;
@@ -92,15 +92,15 @@ struct EntSpec {
 };
 
 inline sim::FxVec2 EntSpecSize(float width, float height) {
-    return sim::ToSimVec2(FVec2::New(width, height));
+    return ToFxVec2(FVec2::New(width, height));
 }
 
 inline sim::FxVec2 EntSpecSize(const FVec2& size) {
-    return sim::ToSimVec2(size);
+    return ToFxVec2(size);
 }
 
 inline sim::Scalar EntSpecCounter(float value) {
-    return sim::ToSimScalar(value);
+    return ToFxScalar(value);
 }
 
 const EntSpec& GetEntSpec(EntType type_);

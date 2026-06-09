@@ -20,8 +20,8 @@ constexpr int kWaitFrames = 100;
 constexpr float kImpactShake = 0.45F;
 constexpr float kImpactTileShake = 0.36F;
 constexpr float kImpactShakeRadiusTiles = 1.2F;
-const sim::Scalar kSimTriggerDistance = sim::ToSimScalar(kTriggerDistance);
-const sim::Scalar kSimTriggerHalfWidth = sim::ToSimScalar(kTriggerHalfWidth);
+const sim::Scalar kSimTriggerDistance = ToFxScalar(kTriggerDistance);
+const sim::Scalar kSimTriggerHalfWidth = ToFxScalar(kTriggerHalfWidth);
 
 bool HasHomePosition(const Ent& thwomp) {
     return thwomp.point_label_a == PointLabel::Target;
@@ -96,7 +96,7 @@ void StartWait(Ent& thwomp, State& state) {
 
 void StartReturn(Ent& thwomp) {
     thwomp.ai_state = EntAiState::Returning;
-    thwomp.vel = sim::FxVec2{sim::Scalar::zero(), sim::ToSimScalar(kReturnVelocity)};
+    thwomp.vel = sim::FxVec2{sim::Scalar::zero(), ToFxScalar(kReturnVelocity)};
     thwomp.acc = sim::FxVec2::zero();
 }
 
@@ -176,16 +176,16 @@ void StepEntPhysicsAsThwompTrap(
     const sim::Scalar pre_vel_y = thwomp.vel.y;
 
     if (IsDropping(thwomp)) {
-        thwomp.acc.y += sim::ToSimScalar(kDropGravity);
+        thwomp.acc.y += ToFxScalar(kDropGravity);
     } else {
-        thwomp.vel = sim::FxVec2{sim::Scalar::zero(), sim::ToSimScalar(kReturnVelocity)};
+        thwomp.vel = sim::FxVec2{sim::Scalar::zero(), ToFxScalar(kReturnVelocity)};
         thwomp.acc = sim::FxVec2::zero();
     }
 
     common::PrePartialEulerStep(ent_idx, state, dt);
     if (IsDropping(thwomp)) {
         thwomp.vel.y = gfxp::clamp(thwomp.vel.y, sim::Scalar::zero(),
-                                   sim::ToSimScalar(kDropMaxVelocity));
+                                   ToFxScalar(kDropMaxVelocity));
     }
     common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     common::PostPartialEulerStep(ent_idx, state, dt);

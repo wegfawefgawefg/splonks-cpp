@@ -29,7 +29,7 @@ float GetTileShakeFromGrid(const std::vector<std::vector<sim::Scalar>>& grid,
     if (x >= row.size()) {
         return 0.0F;
     }
-    return sim::ToRenderScalar(row[static_cast<std::size_t>(x)]);
+    return ToFloat(row[static_cast<std::size_t>(x)]);
 }
 
 bool EmbeddedTreasureCoordExists(
@@ -112,7 +112,7 @@ float Stage::GetFluidAmount(std::uint32_t x, std::uint32_t y) const {
     if (x >= row.size()) {
         return 0.0F;
     }
-    return sim::ToRenderScalar(row[static_cast<std::size_t>(x)]);
+    return ToFloat(row[static_cast<std::size_t>(x)]);
 }
 
 float Stage::GetTileShake(std::uint32_t x, std::uint32_t y) const {

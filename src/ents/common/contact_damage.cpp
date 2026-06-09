@@ -26,7 +26,7 @@ bool HasContactHarmAlignment(const Ent& source, const Ent& target) {
 
 bool CanApplyProjContact(const Ent& ent) {
     return ent.can_apply_proj_contact && ent.proj_contact_timer > 0 &&
-           gfxp::length_sq(ent.vel) >= sim::ToSimScalar(kProjContactMinVelocitySq);
+           gfxp::length_sq(ent.vel) >= ToFxScalar(kProjContactMinVelocitySq);
 }
 
 void ApplyTileOverlapEffects(std::size_t ent_idx, State& state) {
@@ -59,7 +59,7 @@ void ApplyTileOverlapEffects(std::size_t ent_idx, State& state) {
         if (state.stage.GetFluidAmount(
                 static_cast<unsigned int>(tile_query.tile_pos.x),
                 static_cast<unsigned int>(tile_query.tile_pos.y)
-            ) < sim::ToRenderScalar(state.settings.fluid.render_cutoff_amount)) {
+            ) < ToFloat(state.settings.fluid.render_cutoff_amount)) {
             continue;
         }
         const TileSpec& fluid_spec = GetTileSpec(fluid_tile);
@@ -129,7 +129,7 @@ bool HasAuthoredTileCbox(const TileContactData& tile_contact_data) {
 }
 
 bool EntIsMovingIntoSpike(const Ent& ent, TileRotation spike_rotation) {
-    const sim::Scalar min_spike_impact_speed = sim::ToSimScalar(0.01F);
+    const sim::Scalar min_spike_impact_speed = ToFxScalar(0.01F);
     switch (spike_rotation) {
     case kTileRotation90:
         return ent.vel.x < -min_spike_impact_speed;
@@ -159,7 +159,7 @@ KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, co
 KnockbackSpec BuildProjContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
     (void)target;
     (void)stage;
-    const sim::FxVec2 velocity = source.vel * sim::ToSimScalar(kProjContactVelocityScale);
+    const sim::FxVec2 velocity = source.vel * ToFxScalar(kProjContactVelocityScale);
 
     return KnockbackSpec{
         .velocity = velocity,
@@ -290,7 +290,7 @@ void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Au
         const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
         const int ent_bottom_y = ent_aabb.br.y.to_pixels_trunc();
         const bool override_tile_portion_check =
-            gfxp::length_sq(ent.vel) > sim::ToSimScalar(kSpikeOverrideVelocitySq);
+            gfxp::length_sq(ent.vel) > ToFxScalar(kSpikeOverrideVelocitySq);
         const bool in_top_portion_of_tile = (ent_bottom_y % static_cast<int>(kTileSize)) < 4;
         for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent_aabb)) {
             if (tile_query.tile == nullptr || *tile_query.tile != Tile::Spikes) {

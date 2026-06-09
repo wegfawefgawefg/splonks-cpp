@@ -66,18 +66,18 @@ void SpawnRescueKissParticle(const FVec2& pos, State& state) {
 
 FVec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, const Ent& damsel) {
     if (!target_vid.has_value()) {
-        return sim::ToRenderVec2(damsel.GetSimCenter());
+        return ToFVec2(damsel.GetSimCenter());
     }
 
     const Ent* const target = state.ents.GetEnt(*target_vid);
     if (target == nullptr || !target->active) {
-        return sim::ToRenderVec2(damsel.GetSimCenter());
+        return ToFVec2(damsel.GetSimCenter());
     }
 
     const sim::FxAABB target_aabb = target->GetSimAABB();
-    return sim::ToRenderVec2(sim::FxVec2{
+    return ToFVec2(sim::FxVec2{
         target_aabb.center().x,
-        target_aabb.tl.y + target->size.y * sim::ToSimScalar(kRescueKissYOffsetFactor),
+        target_aabb.tl.y + target->size.y * ToFxScalar(kRescueKissYOffsetFactor),
     });
 }
 
@@ -243,7 +243,7 @@ void UpdateDamselAnim(Ent& damsel) {
     }
 
     const bool walking = damsel.grounded &&
-                         damsel.vel.x.abs() >= sim::ToSimScalar(kDamselWalkMinSpeed);
+                         damsel.vel.x.abs() >= ToFxScalar(kDamselWalkMinSpeed);
     TrySetAnim(damsel, walking ? EntDisplayState::Walk : EntDisplayState::Neutral);
 }
 
@@ -307,7 +307,7 @@ void StepEntLogicAsDamsel(
 
     RefreshCarryStunWhileHeld(damsel);
     if (damsel.held_by_vid.has_value()) {
-        damsel.counter_a = sim::ToSimScalar(kDamselHeldReleaseLatch);
+        damsel.counter_a = ToFxScalar(kDamselHeldReleaseLatch);
         damsel.ai_state = EntAiState::Idle;
         return;
     }

@@ -73,7 +73,7 @@ int PositiveModulo(int value, int divisor) {
 bool IsIcyPlatform(const Ent& platform) {
     return platform.impassable &&
            !platform.can_be_hung_on &&
-           platform.support_ground_friction >= sim::ToSimScalar(kIcyPlatformFriction);
+           platform.support_ground_friction >= ToFxScalar(kIcyPlatformFriction);
 }
 
 void SpawnIcyPlatformParticles(const Ent& platform, State& state) {
@@ -85,7 +85,7 @@ void SpawnIcyPlatformParticles(const Ent& platform, State& state) {
     shard.aframe_animator = AFrameAnimator::New(aframe_ids::IceBlock);
     shard.draw_layer = DrawLayer::Foreground;
     shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(12, 20));
-    shard.pos = sim::ToRenderVec2(platform.GetSimCenter()) + FVec2::New(
+    shard.pos = ToFVec2(platform.GetSimCenter()) + FVec2::New(
         rng::RandomFloat(-4.0F, 4.0F),
         rng::RandomFloat(-2.0F, 2.0F)
     );
@@ -119,7 +119,7 @@ void StepHorizontalPingPong(Ent& platform) {
         platform.counter_b = sim::Scalar::from_int(1);
     }
 
-    platform.vel = sim::FxVec2{platform.counter_b * sim::ToSimScalar(kPlatformSpeed),
+    platform.vel = sim::FxVec2{platform.counter_b * ToFxScalar(kPlatformSpeed),
                              sim::Scalar::zero()};
 }
 
@@ -139,7 +139,7 @@ void StepVerticalPingPong(Ent& platform) {
     }
 
     platform.vel = sim::FxVec2{sim::Scalar::zero(),
-                             platform.counter_b * sim::ToSimScalar(kPlatformSpeed)};
+                             platform.counter_b * ToFxScalar(kPlatformSpeed)};
 }
 
 void StepCircle(Ent& platform) {

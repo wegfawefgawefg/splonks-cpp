@@ -345,7 +345,7 @@ IVec2 GetMoveDirection(const Ent& block) {
 }
 
 sim::FxVec2 GetMoveVelocity(const IVec2& direction) {
-    const sim::Scalar speed = sim::ToSimScalar(kMoveSpeed);
+    const sim::Scalar speed = ToFxScalar(kMoveSpeed);
     return sim::FxVec2{
         sim::Scalar::from_int(direction.x) * speed,
         sim::Scalar::from_int(direction.y) * speed
@@ -381,10 +381,10 @@ void StartWindup(Ent& block, std::uint32_t direction_idx, State& state) {
     const IVec2 tile_dir = kDirections[static_cast<std::size_t>(direction_idx)].tile_dir;
     StoreMoveDirection(block, tile_dir);
     block.ai_state = EntAiState::Pursuing;
-    block.counter_b = sim::ToSimScalar(kWindupFrames);
+    block.counter_b = ToFxScalar(kWindupFrames);
     block.vel = sim::FxVec2::zero();
     block.acc = sim::FxVec2::zero();
-    block.shake = std::max(block.shake, sim::ToSimScalar(kWindupShake));
+    block.shake = std::max(block.shake, ToFxScalar(kWindupShake));
     block.aframe_animator.PlayLoop(aframe_ids::SquisherBlock);
     (void)PlayEntCenterSoundEmitter(state, block, audio_asset_ids::BoulderLatch);
 }
@@ -394,7 +394,7 @@ void StartMove(Ent& block) {
     block.ai_state = EntAiState::Disturbed;
     block.vel = GetMoveVelocity(tile_dir);
     block.acc = sim::FxVec2::zero();
-    block.shake = std::max(block.shake, sim::ToSimScalar(kStartShake));
+    block.shake = std::max(block.shake, ToFxScalar(kStartShake));
 }
 
 void StopMove(Ent& block, State& state) {
@@ -404,11 +404,11 @@ void StopMove(Ent& block, State& state) {
         block.counter_a = sim::Scalar::zero();
     } else {
         block.ai_state = EntAiState::Returning;
-        block.counter_a = sim::ToSimScalar(kAfterImpactCooldownFrames);
+        block.counter_a = ToFxScalar(kAfterImpactCooldownFrames);
     }
     block.vel = sim::FxVec2::zero();
     block.acc = sim::FxVec2::zero();
-    block.shake = std::max(block.shake, sim::ToSimScalar(kImpactShake));
+    block.shake = std::max(block.shake, ToFxScalar(kImpactShake));
     InvalidateOpenSensorCache(block);
     ShowSleepingFrame(block);
     AddShake(
@@ -471,7 +471,7 @@ void StepEntLogicAsTrapBlock(
         ShowAwakeAnim(block);
         block.vel = sim::FxVec2::zero();
         block.acc = sim::FxVec2::zero();
-        block.shake = std::max(block.shake, sim::ToSimScalar(kWindupShake));
+        block.shake = std::max(block.shake, ToFxScalar(kWindupShake));
         block.counter_b -= sim::Scalar::from_int(1);
         if (block.counter_b <= sim::Scalar::zero()) {
             StartMove(block);

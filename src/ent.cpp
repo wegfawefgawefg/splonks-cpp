@@ -56,14 +56,14 @@ Ent Ent::New() {
     ent.pos = sim::FxVec2::zero();
     ent.vel = sim::FxVec2::zero();
     ent.acc = sim::FxVec2::zero();
-    ent.max_speed = sim::ToSimScalar(7.0F);
+    ent.max_speed = ToFxScalar(7.0F);
     ent.jump_hold_gravity_frames_remaining = 0;
     ent.throw_velocity_scale = sim::Scalar::from_int(1);
     ent.buoyancy = sim::Scalar::zero();
     ent.size = sim::FxVec2::from_pixels(8, 8);
     ent.self_light = sim::Scalar::zero();
     ent.light_strength = sim::Scalar::zero();
-    ent.light_color = sim::ToSimColor3(Color3::White());
+    ent.light_color = ToFxColor3(Color3::White());
     ent.light_radius = 0;
     ent.dist_traveled_this_frame = sim::Scalar::zero();
     ent.facing = Side::Left;
@@ -99,7 +99,7 @@ Ent Ent::New() {
     ent.hurt_on_contact = false;
     ent.vanish_on_death = false;
     ent.affected_by_ground_friction = true;
-    ent.support_ground_friction = sim::ToSimScalar(0.85F);
+    ent.support_ground_friction = ToFxScalar(0.85F);
     ent.push_acc = sim::Scalar::zero();
     ent.damage_anim.reset();
     ent.damage_sound.reset();
@@ -160,12 +160,12 @@ void Ent::Reset() {
 }
 
 void AddEntShake(Ent& ent, float amount) {
-    const sim::Scalar max_ent_shake = sim::ToSimScalar(8.0F);
-    ent.shake = std::clamp(ent.shake + sim::ToSimScalar(amount), sim::Scalar::zero(), max_ent_shake);
+    const sim::Scalar max_ent_shake = ToFxScalar(8.0F);
+    ent.shake = std::clamp(ent.shake + ToFxScalar(amount), sim::Scalar::zero(), max_ent_shake);
 }
 
 void AttenuateEntShake(Ent& ent, float amount) {
-    ent.shake = std::max(sim::Scalar::zero(), ent.shake - sim::ToSimScalar(amount));
+    ent.shake = std::max(sim::Scalar::zero(), ent.shake - ToFxScalar(amount));
 }
 
 void UseEnt(Ent& ent, std::optional<VID> user_vid, AttachMode source) {
@@ -246,27 +246,27 @@ void Ent::SetSimAcc(sim::FxVec2 value) {
 }
 
 FVec2 Ent::GetRenderPos() const {
-    return sim::ToRenderVec2(pos);
+    return ToFVec2(pos);
 }
 
 FVec2 Ent::GetRenderVel() const {
-    return sim::ToRenderVec2(vel);
+    return ToFVec2(vel);
 }
 
 FVec2 Ent::GetRenderAcc() const {
-    return sim::ToRenderVec2(acc);
+    return ToFVec2(acc);
 }
 
 void Ent::SetRenderPos(const FVec2& value) {
-    pos = sim::ToSimVec2(value);
+    pos = ToFxVec2(value);
 }
 
 void Ent::SetRenderVel(const FVec2& value) {
-    vel = sim::ToSimVec2(value);
+    vel = ToFxVec2(value);
 }
 
 void Ent::SetRenderAcc(const FVec2& value) {
-    acc = sim::ToSimVec2(value);
+    acc = ToFxVec2(value);
 }
 
 sim::FxAABB Ent::GetSimAABB() const {
@@ -290,13 +290,13 @@ sim::FxAABB Ent::GetSimFeet() const {
 
 sim::FxAABB Ent::GetSimGroundProbe() const {
     sim::FxAABB feet = GetSimFeet();
-    feet.br.y += sim::ToSimScalar(kGroundProbeFractionalEpsilon);
+    feet.br.y += ToFxScalar(kGroundProbeFractionalEpsilon);
     return feet;
 }
 
 std::tuple<FVec2, FVec2> Ent::GetRenderBounds() const {
     const sim::FxAABB bounds = GetSimAABB();
-    return {sim::ToRenderVec2(bounds.tl), sim::ToRenderVec2(bounds.br)};
+    return {ToFVec2(bounds.tl), ToFVec2(bounds.br)};
 }
 
 FAABB Ent::GetRenderAABB() const {
@@ -304,15 +304,15 @@ FAABB Ent::GetRenderAABB() const {
 }
 
 FVec2 Ent::GetRenderCenter() const {
-    return sim::ToRenderVec2(GetSimCenter());
+    return ToFVec2(GetSimCenter());
 }
 
 void Ent::SetRenderCenter(const FVec2& center) {
-    SetSimCenter(sim::ToSimVec2(center));
+    SetSimCenter(ToFxVec2(center));
 }
 
 FVec2 Ent::GetSize() const {
-    return sim::ToRenderVec2(size);
+    return ToFVec2(size);
 }
 
 void Ent::IncTravelSound() {
@@ -366,7 +366,7 @@ void Ent::SetGrounded(const Stage& stage) {
 }
 
 std::tuple<FVec2, FVec2> Ent::GetTlAndTrCorners() const {
-    return {GetRenderPos(), sim::ToRenderVec2(pos + sim::FxVec2{size.x, sim::Scalar::zero()})};
+    return {GetRenderPos(), ToFVec2(pos + sim::FxVec2{size.x, sim::Scalar::zero()})};
 }
 
 HangHands Ent::GetHangHands() const {

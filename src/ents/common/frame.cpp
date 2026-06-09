@@ -112,7 +112,7 @@ FVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const FVec
     const FVec2 sprite_world_size = FVec2::New(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h)
-    ) * sim::ToRenderScalar(ent.aframe_animator.scale);
+    ) * ToFloat(ent.aframe_animator.scale);
     return sprite_tl + (sprite_world_size * 0.5F);
 }
 

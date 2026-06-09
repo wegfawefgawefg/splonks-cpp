@@ -187,15 +187,15 @@ void ThrowSpawnedEnt(Ent& ent, const Ent& monkey) {
 
 sim::FxVec2 BuildMonkeyThrowLeft(const controls::ControlIntent&) {
     return sim::FxVec2{
-        sim::ToSimScalar(-kMonkeyItemThrowSpeedX),
-        sim::ToSimScalar(kMonkeyItemThrowSpeedY),
+        ToFxScalar(-kMonkeyItemThrowSpeedX),
+        ToFxScalar(kMonkeyItemThrowSpeedY),
     };
 }
 
 sim::FxVec2 BuildMonkeyThrowRight(const controls::ControlIntent&) {
     return sim::FxVec2{
-        sim::ToSimScalar(kMonkeyItemThrowSpeedX),
-        sim::ToSimScalar(kMonkeyItemThrowSpeedY),
+        ToFxScalar(kMonkeyItemThrowSpeedX),
+        ToFxScalar(kMonkeyItemThrowSpeedY),
     };
 }
 

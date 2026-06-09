@@ -38,10 +38,10 @@ struct IAABB {
 FVec2 GetMinDisplacement(const FAABB& aabb1, const FAABB& aabb2);
 bool AabbsIntersect(const FAABB& left, const FAABB& right);
 
-sim::FxAABB ToSimAABB(const FAABB& value, gfxp::Rounding rounding = gfxp::Rounding::Nearest);
+sim::FxAABB ToFxAABB(const FAABB& value, gfxp::Rounding rounding = gfxp::Rounding::Nearest);
 FAABB ToFAABB(const sim::FxAABB& value);
 IAABB ToIAABBFloorCeil(const sim::FxAABB& value);
-FVec2 ToRenderMinDisplacement(sim::FxAABB aabb1, sim::FxAABB aabb2);
+FVec2 ToFMinDisplacement(sim::FxAABB aabb1, sim::FxAABB aabb2);
 
 namespace rng {
 

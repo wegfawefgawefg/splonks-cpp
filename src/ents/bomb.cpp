@@ -20,7 +20,7 @@ constexpr int kLitBombLightRadius = 5;
 constexpr Color3 kLitBombLightColor = Color3::New(1.0F, 0.48F, 0.16F);
 
 bool IsStickyBomb(const Ent& bomb) {
-    return bomb.counter_b >= sim::ToSimScalar(0.5F);
+    return bomb.counter_b >= ToFxScalar(0.5F);
 }
 
 AFrameId GetBombIdleAnim(const Ent& bomb) {
@@ -62,33 +62,33 @@ void UpdateBombRotation(Ent& bomb) {
     if (bomb.held_by_vid.has_value() || bomb.attach_mode != AttachMode::None) {
         return;
     }
-    if (bomb.vel.x.abs() < sim::ToSimScalar(0.01F)) {
+    if (bomb.vel.x.abs() < ToFxScalar(0.01F)) {
         return;
     }
 
-    float rotation = sim::ToRenderScalar(bomb.rotation) +
-                     sim::ToRenderScalar(bomb.vel.x) * kBombRotationDegreesPerPixel;
+    float rotation = ToFloat(bomb.rotation) +
+                     ToFloat(bomb.vel.x) * kBombRotationDegreesPerPixel;
     while (rotation >= 360.0F) {
         rotation -= 360.0F;
     }
     while (rotation < 0.0F) {
         rotation += 360.0F;
     }
-    bomb.rotation = sim::ToSimScalar(rotation);
+    bomb.rotation = ToFxScalar(rotation);
 }
 
 void UpdateBombFuseLight(Ent& bomb) {
     if (bomb.counter_a <= sim::Scalar::zero()) {
         bomb.self_light = sim::Scalar::zero();
         bomb.light_strength = sim::Scalar::zero();
-        bomb.light_color = sim::ToSimColor3(Color3::White());
+        bomb.light_color = ToFxColor3(Color3::White());
         bomb.light_radius = 0;
         return;
     }
 
-    bomb.self_light = sim::ToSimScalar(kLitBombSelfLight);
-    bomb.light_strength = sim::ToSimScalar(kLitBombLightStrength);
-    bomb.light_color = sim::ToSimColor3(kLitBombLightColor);
+    bomb.self_light = ToFxScalar(kLitBombSelfLight);
+    bomb.light_strength = ToFxScalar(kLitBombLightStrength);
+    bomb.light_color = ToFxColor3(kLitBombLightColor);
     bomb.light_radius = kLitBombLightRadius;
 }
 

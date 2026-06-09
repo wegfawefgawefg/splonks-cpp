@@ -113,7 +113,7 @@ void StepHangSpider(
 
     const std::optional<sim::FxVec2> player_delta = GetPlayerDeltaBelow(hang_spider, state, drop_distance);
     const bool player_below =
-        player_delta.has_value() && player_delta->x.abs() < sim::ToSimScalar(drop_x_tolerance);
+        player_delta.has_value() && player_delta->x.abs() < ToFxScalar(drop_x_tolerance);
     const bool hurt_but_alive = convert_when_hurt && hang_spider.health < GetEntSpec(hang_spider.type_).health;
     if (hurt_but_alive || !HasCeilingSupport(hang_spider, state) || player_below) {
         ConvertHangEntToLiveSpider(ent_idx, state, live_type);

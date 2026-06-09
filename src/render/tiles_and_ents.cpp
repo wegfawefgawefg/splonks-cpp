@@ -361,7 +361,7 @@ std::array<SDL_FColor, 4> MakeFluidVertexColorsForWorldQuad(
                 LerpRenderColor(
                     Color3::White(),
                     sampled_brightness,
-                    std::clamp(sim::ToRenderScalar(fluid.lighting_strength), 0.0F, 2.0F)
+                    std::clamp(ToFloat(fluid.lighting_strength), 0.0F, 2.0F)
                 )
             );
         }
@@ -1117,13 +1117,13 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
     constexpr float kMinVisibleDisplayLevel = 0.0001F;
     const FluidSettings& fluid = state.settings.fluid;
     const float min_fluid_display_level =
-        std::clamp(sim::ToRenderScalar(fluid.render_cutoff_amount), 0.0F, 1.0F);
+        std::clamp(ToFloat(fluid.render_cutoff_amount), 0.0F, 1.0F);
     const float effective_display_cutoff =
         std::max(min_fluid_display_level, kMinVisibleDisplayLevel);
     const std::uint8_t body_alpha = static_cast<std::uint8_t>(
         std::clamp(
             static_cast<int>(std::round(
-                255.0F * std::clamp(sim::ToRenderScalar(fluid.water_alpha), 0.0F, 1.0F)
+                255.0F * std::clamp(ToFloat(fluid.water_alpha), 0.0F, 1.0F)
             )),
             0,
             255
@@ -1210,11 +1210,11 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             sim::Scalar& stored_display_amount =
                 state.stage.fluid_display_amount[static_cast<std::size_t>(y)]
                                                 [static_cast<std::size_t>(x)];
-            float display_amount = sim::ToRenderScalar(stored_display_amount);
+            float display_amount = ToFloat(stored_display_amount);
             if (!cell.has_liquid) {
                 if (fluid.temporal_smoothing_enabled) {
                     const float response = std::clamp(
-                        sim::ToRenderScalar(fluid.temporal_smoothing_response),
+                        ToFloat(fluid.temporal_smoothing_response),
                         0.0F,
                         1.0F
                     );
@@ -1244,7 +1244,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
 
                 cell.visible_tile = residual_visible_tile;
                 cell.visible_level = std::clamp(display_amount, 0.0F, 1.0F);
-                stored_display_amount = sim::ToSimScalar(cell.visible_level);
+                stored_display_amount = ToFxScalar(cell.visible_level);
                 cell.display_level = cell.visible_level;
                 cell.has_visible_liquid = true;
                 cell.render_candidate = true;
@@ -1254,7 +1254,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             cell.liquid_level = std::clamp(amount, 0.0F, 1.0F);
             if (fluid.temporal_smoothing_enabled) {
                 const float response = std::clamp(
-                    sim::ToRenderScalar(fluid.temporal_smoothing_response),
+                    ToFloat(fluid.temporal_smoothing_response),
                     0.0F,
                     1.0F
                 );
@@ -1263,7 +1263,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 display_amount = cell.liquid_level;
             }
             cell.visible_level = std::clamp(display_amount, 0.0F, 1.0F);
-            stored_display_amount = sim::ToSimScalar(cell.visible_level);
+            stored_display_amount = ToFxScalar(cell.visible_level);
             cell.display_level = cell.visible_level;
             cell.has_visible_liquid = true;
             cell.render_candidate = true;
@@ -1327,7 +1327,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         LerpRenderColor(
                             Color3::White(),
                             sampled_brightness,
-                            std::clamp(sim::ToRenderScalar(fluid.lighting_strength), 0.0F, 2.0F)
+                            std::clamp(ToFloat(fluid.lighting_strength), 0.0F, 2.0F)
                         )
                     );
                 }
@@ -1344,7 +1344,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         x >= state.stage.fluid_velocity[y].size()) {
                         return;
                     }
-                    const FVec2 velocity = sim::ToRenderVec2(state.stage.fluid_velocity[y][x]);
+                    const FVec2 velocity = ToFVec2(state.stage.fluid_velocity[y][x]);
                     const std::uint64_t flow_tick =
                         static_cast<std::uint64_t>(state.scene_frame) +
                         (static_cast<std::uint64_t>(x) * 29ULL) +

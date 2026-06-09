@@ -83,6 +83,8 @@ Progress:
   `sim::Vec2` to `sim::FxVec2`.
 - Completed 2026-06-09: fourth scripted lane renamed fixed rectangles from
   `sim::AABB` to `sim::FxAABB`.
+- Completed 2026-06-09: fifth scripted lane shortened scalar, vector,
+  color, and AABB conversion helper names.
 
 1. Rename the old float `Vec2` type to `FVec2`.
    - Update constructors and operators mechanically.

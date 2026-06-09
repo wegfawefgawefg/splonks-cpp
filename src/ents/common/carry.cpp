@@ -251,7 +251,7 @@ void ApplyThrowState(
                 .type = EffectHookType::Throw,
                 .actor_vid = thrower.vid,
                 .target_vid = thrown.vid,
-                .world_pos = sim::ToRenderVec2(thrown.GetSimCenter()),
+                .world_pos = ToFVec2(thrown.GetSimCenter()),
             }
         );
     } else {
@@ -784,9 +784,9 @@ void UpdateCarryAndBackItems(
                             throw_vel.x > sim::Scalar::zero() ? 1 :
                             ent.facing == Side::Left ? -1 : 1;
                         throw_vel.x += sim::Scalar::from_int(throw_direction) *
-                                       sim::ToSimScalar(mitt_throw_boost);
+                                       ToFxScalar(mitt_throw_boost);
                         if (!trying_to_go_up && !trying_to_go_down) {
-                            throw_vel.y = sim::ToSimScalar(-0.4F);
+                            throw_vel.y = ToFxScalar(-0.4F);
                         } else if (trying_to_go_down) {
                             throw_vel.y = sim::Scalar::from_int(6);
                         }

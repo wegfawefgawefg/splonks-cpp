@@ -230,7 +230,7 @@ void AddMattockDebugAnnotations(
             .color = DebugAnnotationColor{255, 0, 0, 255},
         });
         state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-            .world_pos = sim::ToRenderVec2(fallback),
+            .world_pos = ToFVec2(fallback),
             .text = "fallback (" + std::to_string(fallback_tile.x) + ", " + std::to_string(fallback_tile.y) + ")",
             .color = DebugAnnotationColor{255, 0, 0, 255},
         });
@@ -359,12 +359,12 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
             continue;
         }
         if (is_heavy_target && damage_result == common::DamageResult::Died) {
-            (void)PlayWorldSoundEmitter(state, sim::ToRenderVec2(other_aabb.center()), audio_asset_ids::PotShatter);
+            (void)PlayWorldSoundEmitter(state, ToFVec2(other_aabb.center()), audio_asset_ids::PotShatter);
         }
         if (Ent* const other_ent = state.ents.GetEntMut(other_ent_const->vid)) {
             result.sound_pos = other_ent->GetRenderCenter();
         } else {
-            result.sound_pos = sim::ToRenderVec2(other_aabb.center());
+            result.sound_pos = ToFVec2(other_aabb.center());
         }
         result.hit_any = true;
     }
@@ -436,7 +436,7 @@ void OnUseAsMattock(std::size_t ent_idx, State& state, Graphics& graphics, Audio
 
     SetAnim(mattock, aframe_ids::MattockSwing);
     mattock.aframe_animator.loop = false;
-    mattock.counter_a = sim::ToSimScalar(kMattockStrikePending);
+    mattock.counter_a = ToFxScalar(kMattockStrikePending);
 
     if (mattock.use_state.source == AttachMode::None) {
         StopUsingEnt(mattock);

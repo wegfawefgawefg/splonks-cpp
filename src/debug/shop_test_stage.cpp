@@ -206,7 +206,7 @@ void SpawnShopTestOwnedItem(
         FVec2::New(
             static_cast<float>(spec.tile_x * static_cast<int>(kTileSize)),
             10.0F * static_cast<float>(kTileSize) -
-                sim::ToRenderScalar(GetEntSpec(spec.type_).size.y)
+                ToFloat(GetEntSpec(spec.type_).size.y)
         )
     );
     if (!item_vid.has_value()) {
@@ -239,14 +239,14 @@ void SpawnShopTestCrapsTable(
         EntType::Dice,
         FVec2::New(57.0F * static_cast<float>(kTileSize),
                   10.0F * static_cast<float>(kTileSize) -
-                      sim::ToRenderScalar(GetEntSpec(EntType::Dice).size.y))
+                      ToFloat(GetEntSpec(EntType::Dice).size.y))
     );
     const std::optional<VID> prize_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::JetPack,
         FVec2::New(62.0F * static_cast<float>(kTileSize),
                   10.0F * static_cast<float>(kTileSize) -
-                      sim::ToRenderScalar(GetEntSpec(EntType::JetPack).size.y))
+                      ToFloat(GetEntSpec(EntType::JetPack).size.y))
     );
     const sim::FxAABB shop_area = MakeShopTestArea(stall);
     const std::optional<VID> table_vid =

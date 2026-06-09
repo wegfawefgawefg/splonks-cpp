@@ -226,7 +226,7 @@ void AFrameAnimator::SetForcedFrame(std::uint32_t frame_index) {
 }
 
 void AFrameAnimator::SetSpeed(float speed_value) {
-    speed = sim::ToSimScalar(std::clamp(speed_value, 0.01F, 10.0F));
+    speed = ToFxScalar(std::clamp(speed_value, 0.01F, 10.0F));
 }
 
 void AFrameAnimator::ResetSpeed() {
