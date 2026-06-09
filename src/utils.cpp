@@ -33,6 +33,10 @@ int DetRng::RandomIntExclusive(int minimum, int maximum) {
     return RandomIntInclusive(minimum, maximum - 1);
 }
 
+bool DetRng::RandomBool() {
+    return RandomIntInclusive(0, 1) == 0;
+}
+
 float DetRng::RandomFloat(float minimum, float maximum) {
     const std::uint32_t mantissa = NextU32() >> 8U;
     const float unit = static_cast<float>(mantissa) * (1.0F / 16777216.0F);

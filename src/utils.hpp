@@ -14,6 +14,7 @@ struct DetRng {
     std::uint32_t NextU32();
     int RandomIntInclusive(int minimum, int maximum);
     int RandomIntExclusive(int minimum, int maximum);
+    bool RandomBool();
     float RandomFloat(float minimum, float maximum);
 };
 

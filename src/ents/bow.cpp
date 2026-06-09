@@ -23,8 +23,6 @@ constexpr float kBowArrowAmmo = 8.0F;
 constexpr float kBowArrowSpeed = 8.0F;
 constexpr std::uint32_t kBowArrowDamage = 2;
 
-using BowAim = common::DiscreteHeldWeaponAim;
-
 bool HasAmmo(const Ent& bow) {
     return bow.counter_b > FxScalar::zero();
 }
@@ -62,7 +60,7 @@ void BuildHudEntryAsBow(
     entry.style = ammo > 0 ? HudEntryStyle::Normal : HudEntryStyle::Dimmed;
 }
 
-BowAim GetBowAim(const Ent& bow, const State& state) {
+common::DiscreteHeldWeaponAim GetBowAim(const Ent& bow, const State& state) {
     const Ent* const holder =
         bow.held_by_vid.has_value() ? state.ents.GetEnt(*bow.held_by_vid) : nullptr;
     return common::GetDiscreteHeldWeaponAim(bow, holder, state);
@@ -75,14 +73,14 @@ void ArmBow(Ent& bow, State& state) {
 
     bow.counter_a = ToFxScalar(kBowFireCooldownFrames);
     bow.ent_a = bow.held_by_vid;
-    const BowAim aim = GetBowAim(bow, state);
+    const common::DiscreteHeldWeaponAim aim = GetBowAim(bow, state);
     bow.facing = aim.facing;
     bow.rotation = aim.rotation;
     bow.aframe_animator.PlayOnce(GetPullAnimId(bow));
     (void)PlayEntCenterSoundEmitter(state, bow, audio_asset_ids::Throw);
 }
 
-void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
+void SpawnArrowFromBow(Ent& bow, State& state, const common::DiscreteHeldWeaponAim& aim) {
     (void)world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         const FxVec2 spawn_center = bow.GetCenter() +
                                        (aim.direction * FxScalar::from_int(12));
@@ -108,7 +106,7 @@ void FireBow(Ent& bow, State& state) {
         return;
     }
 
-    const BowAim aim = GetBowAim(bow, state);
+    const common::DiscreteHeldWeaponAim aim = GetBowAim(bow, state);
     bow.facing = aim.facing;
     bow.rotation = aim.rotation;
     SpawnArrowFromBow(bow, state, aim);
@@ -162,7 +160,7 @@ void StepEntLogicAsBow(
             gfxp::max(FxScalar::zero(), bow.counter_a - FxScalar::from_int(1));
     }
     if (bow.held_by_vid.has_value()) {
-        const BowAim aim = GetBowAim(bow, state);
+        const common::DiscreteHeldWeaponAim aim = GetBowAim(bow, state);
         bow.facing = aim.facing;
         bow.rotation = aim.rotation;
     }

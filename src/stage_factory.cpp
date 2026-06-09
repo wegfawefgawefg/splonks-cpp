@@ -6,10 +6,6 @@ namespace splonks {
 
 namespace {
 
-bool RandomBool(DetRng& det_rng) {
-    return det_rng.RandomIntExclusive(0, 2) == 0;
-}
-
 std::vector<std::vector<EmbeddedTreasure>> MakeEmptyEmbeddedTreasures(
     const std::vector<std::vector<Tile>>& tiles
 ) {
@@ -259,7 +255,7 @@ Stage Stage::New(StageType stage_type, DetRng& det_rng) {
             const std::vector<std::vector<Tile>> room =
                 GenRoom(room_type, stage_type, room_tile_palette, det_rng);
 
-            const bool flip = RandomBool(det_rng);
+            const bool flip = det_rng.RandomBool();
             for (unsigned int tile_y = 0; tile_y < kRoomShape.y; ++tile_y) {
                 for (unsigned int tile_x = 0; tile_x < kRoomShape.x; ++tile_x) {
                     const UVec2 tile_pos = room_pos + UVec2::New(tile_x, tile_y);

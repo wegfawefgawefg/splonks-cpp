@@ -10,10 +10,6 @@ namespace splonks::stage_gen::cave {
 
 namespace {
 
-bool RandomBool(DetRng& det_rng) {
-    return det_rng.RandomIntInclusive(0, 1) == 0;
-}
-
 UVec2 Fit(const UVec2& available_area, const UVec2& size, bool grounded, DetRng& det_rng) {
     if (available_area.x < size.x || available_area.y < size.y) {
         return UVec2::New(0, 0);
@@ -232,7 +228,7 @@ void PasteOHalf(const UVec2& available_area, const UVec2& at,
         {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
-    PasteTemplate(target, room_template, position, false, RandomBool(det_rng));
+    PasteTemplate(target, room_template, position, false, det_rng.RandomBool());
 }
 
 void PasteFiveLong(const UVec2& available_area, const UVec2& at,
@@ -336,7 +332,7 @@ void PasteHillsOnSpikesAssymetrical(const UVec2& available_area, const UVec2& at
          MetaTile::MaybeSpikes, MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
-    PasteTemplate(target, room_template, position, RandomBool(det_rng), false);
+    PasteTemplate(target, room_template, position, det_rng.RandomBool(), false);
 }
 
 void PasteStepsAndFloatingBlockWithSpikes(const UVec2& available_area, const UVec2& at,
@@ -349,7 +345,7 @@ void PasteStepsAndFloatingBlockWithSpikes(const UVec2& available_area, const UVe
          MetaTile::MaybeSpikes, MetaTile::MaybeSpikes},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
-    PasteTemplate(target, room_template, position, RandomBool(det_rng), false);
+    PasteTemplate(target, room_template, position, det_rng.RandomBool(), false);
 }
 
 void PasteMound(const UVec2& available_area, const UVec2& at,
@@ -394,7 +390,7 @@ void PasteDoorHutAndPillar(const UVec2& available_area, const UVec2& at,
          MetaTile::Air, MetaTile::Air, MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
-    PasteTemplate(target, room_template, position, RandomBool(det_rng), false);
+    PasteTemplate(target, room_template, position, det_rng.RandomBool(), false);
 }
 
 void PasteDoorPyramid(const UVec2& available_area, const UVec2& at,
@@ -438,7 +434,7 @@ void PasteDoorHut(const UVec2& available_area, const UVec2& at,
          entrance ? MetaTile::Entrance : MetaTile::Exit, MetaTile::MaybeBlock},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
-    PasteTemplate(target, room_template, position, RandomBool(det_rng), false);
+    PasteTemplate(target, room_template, position, det_rng.RandomBool(), false);
 }
 
 void PasteDoorStilted(const UVec2& available_area, const UVec2& at,
@@ -464,7 +460,7 @@ void PasteDoorFourblock(const UVec2& available_area, const UVec2& at,
          MetaTile::MaybeSolid, entrance ? MetaTile::Entrance : MetaTile::Exit},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
-    PasteTemplate(target, room_template, position, RandomBool(det_rng), false);
+    PasteTemplate(target, room_template, position, det_rng.RandomBool(), false);
 }
 
 void PasteBottomExitSubroom(const UVec2& subroom_shape, const UVec2& at,
