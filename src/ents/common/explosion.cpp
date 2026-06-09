@@ -44,8 +44,10 @@ bool IsInSpelunkyExplosionFootprint(sim::Vec2 world_delta) {
            (abs_y <= centerline_limit && abs_x <= cross_limit);
 }
 
-std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, const Vec2& center) {
-    const IVec2 center_tile = stage.GetTileCoordAtWc(ToIVec2(center));
+std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, sim::Vec2 center) {
+    const IVec2 center_tile = stage.GetTileCoordAtWc(
+        IVec2::New(center.x.to_pixels_trunc(), center.y.to_pixels_trunc())
+    );
     std::vector<IVec2> result;
     result.reserve(13);
     for (int dy = -kExplosionCrossRadiusTiles; dy <= kExplosionCrossRadiusTiles; ++dy) {
@@ -68,12 +70,13 @@ std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, const Vec2& 
 
 void DoExplosion(
     std::size_t ent_idx,
-    Vec2 center,
+    sim::Vec2 center,
     float size,
     float push_magnitude,
     State& state,
     Audio& audio
 ) {
+    const Vec2 render_center = sim::ToRenderVec2(center);
     const float effect_size = size * 0.5F * static_cast<float>(kTileSize);
     {
         SpriteParticle effect{};
@@ -83,7 +86,7 @@ void DoExplosion(
         effect.draw_layer = DrawLayer::Foreground;
         effect.lighting_mode = ParticleLightingMode::Emissive;
         effect.counter = 8;
-        effect.pos = center;
+        effect.pos = render_center;
         effect.size = Vec2::New(effect_size, effect_size);
         effect.rot = rng::RandomFloat(0.0F, 360.0F);
         effect.alpha = 1.0F;
@@ -106,7 +109,7 @@ void DoExplosion(
         effect.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(64, 128));
-        effect.pos = center;
+        effect.pos = render_center;
         effect.size = Vec2::New(0.0F, 0.0F);
         effect.rot = rng::RandomFloat(0.0F, 360.0F);
         effect.alpha = 1.0F;
@@ -120,36 +123,33 @@ void DoExplosion(
         effect.alpha_acc = 0.0F;
         state.particles.Add(std::move(effect));
     }
-    (void)PlayWorldSoundEmitter(state, center, audio_asset_ids::BombExplosion);
+    (void)PlayWorldSoundEmitter(state, render_center, audio_asset_ids::BombExplosion);
     AddShake(
         state,
-        center,
+        render_center,
         kExplosionShakeForegroundAmount,
         kExplosionShakeBackgroundAmount,
         kExplosionShakeEntAmount,
         kExplosionShakeRadiusTiles
     );
     const Color3 explosion_light_color = Color3::New(1.0F, 0.48F, 0.12F);
-    AddTransientLight(state, center, 2.4F, explosion_light_color, 9, 14);
+    AddTransientLight(state, render_center, 2.4F, explosion_light_color, 9, 14);
 
     const std::vector<IVec2> explosion_tiles = BuildExplosionFootprintTiles(state.stage, center);
     BreakStageTilesAtCoords(explosion_tiles, state, audio);
 
-    const float explosion_size = size * static_cast<float>(kTileSize);
-    const Vec2 render_tl = center - (Vec2::New(1.0F, 1.0F) * explosion_size);
-    const Vec2 render_br = center + (Vec2::New(1.0F, 1.0F) * explosion_size);
+    const sim::Scalar explosion_size = sim::ToSimScalar(size * static_cast<float>(kTileSize));
     const sim::AABB area = sim::AABB::from_corners(
-        sim::ToSimVec2(render_tl, gfxp::Rounding::Floor),
-        sim::ToSimVec2(render_br, gfxp::Rounding::Ceil)
+        center - sim::Vec2{explosion_size, explosion_size},
+        center + sim::Vec2{explosion_size, explosion_size}
     );
 
     const VID this_vid = state.ents.GetVid(ent_idx);
     const std::vector<VID> results = QueryEntsInAabb(state, area, this_vid);
-    const sim::Vec2 sim_center = sim::ToSimVec2(center);
     const sim::Scalar sim_push_magnitude = sim::ToSimScalar(push_magnitude);
     for (const VID& vid : results) {
         if (Ent* const ent = state.ents.GetEntMut(vid)) {
-            const sim::Vec2 delta = GetNearestWorldDelta(state.stage, sim_center, ent->GetSimCenter());
+            const sim::Vec2 delta = GetNearestWorldDelta(state.stage, center, ent->GetSimCenter());
             const bool can_receive_push =
                 ent->active &&
                 ent->has_physics &&

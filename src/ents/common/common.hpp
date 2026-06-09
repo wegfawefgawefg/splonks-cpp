@@ -4,6 +4,7 @@
 #include "ents/common/contact_types.hpp"
 #include "ents/common/knockback.hpp"
 #include "graphics.hpp"
+#include "sim/fxp.hpp"
 #include "state.hpp"
 #include "tools/tool_spec.hpp"
 
@@ -114,7 +115,7 @@ void DoTileAndEntCollisions(
 );
 void DoExplosion(
     std::size_t ent_idx,
-    Vec2 center,
+    sim::Vec2 center,
     float size,
     float push_magnitude,
     State& state,

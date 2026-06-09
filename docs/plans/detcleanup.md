@@ -423,6 +423,11 @@ Current state:
   web-ball spawn placement now use fixed centers and fixed tile snapping. Web
   spray, burst, trail, and sound presentation convert fixed positions to render
   coordinates at the boundary.
+- Completed 2026-06-09: common damage/death effect placement now derives render
+  hook and damage-burst positions from fixed centers, and `DoExplosion(...)`
+  now accepts a fixed explosion origin. Explosion tile footprint, broadphase,
+  and knockback deltas stay in fixed/int space while particles, sound, shake,
+  and transient light convert at presentation boundaries.
 
 Cleanup:
 
