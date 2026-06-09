@@ -14,11 +14,18 @@ after the codebase has normalized transitional APIs.
 
 Gameplay should use gfxp-backed fixed geometry by default:
 
-- Use `sim::Scalar`, `sim::Vec2`, and `sim::AABB` for authoritative simulation.
+- Use fixed-point scalar, vector, and AABB types for authoritative simulation.
 - Treat `sim::AABB` as the Splonks gameplay alias for gfxp's Fixed12 AABB.
 - Convert to float/render geometry only at render, debug, UI, audio, tooling,
   and other presentation boundaries.
 - Do not make gameplay decisions using old float `AABB` or render `Vec2`.
+
+Naming cleanup has moved to
+[`fx_fvec2_naming_cleanup.md`](fx_fvec2_naming_cleanup.md). The target is to
+rename fixed vectors/rectangles to `FxVec2`/`FxAABB`, rename float
+presentation vectors/rectangles to `FVec2`/`FAABB`, and collapse noisy migration
+helpers like `GetSimCenter()`/`ToRenderVec2(...)` once the fixed/float type
+names make the boundary clear.
 
 The Splonks aliases should make it obvious that they are gfxp aliases, not new
 wrapper types:
