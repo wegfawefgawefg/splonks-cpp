@@ -182,7 +182,7 @@ void MaybeHurtAndStunOnContact(
     const Ent& ent = state.ents.ents[ent_idx];
     const VID ent_vid = ent.vid;
     const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
-    const sim::FxVec2 ent_pos = ent.GetPos();
+    const sim::FxVec2 ent_pos = ent.pos;
     const EntCondition condition = ent.condition;
     const bool hurt_on_contact = ent.hurt_on_contact;
     const std::optional<VID> thrown_by = ent.thrown_by;

@@ -92,8 +92,7 @@ Default gameplay lane:
 - Entity geometry helpers should be short:
   - `GetSimCenter()` -> `GetCenter()`
   - `SetSimCenter(...)` -> `SetCenter(...)`
-  - `GetSimPos()` -> `GetPos()` or direct `ent.pos`
-  - `SetSimPos(...)` -> `SetPos(...)` or direct `ent.pos = ...`
+  - `GetSimPos()` / `SetSimPos(...)` -> direct `ent.pos` access
   - `GetSimAABB()` -> `GetAABB()`
   - `GetSimFeet()` -> `GetFeet()`
   - `GetSimGroundProbe()` -> `GetGroundProbe()`
@@ -234,9 +233,13 @@ Audit notes from 2026-06-09:
   symbols.
 - The duplicate sprite top-left helper was removed. Render now calls
   `GetSpriteTopLeftForEnt(...)` and converts with `ToFVec2(...)`.
-- The remaining `Ent::GetRender*` / `Ent::SetRender*` methods are boundary
-  adapters, not duplicate gameplay helpers. They still deserve scrutiny when
-  they appear in gameplay files, but they should not be deleted blindly.
+- The one-line `Ent::GetRender*` / `Ent::SetRender*` methods were removed.
+  Render/debug code now reads the fixed field or fixed helper and converts at
+  the actual boundary.
+- The one-line `Ent::GetPos` / `SetPos` / `GetVel` / `SetVel` / `GetAcc` /
+  `SetAcc` methods were also removed. `pos`, `vel`, and `acc` are public fixed
+  simulation state; wrapping those fields in no-op accessors only hides the
+  model.
 - `Stage::GetVoidDeathY()` and `Stage::GetSimVoidDeathY()` are a small
   float/fixed boundary pair. The fixed side is gameplay; the float side is
   currently only used by debug rendering. This is acceptable for now, but a

@@ -221,30 +221,6 @@ void ClearTransientMovementFlags(Ent& ent) {
     SetMovementFlag(ent, EntMovementFlag::Pushing, false);
 }
 
-sim::FxVec2 Ent::GetPos() const {
-    return pos;
-}
-
-sim::FxVec2 Ent::GetVel() const {
-    return vel;
-}
-
-sim::FxVec2 Ent::GetAcc() const {
-    return acc;
-}
-
-void Ent::SetPos(sim::FxVec2 value) {
-    pos = value;
-}
-
-void Ent::SetVel(sim::FxVec2 value) {
-    vel = value;
-}
-
-void Ent::SetAcc(sim::FxVec2 value) {
-    acc = value;
-}
-
 sim::FxAABB Ent::GetAABB() const {
     return sim::FxAABB::from_pos_size(pos, size - sim::FxVec2::from_pixels(1, 1));
 }

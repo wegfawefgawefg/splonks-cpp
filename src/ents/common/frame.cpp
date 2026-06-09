@@ -105,7 +105,7 @@ void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 cente
         (pbox_size - sim::FxVec2::from_pixels(1, 1)) / sim::Scalar::from_int(2);
 
     if (ent.facing == Side::Left) {
-        ent.SetPos(center - draw_offset - pbox_center_offset);
+        ent.pos = center - draw_offset - pbox_center_offset;
         return;
     }
 
@@ -113,7 +113,7 @@ void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 cente
     if (ent.type_ == EntType::BaseballBat) {
         facing_adjusted_draw_offset = sim::FxVec2{-draw_offset.x, draw_offset.y};
     }
-    ent.SetPos(center - facing_adjusted_draw_offset - pbox_center_offset);
+    ent.pos = center - facing_adjusted_draw_offset - pbox_center_offset;
 }
 
 sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback) {

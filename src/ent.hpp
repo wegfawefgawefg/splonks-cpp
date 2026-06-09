@@ -177,12 +177,6 @@ struct Ent {
 
     static Ent New();
     void Reset();
-    sim::FxVec2 GetPos() const;
-    sim::FxVec2 GetVel() const;
-    sim::FxVec2 GetAcc() const;
-    void SetPos(sim::FxVec2 value);
-    void SetVel(sim::FxVec2 value);
-    void SetAcc(sim::FxVec2 value);
     sim::FxAABB GetAABB() const;
     sim::FxVec2 GetCenter() const;
     void SetCenter(sim::FxVec2 center);

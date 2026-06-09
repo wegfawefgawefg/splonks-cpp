@@ -361,9 +361,10 @@ does not become tedious or error-prone.
 - [ ] Keep `Vec2` as the default `BasicVec2<Fixed>`.
 - [ ] Add explicit fixed-to-fixed conversion helpers, such as
       `fixed_cast<ToFixed>(value)`, with named rounding.
-- [ ] Add named pixel helpers, such as `from_pixels`, `checked_from_pixels`,
-      `to_pixels_floor`, `to_pixels_ceil`, and `to_pixels_round`, while keeping
-      raw integer access for hashes.
+- [x] Keep construction helpers such as `from_pixels` and
+      `checked_from_pixels`, but do not add one-line `to_pixels_*` aliases.
+      Call `floor_int()`, `ceil_int()`, `round_int()`, and `trunc_int()`
+      directly so rounding policy is visible.
 - [ ] Add checked and unchecked hot-path helpers where the distinction matters.
       Debug builds should make overflow policy easy to audit.
 - [ ] Add deterministic vector helpers needed by physics migration:

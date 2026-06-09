@@ -72,7 +72,7 @@ bool BelongsToOwnerAltar(const Ent& ent, const Ent& owner) {
 }
 
 sim::FxAABB GetSacrificeArea(const Ent& altar) {
-    const sim::FxVec2 altar_pos = altar.GetPos();
+    const sim::FxVec2 altar_pos = altar.pos;
     return sim::FxAABB::from_corners(
         altar_pos + sim::PixelVec2(-1, -kSacrificeSurfaceTopOffset),
         altar_pos + sim::PixelVec2(31, kSacrificeSurfaceBottomOffset)
@@ -239,7 +239,7 @@ sim::FxVec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphi
     return common::GetEmitPointForEnt(
         altar,
         graphics,
-        altar.GetPos() + sim::PixelVec2(16, -8)
+        altar.pos + sim::PixelVec2(16, -8)
     );
 }
 
@@ -256,7 +256,7 @@ FVec2 GetAltarSoundPos(const Ent& altar, const State& state, const Graphics& gra
         common::GetVisualCenterForEnt(
             altar,
             graphics,
-            altar.GetPos() + sim::PixelVec2(16, -8)
+            altar.pos + sim::PixelVec2(16, -8)
         )
     );
 }

@@ -308,27 +308,28 @@ Cleanup:
 
 Current state:
 
-- Runtime entity fields `pos`, `vel`, `acc`, and `size` are already fixed.
-- `Ent` exposes fixed helpers such as `GetPos()` / `SetPos()` and presentation
-  adapters such as `GetRenderPos()` / `SetRenderPos()`.
+- Runtime entity fields `pos`, `vel`, `acc`, and `size` are fixed and public.
+- One-line fixed accessors such as `GetPos()` / `SetPos()` and one-line
+  presentation adapters such as `GetRenderPos()` / `SetRenderPos()` have been
+  removed. Callers should read/write the fixed field directly or call a helper
+  that performs real geometry work.
 - The old `GetSimPos()` / `SetSimPos()` transition scaffolding has been removed.
-- Completed 2026-06-08: `Ent::GetAABB()` was renamed to
-  `Ent::GetRenderAABB()`, and the remaining callers are render/debug
-  presentation boundaries.
+- Completed 2026-06-09: one-line render AABB/center/position wrappers were
+  removed. Render/debug callers now use fixed helpers such as `GetAABB()` and
+  `GetCenter()` and convert with `ToFAABB(...)` or `ToFVec2(...)` at the
+  boundary.
 - Completed 2026-06-08: unused old float `Ent::GetFeet()` and
   `Ent::GetGroundProbe()` adapters were removed; fixed `GetFeet()` and
   `GetGroundProbe()` remain.
-- Completed 2026-06-08: gameplay callers of old render `Ent::GetBounds()`
-  moved to fixed body AABBs. The remaining render-style helper was renamed to
-  `Ent::GetRenderBounds()`.
+- Completed 2026-06-09: gameplay callers of old render bounds moved to fixed
+  body AABBs, and the one-line render bounds wrapper was deleted.
 - Completed 2026-06-08: common-layer render contact/broadphase wrappers
   `GetRenderContactAabbForEnt(...)` and `GetRenderEntBroadphaseAabb(...)` were
   removed. Render/debug callers now convert fixed contact AABBs explicitly at
   their boundary.
-- Completed 2026-06-08: old generic center helpers were renamed to
-  `GetRenderCenter()` and `SetRenderCenter()`. This removes the ambiguous
-  neutral names; remaining render-center use in gameplay files is still
-  visible migration debt.
+- Completed 2026-06-09: fixed center helpers keep the neutral `GetCenter()` and
+  `SetCenter()` names because fixed simulation state is the default lane.
+  Float centers are produced by converting at render/debug boundaries.
 - Completed 2026-06-08: nearest-player queries gained fixed `sim::FxVec2`
   overloads, and spider, hanging-spider, skeleton, piranha, caveman, cobra,
   shopkeeper, ghost-ball, DVD-logo, damsel, chest, gold-idol, and
@@ -358,13 +359,13 @@ Current state:
   center use is presentation/audio or tool API boundary code.
 - Completed 2026-06-08: carry back-item placement, thrown-entity placement,
   and spawned tool-throw placement now write fixed centers directly instead of
-  using `SetRenderCenter(...)`/`GetRenderCenter(...)`.
+  round-tripping through float centers.
 - Completed 2026-06-08: fixed `GetVisualCenterForEnt(...)` and
   `SetVisualCenterForEnt(...)` overloads were added for authored sprite-frame
   visual-center offsets. Held item attachment now uses those fixed overloads
   instead of round-tripping through render centers.
 - Completed 2026-06-08: shopkeeper held-pistol spawn/sync placement now uses
-  fixed centers instead of `GetRenderCenter()`/`SetRenderCenter()`.
+  fixed centers instead of round-tripping through float centers.
 - Completed 2026-06-08: flesh-guy climb tile probes/snapping and common
   climb-centerline snapping now use fixed centers and fixed pixel conversion
   instead of render center access.
@@ -442,18 +443,17 @@ Current state:
 Cleanup:
 
 - Prefer direct fixed fields or fixed helpers in gameplay.
-- Keep render accessors explicitly named and limit them to presentation or
-  migration boundary code.
-- [x] Rename old render `GetAABB()` to explicit `GetRenderAABB()`.
+- Do not add one-line aliases for direct field access or fixed-to-float
+  conversion.
+- [x] Keep fixed `GetAABB()` as the default body AABB helper and remove the
+      one-line render AABB alias.
 - [x] Remove unused old render `GetFeet()` and `GetGroundProbe()` adapters.
-- [x] Rename old render `GetBounds()` to explicit `GetRenderBounds()` and move
-      gameplay callers to fixed body AABBs.
-- [x] Rename old generic helpers (`GetCenter`, `SetCenter`) to render-named
-      wrappers.
+- [x] Move gameplay callers to fixed body AABBs and remove the one-line render
+      bounds alias.
+- [x] Keep fixed `GetCenter()` / `SetCenter()` as the default center helpers.
 - [x] Add fixed nearest-player query overloads and migrate a first pass of AI
       chase/distance/target lookup callers to fixed centers and deltas.
-- Migrate authoritative gameplay callers of `GetRenderCenter()` and
-  `SetRenderCenter()` to fixed center helpers or fixed placement APIs.
+- [x] Remove one-line `GetRenderCenter()` and `SetRenderCenter()` wrappers.
 
 ### 6. World query has duplicate float/fixed overload sets
 
@@ -692,8 +692,8 @@ Adapters are only boundary crossings. They convert simulation data for systems
 outside authoritative gameplay, or convert authored/debug data before it enters
 simulation. Valid adapter homes are rendering, debug UI, audio, tooling,
 asset/data import, test fixtures, and display/serialization text. Their names
-should make the crossing obvious, such as `ToFAABB(...)`,
-`GetRenderCenter(...)`, or `SpawnDebug...(...)`.
+should make the crossing obvious, such as `ToFAABB(...)`, `ToFVec2(...)`, or
+`SpawnDebug...(...)`.
 
 If gameplay needs a query, collision check, AI decision, damage check, pickup
 check, spawn placement, or topology change, it should use a fixed/int gameplay
