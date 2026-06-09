@@ -35,7 +35,7 @@ void ApplyTileOverlapEffects(std::size_t ent_idx, State& state) {
     }
 
     Ent& ent = state.ents.ents[ent_idx];
-    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent.GetSimAABB())) {
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent.GetAABB())) {
         if (tile_query.tile == nullptr) {
             continue;
         }
@@ -144,7 +144,7 @@ bool EntIsMovingIntoSpike(const Ent& ent, TileRotation spike_rotation) {
 }
 
 KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(stage, source.GetSimCenter(), target.GetSimCenter());
+    const sim::FxVec2 delta = GetNearestWorldDelta(stage, source.GetCenter(), target.GetCenter());
     const int direction = delta.x < sim::Scalar::zero() ? -1 : 1;
     return KnockbackSpec{
         .velocity = sim::FxVec2{
@@ -182,7 +182,7 @@ void MaybeHurtAndStunOnContact(
     const Ent& ent = state.ents.ents[ent_idx];
     const VID ent_vid = ent.vid;
     const sim::FxAABB ent_aabb = GetContactAabbForEnt(ent, graphics);
-    const sim::FxVec2 ent_pos = ent.GetSimPos();
+    const sim::FxVec2 ent_pos = ent.GetPos();
     const EntCondition condition = ent.condition;
     const bool hurt_on_contact = ent.hurt_on_contact;
     const std::optional<VID> thrown_by = ent.thrown_by;

@@ -85,6 +85,8 @@ Progress:
   `sim::AABB` to `sim::FxAABB`.
 - Completed 2026-06-09: fifth scripted lane shortened scalar, vector,
   color, and AABB conversion helper names.
+- Completed 2026-06-09: sixth scripted lane collapsed entity fixed geometry
+  accessors from `GetSim*`/`SetSim*` to short fixed-default names.
 
 1. Rename the old float `Vec2` type to `FVec2`.
    - Update constructors and operators mechanically.

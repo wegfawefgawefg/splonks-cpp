@@ -124,7 +124,7 @@ void SpawnBlockTrailSmoke(State& state, const FVec2& pos, Side facing) {
 }
 
 FVec2 GetBlockTrailingBottomCorner(const Ent& block) {
-    const sim::FxAABB aabb = block.GetSimAABB();
+    const sim::FxAABB aabb = block.GetAABB();
     return ToFVec2(block.facing == Side::Right
                                  ? sim::FxVec2{aabb.tl.x, aabb.br.y}
                                  : sim::FxVec2{aabb.br.x, aabb.br.y});
@@ -227,7 +227,7 @@ void OnDeathAsBlock(std::size_t ent_idx, State& state, Audio& audio) {
     }
     Ent& block = state.ents.ents[ent_idx];
     SpawnBlockDeathParticles(
-        ToFVec2(block.GetSimCenter()),
+        ToFVec2(block.GetCenter()),
         state.stage.block_anim_id,
         state
     );

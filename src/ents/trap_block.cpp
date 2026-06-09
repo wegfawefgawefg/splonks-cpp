@@ -83,7 +83,7 @@ int GetMaxSensorDistance(const State& state, const IVec2& direction) {
 }
 
 int ComputeOpenSensorDistance(const Ent& block, const State& state, const IVec2& direction) {
-    const sim::FxVec2 block_center = block.GetSimCenter();
+    const sim::FxVec2 block_center = block.GetCenter();
     const IVec2 origin_world = IVec2::New(
         block_center.x.to_pixels_trunc(),
         block_center.y.to_pixels_trunc()
@@ -197,7 +197,7 @@ int GetEntBlockedOpenSensorDistance(
     std::size_t direction_idx
 ) {
     const DirectionInfo& direction = kDirections[direction_idx];
-    const sim::FxVec2 center = block.GetSimCenter();
+    const sim::FxVec2 center = block.GetCenter();
     const int open_distance = GetCachedOpenSensorDistance(block, state, direction_idx);
     const sim::FxAABB tile_open_sensor = MakeSensorAabb(center, direction, open_distance);
     const sim::FxVec2 sensor_start = GetSensorStart(center, direction);
@@ -234,7 +234,7 @@ sim::FxAABB GetSensorAabb(
     std::size_t direction_idx
 ) {
     return MakeSensorAabb(
-        block.GetSimCenter(),
+        block.GetCenter(),
         kDirections[direction_idx],
         GetEntBlockedOpenSensorDistance(block, state, graphics, direction_idx)
     );
@@ -247,7 +247,7 @@ void AddDebugAnnotations(Ent& block, State& state, const Graphics& graphics) {
 
     for (std::size_t direction_idx = 0; direction_idx < kDirections.size(); ++direction_idx) {
         const sim::FxAABB tile_open_sensor = MakeSensorAabb(
-            block.GetSimCenter(),
+            block.GetCenter(),
             kDirections[direction_idx],
             GetCachedOpenSensorDistance(block, state, direction_idx)
         );
@@ -300,7 +300,7 @@ std::optional<std::uint32_t> FindTriggerDirection(
 ) {
     std::optional<std::uint32_t> best_direction;
     sim::Scalar best_distance = sim::Scalar::zero();
-    const sim::FxVec2 block_center = block.GetSimCenter();
+    const sim::FxVec2 block_center = block.GetCenter();
 
     for (std::size_t direction_idx = 0; direction_idx < kDirections.size(); ++direction_idx) {
         if (!SensorTouchesPlayer(block, state, graphics, direction_idx)) {
@@ -317,7 +317,7 @@ std::optional<std::uint32_t> FindTriggerDirection(
                 continue;
             }
             const sim::FxVec2 delta =
-                GetNearestWorldDelta(state.stage, block_center, ent->GetSimCenter());
+                GetNearestWorldDelta(state.stage, block_center, ent->GetCenter());
             const sim::Scalar axis_distance =
                 (direction.tile_dir.x != 0 ? delta.x : delta.y).abs();
             nearest_distance = gfxp::min(nearest_distance, axis_distance);

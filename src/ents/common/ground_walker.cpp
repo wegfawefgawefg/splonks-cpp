@@ -16,7 +16,7 @@ bool HasWallAheadForGroundWalker(
     const Graphics& graphics,
     int direction
 ) {
-    const sim::FxAABB bounds = ent.GetSimAABB();
+    const sim::FxAABB bounds = ent.GetAABB();
     const sim::Scalar sample_x = direction < 0
         ? bounds.tl.x - sim::Scalar::from_int(1)
         : bounds.br.x + sim::Scalar::from_int(1);
@@ -33,7 +33,7 @@ bool HasGroundAheadForGroundWalker(
     const Graphics& graphics,
     int direction
 ) {
-    const sim::FxAABB bounds = ent.GetSimAABB();
+    const sim::FxAABB bounds = ent.GetAABB();
     const sim::Scalar sample_x = direction < 0
         ? bounds.tl.x - sim::Scalar::from_int(1)
         : bounds.br.x + sim::Scalar::from_int(1);

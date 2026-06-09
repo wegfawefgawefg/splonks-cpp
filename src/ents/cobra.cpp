@@ -58,7 +58,7 @@ void StartWalking(Ent& cobra, const State& state) {
 }
 
 void FaceTowards(Ent& cobra, sim::FxVec2 target_pos, const Stage& stage) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(stage, cobra.GetSimCenter(), target_pos);
+    const sim::FxVec2 delta = GetNearestWorldDelta(stage, cobra.GetCenter(), target_pos);
     if (delta.x < sim::Scalar::zero()) {
         cobra.facing = Side::Left;
     } else if (delta.x > sim::Scalar::zero()) {
@@ -73,7 +73,7 @@ bool ShouldRunSightScan(const Ent& cobra, std::uint64_t stage_frame) {
 
 bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& graphics) {
     const sim::FxVec2 spit_origin =
-        common::GetEmitPointForEnt(cobra, graphics, cobra.GetSimCenter());
+        common::GetEmitPointForEnt(cobra, graphics, cobra.GetCenter());
     const int direction = cobra.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -84,7 +84,7 @@ bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& gra
             continue;
         }
         const sim::FxVec2 player_center =
-            GetNearestWorldPoint(state.stage, spit_origin, player->GetSimCenter());
+            GetNearestWorldPoint(state.stage, spit_origin, player->GetCenter());
         const sim::FxVec2 player_delta = player_center - spit_origin;
         if (player_delta.y.abs() > sim::Scalar::from_int(kCobraSightVerticalTolerance) ||
             player_delta.x.abs() > sim::Scalar::from_int(kCobraSightDistance)) {
@@ -187,10 +187,10 @@ void FireCobraSpit(std::size_t ent_idx, State& state, Graphics& graphics) {
     Ent& cobra = state.ents.ents[ent_idx];
     const int direction = cobra.facing == Side::Left ? -1 : 1;
     const sim::FxVec2 spit_origin =
-        common::GetEmitPointForEnt(cobra, graphics, cobra.GetSimCenter());
+        common::GetEmitPointForEnt(cobra, graphics, cobra.GetCenter());
 
     Ent* const spit = world_ops::SpawnEnt(state, EntType::CobraSpit, [&](Ent& spawned_spit) {
-        spawned_spit.SetSimCenter(spit_origin);
+        spawned_spit.SetCenter(spit_origin);
         spawned_spit.facing = cobra.facing;
         spawned_spit.vel = CobraSpitVelocity(direction);
         spawned_spit.acc = sim::FxVec2::zero();
@@ -251,8 +251,8 @@ void StepEntLogicAsCobra(
 
     if (ShouldRunSightScan(cobra, state.stage_frame) && cobra.counter_b <= sim::Scalar::zero() &&
         CanSeePlayerAhead(cobra, state, graphics)) {
-        if (const Ent* const player = FindNearestPlayer(state, cobra.GetSimCenter())) {
-            FaceTowards(cobra, player->GetSimCenter(), state.stage);
+        if (const Ent* const player = FindNearestPlayer(state, cobra.GetCenter())) {
+            FaceTowards(cobra, player->GetCenter(), state.stage);
         }
         common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
         TrySetAnim(cobra, EntDisplayState::Walk);

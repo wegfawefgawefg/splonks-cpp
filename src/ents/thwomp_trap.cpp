@@ -52,7 +52,7 @@ bool IsReturning(const Ent& thwomp) {
 }
 
 bool ShouldDrop(const Ent& thwomp, const State& state) {
-    const sim::FxVec2 thwomp_center = thwomp.GetSimCenter();
+    const sim::FxVec2 thwomp_center = thwomp.GetCenter();
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !IsPlayerLikeEntType(ent.type_) ||
             ent.condition == EntCondition::Dead) {
@@ -60,7 +60,7 @@ bool ShouldDrop(const Ent& thwomp, const State& state) {
         }
 
         const sim::FxVec2 delta =
-            GetNearestWorldDelta(state.stage, thwomp_center, ent.GetSimCenter());
+            GetNearestWorldDelta(state.stage, thwomp_center, ent.GetCenter());
         if (delta.y <= sim::Scalar::zero() || delta.y > kSimTriggerDistance ||
             delta.x.abs() > kSimTriggerHalfWidth) {
             continue;

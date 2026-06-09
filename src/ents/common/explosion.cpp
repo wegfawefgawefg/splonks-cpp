@@ -149,7 +149,7 @@ void DoExplosion(
     const sim::Scalar sim_push_magnitude = ToFxScalar(push_magnitude);
     for (const VID& vid : results) {
         if (Ent* const ent = state.ents.GetEntMut(vid)) {
-            const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, center, ent->GetSimCenter());
+            const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, center, ent->GetCenter());
             const bool can_receive_push =
                 ent->active &&
                 ent->has_physics &&

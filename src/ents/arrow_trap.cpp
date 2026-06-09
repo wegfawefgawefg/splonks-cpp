@@ -46,7 +46,7 @@ int DirectionForTrap(const Ent& trap) {
 
 sim::FxVec2 GetSensorStart(const Ent& trap) {
     const int direction = DirectionForTrap(trap);
-    return trap.GetSimCenter() + sim::PixelVec2(direction * 9, 0);
+    return trap.GetCenter() + sim::PixelVec2(direction * 9, 0);
 }
 
 bool ShouldTriggerOnEnt(const Ent& ent) {
@@ -228,7 +228,7 @@ bool SensorTouchesMovingEnt(
 
 Ent* SpawnArrow(State& state, sim::FxVec2 center, int direction, const VID& trap_vid) {
     return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
-        arrow.SetSimCenter(center);
+        arrow.SetCenter(center);
         arrow.vel = ArrowLaunchVelocity(direction);
         arrow.acc = sim::FxVec2::zero();
         arrow.facing = direction < 0 ? Side::Left : Side::Right;
@@ -245,7 +245,7 @@ Ent* SpawnArrow(State& state, sim::FxVec2 center, int direction, const VID& trap
 
 Ent* SpawnLooseArrow(State& state, sim::FxVec2 center) {
     return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
-        arrow.SetSimCenter(center);
+        arrow.SetCenter(center);
         SnapArrowPositionToPixels(arrow);
         arrow.vel = sim::FxVec2::zero();
         arrow.acc = sim::FxVec2::zero();
@@ -264,7 +264,7 @@ void FireTrap(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const int direction = DirectionForTrap(trap);
-    const sim::FxVec2 arrow_center = trap.GetSimCenter() + sim::FxVec2::from_pixels(direction * 10, -4);
+    const sim::FxVec2 arrow_center = trap.GetCenter() + sim::FxVec2::from_pixels(direction * 10, -4);
     Ent* const arrow = SpawnArrow(state, arrow_center, direction, trap.vid);
     if (arrow == nullptr) {
         return;
@@ -338,7 +338,7 @@ void StepEntLogicAsArrow(
         arrow.can_collide = false;
         arrow.vel = sim::FxVec2::zero();
         arrow.acc = sim::FxVec2::zero();
-        arrow.SetSimCenter(stuck_to->GetSimCenter() + FromStoredArrowOffsetPoint(arrow.point_a));
+        arrow.SetCenter(stuck_to->GetCenter() + FromStoredArrowOffsetPoint(arrow.point_a));
         SnapArrowPositionToPixels(arrow);
         return;
     }
@@ -432,11 +432,11 @@ bool TryCollectLooseArrowIntoHeldBow(
 }
 
 void StickArrowToEnt(Ent& arrow, Ent& other, State& state) {
-    const sim::FxVec2 other_center = other.GetSimCenter();
-    const sim::FxVec2 arrow_center = GetNearestWorldPoint(state.stage, other_center, arrow.GetSimCenter());
+    const sim::FxVec2 other_center = other.GetCenter();
+    const sim::FxVec2 arrow_center = GetNearestWorldPoint(state.stage, other_center, arrow.GetCenter());
     const IVec2 stored_offset = ToStoredArrowOffsetPoint(arrow_center - other_center);
 
-    arrow.SetSimCenter(other_center + FromStoredArrowOffsetPoint(stored_offset));
+    arrow.SetCenter(other_center + FromStoredArrowOffsetPoint(stored_offset));
     SnapArrowPositionToPixels(arrow);
     arrow.ent_a = other.vid;
     arrow.point_a = stored_offset;
@@ -582,7 +582,7 @@ void OnDeathAsArrowTrap(std::size_t ent_idx, State& state, Audio& audio) {
     if (HasFired(trap)) {
         return;
     }
-    (void)SpawnLooseArrow(state, trap.GetSimCenter());
+    (void)SpawnLooseArrow(state, trap.GetCenter());
 }
 
 } // namespace

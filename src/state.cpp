@@ -58,7 +58,7 @@ void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount
         }
 
         const sim::FxVec2 nearest_center =
-            GetNearestWorldPoint(state.stage, world_pos_sim, ent->GetSimCenter());
+            GetNearestWorldPoint(state.stage, world_pos_sim, ent->GetCenter());
         const FVec2 delta = ToFVec2(nearest_center - world_pos_sim);
         if (radius_world > 0.0F) {
             const int radius_scaled =
@@ -82,7 +82,7 @@ void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount
             continue;
         }
 
-        if (WorldAabbContainsPoint(state.stage, ent->GetSimAABB(), world_pos_sim)) {
+        if (WorldAabbContainsPoint(state.stage, ent->GetAABB(), world_pos_sim)) {
             AddEntShake(*ent, ent_amount);
         }
     }

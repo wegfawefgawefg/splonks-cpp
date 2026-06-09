@@ -53,12 +53,12 @@ std::optional<FVec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
         return std::nullopt;
     }
 
-    const sim::FxAABB player_aabb = player.GetSimAABB();
+    const sim::FxAABB player_aabb = player.GetAABB();
     const int air_tile_y = state.stage.GetTileCoordAtWc(IVec2::New(
         player_aabb.br.x.to_pixels_trunc(),
         (player_aabb.br.y - sim::Scalar::from_pixels(1)).to_pixels_trunc()
     )).y;
-    const sim::FxVec2 player_center = player.GetSimCenter();
+    const sim::FxVec2 player_center = player.GetCenter();
     const int center_tile_x = state.stage.GetTileCoordAtWc(IVec2::New(
         player_center.x.to_pixels_trunc(),
         player_center.y.to_pixels_trunc()
@@ -121,7 +121,7 @@ void AddMeatheadDebugAnnotations(const Ent& player, State& state) {
         return;
     }
 
-    const FAABB render_sensor = ToFAABB(ExpandAabb(player.GetSimAABB(), kMeatheadPickupRange));
+    const FAABB render_sensor = ToFAABB(ExpandAabb(player.GetAABB(), kMeatheadPickupRange));
     state.AddDebugRectAnnotation(DebugRectAnnotation{
         .area = render_sensor,
         .color = DebugAnnotationColor{255, 64, 192, 255},
@@ -206,8 +206,8 @@ void OnMeatheadEffectHook(
         return;
     }
 
-    const sim::FxAABB collect_area = ExpandAabb(owner.GetSimAABB(), kMeatheadPickupRange);
-    if (!WorldAabbsIntersect(state.stage, collect_area, victim->GetSimAABB())) {
+    const sim::FxAABB collect_area = ExpandAabb(owner.GetAABB(), kMeatheadPickupRange);
+    if (!WorldAabbsIntersect(state.stage, collect_area, victim->GetAABB())) {
         return;
     }
 

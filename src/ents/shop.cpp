@@ -37,7 +37,7 @@ void ClearOwnedBuyableIfPresent(Ent& ent, VID shop_vid) {
 } // namespace
 
 sim::FxAABB GetShopArea(const Ent& shop) {
-    return shop.GetSimAABB();
+    return shop.GetAABB();
 }
 
 void SetShopArea(Ent& shop, sim::FxAABB area) {
@@ -182,7 +182,7 @@ void StepEntLogicAsShop(
             continue;
         }
 
-        const sim::FxAABB child_aabb = child->GetSimAABB();
+        const sim::FxAABB child_aabb = child->GetAABB();
         if (WorldAabbsIntersect(state.stage, child_aabb, shop_area)) {
             continue;
         }

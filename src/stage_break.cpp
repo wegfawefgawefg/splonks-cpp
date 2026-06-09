@@ -18,7 +18,7 @@ namespace {
 
 Ent* SpawnEntAtCenter(EntType type_, sim::FxVec2 center, State& state) {
     return world_ops::SpawnEnt(state, type_, [center](Ent& ent) {
-        ent.SetSimCenter(center);
+        ent.SetCenter(center);
         ent.vel = sim::FxVec2::zero();
     });
 }
@@ -75,7 +75,7 @@ void NotifyAreaEntsTileChanged(const IVec2& tile_pos, State& state, Audio& audio
         if (ent == nullptr || !ent->active || ent->on_area_tile_changed == nullptr) {
             continue;
         }
-        if (!WorldAabbContainsPoint(state.stage, ent->GetSimAABB(), tile_center)) {
+        if (!WorldAabbContainsPoint(state.stage, ent->GetAABB(), tile_center)) {
             continue;
         }
 

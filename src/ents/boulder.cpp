@@ -48,7 +48,7 @@ FVec2 GetBoulderBottomCenter(const Ent& boulder);
 FVec2 GetBoulderFrontFaceCenter(const Ent& boulder);
 
 sim::FxAABB GetLeadingBreakStrip(const Ent& boulder) {
-    const sim::FxAABB aabb = boulder.GetSimAABB();
+    const sim::FxAABB aabb = boulder.GetAABB();
     if (boulder.facing == Side::Right) {
         return sim::FxAABB::from_corners(
             sim::FxVec2{aabb.br.x + sim::Scalar::from_pixels(1), aabb.tl.y},
@@ -172,26 +172,26 @@ void PlayBoulderImpactSoundIfReady(Ent& boulder, State& state) {
 }
 
 FVec2 GetBoulderTrailingBottomCorner(const Ent& boulder) {
-    const sim::FxAABB aabb = boulder.GetSimAABB();
+    const sim::FxAABB aabb = boulder.GetAABB();
     return ToFVec2(boulder.facing == Side::Right
                                  ? sim::FxVec2{aabb.tl.x, aabb.br.y}
                                  : sim::FxVec2{aabb.br.x, aabb.br.y});
 }
 
 FVec2 GetBoulderLeadingBottomCorner(const Ent& boulder) {
-    const sim::FxAABB aabb = boulder.GetSimAABB();
+    const sim::FxAABB aabb = boulder.GetAABB();
     return ToFVec2(boulder.facing == Side::Right
                                  ? sim::FxVec2{aabb.br.x, aabb.br.y}
                                  : sim::FxVec2{aabb.tl.x, aabb.br.y});
 }
 
 FVec2 GetBoulderBottomCenter(const Ent& boulder) {
-    const sim::FxAABB aabb = boulder.GetSimAABB();
+    const sim::FxAABB aabb = boulder.GetAABB();
     return ToFVec2(sim::FxVec2{aabb.center().x, aabb.br.y});
 }
 
 FVec2 GetBoulderFrontFaceCenter(const Ent& boulder) {
-    const sim::FxAABB aabb = boulder.GetSimAABB();
+    const sim::FxAABB aabb = boulder.GetAABB();
     return ToFVec2(boulder.facing == Side::Right
                                  ? sim::FxVec2{aabb.br.x, aabb.center().y}
                                  : sim::FxVec2{aabb.tl.x, aabb.center().y});
@@ -360,7 +360,7 @@ void OnDeathAsBoulder(std::size_t ent_idx, State& state, Audio& audio) {
         return;
     }
     Ent& boulder = state.ents.ents[ent_idx];
-    SpawnBoulderBreakEffects(ToFVec2(boulder.GetSimCenter()), state);
+    SpawnBoulderBreakEffects(ToFVec2(boulder.GetCenter()), state);
     (void)world_ops::DeactivateEnt(state, boulder.vid);
 }
 

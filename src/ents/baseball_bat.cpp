@@ -268,7 +268,7 @@ void StepBaseballBat(
     Side swinger_facing = Side::Left;
     if (held_by_vid.has_value()) {
         if (const Ent* const held_by = state.ents.GetEnt(*held_by_vid)) {
-            swinger_center = held_by->GetSimCenter();
+            swinger_center = held_by->GetCenter();
             swinger_facing = held_by->facing;
         }
     }
@@ -278,10 +278,10 @@ void StepBaseballBat(
                                          ? swinger_center +
                                                sim::FxVec2{-kBatHoldOffset.x, kBatHoldOffset.y}
                                          : swinger_center + kBatHoldOffset;
-    baseball_bat.SetSimCenter(mounted_center);
+    baseball_bat.SetCenter(mounted_center);
 
     const sim::FxVec2 bat_emit_point =
-        common::GetEmitPointForEnt(baseball_bat, graphics, baseball_bat.GetSimCenter());
+        common::GetEmitPointForEnt(baseball_bat, graphics, baseball_bat.GetCenter());
     const FVec2 render_bat_emit_point = ToFVec2(bat_emit_point);
     if (baseball_bat.point_label_a != PointLabel::Target) {
         baseball_bat.point_label_a = PointLabel::Target;

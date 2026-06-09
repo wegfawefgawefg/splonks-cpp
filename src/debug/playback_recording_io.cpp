@@ -1528,9 +1528,9 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
     WriteBoolByte(out, ent.impassable);
     WriteBoolByte(out, ent.can_be_hung_on);
     WriteUint32(out, ent.fall_timer);
-    WriteSimVec2(out, ent.GetSimPos());
-    WriteSimVec2(out, ent.GetSimVel());
-    WriteSimVec2(out, ent.GetSimAcc());
+    WriteSimVec2(out, ent.GetPos());
+    WriteSimVec2(out, ent.GetVel());
+    WriteSimVec2(out, ent.GetAcc());
     WriteSimScalar(out, ent.max_speed);
     WriteUint32(out, ent.jump_hold_gravity_frames_remaining);
     WriteSimScalar(out, ent.throw_velocity_scale);
@@ -1753,9 +1753,9 @@ bool ReadEnt(std::istream& in, Ent& ent) {
     if (!ok) {
         return false;
     }
-    ent.SetSimPos(pos);
-    ent.SetSimVel(vel);
-    ent.SetSimAcc(acc);
+    ent.SetPos(pos);
+    ent.SetVel(vel);
+    ent.SetAcc(acc);
     return true;
 }
 

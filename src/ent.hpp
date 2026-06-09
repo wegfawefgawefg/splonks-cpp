@@ -177,12 +177,12 @@ struct Ent {
 
     static Ent New();
     void Reset();
-    sim::FxVec2 GetSimPos() const;
-    sim::FxVec2 GetSimVel() const;
-    sim::FxVec2 GetSimAcc() const;
-    void SetSimPos(sim::FxVec2 value);
-    void SetSimVel(sim::FxVec2 value);
-    void SetSimAcc(sim::FxVec2 value);
+    sim::FxVec2 GetPos() const;
+    sim::FxVec2 GetVel() const;
+    sim::FxVec2 GetAcc() const;
+    void SetPos(sim::FxVec2 value);
+    void SetVel(sim::FxVec2 value);
+    void SetAcc(sim::FxVec2 value);
     FVec2 GetRenderPos() const;
     FVec2 GetRenderVel() const;
     FVec2 GetRenderAcc() const;
@@ -190,11 +190,11 @@ struct Ent {
     void SetRenderVel(const FVec2& value);
     void SetRenderAcc(const FVec2& value);
     FVec2 GetSize() const;
-    sim::FxAABB GetSimAABB() const;
-    sim::FxVec2 GetSimCenter() const;
-    void SetSimCenter(sim::FxVec2 center);
-    sim::FxAABB GetSimFeet() const;
-    sim::FxAABB GetSimGroundProbe() const;
+    sim::FxAABB GetAABB() const;
+    sim::FxVec2 GetCenter() const;
+    void SetCenter(sim::FxVec2 center);
+    sim::FxAABB GetFeet() const;
+    sim::FxAABB GetGroundProbe() const;
     std::tuple<FVec2, FVec2> GetRenderBounds() const;
     FAABB GetRenderAABB() const;
     FVec2 GetRenderCenter() const;

@@ -28,7 +28,7 @@ void OnDeathAsBones(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& bones = state.ents.ents[ent_idx];
-    SpawnBreakawayContainerShards(ToFVec2(bones.GetSimCenter()), state);
+    SpawnBreakawayContainerShards(ToFVec2(bones.GetCenter()), state);
 }
 
 extern const EntSpec kBonesSpec{

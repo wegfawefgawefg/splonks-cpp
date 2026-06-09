@@ -66,15 +66,15 @@ void SpawnRescueKissParticle(const FVec2& pos, State& state) {
 
 FVec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, const Ent& damsel) {
     if (!target_vid.has_value()) {
-        return ToFVec2(damsel.GetSimCenter());
+        return ToFVec2(damsel.GetCenter());
     }
 
     const Ent* const target = state.ents.GetEnt(*target_vid);
     if (target == nullptr || !target->active) {
-        return ToFVec2(damsel.GetSimCenter());
+        return ToFVec2(damsel.GetCenter());
     }
 
-    const sim::FxAABB target_aabb = target->GetSimAABB();
+    const sim::FxAABB target_aabb = target->GetAABB();
     return ToFVec2(sim::FxVec2{
         target_aabb.center().x,
         target_aabb.tl.y + target->size.y * ToFxScalar(kRescueKissYOffsetFactor),
@@ -83,7 +83,7 @@ FVec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, 
 
 FVec2 GetRescueKissPos(const State& state, const Ent& damsel) {
     return GetRescueKissPosForEnt(
-        FindNearestPlayerVid(state, damsel.GetSimCenter(), false),
+        FindNearestPlayerVid(state, damsel.GetCenter(), false),
         state,
         damsel
     );
@@ -200,7 +200,7 @@ bool TryRescueDamsel(std::size_t ent_idx, State& state, const Graphics& graphics
 
     RescueDamsel(
         ent_idx,
-        FindNearestPlayerVid(state, damsel.GetSimCenter(), false),
+        FindNearestPlayerVid(state, damsel.GetCenter(), false),
         state,
         graphics,
         audio

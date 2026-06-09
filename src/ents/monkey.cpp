@@ -86,7 +86,7 @@ bool IsClimbableAt(const State& state, sim::FxVec2 world_pos) {
 }
 
 std::optional<sim::FxVec2> FindNearbyClimbableCenter(const State& state, const Ent& monkey) {
-    const sim::FxVec2 center = monkey.GetSimCenter();
+    const sim::FxVec2 center = monkey.GetCenter();
     for (const int probe_x : kMonkeyNearbyClimbProbeXs) {
         const std::optional<WorldTileQueryResult> tile_query =
             QueryTileAtWorldPos(state.stage, center + sim::PixelVec2(probe_x, 0));
@@ -104,7 +104,7 @@ std::optional<sim::FxVec2> FindNearbyClimbableCenter(const State& state, const E
 }
 
 std::optional<sim::FxVec2> FindClimbableTargetCenter(const State& state, const Ent& monkey) {
-    const sim::FxVec2 center = monkey.GetSimCenter();
+    const sim::FxVec2 center = monkey.GetCenter();
     const std::optional<WorldTileQueryResult> origin_query =
         QueryTileAtWorldPos(state.stage, center);
     if (!origin_query.has_value()) {
@@ -154,11 +154,11 @@ bool ShouldClimbUp(Ent& monkey, State& state, const std::optional<sim::FxVec2>& 
 }
 
 std::optional<sim::FxVec2> GetNearestPlayerDelta(const Ent& monkey, const State& state) {
-    const Ent* const player = FindNearestPlayer(state, monkey.GetSimCenter(), false);
+    const Ent* const player = FindNearestPlayer(state, monkey.GetCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
-    return GetNearestWorldDelta(state.stage, monkey.GetSimCenter(), player->GetSimCenter());
+    return GetNearestWorldDelta(state.stage, monkey.GetCenter(), player->GetCenter());
 }
 
 AudioAssetId RandomMonkeyNoise(State& state, int min_index, int max_index) {
@@ -266,7 +266,7 @@ bool TryStealRandomToolAndCast(
 }
 
 void BounceAwayFromPlayer(Ent& monkey, const Ent& player, State& state) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, monkey.GetSimCenter(), player.GetSimCenter());
+    const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, monkey.GetCenter(), player.GetCenter());
     monkey.draw_layer = DrawLayer::Foreground;
     monkey.vel.y = -sim::Scalar::from_int(state.drng.RandomIntInclusive(2, 4));
     if (delta.x > sim::Scalar::zero()) {
@@ -317,7 +317,7 @@ void EnterClimb(Ent& monkey, State& state, bool moving_up) {
 }
 
 void SnapToClimbableAndEnterClimb(Ent& monkey, State& state, sim::FxVec2 climb_center, bool moving_up) {
-    monkey.SetSimCenter(sim::FxVec2{climb_center.x, monkey.GetSimCenter().y});
+    monkey.SetCenter(sim::FxVec2{climb_center.x, monkey.GetCenter().y});
     EnterClimb(monkey, state, moving_up);
 }
 
@@ -333,7 +333,7 @@ bool TryGroundClimbOrApproach(Ent& monkey, State& state, const std::optional<sim
         return false;
     }
 
-    const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, monkey.GetSimCenter(), *climb_target);
+    const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, monkey.GetCenter(), *climb_target);
     if (delta.x.abs() < sim::Scalar::from_int(3)) {
         SnapToClimbableAndEnterClimb(monkey, state, *climb_target, ShouldClimbUp(monkey, state, player_delta));
         return true;
@@ -419,7 +419,7 @@ void RobPlayer(std::size_t monkey_idx, Ent& monkey, Ent& player, State& state, G
                state.drng.RandomIntInclusive(1, 10) <= 8) {
         player.money -= kMonkeyRobMoneyAmount;
         if (world_ops::SpawnEnt(state, EntType::GoldNugget, [&](Ent& gold) {
-                gold.SetSimCenter(monkey.GetSimCenter());
+                gold.SetCenter(monkey.GetCenter());
                 state.UpdateSidForEnt(gold.vid.id, graphics);
                 gold.vel = sim::FxVec2{
                     sim::Scalar::from_int(state.drng.RandomIntInclusive(-2, 2)),
@@ -536,7 +536,7 @@ void StepEntLogicAsMonkey(
         if (monkey.grounded) {
             EnterIdle(monkey, state);
         } else if (monkey.counter_c <= sim::Scalar::zero() &&
-                   IsClimbableAt(state, monkey.GetSimCenter())) {
+                   IsClimbableAt(state, monkey.GetCenter())) {
             EnterHang(monkey, state);
         } else if (monkey.collided_last_frame) {
             const bool wall_left = common::HasWallAheadForGroundWalker(monkey, state, graphics, -1);
@@ -576,7 +576,7 @@ void StepEntLogicAsMonkey(
         monkey.vel.x = sim::Scalar::zero();
         const bool moving_up = monkey.point_a.x == 0;
         monkey.vel.y = sim::Scalar::from_int(moving_up ? -kMonkeyClimbSpeed : kMonkeyClimbSpeed);
-        const sim::FxVec2 probe = monkey.GetSimCenter() + sim::PixelVec2(0, moving_up ? -8 : 14);
+        const sim::FxVec2 probe = monkey.GetCenter() + sim::PixelVec2(0, moving_up ? -8 : 14);
         if (monkey.counter_a > sim::Scalar::zero()) {
             monkey.counter_a -= sim::Scalar::from_int(1);
         } else if (state.drng.RandomIntInclusive(1, 100) <= kMonkeyClimbSideDismountPercent) {
@@ -623,7 +623,7 @@ void StepEntLogicAsMonkey(
         const int side = ((state.stage_frame / kMonkeyPlayerAttachSwapFrames) % 2U) == 0U ? -1 : 1;
         monkey.point_a.x = side;
         monkey.facing = side < 0 ? Side::Right : Side::Left;
-        monkey.SetSimCenter(player->GetSimCenter() +
+        monkey.SetCenter(player->GetCenter() +
                             sim::PixelVec2(side * kMonkeyPlayerAttachOffsetX,
                                            kMonkeyPlayerAttachOffsetY));
         if (monkey.counter_a > sim::Scalar::zero()) {

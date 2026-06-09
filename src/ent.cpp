@@ -221,27 +221,27 @@ void ClearTransientMovementFlags(Ent& ent) {
     SetMovementFlag(ent, EntMovementFlag::Pushing, false);
 }
 
-sim::FxVec2 Ent::GetSimPos() const {
+sim::FxVec2 Ent::GetPos() const {
     return pos;
 }
 
-sim::FxVec2 Ent::GetSimVel() const {
+sim::FxVec2 Ent::GetVel() const {
     return vel;
 }
 
-sim::FxVec2 Ent::GetSimAcc() const {
+sim::FxVec2 Ent::GetAcc() const {
     return acc;
 }
 
-void Ent::SetSimPos(sim::FxVec2 value) {
+void Ent::SetPos(sim::FxVec2 value) {
     pos = value;
 }
 
-void Ent::SetSimVel(sim::FxVec2 value) {
+void Ent::SetVel(sim::FxVec2 value) {
     vel = value;
 }
 
-void Ent::SetSimAcc(sim::FxVec2 value) {
+void Ent::SetAcc(sim::FxVec2 value) {
     acc = value;
 }
 
@@ -269,46 +269,46 @@ void Ent::SetRenderAcc(const FVec2& value) {
     acc = ToFxVec2(value);
 }
 
-sim::FxAABB Ent::GetSimAABB() const {
+sim::FxAABB Ent::GetAABB() const {
     return sim::FxAABB::from_pos_size(pos, size - sim::FxVec2::from_pixels(1, 1));
 }
 
-sim::FxVec2 Ent::GetSimCenter() const {
+sim::FxVec2 Ent::GetCenter() const {
     return pos + size / sim::Scalar::from_int(2);
 }
 
-void Ent::SetSimCenter(sim::FxVec2 center) {
+void Ent::SetCenter(sim::FxVec2 center) {
     pos = center - (size / sim::Scalar::from_int(2));
 }
 
-sim::FxAABB Ent::GetSimFeet() const {
-    const sim::FxAABB bounds = GetSimAABB();
+sim::FxAABB Ent::GetFeet() const {
+    const sim::FxAABB bounds = GetAABB();
     return sim::FxAABB::from_corners(sim::FxVec2{bounds.tl.x, bounds.br.y},
                                    bounds.br + sim::FxVec2{sim::Scalar::zero(),
                                                          sim::Scalar::from_int(1)});
 }
 
-sim::FxAABB Ent::GetSimGroundProbe() const {
-    sim::FxAABB feet = GetSimFeet();
+sim::FxAABB Ent::GetGroundProbe() const {
+    sim::FxAABB feet = GetFeet();
     feet.br.y += ToFxScalar(kGroundProbeFractionalEpsilon);
     return feet;
 }
 
 std::tuple<FVec2, FVec2> Ent::GetRenderBounds() const {
-    const sim::FxAABB bounds = GetSimAABB();
+    const sim::FxAABB bounds = GetAABB();
     return {ToFVec2(bounds.tl), ToFVec2(bounds.br)};
 }
 
 FAABB Ent::GetRenderAABB() const {
-    return ToFAABB(GetSimAABB());
+    return ToFAABB(GetAABB());
 }
 
 FVec2 Ent::GetRenderCenter() const {
-    return ToFVec2(GetSimCenter());
+    return ToFVec2(GetCenter());
 }
 
 void Ent::SetRenderCenter(const FVec2& center) {
-    SetSimCenter(ToFxVec2(center));
+    SetCenter(ToFxVec2(center));
 }
 
 FVec2 Ent::GetSize() const {
@@ -339,7 +339,7 @@ bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
         return false;
     }
 
-    const sim::FxAABB ground_probe = GetSimGroundProbe();
+    const sim::FxAABB ground_probe = GetGroundProbe();
     if (ground_probe.br.y < sim::Scalar::from_int(static_cast<std::int32_t>(stage.GetHeight()))) {
         return false;
     }
@@ -349,7 +349,7 @@ bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
 }
 
 void Ent::SetGrounded(const Stage& stage) {
-    const sim::FxAABB feet = GetSimGroundProbe();
+    const sim::FxAABB feet = GetGroundProbe();
     if (TrySnapToBlockingStageBottom(stage)) {
         grounded |= true;
         return;

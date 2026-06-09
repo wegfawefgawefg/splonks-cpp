@@ -132,7 +132,7 @@ sim::FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim:
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 center) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
-        ent.SetSimCenter(center);
+        ent.SetCenter(center);
         return;
     }
 
@@ -143,7 +143,7 @@ void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 cente
         (pbox_size - sim::FxVec2::from_pixels(1, 1)) / sim::Scalar::from_int(2);
 
     if (ent.facing == Side::Left) {
-        ent.SetSimPos(center - draw_offset - pbox_center_offset);
+        ent.SetPos(center - draw_offset - pbox_center_offset);
         return;
     }
 
@@ -151,7 +151,7 @@ void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 cente
     if (ent.type_ == EntType::BaseballBat) {
         facing_adjusted_draw_offset = sim::FxVec2{-draw_offset.x, draw_offset.y};
     }
-    ent.SetSimPos(center - facing_adjusted_draw_offset - pbox_center_offset);
+    ent.SetPos(center - facing_adjusted_draw_offset - pbox_center_offset);
 }
 
 FVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback) {
@@ -199,10 +199,10 @@ sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::Fx
 sim::FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
     const AFrame* const aframe = GetCurrentAFrameForEnt(ent, graphics);
     if (aframe == nullptr) {
-        return ent.GetSimAABB();
+        return ent.GetAABB();
     }
     if (aframe->cbox.w <= 0 || aframe->cbox.h <= 0) {
-        return ent.GetSimAABB();
+        return ent.GetAABB();
     }
 
     const sim::FxVec2 sprite_tl = GetSimSpriteTopLeftForEnt(ent, *aframe);
@@ -220,7 +220,7 @@ sim::FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
 }
 
 sim::FxAABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics) {
-    const sim::FxAABB pbox = ent.GetSimAABB();
+    const sim::FxAABB pbox = ent.GetAABB();
     const sim::FxAABB cbox = GetContactAabbForEnt(ent, graphics);
     return sim::FxAABB::from_corners(gfxp::min(pbox.tl, cbox.tl), gfxp::max(pbox.br, cbox.br));
 }

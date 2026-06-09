@@ -69,12 +69,12 @@ float GetMoveDirection(const Ent& door) {
 }
 
 FVec2 GetTopEmitPos(const Ent& door) {
-    const sim::FxAABB aabb = door.GetSimAABB();
+    const sim::FxAABB aabb = door.GetAABB();
     return ToFVec2(sim::FxVec2{aabb.center().x, aabb.tl.y});
 }
 
 FVec2 GetBottomEmitPos(const Ent& door) {
-    const sim::FxAABB aabb = door.GetSimAABB();
+    const sim::FxAABB aabb = door.GetAABB();
     return ToFVec2(sim::FxVec2{aabb.center().x, aabb.br.y});
 }
 
@@ -179,14 +179,14 @@ void SpawnSealParticles(State& state, const Ent& door) {
 }
 
 bool ShouldStartDrop(const Ent& door, const State& state) {
-    const sim::FxVec2 door_center = door.GetSimCenter();
+    const sim::FxVec2 door_center = door.GetCenter();
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !IsPlayerLikeEntType(ent.type_) ||
             ent.condition == EntCondition::Dead) {
             continue;
         }
         const sim::FxVec2 delta =
-            GetNearestWorldDelta(state.stage, door_center, ent.GetSimCenter());
+            GetNearestWorldDelta(state.stage, door_center, ent.GetCenter());
         if (delta.x >= kSimRightSensorMinX && delta.x <= kSimRightSensorMaxX &&
             delta.y >= kSimRightSensorMinY &&
             delta.y <= kSimRightSensorMaxY) {

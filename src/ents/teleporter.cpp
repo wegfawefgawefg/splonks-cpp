@@ -224,7 +224,7 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
     const Graphics& graphics
 ) {
     const sim::FxVec2 holder_visual_center =
-        common::GetVisualCenterForEnt(holder, graphics, holder.GetSimCenter());
+        common::GetVisualCenterForEnt(holder, graphics, holder.GetCenter());
     const IVec2 holder_tile = state.stage.GetTileCoordAtWc(sim::ToPixelIVec2Round(holder_visual_center));
     const IVec2 raw_target_tile = holder_tile + IVec2::New(aim.direction.x * distance_tiles, aim.direction.y * distance_tiles);
     const IVec2 target_tile = state.stage.WrapTileCoord(raw_target_tile);
@@ -580,7 +580,7 @@ void OnUseAsTeleporter(std::size_t ent_idx, State& state, Graphics& graphics, Au
 
     (void)PlayEntCenterSoundEmitter(state, *holder, audio_asset_ids::Teleport);
     const sim::FxVec2 source_center =
-        ents::common::GetVisualCenterForEnt(*holder, graphics, holder->GetSimCenter());
+        ents::common::GetVisualCenterForEnt(*holder, graphics, holder->GetCenter());
     AddEntShake(*holder, 0.5F);
     AddEntShake(teleporter, 0.5F);
     ApplyTeleportAreaShake(state, ToFVec2(source_center), 8.0F, 8.0F, 1.0F, 1.5F);

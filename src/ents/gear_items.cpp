@@ -97,8 +97,8 @@ void UpdateOpenParachuteVisual(Ent& owner, State& state, const Graphics& graphic
     }
 
     const sim::FxVec2 owner_visual_center =
-        common::GetVisualCenterForEnt(owner, graphics, owner.GetSimCenter());
-    parachute->SetSimCenter(
+        common::GetVisualCenterForEnt(owner, graphics, owner.GetCenter());
+    parachute->SetCenter(
         owner_visual_center + sim::FxVec2::from_pixels(0, kParachuteVisualOffsetYPixels)
     );
     parachute->vel = sim::FxVec2::zero();

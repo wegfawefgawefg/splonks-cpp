@@ -49,7 +49,7 @@ void AddTikiHeadReleaseShake(State& state, const Ent& head) {
 const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
     const Ent* best_player = nullptr;
     sim::Scalar best_distance_sq{};
-    const sim::FxVec2 head_center = head.GetSimCenter();
+    const sim::FxVec2 head_center = head.GetCenter();
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -60,7 +60,7 @@ const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
         }
 
         const sim::FxVec2 delta =
-            GetNearestWorldDelta(state.stage, head_center, player->GetSimCenter());
+            GetNearestWorldDelta(state.stage, head_center, player->GetCenter());
         const sim::Scalar distance_sq = gfxp::length_sq(delta);
         if (best_player == nullptr || distance_sq < best_distance_sq) {
             best_player = player;
@@ -74,12 +74,12 @@ std::optional<VID> SpawnBoulderForHead(Ent& head, State& state, Audio& audio) {
     (void)audio;
 
     Ent* const boulder = world_ops::SpawnEnt(state, EntType::Boulder, [&](Ent& spawned_boulder) {
-        spawned_boulder.SetSimCenter(head.GetSimCenter());
+        spawned_boulder.SetCenter(head.GetCenter());
 
         const Ent* const player = FindClosestPlayerToHead(head, state);
         if (player != nullptr) {
             const sim::FxVec2 delta =
-                GetNearestWorldDelta(state.stage, head.GetSimCenter(), player->GetSimCenter());
+                GetNearestWorldDelta(state.stage, head.GetCenter(), player->GetCenter());
             spawned_boulder.facing = delta.x < sim::Scalar::zero() ? Side::Left : Side::Right;
         } else {
             spawned_boulder.facing = Side::Right;

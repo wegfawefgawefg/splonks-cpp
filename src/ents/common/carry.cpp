@@ -163,7 +163,7 @@ void SyncHeldAttachForHolder(
                               : DrawLayer::Foreground;
 
     const sim::FxVec2 hold_offset = sim::FxVec2::from_pixels(4, 0);
-    const sim::FxVec2 holder_center = holder.GetSimCenter() + sim::FxVec2::from_pixels(0, 1);
+    const sim::FxVec2 holder_center = holder.GetCenter() + sim::FxVec2::from_pixels(0, 1);
     const sim::FxVec2 held_pos_target =
         holder.facing == Side::Left
             ? holder_center + sim::FxVec2{-hold_offset.x, hold_offset.y}
@@ -213,12 +213,12 @@ void SyncBackAttachForHolder(
         TrySetAnim(*back_item, EntDisplayState::Neutral);
     }
 
-    const sim::FxVec2 holder_center = holder.GetSimCenter();
+    const sim::FxVec2 holder_center = holder.GetCenter();
     const sim::FxVec2 held_pos_target =
         holder.facing == Side::Left
             ? holder_center + sim::FxVec2{-back_offset.x, back_offset.y}
             : holder_center + back_offset;
-    back_item->SetSimCenter(held_pos_target);
+    back_item->SetCenter(held_pos_target);
     SnapPlacedAttachToPixels(*back_item);
     back_item->grounded = false;
     state.UpdateSidForEnt(back_item->vid.id, graphics);
@@ -251,19 +251,19 @@ void ApplyThrowState(
                 .type = EffectHookType::Throw,
                 .actor_vid = thrower.vid,
                 .target_vid = thrown.vid,
-                .world_pos = ToFVec2(thrown.GetSimCenter()),
+                .world_pos = ToFVec2(thrown.GetCenter()),
             }
         );
     } else {
         RemoveEffect(thrown, EffectId::NoGravityUntilContact);
     }
 
-    const sim::FxVec2 thrower_center = thrower.GetSimCenter();
+    const sim::FxVec2 thrower_center = thrower.GetCenter();
     if (thrower.size.y <= thrown.size.y) {
         const sim::Scalar delta = (thrown.size.y - thrower.size.y) / sim::Scalar::from_int(2);
-        thrown.SetSimCenter(thrower_center - sim::FxVec2{sim::Scalar::zero(), delta});
+        thrown.SetCenter(thrower_center - sim::FxVec2{sim::Scalar::zero(), delta});
     } else {
-        thrown.SetSimCenter(thrower_center);
+        thrown.SetCenter(thrower_center);
     }
 
     if (IsPlayerEnt(thrown, state)) {

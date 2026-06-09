@@ -32,7 +32,7 @@ constexpr int kCavemanIdleMaxFrames = 64;
 constexpr int kCavemanIdleChance = 120;
 
 void FaceTowards(Ent& caveman, sim::FxVec2 target_pos, const Stage& stage) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(stage, caveman.GetSimCenter(), target_pos);
+    const sim::FxVec2 delta = GetNearestWorldDelta(stage, caveman.GetCenter(), target_pos);
     if (delta.x < sim::Scalar::zero()) {
         caveman.facing = Side::Left;
     } else if (delta.x > sim::Scalar::zero()) {
@@ -80,7 +80,7 @@ bool CanSeePlayerAhead(
     const State& state,
     const Graphics& graphics
 ) {
-    const sim::FxVec2 caveman_center = caveman.GetSimCenter();
+    const sim::FxVec2 caveman_center = caveman.GetCenter();
     const int direction = caveman.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -91,7 +91,7 @@ bool CanSeePlayerAhead(
             continue;
         }
         const sim::FxVec2 player_center =
-            GetNearestWorldPoint(state.stage, caveman_center, player->GetSimCenter());
+            GetNearestWorldPoint(state.stage, caveman_center, player->GetCenter());
         const sim::FxVec2 player_delta = player_center - caveman_center;
         if (player_delta.y.abs() > sim::Scalar::from_int(kCavemanSightVerticalTolerance) ||
             player_delta.x.abs() > sim::Scalar::from_int(kCavemanSightDistance)) {
@@ -159,8 +159,8 @@ void StepEntLogicAsCaveman(
     if (caveman.ai_state != EntAiState::Pursuing &&
         ShouldRunSightScan(caveman, state.stage_frame) &&
         CanSeePlayerAhead(caveman, state, graphics)) {
-        if (const Ent* const player = FindNearestPlayer(state, caveman.GetSimCenter())) {
-            FaceTowards(caveman, player->GetSimCenter(), state.stage);
+        if (const Ent* const player = FindNearestPlayer(state, caveman.GetCenter())) {
+            FaceTowards(caveman, player->GetCenter(), state.stage);
         }
         if (caveman.grounded) {
             caveman.vel.y = ToFxScalar(kCavemanAlertHopSpeedY);

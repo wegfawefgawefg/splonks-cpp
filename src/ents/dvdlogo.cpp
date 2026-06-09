@@ -35,7 +35,7 @@ void StepBounceAxis(std::size_t ent_idx, State& state, const Graphics& graphics,
     }
 
     Ent& ent = state.ents.ents[ent_idx];
-    const sim::FxAABB moved_aabb = TranslateAabb(ent.GetSimAABB(), delta);
+    const sim::FxAABB moved_aabb = TranslateAabb(ent.GetAABB(), delta);
     if (WouldBlockAt(ent_idx, moved_aabb, state, graphics)) {
         if (delta.x != sim::Scalar::zero()) {
             ent.vel.x = -ent.vel.x;
@@ -63,7 +63,7 @@ void MaybeQueueTransitionOnPlayerContact(
         return;
     }
 
-    const Ent* const player = FindNearestPlayer(state, ent.GetSimCenter(), false);
+    const Ent* const player = FindNearestPlayer(state, ent.GetCenter(), false);
     if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
         return;
     }

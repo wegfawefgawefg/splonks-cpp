@@ -27,7 +27,7 @@ bool HasAreaCallbacks(const Ent& ent) {
 
 std::vector<VID> GetAreaOverlapVids(std::size_t area_idx, const State& state) {
     const Ent& area_ent = state.ents.ents[area_idx];
-    const sim::FxAABB area = area_ent.GetSimAABB();
+    const sim::FxAABB area = area_ent.GetAABB();
 
     std::vector<VID> overlaps;
     for (const VID& vid : QueryEntsInAabb(state, area, area_ent.vid)) {
@@ -35,7 +35,7 @@ std::vector<VID> GetAreaOverlapVids(std::size_t area_idx, const State& state) {
         if (other == nullptr || !other->active) {
             continue;
         }
-        if (!WorldAabbsIntersect(state.stage, area, other->GetSimAABB())) {
+        if (!WorldAabbsIntersect(state.stage, area, other->GetAABB())) {
             continue;
         }
         overlaps.push_back(vid);
@@ -109,7 +109,7 @@ void ApplyStageWrapAndVoidDeath(std::size_t ent_idx, State& state, Audio& audio)
         return;
     }
 
-    if (ent.GetSimAABB().br.y <= state.stage.GetSimVoidDeathY()) {
+    if (ent.GetAABB().br.y <= state.stage.GetSimVoidDeathY()) {
         return;
     }
 

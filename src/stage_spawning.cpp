@@ -255,14 +255,14 @@ void SnapAttachedItemsToPlayer(State& state) {
             continue;
         }
 
-        const sim::FxVec2 player_center = player->GetSimCenter();
+        const sim::FxVec2 player_center = player->GetCenter();
 
         if (player->holding_vid.has_value()) {
             if (Ent* const held_item = state.ents.GetEntMut(*player->holding_vid)) {
                 const sim::FxVec2 hold_offset = sim::PixelVec2(4, 1);
                 held_item->facing = player->facing;
                 held_item->draw_layer = DrawLayer::Foreground;
-                held_item->SetSimCenter(player->facing == Side::Left
+                held_item->SetCenter(player->facing == Side::Left
                                             ? player_center +
                                                   sim::FxVec2{-hold_offset.x, hold_offset.y}
                                             : player_center + hold_offset);
@@ -275,7 +275,7 @@ void SnapAttachedItemsToPlayer(State& state) {
                 back_item->facing = player->facing;
                 back_item->draw_layer = DrawLayer::Background;
                 TrySetAnim(*back_item, EntDisplayState::Neutral);
-                back_item->SetSimCenter(player->facing == Side::Left
+                back_item->SetCenter(player->facing == Side::Left
                                             ? player_center +
                                                   sim::FxVec2{-back_offset.x, back_offset.y}
                                             : player_center + back_offset);
@@ -361,7 +361,7 @@ std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, sim::FxVec
     }
 
     SetEntAs(*ent, type_);
-    ent->SetSimCenter(center);
+    ent->SetCenter(center);
     ent->vel = sim::FxVec2::zero();
     return vid;
 }

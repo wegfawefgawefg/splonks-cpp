@@ -159,7 +159,7 @@ bool IsClimbableTileQuery(const std::optional<WorldTileQueryResult>& tile_query)
 }
 
 std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
-    const sim::FxVec2 center = ent.GetSimCenter();
+    const sim::FxVec2 center = ent.GetCenter();
     constexpr sim::Scalar kMaxHorizontalOffset =
         sim::Scalar::from_raw((sim::Scalar::scale * 5) / 2);
     const sim::Scalar horizontal_offset = std::min(
@@ -183,7 +183,7 @@ std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
 }
 
 void SnapToClimbTile(Ent& ent, const IVec2& tile_pos) {
-    sim::FxVec2 center = ent.GetSimCenter();
+    sim::FxVec2 center = ent.GetCenter();
     const sim::Scalar target_x =
         sim::Scalar::from_int(tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2));
     const sim::Scalar delta = std::clamp(
@@ -192,7 +192,7 @@ void SnapToClimbTile(Ent& ent, const IVec2& tile_pos) {
         sim::Scalar::from_int(kClimbSnapSpeedPixels)
     );
     center.x += delta;
-    ent.SetSimCenter(center);
+    ent.SetCenter(center);
 }
 
 std::optional<Side> GetWallSlideSide(
@@ -205,7 +205,7 @@ std::optional<Side> GetWallSlideSide(
         return std::nullopt;
     }
 
-    const sim::FxAABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetAABB();
     const auto side_blocked = [&](Side side) {
         const bool left = side == Side::Left;
         const sim::Scalar probe_x = left
@@ -232,9 +232,9 @@ std::optional<MeatSlimeSurface> GetGroundSurface(const Ent& ent, const State& st
         return std::nullopt;
     }
 
-    const sim::FxAABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetAABB();
     const sim::FxVec2 center_support_world{
-        ent.GetSimCenter().x,
+        ent.GetCenter().x,
         aabb.br.y + sim::Scalar::from_int(1),
     };
     if (const std::optional<MeatSlimeSurface> center_surface =
@@ -242,7 +242,7 @@ std::optional<MeatSlimeSurface> GetGroundSurface(const Ent& ent, const State& st
         return center_surface;
     }
 
-    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent.GetSimFeet())) {
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent.GetFeet())) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
             return MeatSlimeSurface{
                 .kind = MeatSlimeSurfaceKind::Tile,
@@ -320,7 +320,7 @@ void MaybeSpawnTopMeatSlime(Ent& ent, State& state) {
 }
 
 std::optional<MeatSlimeSurface> GetCeilingSurface(const Ent& ent, const State& state) {
-    const sim::FxAABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetAABB();
     const sim::Scalar probe_y = aabb.tl.y - sim::Scalar::from_int(1);
     const sim::FxAABB probe = sim::FxAABB::from_corners(
         sim::FxVec2{aabb.tl.x + sim::Scalar::from_int(1), probe_y},
@@ -336,7 +336,7 @@ std::optional<MeatSlimeSurface> GetCeilingSurface(const Ent& ent, const State& s
         }
     }
 
-    const sim::FxVec2 center_probe{ent.GetSimCenter().x, probe_y};
+    const sim::FxVec2 center_probe{ent.GetCenter().x, probe_y};
     return QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_probe);
 }
 
@@ -357,7 +357,7 @@ void MaybeSpawnBottomMeatSlime(Ent& ent, State& state) {
 }
 
 std::optional<MeatSlimeSurface> GetSideSurface(const Ent& ent, const State& state, Side side) {
-    const sim::FxAABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetAABB();
     const sim::Scalar probe_x = side == Side::Left
         ? aabb.tl.x - sim::Scalar::from_int(1)
         : aabb.br.x + sim::Scalar::from_int(1);
@@ -375,7 +375,7 @@ std::optional<MeatSlimeSurface> GetSideSurface(const Ent& ent, const State& stat
         }
     }
 
-    const sim::FxVec2 center_probe{probe_x, ent.GetSimCenter().y};
+    const sim::FxVec2 center_probe{probe_x, ent.GetCenter().y};
     return QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_probe);
 }
 
@@ -534,7 +534,7 @@ void OnDeathAsFleshGuy(std::size_t ent_idx, State& state, Audio& audio) {
     if (const std::optional<MeatSlimeSurface> ground_surface = GetGroundSurface(flesh_guy, state)) {
         SpawnMeatSlime(state, GetTopMeatSlimeCenter(*ground_surface, state.stage));
     } else if (const std::optional<MeatSlimeSurface> center_surface =
-                   QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, flesh_guy.GetSimCenter())) {
+                   QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, flesh_guy.GetCenter())) {
         SpawnMeatSlime(state, GetTopMeatSlimeCenter(*center_surface, state.stage));
     }
     (void)world_ops::DeactivateEnt(state, flesh_guy.vid);

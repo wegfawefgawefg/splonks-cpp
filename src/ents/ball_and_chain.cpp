@@ -24,7 +24,7 @@ constexpr std::int32_t kPlayerAwayVelocityDampingPercent = 85;
 constexpr sim::Scalar kMaxPlayerPull = sim::Scalar::from_raw(5529);
 
 sim::FxVec2 GetAnchorPos(const Ent& player) {
-    return player.GetSimCenter() +
+    return player.GetCenter() +
            sim::FxVec2{sim::Scalar::zero(), (player.size.y / 2) - sim::Scalar::from_int(1)};
 }
 
@@ -137,7 +137,7 @@ void StepEntLogicAsBallAndChainBall(
     }
 
     const sim::FxVec2 anchor_pos = GetAnchorPos(*player);
-    const sim::FxVec2 ball_center = GetNearestWorldPoint(state.stage, anchor_pos, ball.GetSimCenter());
+    const sim::FxVec2 ball_center = GetNearestWorldPoint(state.stage, anchor_pos, ball.GetCenter());
     const sim::FxVec2 delta = ball_center - anchor_pos;
     const FixedRaw delta_x_raw = delta.x.raw_value();
     const FixedRaw delta_y_raw = delta.y.raw_value();

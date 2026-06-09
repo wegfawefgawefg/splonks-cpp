@@ -18,7 +18,7 @@ namespace splonks::ents::bat {
 namespace {
 
 sim::FxAABB GetAreaAbove(const Ent& bat) {
-    const sim::FxAABB aabb = bat.GetSimAABB();
+    const sim::FxAABB aabb = bat.GetAABB();
     return sim::FxAABB::from_corners(
         sim::FxVec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
         sim::FxVec2{aabb.br.x, aabb.tl.y}
@@ -46,7 +46,7 @@ std::optional<sim::FxVec2> FindBatTargetPosition(const Ent& bat, const State& st
 
     std::optional<sim::FxVec2> best_target;
     sim::Scalar best_dist_sq{};
-    const sim::FxVec2 bat_pos = bat.GetSimPos();
+    const sim::FxVec2 bat_pos = bat.GetPos();
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -58,7 +58,7 @@ std::optional<sim::FxVec2> FindBatTargetPosition(const Ent& bat, const State& st
         }
 
         const sim::FxVec2 player_delta =
-            GetNearestWorldDelta(state.stage, bat_pos, player->GetSimPos());
+            GetNearestWorldDelta(state.stage, bat_pos, player->GetPos());
         if (player_delta.y <= sim::Scalar::zero() ||
             player_delta.y.abs() >= vertical_detect_dist ||
             player_delta.x.abs() >= horizontal_chase_dist) {

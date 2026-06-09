@@ -126,7 +126,7 @@ void SpawnChestSparkles(const FVec2& emit_pos, State& state) {
 
 void SpawnChestTrapBomb(sim::FxVec2 spawn_center, State& state) {
     (void)world_ops::SpawnEnt(state, EntType::Bomb, [&](Ent& bomb) {
-        bomb.SetSimCenter(spawn_center);
+        bomb.SetCenter(spawn_center);
         bomb.vel = RandomChestLaunchVelocity(state);
         bomb.acc = sim::FxVec2::zero();
         bomb.counter_a = ToFxScalar(kChestTrapFuseFrames);
@@ -143,7 +143,7 @@ void SpawnChestTreasure(
         state.drng.RandomIntInclusive(kChestTreasureDropMin, kChestTreasureDropMax);
     for (int i = 0; i < gem_count; ++i) {
         if (world_ops::SpawnEnt(state, RandomChestGemType(state), [&](Ent& gem) {
-                gem.SetSimCenter(spawn_center);
+                gem.SetCenter(spawn_center);
                 gem.vel = sim::FxVec2::zero();
                 gem.acc = sim::FxVec2::zero();
                 LaunchChestLoot(state, gem, opener_vid);
@@ -157,7 +157,7 @@ void SpawnChestTreasure(
     }
 
     (void)world_ops::SpawnEnt(state, RandomChestGemType(state), [&](Ent& gem) {
-        gem.SetSimCenter(spawn_center);
+        gem.SetCenter(spawn_center);
         gem.vel = sim::FxVec2::zero();
         gem.acc = sim::FxVec2::zero();
         LaunchChestLoot(state, gem, opener_vid);
@@ -308,7 +308,7 @@ bool TryOpenTreasureChest(
 
     const Ent& chest = state.ents.ents[ent_idx];
     const sim::FxVec2 emit_pos =
-        common::GetEmitPointForEnt(chest, graphics, chest.GetSimCenter());
+        common::GetEmitPointForEnt(chest, graphics, chest.GetCenter());
     return TryOpenTreasureChestAt(ent_idx, emit_pos, state, audio, opener_vid);
 }
 
@@ -333,10 +333,10 @@ EntDamageEffectResult OnDamageEffectAsChest(
     const Ent& chest = state.ents.ents[ent_idx];
     if (!TryOpenTreasureChestAt(
             ent_idx,
-            chest.GetSimCenter(),
+            chest.GetCenter(),
             state,
             audio,
-            FindNearestPlayerVid(state, chest.GetSimCenter(), false))) {
+            FindNearestPlayerVid(state, chest.GetCenter(), false))) {
         return EntDamageEffectResult::None;
     }
     return EntDamageEffectResult::Consumed;
@@ -365,20 +365,20 @@ bool TryOpenKeyChestWithKey(
 
     SetAnim(chest, aframe_ids::KeyChestOpen);
     const sim::FxVec2 emit_pos =
-        common::GetEmitPointForEnt(chest, graphics, chest.GetSimCenter());
+        common::GetEmitPointForEnt(chest, graphics, chest.GetCenter());
     const FVec2 render_emit_pos = ToFVec2(emit_pos);
     SpawnChestSparkles(render_emit_pos, state);
     (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::Unlock);
     (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::ChestOpen);
     (void)world_ops::SpawnEnt(state, EntType::UdjatEye, [&](Ent& udjat_eye) {
-        udjat_eye.SetSimCenter(emit_pos);
+        udjat_eye.SetCenter(emit_pos);
         udjat_eye.vel = sim::FxVec2::zero();
         udjat_eye.acc = sim::FxVec2::zero();
         LaunchChestLoot(
             state,
             udjat_eye,
             holder != nullptr ? std::optional<VID>(holder->vid)
-                              : FindNearestPlayerVid(state, chest.GetSimCenter(), false));
+                              : FindNearestPlayerVid(state, chest.GetCenter(), false));
     });
     if (holder != nullptr && key != nullptr) {
         ConsumeHeldChestKey(holder, *key, state, graphics);

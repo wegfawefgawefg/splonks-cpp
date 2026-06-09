@@ -103,7 +103,7 @@ BlockingContactSet GatherBlockingContactsForAabb(
                 continue;
             }
             const sim::FxAABB other_aabb =
-                GetNearestWorldAabb(state.stage, anchor, other_ent->GetSimAABB());
+                GetNearestWorldAabb(state.stage, anchor, other_ent->GetAABB());
             if (gfxp::aabbs_intersect(aabb, other_aabb)) {
                 contacts.ent_vids.push_back(other_vid);
             }

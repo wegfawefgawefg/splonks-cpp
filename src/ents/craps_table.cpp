@@ -100,7 +100,7 @@ Ent* SpawnWonPrize(Ent& table, const Ent& display_prize, State& state) {
         display_prize.type_,
         [&](Ent& ent) {
             ClearEntBuyableState(ent);
-            ent.SetSimCenter(table.GetSimCenter() + sim::FxVec2::from_pixels(0, -18));
+            ent.SetCenter(table.GetCenter() + sim::FxVec2::from_pixels(0, -18));
             ent.vel = PrizeLaunchVelocity();
             ent.acc = sim::FxVec2::zero();
             ent.grounded = false;
@@ -127,7 +127,7 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
     dice.counter_b = sim::Scalar::from_int(kDiceRollState);
     dice.rotation = ToFxScalar(static_cast<float>(state.drng.RandomIntInclusive(0, 359)));
 
-    dice.SetSimCenter(table.GetSimCenter() + sim::FxVec2::from_pixels(0, -10));
+    dice.SetCenter(table.GetCenter() + sim::FxVec2::from_pixels(0, -10));
     dice.vel = DiceLaunchVelocity(state);
     dice.acc = sim::FxVec2::zero();
 }
@@ -173,7 +173,7 @@ void PayCrapsResult(
 
 void AddCrapsPrompt(Ent& table, State& state, const char* message, std::uint32_t quantity) {
     state.AddWorldPrompt(WorldPrompt{
-        .world_pos = ToFVec2(table.GetSimCenter() + sim::FxVec2::from_pixels(0, -24)),
+        .world_pos = ToFVec2(table.GetCenter() + sim::FxVec2::from_pixels(0, -24)),
         .action_text = quantity > 0 ? "RB" : "",
         .message_text = message,
         .show_down_arrow = true,
@@ -185,7 +185,7 @@ void AddCrapsPrompt(Ent& table, State& state, const char* message, std::uint32_t
 
 bool PlayerOverlapsTable(const Ent& table, const Ent& player, const Graphics& graphics,
                          const Stage& stage) {
-    const sim::FxAABB table_aabb = table.GetSimAABB();
+    const sim::FxAABB table_aabb = table.GetAABB();
     const sim::FxAABB player_aabb = common::GetContactAabbForEnt(player, graphics);
     return WorldAabbsIntersect(stage, table_aabb, player_aabb);
 }

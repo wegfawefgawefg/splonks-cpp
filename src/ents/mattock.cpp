@@ -88,7 +88,7 @@ IVec2 ToWorldPixelTrunc(sim::FxVec2 point) {
 sim::FxVec2 GetFallbackStrikePoint(const Ent& mattock) {
     const sim::Scalar direction =
         sim::Scalar::from_int(mattock.facing == Side::Left ? -1 : 1);
-    return mattock.GetSimCenter() + sim::FxVec2{sim::Scalar::from_int(10) * direction,
+    return mattock.GetCenter() + sim::FxVec2{sim::Scalar::from_int(10) * direction,
                                               sim::Scalar::zero()};
 }
 
@@ -178,7 +178,7 @@ StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& aud
 }
 
 MattockTileTargets GetMattockTileTargets(const Ent& holder, const Stage& stage) {
-    const sim::FxAABB holder_aabb = holder.GetSimAABB();
+    const sim::FxAABB holder_aabb = holder.GetAABB();
     const int front_world_x = holder.facing == Side::Left
                                   ? holder_aabb.tl.x.to_pixels_floor() - 1 -
                                         kMattockForwardProbeBiasPixels

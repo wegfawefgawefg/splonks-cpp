@@ -17,7 +17,7 @@ constexpr std::size_t TileIndex(Tile tile) {
 
 Ent* SpawnEntAtCenter(EntType type_, sim::FxVec2 center, State& state) {
     return world_ops::SpawnEnt(state, type_, [center](Ent& ent) {
-        ent.SetSimCenter(center);
+        ent.SetCenter(center);
         ent.vel = sim::FxVec2::zero();
     });
 }

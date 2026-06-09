@@ -23,7 +23,7 @@ constexpr std::uint32_t kBeamContactDamage = 1;
 
 bool HasSolidSupportAbove(const Ent& emitter, const State& state) {
     const sim::FxVec2 probe =
-        emitter.GetSimCenter() + sim::FxVec2::from_pixels(0, -kBeamSegmentSizePixels);
+        emitter.GetCenter() + sim::FxVec2::from_pixels(0, -kBeamSegmentSizePixels);
     const std::optional<WorldTileQueryResult> tile_query =
         QueryTileAtWorldPos(state.stage, probe);
     return tile_query.has_value() && tile_query->tile != nullptr &&
@@ -39,7 +39,7 @@ std::vector<VID>& EnsureChildBeamVids(Ent& emitter) {
 
 Ent* SpawnBeamSegment(State& state, sim::FxVec2 center, const Ent& emitter) {
     return world_ops::SpawnEnt(state, EntType::Beam, [&](Ent& beam) {
-        beam.SetSimCenter(center);
+        beam.SetCenter(center);
         beam.ent_a = emitter.vid;
         beam.facing = emitter.facing;
         beam.alpha = emitter.alpha;
@@ -64,7 +64,7 @@ void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
 
     for (std::size_t segment_idx = 0; segment_idx < static_cast<std::size_t>(kBeamSegmentCount); ++segment_idx) {
         const sim::FxVec2 segment_center =
-            emitter.GetSimCenter() +
+            emitter.GetCenter() +
             sim::FxVec2::from_pixels(
                 0,
                 kBeamSegmentSizePixels * static_cast<int>(segment_idx + 1)
@@ -80,7 +80,7 @@ void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
             beam_vids[segment_idx] = beam->vid;
         }
 
-        beam->SetSimCenter(segment_center);
+        beam->SetCenter(segment_center);
         beam->facing = emitter.facing;
         beam->alpha = emitter.alpha;
     }
@@ -149,7 +149,7 @@ void OnDeathAsBarrierEmitter(std::size_t ent_idx, State& state, Audio& audio) {
     DestroyBeamChildren(emitter, state);
     AddShake(
         state,
-        ToFVec2(emitter.GetSimCenter()),
+        ToFVec2(emitter.GetCenter()),
         1.4F,
         2.0F,
         ShakeMask::ForegroundTiles | ShakeMask::BackgroundTiles | ShakeMask::Ents

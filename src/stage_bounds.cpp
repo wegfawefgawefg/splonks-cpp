@@ -205,7 +205,7 @@ void Stage::NormalizeEntPositionForWrap(Ent& ent) const {
     if (WrapsX()) {
         const sim::Scalar stage_width = sim::Scalar::from_pixels(static_cast<int>(GetWidth()));
         while (true) {
-            const sim::FxAABB aabb = ent.GetSimAABB();
+            const sim::FxAABB aabb = ent.GetAABB();
             if (aabb.br.x < sim::Scalar::zero()) {
                 ent.pos.x += stage_width;
                 continue;
@@ -221,7 +221,7 @@ void Stage::NormalizeEntPositionForWrap(Ent& ent) const {
     if (WrapsY()) {
         const sim::Scalar stage_height = sim::Scalar::from_pixels(static_cast<int>(GetHeight()));
         while (true) {
-            const sim::FxAABB aabb = ent.GetSimAABB();
+            const sim::FxAABB aabb = ent.GetAABB();
             if (aabb.br.y < sim::Scalar::zero()) {
                 ent.pos.y += stage_height;
                 continue;

@@ -40,9 +40,9 @@ bool IsAtCrusherLeadingFace(
     const Ent& other_ent,
     const IVec2& push_direction
 ) {
-    const sim::FxAABB crusher_aabb = crusher.GetSimAABB();
+    const sim::FxAABB crusher_aabb = crusher.GetAABB();
     const sim::FxAABB other_aabb =
-        GetNearestWorldAabb(stage, crusher_aabb.center(), other_ent.GetSimAABB());
+        GetNearestWorldAabb(stage, crusher_aabb.center(), other_ent.GetAABB());
     const sim::FxVec2 crusher_center = crusher_aabb.center();
     const sim::FxVec2 other_center = other_aabb.center();
 
@@ -145,7 +145,7 @@ void TryPushBlocks(
                 const sim::Scalar push_zone_left_x = ent_aabb.tl.x - sim::Scalar::from_int(1);
                 const sim::Scalar push_zone_right_x = ent_aabb.br.x + sim::Scalar::from_int(1);
                 const sim::FxAABB nearest_block_aabb =
-                    GetNearestWorldAabb(state.stage, ent_aabb.center(), block_ent->GetSimAABB());
+                    GetNearestWorldAabb(state.stage, ent_aabb.center(), block_ent->GetAABB());
                 const sim::FxVec2 block_tl = nearest_block_aabb.tl;
                 const sim::FxVec2 block_br = nearest_block_aabb.br;
                 sim::Scalar block_x_acc_delta = sim::Scalar::zero();

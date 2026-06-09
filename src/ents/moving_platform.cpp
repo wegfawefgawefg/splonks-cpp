@@ -85,7 +85,7 @@ void SpawnIcyPlatformParticles(const Ent& platform, State& state) {
     shard.aframe_animator = AFrameAnimator::New(aframe_ids::IceBlock);
     shard.draw_layer = DrawLayer::Foreground;
     shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(12, 20));
-    shard.pos = ToFVec2(platform.GetSimCenter()) + FVec2::New(
+    shard.pos = ToFVec2(platform.GetCenter()) + FVec2::New(
         rng::RandomFloat(-4.0F, 4.0F),
         rng::RandomFloat(-2.0F, 2.0F)
     );

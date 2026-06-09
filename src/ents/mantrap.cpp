@@ -52,8 +52,8 @@ bool CanMantrapEatEnt(const Ent& target) {
 }
 
 void FaceTarget(Ent& mantrap, const Ent& target, const Stage& stage) {
-    const sim::FxVec2 delta = GetNearestWorldDelta(stage, mantrap.GetSimAABB().center(),
-                                                 target.GetSimAABB().center());
+    const sim::FxVec2 delta = GetNearestWorldDelta(stage, mantrap.GetAABB().center(),
+                                                 target.GetAABB().center());
     if (delta.x < sim::Scalar::zero()) {
         mantrap.facing = Side::Left;
     } else if (delta.x > sim::Scalar::zero()) {

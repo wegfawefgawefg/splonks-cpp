@@ -20,7 +20,7 @@ constexpr int kGiantSpiderDropDistance = 90;
 constexpr float kGiantSpiderDropXTolerance = 8.0F;
 
 bool HasCeilingSupport(const Ent& ent, const State& state) {
-    const sim::FxAABB aabb = ent.GetSimAABB();
+    const sim::FxAABB aabb = ent.GetAABB();
     const sim::FxVec2 sample_pos = sim::FxVec2{
         aabb.center().x,
         aabb.tl.y - sim::Scalar::from_pixels(1),
@@ -30,13 +30,13 @@ bool HasCeilingSupport(const Ent& ent, const State& state) {
 }
 
 std::optional<sim::FxVec2> GetPlayerDeltaBelow(const Ent& ent, const State& state, int max_distance) {
-    const Ent* const player = FindNearestPlayer(state, ent.GetSimCenter(), false);
+    const Ent* const player = FindNearestPlayer(state, ent.GetCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const sim::FxVec2 ent_center = ent.GetSimCenter();
-    const sim::FxVec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetSimCenter());
+    const sim::FxVec2 ent_center = ent.GetCenter();
+    const sim::FxVec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetCenter());
     const sim::FxVec2 delta = player_center - ent_center;
     if (delta.y <= sim::Scalar::zero() ||
         gfxp::length_sq(delta) >= sim::Scalar::from_int(max_distance * max_distance)) {

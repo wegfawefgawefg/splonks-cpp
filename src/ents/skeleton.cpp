@@ -32,13 +32,13 @@ constexpr float kSkeletonWalkAcceleration = 0.2F;
 constexpr float kSkullBreakImpactSpeed = 2.25F;
 
 std::optional<sim::FxVec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
-    const Ent* const player = FindNearestPlayer(state, ent.GetSimCenter(), false);
+    const Ent* const player = FindNearestPlayer(state, ent.GetCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const sim::FxVec2 ent_center = ent.GetSimCenter();
-    const sim::FxVec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetSimCenter());
+    const sim::FxVec2 ent_center = ent.GetCenter();
+    const sim::FxVec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetCenter());
     return player_center - ent_center;
 }
 
@@ -177,7 +177,7 @@ void SpawnSkeletonDeathEffects(const FVec2& center, State& state) {
 
 void DropLooseSkull(sim::FxVec2 center, State& state) {
     (void)world_ops::SpawnEnt(state, EntType::Skull, [&](Ent& skull) {
-        skull.SetSimCenter(center);
+        skull.SetCenter(center);
         skull.vel = sim::FxVec2{
             RandomSimScalar(state.drng, sim::Scalar::from_int(-1), sim::Scalar::from_int(1)),
             RandomSimScalar(state.drng, ToFxScalar(-1.8F), ToFxScalar(-0.8F)),
@@ -275,7 +275,7 @@ void OnDeathAsSkull(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& skull = state.ents.ents[ent_idx];
-    SpawnSkullBreakEffects(ToFVec2(skull.GetSimCenter()), state);
+    SpawnSkullBreakEffects(ToFVec2(skull.GetCenter()), state);
 }
 
 void OnDeathAsSkeleton(std::size_t ent_idx, State& state, Audio& audio) {
@@ -285,7 +285,7 @@ void OnDeathAsSkeleton(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& skeleton = state.ents.ents[ent_idx];
-    const sim::FxVec2 center = skeleton.GetSimCenter();
+    const sim::FxVec2 center = skeleton.GetCenter();
     SpawnSkeletonDeathEffects(ToFVec2(center), state);
     DropLooseSkull(center, state);
     (void)world_ops::DeactivateEnt(state, skeleton.vid);

@@ -55,20 +55,20 @@ std::optional<VID> GetRewardTargetVid(const Ent& idol, const State& state) {
             return holder->vid;
         }
     }
-    return FindNearestPlayerVid(state, idol.GetSimCenter(), false);
+    return FindNearestPlayerVid(state, idol.GetCenter(), false);
 }
 
 FVec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& state, const Ent& idol) {
     if (!target_vid.has_value()) {
-        return ToFVec2(idol.GetSimCenter());
+        return ToFVec2(idol.GetCenter());
     }
 
     const Ent* const target = state.ents.GetEnt(*target_vid);
     if (target == nullptr || !target->active) {
-        return ToFVec2(idol.GetSimCenter());
+        return ToFVec2(idol.GetCenter());
     }
 
-    const sim::FxAABB target_aabb = target->GetSimAABB();
+    const sim::FxAABB target_aabb = target->GetAABB();
     return ToFVec2(sim::FxVec2{
         target_aabb.center().x,
         target_aabb.tl.y + target->size.y * ToFxScalar(kRewardParticleYOffsetFactor),
@@ -76,7 +76,7 @@ FVec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& 
 }
 
 std::optional<std::size_t> FindIntersectingShopIdx(const Ent& idol, const State& state) {
-    const sim::FxAABB idol_aabb = idol.GetSimAABB();
+    const sim::FxAABB idol_aabb = idol.GetAABB();
     for (std::size_t ent_idx = 0; ent_idx < state.ents.ents.size(); ++ent_idx) {
         const Ent& ent = state.ents.ents[ent_idx];
         if (!ent.active || ent.type_ != EntType::Shop) {

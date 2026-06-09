@@ -106,7 +106,7 @@ inline std::optional<VID> FindNearestPlayerVid(
         if (require_normal_condition && player->condition != EntCondition::Normal) {
             continue;
         }
-        const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, world_pos, player->GetSimPos());
+        const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, world_pos, player->GetPos());
         const sim::Scalar dist_sq = gfxp::length_sq(delta);
         if (!best_dist_sq.has_value() || dist_sq < *best_dist_sq) {
             best_dist_sq = dist_sq;
