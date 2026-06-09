@@ -292,13 +292,13 @@ Expected final state:
 - Float conversions are visible only at render/audio/debug/UI/particle/tooling
   boundaries.
 
-## Open Naming Decision
+## Closed Naming Decision
 
-Pick rectangle spelling before implementation:
+Rectangle spelling chosen for this pass:
 
-- `FxAABB` / `FAABB`: most mechanical and closest to the current vocabulary.
-- `FxRect` / `FRect`: friendlier if we want to stop saying AABB everywhere.
+- `FxAABB`: fixed-point authoritative/gameplay rectangle.
+- `FAABB`: float presentation rectangle.
 
-Recommendation: use `FxAABB` / `FAABB` for this pass because it is mechanical
-and preserves collision vocabulary. Rename to `Rect` later only if it actually
-improves readability.
+This pass keeps AABB terminology because it is mechanical and preserves
+collision vocabulary. Rename to `Rect` later only if it improves readability
+without reopening the fixed/float helper split.
