@@ -26,7 +26,7 @@ constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct BowAim {
     FVec2 direction = FVec2::New(1.0F, 0.0F);
-    sim::Vec2 sim_direction = sim::Vec2{sim::Scalar::from_int(1), sim::Scalar::zero()};
+    sim::FxVec2 sim_direction = sim::FxVec2{sim::Scalar::from_int(1), sim::Scalar::zero()};
     Side facing = Side::Right;
     sim::Scalar rotation = sim::Scalar::zero();
 };
@@ -91,20 +91,20 @@ FVec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
     return FVec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
 }
 
-sim::Vec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
+sim::FxVec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
     if (aim_x == 0 && aim_y == 0) {
-        return sim::Vec2{
+        return sim::FxVec2{
             sim::Scalar::from_int(facing == Side::Left ? -1 : 1),
             sim::Scalar::zero(),
         };
     }
     if (aim_x != 0 && aim_y != 0) {
-        return sim::Vec2{
+        return sim::FxVec2{
             sim::Scalar::from_int(aim_x) * sim::ToSimScalar(kDiagonalAimComponent),
             sim::Scalar::from_int(aim_y) * sim::ToSimScalar(kDiagonalAimComponent),
         };
     }
-    return sim::Vec2{
+    return sim::FxVec2{
         sim::Scalar::from_int(aim_x),
         sim::Scalar::from_int(aim_y),
     };
@@ -189,12 +189,12 @@ void ArmBow(Ent& bow, State& state) {
 
 void SpawnArrowFromBow(Ent& bow, State& state, const BowAim& aim) {
     (void)world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
-        const sim::Vec2 spawn_center = bow.GetSimCenter() +
+        const sim::FxVec2 spawn_center = bow.GetSimCenter() +
                                        (aim.sim_direction * sim::Scalar::from_int(12));
         arrow.SetSimCenter(sim::PixelVec2(spawn_center.x.to_pixels_round(),
                                           spawn_center.y.to_pixels_round()));
         arrow.vel = aim.sim_direction * sim::ToSimScalar(kBowArrowSpeed);
-        arrow.acc = sim::Vec2::zero();
+        arrow.acc = sim::FxVec2::zero();
         arrow.facing = aim.facing;
         arrow.rotation = aim.rotation;
         arrow.thrown_by = bow.ent_a.has_value() ? bow.ent_a : bow.held_by_vid;

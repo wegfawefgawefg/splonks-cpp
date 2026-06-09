@@ -30,7 +30,7 @@ bool IsInSpelunkyExplosionFootprint(const IVec2& tile_delta) {
            (abs_y == 0 && abs_x <= kExplosionCrossRadiusTiles);
 }
 
-bool IsInSpelunkyExplosionFootprint(sim::Vec2 world_delta) {
+bool IsInSpelunkyExplosionFootprint(sim::FxVec2 world_delta) {
     const sim::Scalar abs_x = world_delta.x.abs();
     const sim::Scalar abs_y = world_delta.y.abs();
     const sim::Scalar diagonal_limit = sim::ToSimScalar(1.5F * static_cast<float>(kTileSize));
@@ -44,7 +44,7 @@ bool IsInSpelunkyExplosionFootprint(sim::Vec2 world_delta) {
            (abs_y <= centerline_limit && abs_x <= cross_limit);
 }
 
-std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, sim::Vec2 center) {
+std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, sim::FxVec2 center) {
     const IVec2 center_tile = stage.GetTileCoordAtWc(
         IVec2::New(center.x.to_pixels_trunc(), center.y.to_pixels_trunc())
     );
@@ -70,7 +70,7 @@ std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, sim::Vec2 ce
 
 void DoExplosion(
     std::size_t ent_idx,
-    sim::Vec2 center,
+    sim::FxVec2 center,
     float size,
     float push_magnitude,
     State& state,
@@ -140,8 +140,8 @@ void DoExplosion(
 
     const sim::Scalar explosion_size = sim::ToSimScalar(size * static_cast<float>(kTileSize));
     const sim::AABB area = sim::AABB::from_corners(
-        center - sim::Vec2{explosion_size, explosion_size},
-        center + sim::Vec2{explosion_size, explosion_size}
+        center - sim::FxVec2{explosion_size, explosion_size},
+        center + sim::FxVec2{explosion_size, explosion_size}
     );
 
     const VID this_vid = state.ents.GetVid(ent_idx);
@@ -149,7 +149,7 @@ void DoExplosion(
     const sim::Scalar sim_push_magnitude = sim::ToSimScalar(push_magnitude);
     for (const VID& vid : results) {
         if (Ent* const ent = state.ents.GetEntMut(vid)) {
-            const sim::Vec2 delta = GetNearestWorldDelta(state.stage, center, ent->GetSimCenter());
+            const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, center, ent->GetSimCenter());
             const bool can_receive_push =
                 ent->active &&
                 ent->has_physics &&
@@ -168,9 +168,9 @@ void DoExplosion(
                 );
                 continue;
             }
-            sim::Vec2 knockback_dir = sim::NormalizeOrZero(delta);
-            if (knockback_dir == sim::Vec2::zero()) {
-                knockback_dir = sim::Vec2{
+            sim::FxVec2 knockback_dir = sim::NormalizeOrZero(delta);
+            if (knockback_dir == sim::FxVec2::zero()) {
+                knockback_dir = sim::FxVec2{
                     sim::Scalar::zero(),
                     sim::Scalar::from_int(-1),
                 };

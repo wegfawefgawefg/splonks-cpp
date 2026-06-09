@@ -117,12 +117,12 @@ struct FingerprintWriter {
     }
 
     void AddVec2(const FVec2& vec) {
-        const sim::Vec2 fixed = sim::ToSimVec2(vec);
+        const sim::FxVec2 fixed = sim::ToSimVec2(vec);
         AddFixedScalar(fixed.x);
         AddFixedScalar(fixed.y);
     }
 
-    void AddFixedVec2(const sim::Vec2& vec) {
+    void AddFixedVec2(const sim::FxVec2& vec) {
         AddFixedScalar(vec.x);
         AddFixedScalar(vec.y);
     }
@@ -195,10 +195,10 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage,
                 }
                 return grid[y_][x_];
             };
-            const auto read_sim_vec2_grid = [](const std::vector<std::vector<sim::Vec2>>& grid,
+            const auto read_sim_vec2_grid = [](const std::vector<std::vector<sim::FxVec2>>& grid,
                                                std::size_t y_, std::size_t x_) {
                 if (y_ >= grid.size() || x_ >= grid[y_].size()) {
-                    return sim::Vec2::zero();
+                    return sim::FxVec2::zero();
                 }
                 return grid[y_][x_];
             };

@@ -331,7 +331,7 @@ void HandleJoinRequestAsHost(
     }
 
     const std::string display_name = ReadFixedString(request.display_name);
-    sim::Vec2 remote_spawn = GetRemoteSpawnPos(state);
+    sim::FxVec2 remote_spawn = GetRemoteSpawnPos(state);
     for (std::size_t i = 0; i < player_ids.size(); ++i) {
         const PlayerId player_id = player_ids[i];
         const std::string player_name = display_name.empty()
@@ -339,7 +339,7 @@ void HandleJoinRequestAsHost(
             : display_name + " " + std::to_string(i + 1);
         PlayerSlot& slot = state.players.EnsureRemotePlayer(player_id, player_name);
         const NetRetainedPlayerState* const retained = FindRetainedPlayerState(state, player_id);
-        const sim::Vec2 spawn_pos = ResolveReconnectSpawnPos(state, retained, i);
+        const sim::FxVec2 spawn_pos = ResolveReconnectSpawnPos(state, retained, i);
         if (i == 0) {
             remote_spawn = spawn_pos;
         }
@@ -389,7 +389,7 @@ void HandleJoinRequestAsHost(
     }
     RegisterRemoteEndpoint(transport, player_ids, udp_packet.endpoint, transport.pump_tick);
 
-    const sim::Vec2 host_spawn = GetPrimaryPlayerSpawnPos(state);
+    const sim::FxVec2 host_spawn = GetPrimaryPlayerSpawnPos(state);
     JoinAcceptPacket accept;
     accept.assigned_player_count = static_cast<std::uint32_t>(std::min<std::size_t>(
         player_ids.size(),
@@ -516,15 +516,15 @@ void HandleJoinAcceptAsPeer(
         transport.last_error = "Join accepted, but synced quest stage load failed.";
         return;
     }
-    const sim::Vec2 host_spawn{accept.host_spawn_x, accept.host_spawn_y};
-    const sim::Vec2 remote_spawn{accept.remote_spawn_x, accept.remote_spawn_y};
+    const sim::FxVec2 host_spawn{accept.host_spawn_x, accept.host_spawn_y};
+    const sim::FxVec2 remote_spawn{accept.remote_spawn_x, accept.remote_spawn_y};
     PlayerSlot& host_slot =
         state.players.EnsureRemotePlayer(accept.host_player_id, ReadFixedString(accept.host_name));
     if (host_slot.ent_vid.has_value()) {
         if (Ent* const host = state.ents.GetEntMut(*host_slot.ent_vid)) {
             host->pos = host_spawn;
-            host->vel = sim::Vec2::zero();
-            host->acc = sim::Vec2::zero();
+            host->vel = sim::FxVec2::zero();
+            host->acc = sim::FxVec2::zero();
             state.net_session.LinkEnt(MakePlayerNetEntId(accept.host_player_id), host->vid);
         }
     } else {

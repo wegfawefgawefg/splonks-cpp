@@ -113,7 +113,7 @@ void ApplyStageWrapAndVoidDeath(std::size_t ent_idx, State& state, Audio& audio)
         return;
     }
 
-    ent.vel = sim::Vec2::zero();
+    ent.vel = sim::FxVec2::zero();
     ent.health = 0;
     ents::common::DieIfDead(ent_idx, state, audio);
 }

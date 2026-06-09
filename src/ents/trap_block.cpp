@@ -83,7 +83,7 @@ int GetMaxSensorDistance(const State& state, const IVec2& direction) {
 }
 
 int ComputeOpenSensorDistance(const Ent& block, const State& state, const IVec2& direction) {
-    const sim::Vec2 block_center = block.GetSimCenter();
+    const sim::FxVec2 block_center = block.GetSimCenter();
     const IVec2 origin_world = IVec2::New(
         block_center.x.to_pixels_trunc(),
         block_center.y.to_pixels_trunc()
@@ -127,30 +127,30 @@ int GetCachedOpenSensorDistance(Ent& block, const State& state, std::size_t dire
     }
 }
 
-sim::Vec2 GetSensorStart(sim::Vec2 center, const DirectionInfo& direction) {
+sim::FxVec2 GetSensorStart(sim::FxVec2 center, const DirectionInfo& direction) {
     return center + sim::PixelVec2(
         direction.tile_dir.x * static_cast<int>(kTileSize / 2),
         direction.tile_dir.y * static_cast<int>(kTileSize / 2)
     );
 }
 
-sim::AABB MakeSensorAabb(sim::Vec2 center, const DirectionInfo& direction, int open_distance) {
-    const sim::Vec2 start = GetSensorStart(center, direction);
-    const sim::Vec2 end = start + sim::PixelVec2(
+sim::AABB MakeSensorAabb(sim::FxVec2 center, const DirectionInfo& direction, int open_distance) {
+    const sim::FxVec2 start = GetSensorStart(center, direction);
+    const sim::FxVec2 end = start + sim::PixelVec2(
         direction.tile_dir.x * open_distance,
         direction.tile_dir.y * open_distance
     );
 
     if (direction.tile_dir.x != 0) {
         return sim::AABB::from_corners(
-            sim::Vec2{gfxp::min(start.x, end.x), center.y - kSensorHalfWidth},
-            sim::Vec2{gfxp::max(start.x, end.x), center.y + kSensorHalfWidth}
+            sim::FxVec2{gfxp::min(start.x, end.x), center.y - kSensorHalfWidth},
+            sim::FxVec2{gfxp::max(start.x, end.x), center.y + kSensorHalfWidth}
         );
     }
 
     return sim::AABB::from_corners(
-        sim::Vec2{center.x - kSensorHalfWidth, gfxp::min(start.y, end.y)},
-        sim::Vec2{center.x + kSensorHalfWidth, gfxp::max(start.y, end.y)}
+        sim::FxVec2{center.x - kSensorHalfWidth, gfxp::min(start.y, end.y)},
+        sim::FxVec2{center.x + kSensorHalfWidth, gfxp::max(start.y, end.y)}
     );
 }
 
@@ -159,7 +159,7 @@ bool IsSensorBlockingEnt(const Ent& ent) {
 }
 
 std::optional<sim::Scalar> GetBlockerDistance(
-    sim::Vec2 sensor_start,
+    sim::FxVec2 sensor_start,
     sim::AABB blocker_aabb,
     const DirectionInfo& direction
 ) {
@@ -197,10 +197,10 @@ int GetEntBlockedOpenSensorDistance(
     std::size_t direction_idx
 ) {
     const DirectionInfo& direction = kDirections[direction_idx];
-    const sim::Vec2 center = block.GetSimCenter();
+    const sim::FxVec2 center = block.GetSimCenter();
     const int open_distance = GetCachedOpenSensorDistance(block, state, direction_idx);
     const sim::AABB tile_open_sensor = MakeSensorAabb(center, direction, open_distance);
-    const sim::Vec2 sensor_start = GetSensorStart(center, direction);
+    const sim::FxVec2 sensor_start = GetSensorStart(center, direction);
 
     sim::Scalar blocked_distance = sim::Scalar::from_pixels(open_distance);
     for (const VID& vid : QueryEntsInAabb(state, tile_open_sensor, block.vid)) {
@@ -300,7 +300,7 @@ std::optional<std::uint32_t> FindTriggerDirection(
 ) {
     std::optional<std::uint32_t> best_direction;
     sim::Scalar best_distance = sim::Scalar::zero();
-    const sim::Vec2 block_center = block.GetSimCenter();
+    const sim::FxVec2 block_center = block.GetSimCenter();
 
     for (std::size_t direction_idx = 0; direction_idx < kDirections.size(); ++direction_idx) {
         if (!SensorTouchesPlayer(block, state, graphics, direction_idx)) {
@@ -316,7 +316,7 @@ std::optional<std::uint32_t> FindTriggerDirection(
             if (ent == nullptr || !ent->active || !IsPlayerLikeEntType(ent->type_)) {
                 continue;
             }
-            const sim::Vec2 delta =
+            const sim::FxVec2 delta =
                 GetNearestWorldDelta(state.stage, block_center, ent->GetSimCenter());
             const sim::Scalar axis_distance =
                 (direction.tile_dir.x != 0 ? delta.x : delta.y).abs();
@@ -344,9 +344,9 @@ IVec2 GetMoveDirection(const Ent& block) {
     return block.point_d;
 }
 
-sim::Vec2 GetMoveVelocity(const IVec2& direction) {
+sim::FxVec2 GetMoveVelocity(const IVec2& direction) {
     const sim::Scalar speed = sim::ToSimScalar(kMoveSpeed);
-    return sim::Vec2{
+    return sim::FxVec2{
         sim::Scalar::from_int(direction.x) * speed,
         sim::Scalar::from_int(direction.y) * speed
     };
@@ -382,8 +382,8 @@ void StartWindup(Ent& block, std::uint32_t direction_idx, State& state) {
     StoreMoveDirection(block, tile_dir);
     block.ai_state = EntAiState::Pursuing;
     block.counter_b = sim::ToSimScalar(kWindupFrames);
-    block.vel = sim::Vec2::zero();
-    block.acc = sim::Vec2::zero();
+    block.vel = sim::FxVec2::zero();
+    block.acc = sim::FxVec2::zero();
     block.shake = std::max(block.shake, sim::ToSimScalar(kWindupShake));
     block.aframe_animator.PlayLoop(aframe_ids::SquisherBlock);
     (void)PlayEntCenterSoundEmitter(state, block, audio_asset_ids::BoulderLatch);
@@ -393,7 +393,7 @@ void StartMove(Ent& block) {
     const IVec2 tile_dir = GetMoveDirection(block);
     block.ai_state = EntAiState::Disturbed;
     block.vel = GetMoveVelocity(tile_dir);
-    block.acc = sim::Vec2::zero();
+    block.acc = sim::FxVec2::zero();
     block.shake = std::max(block.shake, sim::ToSimScalar(kStartShake));
 }
 
@@ -406,8 +406,8 @@ void StopMove(Ent& block, State& state) {
         block.ai_state = EntAiState::Returning;
         block.counter_a = sim::ToSimScalar(kAfterImpactCooldownFrames);
     }
-    block.vel = sim::Vec2::zero();
-    block.acc = sim::Vec2::zero();
+    block.vel = sim::FxVec2::zero();
+    block.acc = sim::FxVec2::zero();
     block.shake = std::max(block.shake, sim::ToSimScalar(kImpactShake));
     InvalidateOpenSensorCache(block);
     ShowSleepingFrame(block);
@@ -452,8 +452,8 @@ void StepEntLogicAsTrapBlock(
 
     if (IsOneShot(block) && HasFiredOneShot(block)) {
         ShowSleepingFrame(block);
-        block.vel = sim::Vec2::zero();
-        block.acc = sim::Vec2::zero();
+        block.vel = sim::FxVec2::zero();
+        block.acc = sim::FxVec2::zero();
         return;
     }
 
@@ -469,8 +469,8 @@ void StepEntLogicAsTrapBlock(
 
     if (IsWindingUp(block)) {
         ShowAwakeAnim(block);
-        block.vel = sim::Vec2::zero();
-        block.acc = sim::Vec2::zero();
+        block.vel = sim::FxVec2::zero();
+        block.acc = sim::FxVec2::zero();
         block.shake = std::max(block.shake, sim::ToSimScalar(kWindupShake));
         block.counter_b -= sim::Scalar::from_int(1);
         if (block.counter_b <= sim::Scalar::zero()) {
@@ -485,8 +485,8 @@ void StepEntLogicAsTrapBlock(
     }
 
     ShowSleepingFrame(block);
-    block.vel = sim::Vec2::zero();
-    block.acc = sim::Vec2::zero();
+    block.vel = sim::FxVec2::zero();
+    block.acc = sim::FxVec2::zero();
     const std::optional<std::uint32_t> direction_idx =
         FindTriggerDirection(block, state, graphics);
     if (direction_idx.has_value()) {
@@ -516,7 +516,7 @@ void StepEntPhysicsAsTrapBlock(
 
     const IVec2 move_dir = GetMoveDirection(block);
     block.vel = GetMoveVelocity(move_dir);
-    block.acc = sim::Vec2::zero();
+    block.acc = sim::FxVec2::zero();
 
     common::PrePartialEulerStep(ent_idx, state, dt);
     block.vel = GetMoveVelocity(move_dir);

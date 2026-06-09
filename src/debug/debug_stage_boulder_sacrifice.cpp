@@ -210,8 +210,8 @@ void SpawnSacAltarTestCorpsePile(State& state) {
             }
             caveman->health = 0;
             caveman->condition = EntCondition::Dead;
-            caveman->vel = sim::Vec2::zero();
-            caveman->acc = sim::Vec2::zero();
+            caveman->vel = sim::FxVec2::zero();
+            caveman->acc = sim::FxVec2::zero();
             TrySetAnim(*caveman, EntDisplayState::Dead);
         }
     }
@@ -251,8 +251,8 @@ void SpawnSacAltarTestLivingDamsels(State& state) {
         damsel->stun_timer = 6000;
         damsel->stun_recovers_on_ground = false;
         damsel->stun_recovers_while_held = false;
-        damsel->vel = sim::Vec2::zero();
-        damsel->acc = sim::Vec2::zero();
+        damsel->vel = sim::FxVec2::zero();
+        damsel->acc = sim::FxVec2::zero();
         TrySetAnim(*damsel, EntDisplayState::Stunned);
     }
 }

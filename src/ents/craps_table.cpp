@@ -37,15 +37,15 @@ TableState GetTableState(const Ent& table) {
     return static_cast<TableState>(table.counter_a.trunc_int());
 }
 
-sim::Vec2 PrizeLaunchVelocity() {
-    return sim::Vec2{
+sim::FxVec2 PrizeLaunchVelocity() {
+    return sim::FxVec2{
         sim::Scalar::zero(),
         sim::ToSimScalar(-2.25F),
     };
 }
 
-sim::Vec2 DiceLaunchVelocity(State& state) {
-    return sim::Vec2{
+sim::FxVec2 DiceLaunchVelocity(State& state) {
+    return sim::FxVec2{
         sim::Scalar::from_int(state.drng.RandomIntInclusive(-2, 2)),
         sim::Scalar::from_int(-5),
     };
@@ -91,7 +91,7 @@ void UnlockPrize(Ent& prize) {
     prize.can_be_hit = spec.can_be_hit;
     prize.alpha = spec.alpha;
     prize.vel = PrizeLaunchVelocity();
-    prize.acc = sim::Vec2::zero();
+    prize.acc = sim::FxVec2::zero();
 }
 
 Ent* SpawnWonPrize(Ent& table, const Ent& display_prize, State& state) {
@@ -100,9 +100,9 @@ Ent* SpawnWonPrize(Ent& table, const Ent& display_prize, State& state) {
         display_prize.type_,
         [&](Ent& ent) {
             ClearEntBuyableState(ent);
-            ent.SetSimCenter(table.GetSimCenter() + sim::Vec2::from_pixels(0, -18));
+            ent.SetSimCenter(table.GetSimCenter() + sim::FxVec2::from_pixels(0, -18));
             ent.vel = PrizeLaunchVelocity();
-            ent.acc = sim::Vec2::zero();
+            ent.acc = sim::FxVec2::zero();
             ent.grounded = false;
         }
     );
@@ -127,9 +127,9 @@ void LaunchDice(Ent& table, Ent& dice, State& state) {
     dice.counter_b = sim::Scalar::from_int(kDiceRollState);
     dice.rotation = sim::ToSimScalar(static_cast<float>(state.drng.RandomIntInclusive(0, 359)));
 
-    dice.SetSimCenter(table.GetSimCenter() + sim::Vec2::from_pixels(0, -10));
+    dice.SetSimCenter(table.GetSimCenter() + sim::FxVec2::from_pixels(0, -10));
     dice.vel = DiceLaunchVelocity(state);
-    dice.acc = sim::Vec2::zero();
+    dice.acc = sim::FxVec2::zero();
 }
 
 bool DiceHasSettled(const Ent& dice) {
@@ -173,7 +173,7 @@ void PayCrapsResult(
 
 void AddCrapsPrompt(Ent& table, State& state, const char* message, std::uint32_t quantity) {
     state.AddWorldPrompt(WorldPrompt{
-        .world_pos = sim::ToRenderVec2(table.GetSimCenter() + sim::Vec2::from_pixels(0, -24)),
+        .world_pos = sim::ToRenderVec2(table.GetSimCenter() + sim::FxVec2::from_pixels(0, -24)),
         .action_text = quantity > 0 ? "RB" : "",
         .message_text = message,
         .show_down_arrow = true,

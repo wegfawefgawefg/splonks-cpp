@@ -146,13 +146,13 @@ bool TryApplyStompContactToEnt(
     if (stomp_damage == 0) {
         return false;
     }
-    const sim::Vec2 stomp_delta =
+    const sim::FxVec2 stomp_delta =
         GetNearestWorldDelta(state.stage, stomper.GetSimAABB().center(), stomped->GetSimAABB().center());
     const sim::Scalar stomp_knockback_x =
         stomp_delta.x < sim::Scalar::zero() ? -sim::ToSimScalar(kStompVictimKnockbackVelocityX)
                                             : sim::ToSimScalar(kStompVictimKnockbackVelocityX);
     const KnockbackSpec knockback{
-        .velocity = sim::Vec2{
+        .velocity = sim::FxVec2{
             stomp_knockback_x,
             sim::ToSimScalar(kStompVictimKnockbackVelocityY),
         },

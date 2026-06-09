@@ -14,7 +14,7 @@
 
 namespace splonks::network {
 
-sim::Vec2 GetPrimaryPlayerSpawnPos(const State& state) {
+sim::FxVec2 GetPrimaryPlayerSpawnPos(const State& state) {
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal()) {
         if (primary->ent_vid.has_value()) {
             if (const Ent* const ent = state.ents.GetEnt(*primary->ent_vid)) {
@@ -25,12 +25,12 @@ sim::Vec2 GetPrimaryPlayerSpawnPos(const State& state) {
     return sim::PixelVec2(24, 24);
 }
 
-sim::Vec2 GetRemoteSpawnPos(const State& state) {
+sim::FxVec2 GetRemoteSpawnPos(const State& state) {
     return GetPrimaryPlayerSpawnPos(state) + sim::PixelVec2(16, 0);
 }
 
-sim::Vec2 GetEntranceOrRemoteSpawnPos(const State& state) {
-    if (const std::optional<sim::Vec2> entrance_pos = FindStageEntranceSpawnPos(state)) {
+sim::FxVec2 GetEntranceOrRemoteSpawnPos(const State& state) {
+    if (const std::optional<sim::FxVec2> entrance_pos = FindStageEntranceSpawnPos(state)) {
         return *entrance_pos;
     }
     return GetRemoteSpawnPos(state);
@@ -227,13 +227,13 @@ void ApplyRetainedAttachedEntState(
     const Graphics& graphics
 );
 
-sim::Vec2 ResolveReconnectSpawnPos(
+sim::FxVec2 ResolveReconnectSpawnPos(
     const State& state,
     const NetRetainedPlayerState* retained,
     std::size_t player_index
 ) {
-    const sim::Vec2 player_offset = sim::PixelVec2(static_cast<int>(player_index) * 8, 0);
-    sim::Vec2 pos = GetRemoteSpawnPos(state) + player_offset;
+    const sim::FxVec2 player_offset = sim::PixelVec2(static_cast<int>(player_index) * 8, 0);
+    sim::FxVec2 pos = GetRemoteSpawnPos(state) + player_offset;
     switch (state.net_session.reconnect_spawn_mode) {
     case NetReconnectSpawnMode::FreshAtEntrance:
     case NetReconnectSpawnMode::RetainedAtEntrance:
@@ -256,7 +256,7 @@ void ApplyRetainedPlayerState(
     State& state,
     PlayerId player_id,
     const NetRetainedPlayerState& retained,
-    sim::Vec2 spawn_pos,
+    sim::FxVec2 spawn_pos,
     const Graphics& graphics
 ) {
     EnsureSpawnedPlayer(state, player_id, false, false, spawn_pos, graphics);
@@ -272,8 +272,8 @@ void ApplyRetainedPlayerState(
 
     SetEntAs(*player, retained.ent_type);
     player->pos = spawn_pos;
-    player->vel = sim::Vec2::zero();
-    player->acc = sim::Vec2::zero();
+    player->vel = sim::FxVec2::zero();
+    player->acc = sim::FxVec2::zero();
     player->health = retained.health;
     player->money = retained.money;
     player->held_by_vid.reset();

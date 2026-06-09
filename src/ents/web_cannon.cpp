@@ -43,7 +43,7 @@ constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct WebGunAim {
     FVec2 direction = FVec2::New(1.0F, 0.0F);
-    sim::Vec2 sim_direction = sim::Vec2{sim::Scalar::from_int(1), sim::Scalar::zero()};
+    sim::FxVec2 sim_direction = sim::FxVec2{sim::Scalar::from_int(1), sim::Scalar::zero()};
     Side facing = Side::Right;
     sim::Scalar rotation = sim::Scalar::zero();
 };
@@ -71,20 +71,20 @@ FVec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
     return FVec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
 }
 
-sim::Vec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
+sim::FxVec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
     if (aim_x == 0 && aim_y == 0) {
-        return sim::Vec2{
+        return sim::FxVec2{
             sim::Scalar::from_int(facing == Side::Left ? -1 : 1),
             sim::Scalar::zero(),
         };
     }
     if (aim_x != 0 && aim_y != 0) {
-        return sim::Vec2{
+        return sim::FxVec2{
             sim::Scalar::from_int(aim_x) * sim::ToSimScalar(kDiagonalAimComponent),
             sim::Scalar::from_int(aim_y) * sim::ToSimScalar(kDiagonalAimComponent),
         };
     }
-    return sim::Vec2{
+    return sim::FxVec2{
         sim::Scalar::from_int(aim_x),
         sim::Scalar::from_int(aim_y),
     };
@@ -159,14 +159,14 @@ int FloorDiv(int numerator, int denominator) {
     return quotient;
 }
 
-IVec2 SnapWorldPointToTile(sim::Vec2 point, const Stage& stage) {
+IVec2 SnapWorldPointToTile(sim::FxVec2 point, const Stage& stage) {
     const int tile_size = static_cast<int>(kTileSize);
     const int tile_x = FloorDiv(point.x.to_pixels_floor(), tile_size);
     const int tile_y = FloorDiv(point.y.to_pixels_floor(), tile_size);
     return stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
 }
 
-sim::Vec2 TileCenterToWorld(const IVec2& tile_pos) {
+sim::FxVec2 TileCenterToWorld(const IVec2& tile_pos) {
     const int tile_size = static_cast<int>(kTileSize);
     return sim::PixelVec2(tile_pos.x * tile_size + 8, tile_pos.y * tile_size + 8);
 }
@@ -192,7 +192,7 @@ bool CanSpawnCobwebAtTile(const IVec2& tile_pos, const State& state) {
     return !IsTileCollidable(*tile_query->tile) && !HasCobwebAtTile(tile_query->tile_pos, state);
 }
 
-bool IsWorldPointInsideSolidTile(sim::Vec2 point, const State& state) {
+bool IsWorldPointInsideSolidTile(sim::FxVec2 point, const State& state) {
     const std::optional<WorldTileQueryResult> tile_query = QueryTileAtWorldPos(state.stage, point);
     return tile_query.has_value() && tile_query->tile != nullptr && IsTileCollidable(*tile_query->tile);
 }
@@ -219,11 +219,11 @@ std::optional<IVec2> GetCobwebGrowthTile(const Ent& web_ball, const Ent& hit_cob
 
     push_candidate(SnapWorldPointToTile(web_ball.GetSimCenter(), state.stage));
 
-    sim::Vec2 incoming_dir = web_ball.vel * sim::Scalar::from_int(-1);
-    if (incoming_dir == sim::Vec2::zero()) {
+    sim::FxVec2 incoming_dir = web_ball.vel * sim::Scalar::from_int(-1);
+    if (incoming_dir == sim::FxVec2::zero()) {
         incoming_dir = web_ball.facing == Side::Left
-            ? sim::Vec2{sim::Scalar::from_int(1), sim::Scalar::zero()}
-            : sim::Vec2{sim::Scalar::from_int(-1), sim::Scalar::zero()};
+            ? sim::FxVec2{sim::Scalar::from_int(1), sim::Scalar::zero()}
+            : sim::FxVec2{sim::Scalar::from_int(-1), sim::Scalar::zero()};
     }
 
     const int step_x = incoming_dir.x > sim::Scalar::zero()
@@ -333,7 +333,7 @@ void SpawnCobwebBurst(State& state, const FVec2& origin) {
     }
 }
 
-Ent* SpawnCobwebEnt(State& state, sim::Vec2 center, bool temporary) {
+Ent* SpawnCobwebEnt(State& state, sim::FxVec2 center, bool temporary) {
     return world_ops::SpawnEnt(state, EntType::Cobweb, [&](Ent& cobweb) {
         cobweb.SetSimCenter(center);
         cobweb.counter_a = temporary ? sim::ToSimScalar(kTemporaryCobwebLifetimeFrames)
@@ -367,7 +367,7 @@ void TriggerWebBallBurst(std::size_t ent_idx, State& state, bool spawn_cobweb) {
         return;
     }
 
-    const sim::Vec2 impact_center = web_ball.GetSimCenter();
+    const sim::FxVec2 impact_center = web_ball.GetSimCenter();
     if (spawn_cobweb) {
         const IVec2 tile_pos = SnapWorldPointToTile(impact_center, state.stage);
         if (CanSpawnCobwebAtTile(tile_pos, state)) {
@@ -388,7 +388,7 @@ void TriggerWebBallBurstAtTile(std::size_t ent_idx, State& state, const IVec2& t
         return;
     }
 
-    const sim::Vec2 impact_center = web_ball.GetSimCenter();
+    const sim::FxVec2 impact_center = web_ball.GetSimCenter();
     if (CanSpawnCobwebAtTile(tile_pos, state)) {
         (void)SpawnCobwebEnt(state, TileCenterToWorld(tile_pos), true);
     }
@@ -409,8 +409,8 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
     weapon.facing = aim.facing;
     weapon.rotation = aim.rotation;
 
-    const sim::Vec2 muzzle_pos = weapon.GetSimCenter() + (aim.sim_direction * sim::Scalar::from_int(8));
-    const sim::Vec2 spawn_pos = muzzle_pos + (aim.sim_direction * sim::Scalar::from_int(4));
+    const sim::FxVec2 muzzle_pos = weapon.GetSimCenter() + (aim.sim_direction * sim::Scalar::from_int(8));
+    const sim::FxVec2 spawn_pos = muzzle_pos + (aim.sim_direction * sim::Scalar::from_int(4));
     const FVec2 render_muzzle_pos = sim::ToRenderVec2(muzzle_pos);
 
     if (holder != nullptr && IsWorldPointInsideSolidTile(muzzle_pos, state)) {
@@ -433,8 +433,8 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
         spawned_web_ball.vel = aim.sim_direction * sim::ToSimScalar(kWebBallSpeedX) +
                                (holder != nullptr
                                     ? holder->vel * sim::ToSimScalar(0.35F)
-                                    : sim::Vec2::zero());
-        spawned_web_ball.acc = sim::Vec2::zero();
+                                    : sim::FxVec2::zero());
+        spawned_web_ball.acc = sim::FxVec2::zero();
         spawned_web_ball.thrown_by =
             holder != nullptr ? std::optional<VID>(holder->vid) : weapon.use_state.user_vid;
         spawned_web_ball.thrown_immunity_timer = common::kThrownByImmunityDuration;
@@ -536,8 +536,8 @@ common::ContactResult OnEntContactAsWebBall(
 
     if (other.type_ != EntType::Cobweb) {
         if (Ent* const other_mut = state.ents.GetEntMut(other.vid)) {
-            other_mut->vel = sim::Vec2::zero();
-            other_mut->acc = sim::Vec2::zero();
+            other_mut->vel = sim::FxVec2::zero();
+            other_mut->acc = sim::FxVec2::zero();
             other_mut->fall_timer = 0;
         }
         TriggerWebBallBurst(ent_idx, state, true);

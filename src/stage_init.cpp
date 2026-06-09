@@ -27,7 +27,7 @@ void PlacePlayerAtEntrance(State& state) {
                 continue;
             }
 
-            const sim::Vec2 spawn_pos = sim::PixelVec2(
+            const sim::FxVec2 spawn_pos = sim::PixelVec2(
                 static_cast<int>(x * kTileSize),
                 static_cast<int>(y * kTileSize));
             unsigned int local_player_index = 0;
@@ -38,8 +38,8 @@ void PlacePlayerAtEntrance(State& state) {
                 if (Ent* const player = state.ents.GetEntMut(*slot.ent_vid)) {
                     player->pos =
                         spawn_pos + sim::PixelVec2(static_cast<int>(local_player_index) * 8, 0);
-                    player->vel = sim::Vec2::zero();
-                    player->acc = sim::Vec2::zero();
+                    player->vel = sim::FxVec2::zero();
+                    player->acc = sim::FxVec2::zero();
                 }
                 ++local_player_index;
             }
@@ -51,7 +51,7 @@ void PlacePlayerAtEntrance(State& state) {
         "No entrance tile found. You have a game breaking bug in the map generation code.");
 }
 
-void SpawnConnectedPlayers(State& state, sim::Vec2 spawn_pos) {
+void SpawnConnectedPlayers(State& state, sim::FxVec2 spawn_pos) {
     unsigned int player_index = 0;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || slot.player_id == kInvalidPlayerId) {
@@ -94,7 +94,7 @@ void InitStage(State& state, bool preserve_player_state) {
     if (!carryover.players.empty()) {
         RestoreStageCarryover(state, carryover);
     } else {
-        SpawnConnectedPlayers(state, sim::Vec2::zero());
+        SpawnConnectedPlayers(state, sim::FxVec2::zero());
     }
     SpawnAuthoredStageEnts(state);
 

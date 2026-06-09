@@ -802,7 +802,7 @@ JoinBarrierTopologyPacket BuildJoinBarrierTopologyPacket(const State& state) {
     for (std::uint32_t i = 0; i < packet.player_count; ++i) {
         const PlayerId player_id = state.net_session.join_barrier_joined_player_ids[i];
         packet.player_ids[i] = player_id;
-        sim::Vec2 pos = GetRemoteSpawnPos(state);
+        sim::FxVec2 pos = GetRemoteSpawnPos(state);
         if (const PlayerSlot* const slot = state.players.Find(player_id)) {
             if (slot->ent_vid.has_value()) {
                 if (const Ent* const ent = state.ents.GetEnt(*slot->ent_vid)) {
@@ -2451,7 +2451,7 @@ void HandleJoinBarrierTopology(
             player_id,
             false,
             false,
-            sim::Vec2::from_raw(packet.player_pos_x_raw[i], packet.player_pos_y_raw[i]),
+            sim::FxVec2::from_raw(packet.player_pos_x_raw[i], packet.player_pos_y_raw[i]),
             graphics
         );
     }

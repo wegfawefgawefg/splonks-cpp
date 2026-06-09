@@ -10,7 +10,7 @@ void ApplyKnockback(Ent& target, const KnockbackSpec& spec) {
     }
 
     if (spec.clear_acceleration) {
-        target.acc = sim::Vec2::zero();
+        target.acc = sim::FxVec2::zero();
     }
 
     if (spec.thrown_by.has_value()) {

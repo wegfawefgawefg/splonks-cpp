@@ -31,8 +31,8 @@ constexpr int kCavemanIdleMinFrames = 24;
 constexpr int kCavemanIdleMaxFrames = 64;
 constexpr int kCavemanIdleChance = 120;
 
-void FaceTowards(Ent& caveman, sim::Vec2 target_pos, const Stage& stage) {
-    const sim::Vec2 delta = GetNearestWorldDelta(stage, caveman.GetSimCenter(), target_pos);
+void FaceTowards(Ent& caveman, sim::FxVec2 target_pos, const Stage& stage) {
+    const sim::FxVec2 delta = GetNearestWorldDelta(stage, caveman.GetSimCenter(), target_pos);
     if (delta.x < sim::Scalar::zero()) {
         caveman.facing = Side::Left;
     } else if (delta.x > sim::Scalar::zero()) {
@@ -80,7 +80,7 @@ bool CanSeePlayerAhead(
     const State& state,
     const Graphics& graphics
 ) {
-    const sim::Vec2 caveman_center = caveman.GetSimCenter();
+    const sim::FxVec2 caveman_center = caveman.GetSimCenter();
     const int direction = caveman.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -90,9 +90,9 @@ bool CanSeePlayerAhead(
         if (player == nullptr || !player->active || player->condition != EntCondition::Normal) {
             continue;
         }
-        const sim::Vec2 player_center =
+        const sim::FxVec2 player_center =
             GetNearestWorldPoint(state.stage, caveman_center, player->GetSimCenter());
-        const sim::Vec2 player_delta = player_center - caveman_center;
+        const sim::FxVec2 player_delta = player_center - caveman_center;
         if (player_delta.y.abs() > sim::Scalar::from_int(kCavemanSightVerticalTolerance) ||
             player_delta.x.abs() > sim::Scalar::from_int(kCavemanSightDistance)) {
             continue;

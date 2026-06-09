@@ -10,7 +10,7 @@
 namespace splonks::sim {
 
 using Scalar = gfxp::Fixed12;
-using Vec2 = gfxp::Vec2_12;
+using FxVec2 = gfxp::Vec2_12;
 using AABB = gfxp::Aabb_12;
 
 struct Color3 {
@@ -28,25 +28,25 @@ struct Color3 {
     return value.to_float();
 }
 
-[[nodiscard]] inline Vec2 ToSimVec2(const splonks::FVec2& value,
+[[nodiscard]] inline FxVec2 ToSimVec2(const splonks::FVec2& value,
                                     gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
-    return Vec2{ToSimScalar(value.x, rounding), ToSimScalar(value.y, rounding)};
+    return FxVec2{ToSimScalar(value.x, rounding), ToSimScalar(value.y, rounding)};
 }
 
-[[nodiscard]] inline Vec2 ToSimVec2(float x, float y,
+[[nodiscard]] inline FxVec2 ToSimVec2(float x, float y,
                                     gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
-    return Vec2{ToSimScalar(x, rounding), ToSimScalar(y, rounding)};
+    return FxVec2{ToSimScalar(x, rounding), ToSimScalar(y, rounding)};
 }
 
-[[nodiscard]] inline splonks::FVec2 ToRenderVec2(const Vec2& value) {
+[[nodiscard]] inline splonks::FVec2 ToRenderVec2(const FxVec2& value) {
     return splonks::FVec2::New(value.x.to_float(), value.y.to_float());
 }
 
-[[nodiscard]] constexpr Vec2 PixelVec2(std::int32_t x, std::int32_t y) {
-    return Vec2::from_pixels(x, y);
+[[nodiscard]] constexpr FxVec2 PixelVec2(std::int32_t x, std::int32_t y) {
+    return FxVec2::from_pixels(x, y);
 }
 
-[[nodiscard]] inline IVec2 ToPixelIVec2Round(Vec2 value) {
+[[nodiscard]] inline IVec2 ToPixelIVec2Round(FxVec2 value) {
     return IVec2::New(value.x.to_pixels_round(), value.y.to_pixels_round());
 }
 
@@ -72,7 +72,7 @@ namespace detail {
 
 } // namespace detail
 
-[[nodiscard]] inline Scalar Length(Vec2 value) {
+[[nodiscard]] inline Scalar Length(FxVec2 value) {
     const std::int64_t x = value.x.raw_value();
     const std::int64_t y = value.y.raw_value();
     const std::uint64_t sum = static_cast<std::uint64_t>(x * x + y * y);
@@ -83,10 +83,10 @@ namespace detail {
     return Scalar::from_raw(static_cast<Scalar::raw_type>(root));
 }
 
-[[nodiscard]] inline Vec2 NormalizeOrZero(Vec2 value) {
+[[nodiscard]] inline FxVec2 NormalizeOrZero(FxVec2 value) {
     const Scalar length = Length(value);
     if (length == Scalar::zero()) {
-        return Vec2::zero();
+        return FxVec2::zero();
     }
     return value / length;
 }

@@ -20,8 +20,8 @@ namespace {
 sim::AABB GetAreaAbove(const Ent& bat) {
     const sim::AABB aabb = bat.GetSimAABB();
     return sim::AABB::from_corners(
-        sim::Vec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
-        sim::Vec2{aabb.br.x, aabb.tl.y}
+        sim::FxVec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
+        sim::FxVec2{aabb.br.x, aabb.tl.y}
     );
 }
 
@@ -38,15 +38,15 @@ bool IsAtPerchOrRoof(const Ent& bat, const State& state) {
     return false;
 }
 
-std::optional<sim::Vec2> FindBatTargetPosition(const Ent& bat, const State& state) {
+std::optional<sim::FxVec2> FindBatTargetPosition(const Ent& bat, const State& state) {
     constexpr int kVerticalDetectDist = 8 * static_cast<int>(kTileSize);
     constexpr int kHorizontalChaseDist = 4 * static_cast<int>(kTileSize);
     const sim::Scalar vertical_detect_dist = sim::Scalar::from_pixels(kVerticalDetectDist);
     const sim::Scalar horizontal_chase_dist = sim::Scalar::from_pixels(kHorizontalChaseDist);
 
-    std::optional<sim::Vec2> best_target;
+    std::optional<sim::FxVec2> best_target;
     sim::Scalar best_dist_sq{};
-    const sim::Vec2 bat_pos = bat.GetSimPos();
+    const sim::FxVec2 bat_pos = bat.GetSimPos();
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -57,7 +57,7 @@ std::optional<sim::Vec2> FindBatTargetPosition(const Ent& bat, const State& stat
             continue;
         }
 
-        const sim::Vec2 player_delta =
+        const sim::FxVec2 player_delta =
             GetNearestWorldDelta(state.stage, bat_pos, player->GetSimPos());
         if (player_delta.y <= sim::Scalar::zero() ||
             player_delta.y.abs() >= vertical_detect_dist ||
@@ -111,8 +111,8 @@ void ControlEntAsBat(
     if (!steering && IsAtPerchOrRoof(bat, state)) {
         bat.ai_state = EntAiState::Idle;
         SetAnim(bat, aframe_ids::HangingBat);
-        bat.acc = sim::Vec2::zero();
-        bat.vel = sim::Vec2::zero();
+        bat.acc = sim::FxVec2::zero();
+        bat.vel = sim::FxVec2::zero();
         return;
     }
 
@@ -125,7 +125,7 @@ void ControlEntAsBat(
 
     bat.ai_state = EntAiState::Pursuing;
     SetAnim(bat, aframe_ids::FlyingBat);
-    bat.acc = sim::Vec2::zero();
+    bat.acc = sim::FxVec2::zero();
     const sim::Scalar chase_speed = sim::ToSimScalar(kChaseSpeed);
     if (control.left) {
         bat.acc.x -= chase_speed;
@@ -204,7 +204,7 @@ void StepEntLogicAsBat(
     const EntCondition bat_condition = bat.condition;
 
     if (bat_condition == EntCondition::Normal) {
-        const std::optional<sim::Vec2> target_position = FindBatTargetPosition(bat, state);
+        const std::optional<sim::FxVec2> target_position = FindBatTargetPosition(bat, state);
 
         //  State Machine
         Ent& mutable_bat = state.ents.ents[ent_idx];
@@ -230,12 +230,12 @@ void StepEntLogicAsBat(
             const bool at_perch_or_roof = IsAtPerchOrRoof(mutable_bat, state);
             if (at_perch_or_roof) {
                 mutable_bat.ai_state = EntAiState::Idle;
-                mutable_bat.acc = sim::Vec2::zero();
-                mutable_bat.vel = sim::Vec2::zero();
+                mutable_bat.acc = sim::FxVec2::zero();
+                mutable_bat.vel = sim::FxVec2::zero();
                 SetAnim(mutable_bat, aframe_ids::HangingBat);
             } else {
                 //  keep going up till you get there
-                mutable_bat.acc += sim::Vec2{
+                mutable_bat.acc += sim::FxVec2{
                     sim::Scalar::zero(),
                     sim::Scalar::from_int(-2),
                 };
@@ -278,8 +278,8 @@ void StepEntPhysicsAsBat(
     if (bat_condition != EntCondition::Normal) {
         common::ApplyGravity(ent_idx, state, dt);
     } else if (bat_ai_state == EntAiState::Idle) {
-        bat.acc = sim::Vec2::zero();
-        bat.vel = sim::Vec2::zero();
+        bat.acc = sim::FxVec2::zero();
+        bat.vel = sim::FxVec2::zero();
     } else if (!controlled) {
         common::ApplyGravity(ent_idx, state, dt);
     }

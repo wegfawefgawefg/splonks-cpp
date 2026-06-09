@@ -17,11 +17,11 @@ namespace splonks {
 namespace {
 
 std::int64_t GetBuyPromptDistanceSq(
-    sim::Vec2 buyer_center,
-    sim::Vec2 item_center,
+    sim::FxVec2 buyer_center,
+    sim::FxVec2 item_center,
     const Stage& stage
 ) {
-    const sim::Vec2 delta = GetNearestWorldDelta(stage, buyer_center, item_center);
+    const sim::FxVec2 delta = GetNearestWorldDelta(stage, buyer_center, item_center);
     const std::int64_t dx = delta.x.raw_value();
     const std::int64_t dy = delta.y.raw_value();
     return (dx * dx) + (dy * dy);
@@ -48,7 +48,7 @@ std::vector<OverlappingBuyableEnt> FindOverlappingBuyableEnts(
     }
 
     const sim::AABB buyer_aabb = ents::common::GetContactAabbForEnt(buyer, graphics);
-    const sim::Vec2 buyer_center = buyer_aabb.center();
+    const sim::FxVec2 buyer_center = buyer_aabb.center();
     const std::vector<VID> results = QueryEntsInAabb(state, buyer_aabb, buyer.vid);
 
     std::vector<OverlappingBuyableEnt> overlaps;

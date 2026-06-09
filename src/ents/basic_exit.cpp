@@ -14,8 +14,8 @@ namespace splonks::ents::basic_exit {
 
 namespace {
 
-std::int64_t GetDistanceSq(sim::Vec2 from, sim::Vec2 to, const Stage& stage) {
-    const sim::Vec2 delta = GetNearestWorldDelta(stage, from, to);
+std::int64_t GetDistanceSq(sim::FxVec2 from, sim::FxVec2 to, const Stage& stage) {
+    const sim::FxVec2 delta = GetNearestWorldDelta(stage, from, to);
     const std::int64_t dx = delta.x.raw_value();
     const std::int64_t dy = delta.y.raw_value();
     return (dx * dx) + (dy * dy);
@@ -80,7 +80,7 @@ std::optional<std::size_t> FindOverlappingBasicExitEntIdx(
     }
 
     const sim::AABB ent_aabb = common::GetContactAabbForEnt(ent, graphics);
-    const sim::Vec2 ent_center = ent_aabb.center();
+    const sim::FxVec2 ent_center = ent_aabb.center();
     const std::vector<VID> results = QueryEntsInAabb(state, ent_aabb, ent.vid);
 
     std::int64_t best_distance_sq = std::numeric_limits<std::int64_t>::max();
@@ -150,16 +150,16 @@ void StepEntLogicAsBasicExit(
 
         state.ClaimInteractForEnt(*slot.ent_vid);
         const sim::AABB player_aabb = common::GetContactAabbForEnt(*player, graphics);
-        const sim::Vec2 player_center = player_aabb.center();
+        const sim::FxVec2 player_center = player_aabb.center();
         const sim::AABB nearest_exit_aabb = GetNearestWorldAabb(
             state.stage,
             player_center,
             common::GetContactAabbForEnt(exit_ent, graphics)
         );
-        const sim::Vec2 prompt_base = GetNearestWorldPoint(
+        const sim::FxVec2 prompt_base = GetNearestWorldPoint(
             state.stage,
             player_center,
-            sim::Vec2{(nearest_exit_aabb.tl.x + nearest_exit_aabb.br.x) / 2,
+            sim::FxVec2{(nearest_exit_aabb.tl.x + nearest_exit_aabb.br.x) / 2,
                       nearest_exit_aabb.tl.y}
         );
         state.AddWorldPrompt(WorldPrompt{

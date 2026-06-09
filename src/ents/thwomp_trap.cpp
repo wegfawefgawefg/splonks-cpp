@@ -52,14 +52,14 @@ bool IsReturning(const Ent& thwomp) {
 }
 
 bool ShouldDrop(const Ent& thwomp, const State& state) {
-    const sim::Vec2 thwomp_center = thwomp.GetSimCenter();
+    const sim::FxVec2 thwomp_center = thwomp.GetSimCenter();
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !IsPlayerLikeEntType(ent.type_) ||
             ent.condition == EntCondition::Dead) {
             continue;
         }
 
-        const sim::Vec2 delta =
+        const sim::FxVec2 delta =
             GetNearestWorldDelta(state.stage, thwomp_center, ent.GetSimCenter());
         if (delta.y <= sim::Scalar::zero() || delta.y > kSimTriggerDistance ||
             delta.x.abs() > kSimTriggerHalfWidth) {
@@ -72,14 +72,14 @@ bool ShouldDrop(const Ent& thwomp, const State& state) {
 
 void StartDrop(Ent& thwomp) {
     thwomp.ai_state = EntAiState::Disturbed;
-    thwomp.vel = sim::Vec2::zero();
-    thwomp.acc = sim::Vec2::zero();
+    thwomp.vel = sim::FxVec2::zero();
+    thwomp.acc = sim::FxVec2::zero();
 }
 
 void StartWait(Ent& thwomp, State& state) {
     thwomp.ai_state = EntAiState::Pursuing;
-    thwomp.vel = sim::Vec2::zero();
-    thwomp.acc = sim::Vec2::zero();
+    thwomp.vel = sim::FxVec2::zero();
+    thwomp.acc = sim::FxVec2::zero();
     thwomp.counter_a = sim::Scalar::from_int(kWaitFrames);
     AddEntShake(thwomp, kImpactShake);
     AddShake(
@@ -96,15 +96,15 @@ void StartWait(Ent& thwomp, State& state) {
 
 void StartReturn(Ent& thwomp) {
     thwomp.ai_state = EntAiState::Returning;
-    thwomp.vel = sim::Vec2{sim::Scalar::zero(), sim::ToSimScalar(kReturnVelocity)};
-    thwomp.acc = sim::Vec2::zero();
+    thwomp.vel = sim::FxVec2{sim::Scalar::zero(), sim::ToSimScalar(kReturnVelocity)};
+    thwomp.acc = sim::FxVec2::zero();
 }
 
 void FinishReturn(Ent& thwomp) {
     thwomp.ai_state = EntAiState::Idle;
     thwomp.pos.y = GetHomeY(thwomp);
-    thwomp.vel = sim::Vec2::zero();
-    thwomp.acc = sim::Vec2::zero();
+    thwomp.vel = sim::FxVec2::zero();
+    thwomp.acc = sim::FxVec2::zero();
     thwomp.grounded = false;
     thwomp.collided = false;
 }
@@ -134,8 +134,8 @@ void StepEntLogicAsThwompTrap(
     }
 
     if (thwomp.ai_state == EntAiState::Idle) {
-        thwomp.vel = sim::Vec2::zero();
-        thwomp.acc = sim::Vec2::zero();
+        thwomp.vel = sim::FxVec2::zero();
+        thwomp.acc = sim::FxVec2::zero();
         if (ShouldDrop(thwomp, state)) {
             StartDrop(thwomp);
         }
@@ -143,8 +143,8 @@ void StepEntLogicAsThwompTrap(
     }
 
     if (IsWaiting(thwomp)) {
-        thwomp.vel = sim::Vec2::zero();
-        thwomp.acc = sim::Vec2::zero();
+        thwomp.vel = sim::FxVec2::zero();
+        thwomp.acc = sim::FxVec2::zero();
         thwomp.counter_a -= sim::Scalar::from_int(1);
         if (thwomp.counter_a <= sim::Scalar::zero()) {
             StartReturn(thwomp);
@@ -178,8 +178,8 @@ void StepEntPhysicsAsThwompTrap(
     if (IsDropping(thwomp)) {
         thwomp.acc.y += sim::ToSimScalar(kDropGravity);
     } else {
-        thwomp.vel = sim::Vec2{sim::Scalar::zero(), sim::ToSimScalar(kReturnVelocity)};
-        thwomp.acc = sim::Vec2::zero();
+        thwomp.vel = sim::FxVec2{sim::Scalar::zero(), sim::ToSimScalar(kReturnVelocity)};
+        thwomp.acc = sim::FxVec2::zero();
     }
 
     common::PrePartialEulerStep(ent_idx, state, dt);

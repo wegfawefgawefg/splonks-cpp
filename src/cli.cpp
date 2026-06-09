@@ -592,7 +592,7 @@ void InitBigMonkeySampleStage(State& state) {
 
     for (int room_y = 0; room_y < 4; ++room_y) {
         for (int room_x = 0; room_x < 4; ++room_x) {
-            const sim::Vec2 center = sim::PixelVec2(
+            const sim::FxVec2 center = sim::PixelVec2(
                 (room_x * 10 + 5) * static_cast<int>(kTileSize),
                 (room_y * 8 + 4) * static_cast<int>(kTileSize)
             );
@@ -747,7 +747,7 @@ std::string Vec2DebugString(FVec2 value) {
     return out.str();
 }
 
-std::string SimVec2DebugString(sim::Vec2 value) {
+std::string SimVec2DebugString(sim::FxVec2 value) {
     std::ostringstream out;
     out << std::fixed << std::setprecision(4)
         << "(" << value.x.to_float() << "," << value.y.to_float()

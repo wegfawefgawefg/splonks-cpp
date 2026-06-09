@@ -12,7 +12,7 @@ bool TryUseToolSlot(
     std::size_t tool_slot_index,
     bool trigger_pressed,
     ToolThrowVelocityBuilder build_throw_velocity,
-    std::optional<sim::Vec2> throw_velocity_override
+    std::optional<sim::FxVec2> throw_velocity_override
 ) {
     const Ent& ent = state.ents.ents[ent_idx];
     const ToolSlot* const tool_slot = state.ent_tools.FindToolSlot(ent.vid, tool_slot_index);

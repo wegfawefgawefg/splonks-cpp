@@ -146,7 +146,7 @@ bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string*
         return false;
     }
     RegisterStageEntLinks(state);
-    const sim::Vec2 spawn_base = GetPrimaryPlayerSpawnPos(state);
+    const sim::FxVec2 spawn_base = GetPrimaryPlayerSpawnPos(state);
     state.players.slots.clear();
     state.controlled_ent_vid.reset();
     for (std::size_t i = 0; i < saved_slots.size(); ++i) {

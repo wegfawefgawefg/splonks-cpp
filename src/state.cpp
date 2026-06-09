@@ -46,10 +46,10 @@ void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount
 
     const float radius_world = radius_tiles * static_cast<float>(kTileSize);
     const sim::Scalar radius_world_sim = sim::ToSimScalar(radius_world);
-    const sim::Vec2 world_pos_sim = sim::ToSimVec2(world_pos);
+    const sim::FxVec2 world_pos_sim = sim::ToSimVec2(world_pos);
     const sim::AABB area = sim::AABB::from_corners(
-        world_pos_sim - sim::Vec2{radius_world_sim, radius_world_sim},
-        world_pos_sim + sim::Vec2{radius_world_sim, radius_world_sim}
+        world_pos_sim - sim::FxVec2{radius_world_sim, radius_world_sim},
+        world_pos_sim + sim::FxVec2{radius_world_sim, radius_world_sim}
     );
     for (const VID& vid : QueryEntsInAabb(state, area, exclude_ent_vid)) {
         Ent* const ent = state.ents.GetEntMut(vid);
@@ -57,7 +57,7 @@ void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount
             continue;
         }
 
-        const sim::Vec2 nearest_center =
+        const sim::FxVec2 nearest_center =
             GetNearestWorldPoint(state.stage, world_pos_sim, ent->GetSimCenter());
         const FVec2 delta = sim::ToRenderVec2(nearest_center - world_pos_sim);
         if (radius_world > 0.0F) {

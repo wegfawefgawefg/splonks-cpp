@@ -115,7 +115,7 @@ void DoTileAndEntCollisions(
 );
 void DoExplosion(
     std::size_t ent_idx,
-    sim::Vec2 center,
+    sim::FxVec2 center,
     float size,
     float push_magnitude,
     State& state,
@@ -125,9 +125,9 @@ bool TryApplyPlausibleLocomotionClaim(
     Ent& ent,
     State& state,
     const JumpAndClimbTuning& tuning,
-    sim::Vec2 claimed_pos,
-    sim::Vec2 claimed_vel,
-    sim::Vec2 claimed_acc,
+    sim::FxVec2 claimed_pos,
+    sim::FxVec2 claimed_vel,
+    sim::FxVec2 claimed_acc,
     std::uint32_t claimed_movement_flags,
     bool claimed_grounded,
     std::optional<Side> claimed_hang_side,
@@ -138,12 +138,12 @@ bool TryApplyPlausibleLocomotionClaim(
 );
 const AFrame* GetCurrentAFrameForEnt(const Ent& ent, const Graphics& graphics);
 FVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
-sim::Vec2 GetSimSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
+sim::FxVec2 GetSimSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
 FVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback);
-sim::Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::Vec2 fallback);
-void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::Vec2 center);
+sim::FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback);
+void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 center);
 FVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback);
-sim::Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::Vec2 fallback);
+sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback);
 sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics);
 sim::AABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);
 bool CanCollectPickupFromContact(
@@ -174,7 +174,7 @@ bool TryDropEntByVid(
 bool TryThrowEntByVid(
     VID thrower_vid,
     VID thrown_vid,
-    sim::Vec2 throw_velocity,
+    sim::FxVec2 throw_velocity,
     State& state,
     const Graphics& graphics,
     Audio& audio
@@ -247,7 +247,7 @@ bool TrySpawnAndThrowEntForToolUse(
     std::uint32_t thrown_immunity_timer,
     void (*setup_ent)(Ent&),
     ToolThrowVelocityBuilder build_throw_velocity = nullptr,
-    std::optional<sim::Vec2> throw_velocity_override = std::nullopt
+    std::optional<sim::FxVec2> throw_velocity_override = std::nullopt
 );
 bool TryUseToolSlot(
     std::size_t ent_idx,
@@ -257,7 +257,7 @@ bool TryUseToolSlot(
     std::size_t tool_slot_index,
     bool trigger_pressed,
     ToolThrowVelocityBuilder build_throw_velocity = nullptr,
-    std::optional<sim::Vec2> throw_velocity_override = std::nullopt
+    std::optional<sim::FxVec2> throw_velocity_override = std::nullopt
 );
 
 enum class DamageResult {

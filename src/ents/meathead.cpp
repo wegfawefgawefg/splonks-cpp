@@ -58,7 +58,7 @@ std::optional<FVec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
         player_aabb.br.x.to_pixels_trunc(),
         (player_aabb.br.y - sim::Scalar::from_pixels(1)).to_pixels_trunc()
     )).y;
-    const sim::Vec2 player_center = player.GetSimCenter();
+    const sim::FxVec2 player_center = player.GetSimCenter();
     const int center_tile_x = state.stage.GetTileCoordAtWc(IVec2::New(
         player_center.x.to_pixels_trunc(),
         player_center.y.to_pixels_trunc()
@@ -111,8 +111,8 @@ void PlayMeatheadHealFeedback(State& state, const Ent& player) {
 
 sim::AABB ExpandAabb(sim::AABB aabb, sim::Scalar amount) {
     return sim::AABB::from_corners(
-        aabb.tl - sim::Vec2{amount, amount},
-        aabb.br + sim::Vec2{amount, amount}
+        aabb.tl - sim::FxVec2{amount, amount},
+        aabb.br + sim::FxVec2{amount, amount}
     );
 }
 
@@ -162,8 +162,8 @@ void StepEntLogicAsMeathead(
         return;
     }
 
-    meathead.vel = sim::Vec2::zero();
-    meathead.acc = sim::Vec2::zero();
+    meathead.vel = sim::FxVec2::zero();
+    meathead.acc = sim::FxVec2::zero();
 
     if (meathead.aframe_animator.anim_id == aframe_ids::MeatheadRise &&
         meathead.aframe_animator.IsFinished()) {

@@ -328,8 +328,8 @@ void ControlEntAsPlayerWithTuning(
         }
     }
     if (intent.stop) {
-        player.acc = sim::Vec2::zero();
-        player.vel = sim::Vec2::zero();
+        player.acc = sim::FxVec2::zero();
+        player.vel = sim::FxVec2::zero();
     }
 }
 
@@ -536,7 +536,7 @@ void StepEntLogicAsPlayer(
     }
     if (!loss_of_control) {
         const Ent& player = state.ents.ents[ent_idx];
-        const sim::Vec2 player_pos = player.pos;
+        const sim::FxVec2 player_pos = player.pos;
         const bool trying_to_attack = control.attack_pressed;
         const VID player_vid = player.vid;
         const unsigned int attack_delay_countdown = player.attack_delay_countdown;

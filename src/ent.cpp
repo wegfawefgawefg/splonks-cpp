@@ -53,14 +53,14 @@ Ent Ent::New() {
     ent.impassable = false;
     ent.can_be_hung_on = true;
     ent.fall_timer = 0;
-    ent.pos = sim::Vec2::zero();
-    ent.vel = sim::Vec2::zero();
-    ent.acc = sim::Vec2::zero();
+    ent.pos = sim::FxVec2::zero();
+    ent.vel = sim::FxVec2::zero();
+    ent.acc = sim::FxVec2::zero();
     ent.max_speed = sim::ToSimScalar(7.0F);
     ent.jump_hold_gravity_frames_remaining = 0;
     ent.throw_velocity_scale = sim::Scalar::from_int(1);
     ent.buoyancy = sim::Scalar::zero();
-    ent.size = sim::Vec2::from_pixels(8, 8);
+    ent.size = sim::FxVec2::from_pixels(8, 8);
     ent.self_light = sim::Scalar::zero();
     ent.light_strength = sim::Scalar::zero();
     ent.light_color = sim::ToSimColor3(Color3::White());
@@ -221,27 +221,27 @@ void ClearTransientMovementFlags(Ent& ent) {
     SetMovementFlag(ent, EntMovementFlag::Pushing, false);
 }
 
-sim::Vec2 Ent::GetSimPos() const {
+sim::FxVec2 Ent::GetSimPos() const {
     return pos;
 }
 
-sim::Vec2 Ent::GetSimVel() const {
+sim::FxVec2 Ent::GetSimVel() const {
     return vel;
 }
 
-sim::Vec2 Ent::GetSimAcc() const {
+sim::FxVec2 Ent::GetSimAcc() const {
     return acc;
 }
 
-void Ent::SetSimPos(sim::Vec2 value) {
+void Ent::SetSimPos(sim::FxVec2 value) {
     pos = value;
 }
 
-void Ent::SetSimVel(sim::Vec2 value) {
+void Ent::SetSimVel(sim::FxVec2 value) {
     vel = value;
 }
 
-void Ent::SetSimAcc(sim::Vec2 value) {
+void Ent::SetSimAcc(sim::FxVec2 value) {
     acc = value;
 }
 
@@ -270,21 +270,21 @@ void Ent::SetRenderAcc(const FVec2& value) {
 }
 
 sim::AABB Ent::GetSimAABB() const {
-    return sim::AABB::from_pos_size(pos, size - sim::Vec2::from_pixels(1, 1));
+    return sim::AABB::from_pos_size(pos, size - sim::FxVec2::from_pixels(1, 1));
 }
 
-sim::Vec2 Ent::GetSimCenter() const {
+sim::FxVec2 Ent::GetSimCenter() const {
     return pos + size / sim::Scalar::from_int(2);
 }
 
-void Ent::SetSimCenter(sim::Vec2 center) {
+void Ent::SetSimCenter(sim::FxVec2 center) {
     pos = center - (size / sim::Scalar::from_int(2));
 }
 
 sim::AABB Ent::GetSimFeet() const {
     const sim::AABB bounds = GetSimAABB();
-    return sim::AABB::from_corners(sim::Vec2{bounds.tl.x, bounds.br.y},
-                                   bounds.br + sim::Vec2{sim::Scalar::zero(),
+    return sim::AABB::from_corners(sim::FxVec2{bounds.tl.x, bounds.br.y},
+                                   bounds.br + sim::FxVec2{sim::Scalar::zero(),
                                                          sim::Scalar::from_int(1)});
 }
 
@@ -366,7 +366,7 @@ void Ent::SetGrounded(const Stage& stage) {
 }
 
 std::tuple<FVec2, FVec2> Ent::GetTlAndTrCorners() const {
-    return {GetRenderPos(), sim::ToRenderVec2(pos + sim::Vec2{size.x, sim::Scalar::zero()})};
+    return {GetRenderPos(), sim::ToRenderVec2(pos + sim::FxVec2{size.x, sim::Scalar::zero()})};
 }
 
 HangHands Ent::GetHangHands() const {

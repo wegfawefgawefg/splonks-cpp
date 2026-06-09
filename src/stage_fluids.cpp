@@ -28,7 +28,7 @@ struct FluidTransferProposal {
     IVec2 target = IVec2::New(0, 0);
     Tile fluid_tile = Tile::Air;
     sim::Scalar amount = sim::Scalar::zero();
-    sim::Vec2 direction = sim::Vec2::zero();
+    sim::FxVec2 direction = sim::FxVec2::zero();
 };
 
 int WrapFluidCoordinate(int value, int size) {
@@ -42,7 +42,7 @@ int WrapFluidCoordinate(int value, int size) {
     return wrapped;
 }
 
-sim::Scalar Dot(sim::Vec2 left, sim::Vec2 right) {
+sim::Scalar Dot(sim::FxVec2 left, sim::FxVec2 right) {
     return (left.x * right.x) + (left.y * right.y);
 }
 
@@ -50,7 +50,7 @@ sim::Scalar ClampScalar(sim::Scalar value, sim::Scalar min_value, sim::Scalar ma
     return std::clamp(value, min_value, max_value);
 }
 
-sim::Vec2 ClampLength(sim::Vec2 value, sim::Scalar max_length) {
+sim::FxVec2 ClampLength(sim::FxVec2 value, sim::Scalar max_length) {
     const sim::Scalar length = sim::Length(value);
     if (length <= max_length || length <= kZero) {
         return value;
@@ -112,16 +112,16 @@ void SetAmountInGrid(
            [static_cast<std::size_t>(tile_coord.x)] = amount;
 }
 
-sim::Vec2 GetVelocityFromGrid(
-    const std::vector<std::vector<sim::Vec2>>& velocities,
+sim::FxVec2 GetVelocityFromGrid(
+    const std::vector<std::vector<sim::FxVec2>>& velocities,
     const IVec2& tile_coord
 ) {
     return velocities[static_cast<std::size_t>(tile_coord.y)]
                      [static_cast<std::size_t>(tile_coord.x)];
 }
 
-sim::Vec2 GetVec2FromGrid(
-    const std::vector<std::vector<sim::Vec2>>& grid,
+sim::FxVec2 GetVec2FromGrid(
+    const std::vector<std::vector<sim::FxVec2>>& grid,
     const IVec2& tile_coord
 ) {
     return grid[static_cast<std::size_t>(tile_coord.y)]
@@ -129,9 +129,9 @@ sim::Vec2 GetVec2FromGrid(
 }
 
 void SetVec2InGrid(
-    std::vector<std::vector<sim::Vec2>>& grid,
+    std::vector<std::vector<sim::FxVec2>>& grid,
     const IVec2& tile_coord,
-    sim::Vec2 value
+    sim::FxVec2 value
 ) {
     grid[static_cast<std::size_t>(tile_coord.y)]
         [static_cast<std::size_t>(tile_coord.x)] = value;
@@ -164,14 +164,14 @@ void AddFluidTransferProposalsForCell(
     const std::vector<std::vector<Tile>>& terrain_tiles,
     const std::vector<std::vector<Tile>>& fluid_tiles,
     const std::vector<std::vector<sim::Scalar>>& amounts,
-    const std::vector<std::vector<sim::Vec2>>& velocities,
-    const std::vector<std::vector<sim::Vec2>>& gravity_overrides,
+    const std::vector<std::vector<sim::FxVec2>>& velocities,
+    const std::vector<std::vector<sim::FxVec2>>& gravity_overrides,
     const std::vector<std::vector<std::uint8_t>>& gravity_strengths,
-    const std::vector<std::vector<sim::Vec2>>& temp_gravity,
+    const std::vector<std::vector<sim::FxVec2>>& temp_gravity,
     const IVec2& source,
     sim::Scalar transfer_cap,
     sim::Scalar pressure_strength,
-    sim::Vec2 gravity,
+    sim::FxVec2 gravity,
     std::vector<FluidTransferProposal>& proposals
 ) {
     const Tile fluid_tile = GetTileFromGrid(fluid_tiles, source);
@@ -182,7 +182,7 @@ void AddFluidTransferProposalsForCell(
 
     struct Candidate {
         IVec2 target = IVec2::New(0, 0);
-        sim::Vec2 direction = sim::Vec2::zero();
+        sim::FxVec2 direction = sim::FxVec2::zero();
         sim::Scalar score = sim::Scalar::zero();
         sim::Scalar capacity = sim::Scalar::zero();
     };
@@ -200,15 +200,15 @@ void AddFluidTransferProposalsForCell(
 
     const bool gravity_override_active =
         gravity_strengths[static_cast<std::size_t>(source.y)][static_cast<std::size_t>(source.x)];
-    const sim::Vec2 effective_gravity = (gravity_override_active
+    const sim::FxVec2 effective_gravity = (gravity_override_active
         ? GetVec2FromGrid(gravity_overrides, source)
         : gravity) + GetVec2FromGrid(temp_gravity, source);
-    const sim::Vec2 source_velocity = ClampLength(
+    const sim::FxVec2 source_velocity = ClampLength(
         GetVelocityFromGrid(velocities, source) + effective_gravity,
         kVelocityClamp
     );
     const sim::Scalar gravity_magnitude = sim::Length(effective_gravity);
-    const sim::Vec2 gravity_direction = sim::NormalizeOrZero(effective_gravity);
+    const sim::FxVec2 gravity_direction = sim::NormalizeOrZero(effective_gravity);
     const bool has_gravity = gravity_magnitude > kGravityEpsilon;
     const sim::Scalar gravity_pressure_bias = ClampScalar(gravity_magnitude, kZero, kOne);
     std::vector<Candidate> candidates;
@@ -231,7 +231,7 @@ void AddFluidTransferProposalsForCell(
         }
 
         const sim::Scalar target_amount = GetAmountFromGrid(amounts, *resolved_target);
-        const sim::Vec2 direction = sim::NormalizeOrZero(sim::PixelVec2(offset.x, offset.y));
+        const sim::FxVec2 direction = sim::NormalizeOrZero(sim::PixelVec2(offset.x, offset.y));
         const sim::Scalar velocity_score =
             ClampScalar(Dot(source_velocity, direction), kZero, kVelocityClamp);
         const sim::Scalar directional_pressure_gate =
@@ -306,7 +306,7 @@ std::vector<IVec2> NormalizeAuthoredFluidTiles(Stage& stage) {
             stage.fluid_display_amount[static_cast<std::size_t>(y)]
                                       [static_cast<std::size_t>(x)] = sim::Scalar::from_int(1);
             stage.fluid_velocity[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
-                sim::Vec2::zero();
+                sim::FxVec2::zero();
             terrain_tile = Tile::Air;
             stage.tile_rotations[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 kTileRotation0;
@@ -348,11 +348,11 @@ void StepStageFluids(State& state) {
     const std::vector<std::vector<Tile>>& terrain_tiles = stage.tiles;
     const std::vector<std::vector<Tile>>& source_fluid_tiles = stage.fluid_tiles;
     const std::vector<std::vector<sim::Scalar>>& source_amounts = stage.fluid_amount;
-    const std::vector<std::vector<sim::Vec2>>& source_velocities = stage.fluid_velocity;
-    const std::vector<std::vector<sim::Vec2>>& source_gravity_overrides = stage.fluid_gravity;
+    const std::vector<std::vector<sim::FxVec2>>& source_velocities = stage.fluid_velocity;
+    const std::vector<std::vector<sim::FxVec2>>& source_gravity_overrides = stage.fluid_gravity;
     const std::vector<std::vector<std::uint8_t>>& source_gravity_strengths =
         stage.fluid_gravity_strength;
-    const std::vector<std::vector<sim::Vec2>>& source_temp_gravity = stage.fluid_temp_gravity;
+    const std::vector<std::vector<sim::FxVec2>>& source_temp_gravity = stage.fluid_temp_gravity;
 
     const sim::Scalar transfer_cap =
         ClampScalar(fluid.transfer_per_step, kZero, kMaxFluidAmount);
@@ -360,7 +360,7 @@ void StepStageFluids(State& state) {
     const sim::Scalar velocity_damping_sim = ClampScalar(fluid.velocity_damping, kZero, kOne);
     const sim::Scalar temp_gravity_decay_sim =
         ClampScalar(fluid.temp_gravity_decay, kZero, kOne);
-    const sim::Vec2 gravity{fluid.gravity_x, fluid.gravity_y};
+    const sim::FxVec2 gravity{fluid.gravity_x, fluid.gravity_y};
 
     std::vector<FluidTransferProposal> proposals;
     proposals.reserve(static_cast<std::size_t>(stage.GetTileWidth() * stage.GetTileHeight()));
@@ -399,13 +399,13 @@ void StepStageFluids(State& state) {
 
     std::vector<std::vector<Tile>> next_fluid_tiles = source_fluid_tiles;
     std::vector<std::vector<sim::Scalar>> next_amounts = source_amounts;
-    std::vector<std::vector<sim::Vec2>> next_velocities = source_velocities;
-    std::vector<std::vector<sim::Vec2>> next_temp_gravity = source_temp_gravity;
-    std::vector<std::vector<sim::Vec2>> incoming_velocity(
+    std::vector<std::vector<sim::FxVec2>> next_velocities = source_velocities;
+    std::vector<std::vector<sim::FxVec2>> next_temp_gravity = source_temp_gravity;
+    std::vector<std::vector<sim::FxVec2>> incoming_velocity(
         source_amounts.size(),
-        std::vector<sim::Vec2>(
+        std::vector<sim::FxVec2>(
             source_amounts.empty() ? 0 : source_amounts.front().size(),
-            sim::Vec2::zero()
+            sim::FxVec2::zero()
         )
     );
 
@@ -413,10 +413,10 @@ void StepStageFluids(State& state) {
         for (std::size_t x = 0; x < next_velocities[y].size(); ++x) {
             next_temp_gravity[y][x] *= temp_gravity_decay_sim;
             if (source_amounts[y][x] <= kMinFluidAmount) {
-                next_velocities[y][x] = sim::Vec2::zero();
+                next_velocities[y][x] = sim::FxVec2::zero();
                 continue;
             }
-            const sim::Vec2 cell_gravity = ((source_gravity_strengths[y][x] > 0)
+            const sim::FxVec2 cell_gravity = ((source_gravity_strengths[y][x] > 0)
                 ? source_gravity_overrides[y][x]
                 : gravity) + source_temp_gravity[y][x];
             next_velocities[y][x] = ClampLength(
@@ -470,7 +470,7 @@ void StepStageFluids(State& state) {
             const IVec2 tile_coord = IVec2::New(x, y);
             sim::Scalar next_amount = GetAmountFromGrid(next_amounts, tile_coord);
             Tile& next_tile = next_fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
-            sim::Vec2 next_velocity =
+            sim::FxVec2 next_velocity =
                 next_velocities[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
             next_amount = ClampScalar(next_amount, kZero, kMaxFluidAmount);
             next_velocity = ClampLength(
@@ -482,7 +482,7 @@ void StepStageFluids(State& state) {
             if (next_amount <= kMinFluidAmount || !CanTerrainHoldFluid(GetTileFromGrid(terrain_tiles, tile_coord))) {
                 next_amount = kZero;
                 next_tile = Tile::Air;
-                next_velocity = sim::Vec2::zero();
+                next_velocity = sim::FxVec2::zero();
             }
             SetAmountInGrid(next_amounts, tile_coord, next_amount);
             SetVec2InGrid(next_velocities, tile_coord, next_velocity);

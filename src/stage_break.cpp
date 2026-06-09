@@ -16,19 +16,19 @@ namespace splonks {
 
 namespace {
 
-Ent* SpawnEntAtCenter(EntType type_, sim::Vec2 center, State& state) {
+Ent* SpawnEntAtCenter(EntType type_, sim::FxVec2 center, State& state) {
     return world_ops::SpawnEnt(state, type_, [center](Ent& ent) {
         ent.SetSimCenter(center);
-        ent.vel = sim::Vec2::zero();
+        ent.vel = sim::FxVec2::zero();
     });
 }
 
 void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const IVec2& tile_pos, State& state) {
-    const sim::Vec2 center = sim::PixelVec2(
+    const sim::FxVec2 center = sim::PixelVec2(
         tile_pos.x * static_cast<int>(kTileSize) + 8,
         tile_pos.y * static_cast<int>(kTileSize) + 8
     );
-    static const std::array<sim::Vec2, 8> kDropOffsets{{
+    static const std::array<sim::FxVec2, 8> kDropOffsets{{
         sim::PixelVec2(-4, -1),
         sim::PixelVec2(0, 1),
         sim::PixelVec2(4, -1),
@@ -64,7 +64,7 @@ void SpawnTileBreakAnim(AFrameId anim_id, const IVec2& tile_pos, State& state) {
 }
 
 void NotifyAreaEntsTileChanged(const IVec2& tile_pos, State& state, Audio& audio) {
-    const sim::Vec2 tile_center = sim::PixelVec2(
+    const sim::FxVec2 tile_center = sim::PixelVec2(
         tile_pos.x * static_cast<int>(kTileSize) + 8,
         tile_pos.y * static_cast<int>(kTileSize) + 8
     );

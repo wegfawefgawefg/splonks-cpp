@@ -65,11 +65,11 @@ bool IsOpenWithAnim(const Ent& ent, AFrameId anim_id) {
     return ent.aframe_animator.anim_id == anim_id;
 }
 
-sim::Vec2 RandomChestLaunchVelocity(State& state) {
+sim::FxVec2 RandomChestLaunchVelocity(State& state) {
     const int launch_x =
         state.drng.RandomIntInclusive(0, 3) -
         state.drng.RandomIntInclusive(0, 3);
-    return sim::Vec2{
+    return sim::FxVec2{
         sim::Scalar::from_int(launch_x),
         sim::ToSimScalar(kChestLootLaunchY)
     };
@@ -124,18 +124,18 @@ void SpawnChestSparkles(const FVec2& emit_pos, State& state) {
     }
 }
 
-void SpawnChestTrapBomb(sim::Vec2 spawn_center, State& state) {
+void SpawnChestTrapBomb(sim::FxVec2 spawn_center, State& state) {
     (void)world_ops::SpawnEnt(state, EntType::Bomb, [&](Ent& bomb) {
         bomb.SetSimCenter(spawn_center);
         bomb.vel = RandomChestLaunchVelocity(state);
-        bomb.acc = sim::Vec2::zero();
+        bomb.acc = sim::FxVec2::zero();
         bomb.counter_a = sim::ToSimScalar(kChestTrapFuseFrames);
         SetAnim(bomb, aframe_ids::LiveGrenade);
     });
 }
 
 void SpawnChestTreasure(
-    sim::Vec2 spawn_center,
+    sim::FxVec2 spawn_center,
     State& state,
     std::optional<VID> opener_vid = std::nullopt
 ) {
@@ -144,8 +144,8 @@ void SpawnChestTreasure(
     for (int i = 0; i < gem_count; ++i) {
         if (world_ops::SpawnEnt(state, RandomChestGemType(state), [&](Ent& gem) {
                 gem.SetSimCenter(spawn_center);
-                gem.vel = sim::Vec2::zero();
-                gem.acc = sim::Vec2::zero();
+                gem.vel = sim::FxVec2::zero();
+                gem.acc = sim::FxVec2::zero();
                 LaunchChestLoot(state, gem, opener_vid);
             }) == nullptr) {
             return;
@@ -158,8 +158,8 @@ void SpawnChestTreasure(
 
     (void)world_ops::SpawnEnt(state, RandomChestGemType(state), [&](Ent& gem) {
         gem.SetSimCenter(spawn_center);
-        gem.vel = sim::Vec2::zero();
-        gem.acc = sim::Vec2::zero();
+        gem.vel = sim::FxVec2::zero();
+        gem.acc = sim::FxVec2::zero();
         LaunchChestLoot(state, gem, opener_vid);
     });
 }
@@ -175,7 +175,7 @@ bool IsEntOverlappingChest(
     }
     const Ent& chest = state.ents.ents[chest_idx];
     const sim::AABB interactor_aabb = common::GetContactAabbForEnt(interactor, graphics);
-    const sim::Vec2 interactor_center = interactor_aabb.center();
+    const sim::FxVec2 interactor_center = interactor_aabb.center();
     const sim::AABB chest_aabb = GetNearestWorldAabb(
         state.stage,
         interactor_center,
@@ -264,7 +264,7 @@ bool CanUnlockKeyChestFromHeldKey(
 
 bool TryOpenTreasureChestAt(
     std::size_t ent_idx,
-    sim::Vec2 emit_pos,
+    sim::FxVec2 emit_pos,
     State& state,
     Audio& audio,
     std::optional<VID> opener_vid = std::nullopt
@@ -307,7 +307,7 @@ bool TryOpenTreasureChest(
     }
 
     const Ent& chest = state.ents.ents[ent_idx];
-    const sim::Vec2 emit_pos =
+    const sim::FxVec2 emit_pos =
         common::GetEmitPointForEnt(chest, graphics, chest.GetSimCenter());
     return TryOpenTreasureChestAt(ent_idx, emit_pos, state, audio, opener_vid);
 }
@@ -364,7 +364,7 @@ bool TryOpenKeyChestWithKey(
     }
 
     SetAnim(chest, aframe_ids::KeyChestOpen);
-    const sim::Vec2 emit_pos =
+    const sim::FxVec2 emit_pos =
         common::GetEmitPointForEnt(chest, graphics, chest.GetSimCenter());
     const FVec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
     SpawnChestSparkles(render_emit_pos, state);
@@ -372,8 +372,8 @@ bool TryOpenKeyChestWithKey(
     (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::ChestOpen);
     (void)world_ops::SpawnEnt(state, EntType::UdjatEye, [&](Ent& udjat_eye) {
         udjat_eye.SetSimCenter(emit_pos);
-        udjat_eye.vel = sim::Vec2::zero();
-        udjat_eye.acc = sim::Vec2::zero();
+        udjat_eye.vel = sim::FxVec2::zero();
+        udjat_eye.acc = sim::FxVec2::zero();
         LaunchChestLoot(
             state,
             udjat_eye,

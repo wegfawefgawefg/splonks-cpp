@@ -22,8 +22,8 @@ constexpr int kBeamSegmentSizePixels = 16;
 constexpr std::uint32_t kBeamContactDamage = 1;
 
 bool HasSolidSupportAbove(const Ent& emitter, const State& state) {
-    const sim::Vec2 probe =
-        emitter.GetSimCenter() + sim::Vec2::from_pixels(0, -kBeamSegmentSizePixels);
+    const sim::FxVec2 probe =
+        emitter.GetSimCenter() + sim::FxVec2::from_pixels(0, -kBeamSegmentSizePixels);
     const std::optional<WorldTileQueryResult> tile_query =
         QueryTileAtWorldPos(state.stage, probe);
     return tile_query.has_value() && tile_query->tile != nullptr &&
@@ -37,7 +37,7 @@ std::vector<VID>& EnsureChildBeamVids(Ent& emitter) {
     return *emitter.child_vids;
 }
 
-Ent* SpawnBeamSegment(State& state, sim::Vec2 center, const Ent& emitter) {
+Ent* SpawnBeamSegment(State& state, sim::FxVec2 center, const Ent& emitter) {
     return world_ops::SpawnEnt(state, EntType::Beam, [&](Ent& beam) {
         beam.SetSimCenter(center);
         beam.ent_a = emitter.vid;
@@ -63,9 +63,9 @@ void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
     beam_vids.resize(kBeamSegmentCount);
 
     for (std::size_t segment_idx = 0; segment_idx < static_cast<std::size_t>(kBeamSegmentCount); ++segment_idx) {
-        const sim::Vec2 segment_center =
+        const sim::FxVec2 segment_center =
             emitter.GetSimCenter() +
-            sim::Vec2::from_pixels(
+            sim::FxVec2::from_pixels(
                 0,
                 kBeamSegmentSizePixels * static_cast<int>(segment_idx + 1)
             );

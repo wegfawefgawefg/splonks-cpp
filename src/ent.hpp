@@ -69,14 +69,14 @@ struct Ent {
     bool impassable = false;
     bool can_be_hung_on = true;
     std::uint32_t fall_timer = 0;
-    sim::Vec2 pos;
-    sim::Vec2 vel;
-    sim::Vec2 acc;
+    sim::FxVec2 pos;
+    sim::FxVec2 vel;
+    sim::FxVec2 acc;
     sim::Scalar max_speed = sim::ToSimScalar(7.0F);
     std::uint32_t jump_hold_gravity_frames_remaining = 0;
     sim::Scalar throw_velocity_scale = sim::Scalar::from_int(1);
     sim::Scalar buoyancy = sim::Scalar::zero();
-    sim::Vec2 size;
+    sim::FxVec2 size;
     sim::Scalar self_light = sim::Scalar::zero();
     sim::Scalar light_strength = sim::Scalar::zero();
     sim::Color3 light_color = sim::ToSimColor3(Color3::White());
@@ -177,12 +177,12 @@ struct Ent {
 
     static Ent New();
     void Reset();
-    sim::Vec2 GetSimPos() const;
-    sim::Vec2 GetSimVel() const;
-    sim::Vec2 GetSimAcc() const;
-    void SetSimPos(sim::Vec2 value);
-    void SetSimVel(sim::Vec2 value);
-    void SetSimAcc(sim::Vec2 value);
+    sim::FxVec2 GetSimPos() const;
+    sim::FxVec2 GetSimVel() const;
+    sim::FxVec2 GetSimAcc() const;
+    void SetSimPos(sim::FxVec2 value);
+    void SetSimVel(sim::FxVec2 value);
+    void SetSimAcc(sim::FxVec2 value);
     FVec2 GetRenderPos() const;
     FVec2 GetRenderVel() const;
     FVec2 GetRenderAcc() const;
@@ -191,8 +191,8 @@ struct Ent {
     void SetRenderAcc(const FVec2& value);
     FVec2 GetSize() const;
     sim::AABB GetSimAABB() const;
-    sim::Vec2 GetSimCenter() const;
-    void SetSimCenter(sim::Vec2 center);
+    sim::FxVec2 GetSimCenter() const;
+    void SetSimCenter(sim::FxVec2 center);
     sim::AABB GetSimFeet() const;
     sim::AABB GetSimGroundProbe() const;
     std::tuple<FVec2, FVec2> GetRenderBounds() const;

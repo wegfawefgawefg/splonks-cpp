@@ -28,18 +28,18 @@ constexpr float kRageSpiderHopSpeedX = 2.5F;
 constexpr float kGiantSpiderHopSpeedX = 2.5F;
 constexpr float kSpiderIdleSpeedThreshold = 0.1F;
 
-std::optional<sim::Vec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
+std::optional<sim::FxVec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
     const Ent* const player = FindNearestPlayer(state, ent.GetSimCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const sim::Vec2 ent_center = ent.GetSimCenter();
-    const sim::Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetSimCenter());
+    const sim::FxVec2 ent_center = ent.GetSimCenter();
+    const sim::FxVec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetSimCenter());
     return player_center - ent_center;
 }
 
-void SpawnGiantSpiderLoot(sim::Vec2 center, State& state) {
+void SpawnGiantSpiderLoot(sim::FxVec2 center, State& state) {
     const int gem_count = state.drng.RandomIntInclusive(1, 3);
     for (int i = 0; i < gem_count; ++i) {
         EntType gem_type = EntType::EmeraldBig;
@@ -57,7 +57,7 @@ void SpawnGiantSpiderLoot(sim::Vec2 center, State& state) {
 
         if (world_ops::SpawnEnt(state, gem_type, [&](Ent& gem) {
                 gem.SetSimCenter(center);
-                gem.vel = sim::Vec2{
+                gem.vel = sim::FxVec2{
                     RandomSimScalar(state.drng, sim::Scalar::from_int(-2), sim::Scalar::from_int(2)),
                     sim::Scalar::from_int(-2),
                 };
@@ -68,7 +68,7 @@ void SpawnGiantSpiderLoot(sim::Vec2 center, State& state) {
 
     (void)world_ops::SpawnEnt(state, EntType::Paste, [&](Ent& paste) {
         paste.SetSimCenter(center);
-        paste.vel = sim::Vec2::zero();
+        paste.vel = sim::FxVec2::zero();
     });
 }
 
@@ -80,13 +80,13 @@ void HandleGiantSpiderDeath(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& giant_spider = state.ents.ents[ent_idx];
-    const sim::Vec2 center = giant_spider.GetSimCenter();
+    const sim::FxVec2 center = giant_spider.GetSimCenter();
     SpawnDamageEffectAnimBurst(aframe_ids::BloodBall, sim::ToRenderVec2(center), state);
     SpawnGiantSpiderLoot(center, state);
 }
 
 void FaceTowardNearestPlayer(Ent& ent, const State& state) {
-    const std::optional<sim::Vec2> player_delta = GetNearestPlayerDelta(ent, state);
+    const std::optional<sim::FxVec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value()) {
         return;
     }
@@ -138,7 +138,7 @@ void TryHopTowardPlayer(
     int hop_speed_y_min,
     int hop_speed_y_max
 ) {
-    const std::optional<sim::Vec2> player_delta = GetNearestPlayerDelta(ent, state);
+    const std::optional<sim::FxVec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value() ||
         gfxp::length_sq(*player_delta) > sim::Scalar::from_int(aggro_distance * aggro_distance)) {
         ent.counter_a = sim::Scalar::from_int(state.drng.RandomIntInclusive(

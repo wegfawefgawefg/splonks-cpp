@@ -13,9 +13,9 @@
 
 namespace splonks::network {
 
-sim::Vec2 GetPrimaryPlayerSpawnPos(const State& state);
-sim::Vec2 GetRemoteSpawnPos(const State& state);
-sim::Vec2 GetEntranceOrRemoteSpawnPos(const State& state);
+sim::FxVec2 GetPrimaryPlayerSpawnPos(const State& state);
+sim::FxVec2 GetRemoteSpawnPos(const State& state);
+sim::FxVec2 GetEntranceOrRemoteSpawnPos(const State& state);
 const NetRetainedPlayerState* FindRetainedPlayerState(const State& state, PlayerId player_id);
 void RemoveRetainedPlayerState(State& state, PlayerId player_id);
 void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Ent& player);
@@ -26,7 +26,7 @@ void DeactivateRetainedAttachedEnt(
     std::optional<VID> attached_vid
 );
 bool IsRetainedReconnectMode(NetReconnectSpawnMode mode);
-sim::Vec2 ResolveReconnectSpawnPos(
+sim::FxVec2 ResolveReconnectSpawnPos(
     const State& state,
     const NetRetainedPlayerState* retained,
     std::size_t player_index
@@ -35,7 +35,7 @@ void ApplyRetainedPlayerState(
     State& state,
     PlayerId player_id,
     const NetRetainedPlayerState& retained,
-    sim::Vec2 spawn_pos,
+    sim::FxVec2 spawn_pos,
     const Graphics& graphics
 );
 
@@ -172,7 +172,7 @@ void EnsureSpawnedPlayer(
     PlayerId player_id,
     bool local,
     bool primary,
-    sim::Vec2 pos,
+    sim::FxVec2 pos,
     const Graphics& graphics
 );
 

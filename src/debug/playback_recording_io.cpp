@@ -42,8 +42,8 @@ void WriteFloat(std::ostream& out, float value);
 bool ReadFloat(std::istream& in, float& value);
 void WriteSimScalar(std::ostream& out, sim::Scalar value);
 bool ReadSimScalar(std::istream& in, sim::Scalar& value);
-void WriteSimVec2(std::ostream& out, const sim::Vec2& value);
-bool ReadSimVec2(std::istream& in, sim::Vec2& value);
+void WriteSimVec2(std::ostream& out, const sim::FxVec2& value);
+bool ReadSimVec2(std::istream& in, sim::FxVec2& value);
 void WriteInt32(std::ostream& out, int value);
 bool ReadInt32(std::istream& in, int& value);
 void WriteSigned32(std::ostream& out, std::int32_t value);
@@ -603,12 +603,12 @@ bool ReadSimColor3(std::istream& in, sim::Color3& color) {
            ReadSimScalar(in, color.b);
 }
 
-void WriteSimVec2(std::ostream& out, const sim::Vec2& value) {
+void WriteSimVec2(std::ostream& out, const sim::FxVec2& value) {
     WriteSimScalar(out, value.x);
     WriteSimScalar(out, value.y);
 }
 
-bool ReadSimVec2(std::istream& in, sim::Vec2& value) {
+bool ReadSimVec2(std::istream& in, sim::FxVec2& value) {
     return ReadSimScalar(in, value.x) &&
            ReadSimScalar(in, value.y);
 }
@@ -1624,9 +1624,9 @@ void WriteEnt(std::ostream& out, const Ent& ent) {
 }
 
 bool ReadEnt(std::istream& in, Ent& ent) {
-    sim::Vec2 pos;
-    sim::Vec2 vel;
-    sim::Vec2 acc;
+    sim::FxVec2 pos;
+    sim::FxVec2 vel;
+    sim::FxVec2 acc;
     const bool ok = ReadBoolByte(in, ent.active) &&
            ReadBoolByte(in, ent.marked_for_destruction) &&
            ReadEntType(in, ent.type_) &&

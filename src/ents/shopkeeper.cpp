@@ -47,7 +47,7 @@ std::optional<std::size_t> GetShopIdxForShopkeeper(const Ent& shopkeeper, const 
 }
 
 bool CanSeePlayerAhead(const Ent& shopkeeper, const State& state, const Graphics& graphics) {
-    const sim::Vec2 shopkeeper_center = shopkeeper.GetSimCenter();
+    const sim::FxVec2 shopkeeper_center = shopkeeper.GetSimCenter();
     const int direction = shopkeeper.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
@@ -57,9 +57,9 @@ bool CanSeePlayerAhead(const Ent& shopkeeper, const State& state, const Graphics
         if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
             continue;
         }
-        const sim::Vec2 player_center =
+        const sim::FxVec2 player_center =
             GetNearestWorldPoint(state.stage, shopkeeper_center, player->GetSimCenter());
-        const sim::Vec2 delta = player_center - shopkeeper_center;
+        const sim::FxVec2 delta = player_center - shopkeeper_center;
         if (delta.y.abs() > sim::Scalar::from_int(kShopkeeperSightVerticalTolerance) ||
             delta.x.abs() > sim::Scalar::from_int(kShopkeeperShootDistance)) {
             continue;
@@ -98,7 +98,7 @@ bool SpawnShopkeeperPistolIntoHands(std::size_t ent_idx, State& state, const Gra
         spawned_pistol.can_collide = false;
         spawned_pistol.counter_b = sim::Scalar::from_int(9999);
         spawned_pistol.facing = shopkeeper.facing;
-        spawned_pistol.SetSimCenter(shopkeeper.GetSimCenter() + sim::Vec2::from_pixels(4, 1));
+        spawned_pistol.SetSimCenter(shopkeeper.GetSimCenter() + sim::FxVec2::from_pixels(4, 1));
         shopkeeper.holding_vid = spawned_pistol.vid;
         shopkeeper.holding = true;
         shopkeeper.ent_b = spawned_pistol.vid;
@@ -131,11 +131,11 @@ void SyncHeldPistolToShopkeeper(Ent& shopkeeper, Ent& pistol, State& state, cons
     pistol.draw_layer = DrawLayer::Foreground;
     StopUsingEnt(pistol);
 
-    const sim::Vec2 hold_offset = sim::Vec2::from_pixels(4, 1);
-    const sim::Vec2 shopkeeper_center = shopkeeper.GetSimCenter();
-    const sim::Vec2 held_pos_target =
+    const sim::FxVec2 hold_offset = sim::FxVec2::from_pixels(4, 1);
+    const sim::FxVec2 shopkeeper_center = shopkeeper.GetSimCenter();
+    const sim::FxVec2 held_pos_target =
         shopkeeper.facing == Side::Left
-            ? shopkeeper_center + sim::Vec2{-hold_offset.x, hold_offset.y}
+            ? shopkeeper_center + sim::FxVec2{-hold_offset.x, hold_offset.y}
             : shopkeeper_center + hold_offset;
     pistol.SetSimCenter(held_pos_target);
     pistol.grounded = false;
@@ -182,7 +182,7 @@ bool TryRecoverDroppedPistol(
         return false;
     }
 
-    const sim::Vec2 delta =
+    const sim::FxVec2 delta =
         GetNearestWorldDelta(state.stage, shopkeeper.GetSimCenter(), pistol->GetSimCenter());
     if (delta.x < sim::Scalar::zero()) {
         shopkeeper.facing = Side::Left;
@@ -308,7 +308,7 @@ void StepEntLogicAsShopkeeper(
         return;
     }
 
-    const sim::Vec2 delta =
+    const sim::FxVec2 delta =
         GetNearestWorldDelta(state.stage, shopkeeper.GetSimCenter(), player->GetSimCenter());
     if (delta.x < sim::Scalar::zero()) {
         shopkeeper.facing = Side::Left;

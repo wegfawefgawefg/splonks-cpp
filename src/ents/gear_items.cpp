@@ -96,13 +96,13 @@ void UpdateOpenParachuteVisual(Ent& owner, State& state, const Graphics& graphic
         spawned_visual = true;
     }
 
-    const sim::Vec2 owner_visual_center =
+    const sim::FxVec2 owner_visual_center =
         common::GetVisualCenterForEnt(owner, graphics, owner.GetSimCenter());
     parachute->SetSimCenter(
-        owner_visual_center + sim::Vec2::from_pixels(0, kParachuteVisualOffsetYPixels)
+        owner_visual_center + sim::FxVec2::from_pixels(0, kParachuteVisualOffsetYPixels)
     );
-    parachute->vel = sim::Vec2::zero();
-    parachute->acc = sim::Vec2::zero();
+    parachute->vel = sim::FxVec2::zero();
+    parachute->acc = sim::FxVec2::zero();
     state.UpdateSidForEnt(parachute->vid.id, graphics);
     (void)spawned_visual;
 }

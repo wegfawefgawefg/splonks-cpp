@@ -97,8 +97,8 @@ void OnDeathAsFlappyBee(std::size_t ent_idx, State& state, Audio& audio) {
     bee.render_enabled = false;
     bee.has_physics = false;
     bee.can_collide = false;
-    bee.vel = sim::Vec2::zero();
-    bee.acc = sim::Vec2::zero();
+    bee.vel = sim::FxVec2::zero();
+    bee.acc = sim::FxVec2::zero();
 }
 
 void ControlEntAsFlappyBee(
@@ -144,8 +144,8 @@ void ControlEntAsFlappyBee(
     }
 
     if (control.stop) {
-        bee.acc = sim::Vec2::zero();
-        bee.vel = sim::Vec2::zero();
+        bee.acc = sim::FxVec2::zero();
+        bee.vel = sim::FxVec2::zero();
     }
 }
 

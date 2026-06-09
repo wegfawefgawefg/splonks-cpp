@@ -32,8 +32,8 @@ AFrameId GetBombLiveAnim(const Ent& bomb) {
 }
 
 void StickBombInPlace(Ent& bomb) {
-    bomb.vel = sim::Vec2::zero();
-    bomb.acc = sim::Vec2::zero();
+    bomb.vel = sim::FxVec2::zero();
+    bomb.acc = sim::FxVec2::zero();
     bomb.has_physics = false;
     bomb.thrown_by.reset();
     bomb.thrown_immunity_timer = 0;
@@ -54,8 +54,8 @@ void UpdateStickyBombAttach(Ent& bomb, State& state) {
     }
 
     bomb.pos = attached->pos + sim::PixelVec2(bomb.point_a.x, bomb.point_a.y);
-    bomb.vel = sim::Vec2::zero();
-    bomb.acc = sim::Vec2::zero();
+    bomb.vel = sim::FxVec2::zero();
+    bomb.acc = sim::FxVec2::zero();
 }
 
 void UpdateBombRotation(Ent& bomb) {

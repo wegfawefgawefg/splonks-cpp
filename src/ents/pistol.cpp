@@ -90,7 +90,7 @@ void SpawnPistolImpactEffect(State& state, const FVec2& pos, int direction) {
     }
 }
 
-sim::Vec2 GetFallbackMuzzlePos(const Ent& pistol) {
+sim::FxVec2 GetFallbackMuzzlePos(const Ent& pistol) {
     const int direction = pistol.facing == Side::Left ? -1 : 1;
     return pistol.GetSimCenter() + sim::PixelVec2(8 * direction, 1);
 }
@@ -98,7 +98,7 @@ sim::Vec2 GetFallbackMuzzlePos(const Ent& pistol) {
 void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     const Ent& pistol = state.ents.ents[ent_idx];
     const int direction = pistol.facing == Side::Left ? -1 : 1;
-    const sim::Vec2 muzzle_pos = common::GetEmitPointForEnt(
+    const sim::FxVec2 muzzle_pos = common::GetEmitPointForEnt(
         pistol,
         graphics,
         GetFallbackMuzzlePos(pistol)
@@ -137,7 +137,7 @@ void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio
             common::HitOptions{
                 .source_vid = pistol.vid,
                 .knockback = common::KnockbackSpec{
-                    .velocity = sim::Vec2{
+                    .velocity = sim::FxVec2{
                         sim::Scalar::from_int(direction),
                         sim::Scalar::from_int(-1),
                     },

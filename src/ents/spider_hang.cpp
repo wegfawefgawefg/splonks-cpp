@@ -21,7 +21,7 @@ constexpr float kGiantSpiderDropXTolerance = 8.0F;
 
 bool HasCeilingSupport(const Ent& ent, const State& state) {
     const sim::AABB aabb = ent.GetSimAABB();
-    const sim::Vec2 sample_pos = sim::Vec2{
+    const sim::FxVec2 sample_pos = sim::FxVec2{
         aabb.center().x,
         aabb.tl.y - sim::Scalar::from_pixels(1),
     };
@@ -29,15 +29,15 @@ bool HasCeilingSupport(const Ent& ent, const State& state) {
     return tile_query.has_value() && tile_query->tile != nullptr && IsTileCollidable(*tile_query->tile);
 }
 
-std::optional<sim::Vec2> GetPlayerDeltaBelow(const Ent& ent, const State& state, int max_distance) {
+std::optional<sim::FxVec2> GetPlayerDeltaBelow(const Ent& ent, const State& state, int max_distance) {
     const Ent* const player = FindNearestPlayer(state, ent.GetSimCenter(), false);
     if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const sim::Vec2 ent_center = ent.GetSimCenter();
-    const sim::Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetSimCenter());
-    const sim::Vec2 delta = player_center - ent_center;
+    const sim::FxVec2 ent_center = ent.GetSimCenter();
+    const sim::FxVec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetSimCenter());
+    const sim::FxVec2 delta = player_center - ent_center;
     if (delta.y <= sim::Scalar::zero() ||
         gfxp::length_sq(delta) >= sim::Scalar::from_int(max_distance * max_distance)) {
         return std::nullopt;
@@ -51,8 +51,8 @@ void ConvertHangEntToLiveSpider(std::size_t ent_idx, State& state, EntType live_
     }
 
     Ent& hang_spider = state.ents.ents[ent_idx];
-    const sim::Vec2 pos = hang_spider.pos;
-    const sim::Vec2 vel = hang_spider.vel;
+    const sim::FxVec2 pos = hang_spider.pos;
+    const sim::FxVec2 vel = hang_spider.vel;
     const std::uint32_t health = hang_spider.health;
     const std::optional<VID> thrown_by = hang_spider.thrown_by;
 
@@ -63,7 +63,7 @@ void ConvertHangEntToLiveSpider(std::size_t ent_idx, State& state, EntType live_
     hang_spider.thrown_by = thrown_by;
     hang_spider.grounded = false;
 
-    if (const std::optional<sim::Vec2> player_delta = GetPlayerDeltaBelow(hang_spider, state, 9999)) {
+    if (const std::optional<sim::FxVec2> player_delta = GetPlayerDeltaBelow(hang_spider, state, 9999)) {
         if (player_delta->x < sim::Scalar::zero()) {
             hang_spider.facing = Side::Left;
         } else if (player_delta->x > sim::Scalar::zero()) {
@@ -111,7 +111,7 @@ void StepHangSpider(
         return;
     }
 
-    const std::optional<sim::Vec2> player_delta = GetPlayerDeltaBelow(hang_spider, state, drop_distance);
+    const std::optional<sim::FxVec2> player_delta = GetPlayerDeltaBelow(hang_spider, state, drop_distance);
     const bool player_below =
         player_delta.has_value() && player_delta->x.abs() < sim::ToSimScalar(drop_x_tolerance);
     const bool hurt_but_alive = convert_when_hurt && hang_spider.health < GetEntSpec(hang_spider.type_).health;

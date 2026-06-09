@@ -93,7 +93,7 @@ BlockingContactSet GatherBlockingContactsForAabb(
     if (check_ents) {
         const Ent& ent = state.ents.ents[ent_idx];
         const VID self_vid = ent.vid;
-        const sim::Vec2 anchor = aabb.center();
+        const sim::FxVec2 anchor = aabb.center();
         for (const VID& other_vid : QueryEntsInAabb(state, aabb, self_vid)) {
             const Ent* const other_ent = state.ents.GetEnt(other_vid);
             if (other_ent == nullptr || !other_ent->active) {

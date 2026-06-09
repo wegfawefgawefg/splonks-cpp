@@ -90,7 +90,7 @@ inline bool HasAnyConnectedLivingPlayer(const State& state) {
 
 inline std::optional<VID> FindNearestPlayerVid(
     const State& state,
-    sim::Vec2 world_pos,
+    sim::FxVec2 world_pos,
     bool require_normal_condition = true
 ) {
     std::optional<VID> best_vid;
@@ -106,7 +106,7 @@ inline std::optional<VID> FindNearestPlayerVid(
         if (require_normal_condition && player->condition != EntCondition::Normal) {
             continue;
         }
-        const sim::Vec2 delta = GetNearestWorldDelta(state.stage, world_pos, player->GetSimPos());
+        const sim::FxVec2 delta = GetNearestWorldDelta(state.stage, world_pos, player->GetSimPos());
         const sim::Scalar dist_sq = gfxp::length_sq(delta);
         if (!best_dist_sq.has_value() || dist_sq < *best_dist_sq) {
             best_dist_sq = dist_sq;
@@ -126,7 +126,7 @@ inline std::optional<VID> FindNearestPlayerVid(
 
 inline const Ent* FindNearestPlayer(
     const State& state,
-    sim::Vec2 world_pos,
+    sim::FxVec2 world_pos,
     bool require_normal_condition = true
 ) {
     const std::optional<VID> vid =
@@ -136,7 +136,7 @@ inline const Ent* FindNearestPlayer(
 
 inline Ent* FindNearestPlayerMut(
     State& state,
-    sim::Vec2 world_pos,
+    sim::FxVec2 world_pos,
     bool require_normal_condition = true
 ) {
     const std::optional<VID> vid =

@@ -11,7 +11,7 @@ namespace splonks::ents::dvdlogo {
 
 namespace {
 
-sim::AABB TranslateAabb(sim::AABB aabb, sim::Vec2 delta) {
+sim::AABB TranslateAabb(sim::AABB aabb, sim::FxVec2 delta) {
     return sim::AABB::from_corners(aabb.tl + delta, aabb.br + delta);
 }
 
@@ -29,7 +29,7 @@ bool WouldBlockAt(
     );
 }
 
-void StepBounceAxis(std::size_t ent_idx, State& state, const Graphics& graphics, sim::Vec2 delta) {
+void StepBounceAxis(std::size_t ent_idx, State& state, const Graphics& graphics, sim::FxVec2 delta) {
     if (delta.x == sim::Scalar::zero() && delta.y == sim::Scalar::zero()) {
         return;
     }
@@ -117,13 +117,13 @@ void StepEntLogicAsDvdLogo(
         ent_idx,
         state,
         graphics,
-        sim::Vec2{state.ents.ents[ent_idx].vel.x, sim::Scalar::zero()}
+        sim::FxVec2{state.ents.ents[ent_idx].vel.x, sim::Scalar::zero()}
     );
     StepBounceAxis(
         ent_idx,
         state,
         graphics,
-        sim::Vec2{sim::Scalar::zero(), state.ents.ents[ent_idx].vel.y}
+        sim::FxVec2{sim::Scalar::zero(), state.ents.ents[ent_idx].vel.y}
     );
     MaybeQueueTransitionOnPlayerContact(ent_idx, state, graphics);
 }

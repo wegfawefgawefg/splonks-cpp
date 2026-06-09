@@ -181,7 +181,7 @@ void ApplyPendingStageTransition(State& state) {
     }
 }
 
-std::optional<sim::Vec2> FindStageEntranceSpawnPos(const State& state) {
+std::optional<sim::FxVec2> FindStageEntranceSpawnPos(const State& state) {
     for (unsigned int y = 0; y < state.stage.GetTileHeight(); ++y) {
         for (unsigned int x = 0; x < state.stage.GetTileWidth(); ++x) {
             if (state.stage.GetTile(x, y) == Tile::Entrance) {

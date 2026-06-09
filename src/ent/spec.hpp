@@ -16,7 +16,7 @@ using EntBuildHudEntry = void (*)(const Ent& ent, const State& state, HudEntrySo
 
 struct EntSpec {
     EntType type_ = EntType::None;
-    sim::Vec2 size = sim::Vec2::from_pixels(8, 8);
+    sim::FxVec2 size = sim::FxVec2::from_pixels(8, 8);
     std::uint32_t health = 0;
     bool has_physics = true;
     bool can_collide = true;
@@ -91,11 +91,11 @@ struct EntSpec {
     AFrameAnimator aframe_animator{};
 };
 
-inline sim::Vec2 EntSpecSize(float width, float height) {
+inline sim::FxVec2 EntSpecSize(float width, float height) {
     return sim::ToSimVec2(FVec2::New(width, height));
 }
 
-inline sim::Vec2 EntSpecSize(const FVec2& size) {
+inline sim::FxVec2 EntSpecSize(const FVec2& size) {
     return sim::ToSimVec2(size);
 }
 

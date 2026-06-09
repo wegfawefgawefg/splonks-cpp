@@ -80,7 +80,7 @@ bool CanProjImpactWithoutDamage(const Ent& target) {
 }
 
 sim::AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
-                                      const TileContactData& tile_contact_data, sim::Vec2 anchor) {
+                                      const TileContactData& tile_contact_data, sim::FxVec2 anchor) {
     FrameRect cbox = tile_contact_data.cbox;
     const TileRotation rotation = GetTileRotationForQuery(stage, tile_query);
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
@@ -113,7 +113,7 @@ sim::AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryRe
     default:
         break;
     }
-    const sim::Vec2 tile_tl = sim::PixelVec2(
+    const sim::FxVec2 tile_tl = sim::PixelVec2(
         tile_query.tile_pos.x * static_cast<int>(kTileSize),
         tile_query.tile_pos.y * static_cast<int>(kTileSize)
     );
@@ -144,10 +144,10 @@ bool EntIsMovingIntoSpike(const Ent& ent, TileRotation spike_rotation) {
 }
 
 KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
-    const sim::Vec2 delta = GetNearestWorldDelta(stage, source.GetSimCenter(), target.GetSimCenter());
+    const sim::FxVec2 delta = GetNearestWorldDelta(stage, source.GetSimCenter(), target.GetSimCenter());
     const int direction = delta.x < sim::Scalar::zero() ? -1 : 1;
     return KnockbackSpec{
-        .velocity = sim::Vec2{
+        .velocity = sim::FxVec2{
             sim::Scalar::from_int(direction),
             sim::Scalar::from_int(-1),
         },
@@ -159,7 +159,7 @@ KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, co
 KnockbackSpec BuildProjContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
     (void)target;
     (void)stage;
-    const sim::Vec2 velocity = source.vel * sim::ToSimScalar(kProjContactVelocityScale);
+    const sim::FxVec2 velocity = source.vel * sim::ToSimScalar(kProjContactVelocityScale);
 
     return KnockbackSpec{
         .velocity = velocity,
@@ -182,7 +182,7 @@ void MaybeHurtAndStunOnContact(
     const Ent& ent = state.ents.ents[ent_idx];
     const VID ent_vid = ent.vid;
     const sim::AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
-    const sim::Vec2 ent_pos = ent.GetSimPos();
+    const sim::FxVec2 ent_pos = ent.GetSimPos();
     const EntCondition condition = ent.condition;
     const bool hurt_on_contact = ent.hurt_on_contact;
     const std::optional<VID> thrown_by = ent.thrown_by;
@@ -212,7 +212,7 @@ void MaybeHurtAndStunOnContact(
                 if (IsPlayerLikeEntType(other_ent->type_)) {
                     const sim::AABB player_aabb = other_aabb;
                     const sim::AABB player_foot = {
-                        .tl = sim::Vec2{
+                        .tl = sim::FxVec2{
                             player_aabb.tl.x,
                             player_aabb.br.y - sim::Scalar::from_int(4),
                         },

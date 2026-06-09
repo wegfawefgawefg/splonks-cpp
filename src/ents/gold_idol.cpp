@@ -69,7 +69,7 @@ FVec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& 
     }
 
     const sim::AABB target_aabb = target->GetSimAABB();
-    return sim::ToRenderVec2(sim::Vec2{
+    return sim::ToRenderVec2(sim::FxVec2{
         target_aabb.center().x,
         target_aabb.tl.y + target->size.y * sim::ToSimScalar(kRewardParticleYOffsetFactor),
     });

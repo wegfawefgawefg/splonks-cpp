@@ -49,7 +49,7 @@ void AddTikiHeadReleaseShake(State& state, const Ent& head) {
 const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
     const Ent* best_player = nullptr;
     sim::Scalar best_distance_sq{};
-    const sim::Vec2 head_center = head.GetSimCenter();
+    const sim::FxVec2 head_center = head.GetSimCenter();
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
@@ -59,7 +59,7 @@ const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
             continue;
         }
 
-        const sim::Vec2 delta =
+        const sim::FxVec2 delta =
             GetNearestWorldDelta(state.stage, head_center, player->GetSimCenter());
         const sim::Scalar distance_sq = gfxp::length_sq(delta);
         if (best_player == nullptr || distance_sq < best_distance_sq) {
@@ -78,7 +78,7 @@ std::optional<VID> SpawnBoulderForHead(Ent& head, State& state, Audio& audio) {
 
         const Ent* const player = FindClosestPlayerToHead(head, state);
         if (player != nullptr) {
-            const sim::Vec2 delta =
+            const sim::FxVec2 delta =
                 GetNearestWorldDelta(state.stage, head.GetSimCenter(), player->GetSimCenter());
             spawned_boulder.facing = delta.x < sim::Scalar::zero() ? Side::Left : Side::Right;
         } else {

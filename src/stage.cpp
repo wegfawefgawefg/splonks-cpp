@@ -20,24 +20,24 @@ std::vector<std::vector<TileRotation>> MakeEmptyTileRotationGrid(
     return tile_rotations;
 }
 
-std::vector<std::vector<sim::Vec2>> MakeEmptyFluidVelocityGrid(
+std::vector<std::vector<sim::FxVec2>> MakeEmptyFluidVelocityGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::Vec2>> fluid_velocity;
+    std::vector<std::vector<sim::FxVec2>> fluid_velocity;
     fluid_velocity.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        fluid_velocity.push_back(std::vector<sim::Vec2>(row.size(), sim::Vec2::zero()));
+        fluid_velocity.push_back(std::vector<sim::FxVec2>(row.size(), sim::FxVec2::zero()));
     }
     return fluid_velocity;
 }
 
-std::vector<std::vector<sim::Vec2>> MakeEmptyFluidVec2Grid(
+std::vector<std::vector<sim::FxVec2>> MakeEmptyFluidVec2Grid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::Vec2>> grid;
+    std::vector<std::vector<sim::FxVec2>> grid;
     grid.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        grid.push_back(std::vector<sim::Vec2>(row.size(), sim::Vec2::zero()));
+        grid.push_back(std::vector<sim::FxVec2>(row.size(), sim::FxVec2::zero()));
     }
     return grid;
 }
@@ -129,7 +129,7 @@ void SyncTileRotationGridToTiles(
 }
 
 void SyncFluidVelocityGridToTiles(
-    std::vector<std::vector<sim::Vec2>>& grid,
+    std::vector<std::vector<sim::FxVec2>>& grid,
     const std::vector<std::vector<Tile>>& tiles
 ) {
     if (grid.size() != tiles.size()) {
@@ -146,7 +146,7 @@ void SyncFluidVelocityGridToTiles(
 }
 
 void SyncFluidVec2GridToTiles(
-    std::vector<std::vector<sim::Vec2>>& grid,
+    std::vector<std::vector<sim::FxVec2>>& grid,
     const std::vector<std::vector<Tile>>& tiles
 ) {
     if (grid.size() != tiles.size()) {
@@ -330,7 +330,7 @@ void Stage::SyncFluidVelocityGrid() {
     SyncFluidVelocityGridToTiles(fluid_velocity, tiles);
 }
 
-void Stage::SetFluidGravityOverride(const IVec2& pos, sim::Vec2 gravity_value) {
+void Stage::SetFluidGravityOverride(const IVec2& pos, sim::FxVec2 gravity_value) {
     SyncTileInstanceMetadataGrid();
     const IVec2 tile_pos = WrapTileCoord(pos);
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
@@ -349,12 +349,12 @@ void Stage::ClearFluidGravityOverride(const IVec2& pos) {
         return;
     }
     fluid_gravity[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
-        sim::Vec2::zero();
+        sim::FxVec2::zero();
     fluid_gravity_strength[static_cast<std::size_t>(tile_pos.y)]
                           [static_cast<std::size_t>(tile_pos.x)] = 0;
 }
 
-void Stage::AddFluidTempGravity(const IVec2& pos, sim::Vec2 gravity_value) {
+void Stage::AddFluidTempGravity(const IVec2& pos, sim::FxVec2 gravity_value) {
     SyncTileInstanceMetadataGrid();
     const IVec2 tile_pos = WrapTileCoord(pos);
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
@@ -371,7 +371,7 @@ void Stage::ClearFluidTempGravity(const IVec2& pos) {
         return;
     }
     fluid_temp_gravity[static_cast<std::size_t>(tile_pos.y)]
-                      [static_cast<std::size_t>(tile_pos.x)] = sim::Vec2::zero();
+                      [static_cast<std::size_t>(tile_pos.x)] = sim::FxVec2::zero();
 }
 
 void Stage::SetTile(const IVec2& pos, Tile tile) {
@@ -408,7 +408,7 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
                             [static_cast<std::size_t>(tile_pos.x)] = sim::Scalar::zero();
     }
     fluid_velocity[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
-        sim::Vec2::zero();
+        sim::FxVec2::zero();
     tile_change_generation += 1;
 }
 
@@ -433,7 +433,7 @@ void Stage::SetFluidTile(const IVec2& pos, Tile tile) {
                         [static_cast<std::size_t>(tile_pos.x)] =
                             new_amount;
     fluid_velocity[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
-        sim::Vec2::zero();
+        sim::FxVec2::zero();
     tile_change_generation += 1;
 }
 

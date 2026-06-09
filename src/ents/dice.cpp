@@ -64,7 +64,7 @@ void StepEntLogicAsDice(
 
     dice.counter_b = sim::Scalar::zero();
     dice.rotation = sim::Scalar::zero();
-    dice.vel = sim::Vec2::zero();
+    dice.vel = sim::FxVec2::zero();
 }
 
 } // namespace

@@ -346,8 +346,8 @@ bool SwapControlledCharacter(
     }
 
     SetEntAs(*source_ent, target_type);
-    source_ent->vel = sim::Vec2::zero();
-    source_ent->acc = sim::Vec2::zero();
+    source_ent->vel = sim::FxVec2::zero();
+    source_ent->acc = sim::FxVec2::zero();
     source_ent->rotation = sim::Scalar::zero();
     source_ent->facing = facing;
     source_ent->SetRenderCenter(spawn_center);
@@ -521,8 +521,8 @@ bool SpawnDebugEnt(
     }
 
     Ent* const spawned = world_ops::SpawnEnt(state, type_, [spawn_center](Ent& ent) {
-        ent.vel = sim::Vec2::zero();
-        ent.acc = sim::Vec2::zero();
+        ent.vel = sim::FxVec2::zero();
+        ent.acc = sim::FxVec2::zero();
         ent.SetRenderCenter(spawn_center);
     });
     if (spawned == nullptr) {

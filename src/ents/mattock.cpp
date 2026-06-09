@@ -71,7 +71,7 @@ bool IsSwinging(const Ent& mattock) {
 }
 
 sim::AABB SimTileAabbForTilePos(const IVec2& tile_pos) {
-    const sim::Vec2 tile_tl = sim::PixelVec2(
+    const sim::FxVec2 tile_tl = sim::PixelVec2(
         tile_pos.x * static_cast<int>(kTileSize),
         tile_pos.y * static_cast<int>(kTileSize)
     );
@@ -81,14 +81,14 @@ sim::AABB SimTileAabbForTilePos(const IVec2& tile_pos) {
     );
 }
 
-IVec2 ToWorldPixelTrunc(sim::Vec2 point) {
+IVec2 ToWorldPixelTrunc(sim::FxVec2 point) {
     return IVec2::New(point.x.to_pixels_trunc(), point.y.to_pixels_trunc());
 }
 
-sim::Vec2 GetFallbackStrikePoint(const Ent& mattock) {
+sim::FxVec2 GetFallbackStrikePoint(const Ent& mattock) {
     const sim::Scalar direction =
         sim::Scalar::from_int(mattock.facing == Side::Left ? -1 : 1);
-    return mattock.GetSimCenter() + sim::Vec2{sim::Scalar::from_int(10) * direction,
+    return mattock.GetSimCenter() + sim::FxVec2{sim::Scalar::from_int(10) * direction,
                                               sim::Scalar::zero()};
 }
 
@@ -223,7 +223,7 @@ void AddMattockDebugAnnotations(
     });
 
     if (holder == nullptr) {
-        const sim::Vec2 fallback = GetFallbackStrikePoint(mattock);
+        const sim::FxVec2 fallback = GetFallbackStrikePoint(mattock);
         const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToWorldPixelTrunc(fallback));
         state.AddDebugRectAnnotation(DebugRectAnnotation{
             .area = RenderTileAabbForTilePos(fallback_tile),
@@ -342,7 +342,7 @@ EntStrikeOutcome TryStrikeEntsWithMattock(
                 common::HitOptions{
                     .source_vid = mattock.vid,
                     .knockback = common::KnockbackSpec{
-                        .velocity = sim::Vec2{knockback_x, sim::Scalar::from_int(-2)},
+                        .velocity = sim::FxVec2{knockback_x, sim::Scalar::from_int(-2)},
                         .clear_velocity = !other_ent_const->impassable,
                         .clear_acceleration = !other_ent_const->impassable,
                         .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,
@@ -379,7 +379,7 @@ StrikeOutcome ComputeMattockStrikeOutcome(
     Audio& audio
 ) {
     if (holder == nullptr) {
-        const sim::Vec2 fallback = GetFallbackStrikePoint(mattock);
+        const sim::FxVec2 fallback = GetFallbackStrikePoint(mattock);
         const IVec2 tile_pos = state.stage.GetTileCoordAtWc(ToWorldPixelTrunc(fallback));
         return TryStrikeTileCoord(tile_pos, state, audio);
     }

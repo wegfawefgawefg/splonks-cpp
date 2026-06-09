@@ -45,24 +45,24 @@ std::vector<std::vector<TileRotation>> MakeEmptyTileRotationGrid(
     return tile_rotations;
 }
 
-std::vector<std::vector<sim::Vec2>> MakeEmptyFluidVelocityGrid(
+std::vector<std::vector<sim::FxVec2>> MakeEmptyFluidVelocityGrid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::Vec2>> fluid_velocity;
+    std::vector<std::vector<sim::FxVec2>> fluid_velocity;
     fluid_velocity.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        fluid_velocity.push_back(std::vector<sim::Vec2>(row.size(), sim::Vec2::zero()));
+        fluid_velocity.push_back(std::vector<sim::FxVec2>(row.size(), sim::FxVec2::zero()));
     }
     return fluid_velocity;
 }
 
-std::vector<std::vector<sim::Vec2>> MakeEmptyFluidVec2Grid(
+std::vector<std::vector<sim::FxVec2>> MakeEmptyFluidVec2Grid(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<sim::Vec2>> grid;
+    std::vector<std::vector<sim::FxVec2>> grid;
     grid.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
-        grid.push_back(std::vector<sim::Vec2>(row.size(), sim::Vec2::zero()));
+        grid.push_back(std::vector<sim::FxVec2>(row.size(), sim::FxVec2::zero()));
     }
     return grid;
 }

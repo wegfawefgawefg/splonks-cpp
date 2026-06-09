@@ -41,7 +41,7 @@ int GetRequiredClimbProbeHits(const JumpAndClimbTuning& tuning) {
 }
 
 sim::AABB SimPointAabb(sim::Scalar x, sim::Scalar y) {
-    const sim::Vec2 point{x, y};
+    const sim::FxVec2 point{x, y};
     return sim::AABB::from_corners(point, point);
 }
 
@@ -165,7 +165,7 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
     std::optional<IVec2> best_tile = std::nullopt;
     int best_hits = 0;
     sim::Scalar best_score = sim::Scalar::zero();
-    const sim::Vec2 ent_center = ent.GetSimCenter();
+    const sim::FxVec2 ent_center = ent.GetSimCenter();
 
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
@@ -188,7 +188,7 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
             continue;
         }
 
-        const sim::Vec2 tile_center = sim::Vec2::from_pixels(
+        const sim::FxVec2 tile_center = sim::FxVec2::from_pixels(
             tile_query->tile_pos.x * static_cast<int>(kTileSize) + 8,
             tile_query->tile_pos.y * static_cast<int>(kTileSize) + 8
         );
@@ -291,7 +291,7 @@ bool CanAttachDownToClimbAnchor(const ClimbAnchor& climb_anchor, const State& st
 }
 
 void SnapEntToClimbTileCenterline(Ent& ent, const IVec2& tile_pos) {
-    sim::Vec2 center = ent.GetSimCenter();
+    sim::FxVec2 center = ent.GetSimCenter();
     center.x = sim::Scalar::from_int(tile_pos.x * static_cast<int>(kTileSize) + 8);
     ent.SetSimCenter(center);
 }
@@ -359,7 +359,7 @@ void AddClimbDebugAnnotations(const Ent& ent, State& state, const JumpAndClimbTu
 }
 
 bool IsHangableImpassableInRect(sim::AABB area, const State& state, VID self_vid) {
-    const sim::Vec2 anchor = area.center();
+    const sim::FxVec2 anchor = area.center();
     for (const VID& other_vid : QueryEntsInAabb(state, area, self_vid)) {
         const Ent* const other = state.ents.GetEnt(other_vid);
         if (other == nullptr || !other->active || !other->impassable || !other->can_be_hung_on) {
@@ -497,11 +497,11 @@ bool IsSideBlockedForHang(
     const sim::AABB wall_area =
         left_side
             ? sim::AABB::from_corners(
-                  sim::Vec2{aabb.tl.x - sim::Scalar::from_pixels(1), aabb.tl.y},
-                  sim::Vec2{aabb.tl.x, aabb.br.y})
+                  sim::FxVec2{aabb.tl.x - sim::Scalar::from_pixels(1), aabb.tl.y},
+                  sim::FxVec2{aabb.tl.x, aabb.br.y})
             : sim::AABB::from_corners(
-                  sim::Vec2{aabb.br.x, aabb.tl.y},
-                  sim::Vec2{aabb.br.x + sim::Scalar::from_pixels(1), aabb.br.y});
+                  sim::FxVec2{aabb.br.x, aabb.tl.y},
+                  sim::FxVec2{aabb.br.x + sim::Scalar::from_pixels(1), aabb.br.y});
     return IsBlockedForHangProbe(
         wall_area,
         state,
@@ -602,8 +602,8 @@ bool MovementFlagsHave(std::uint32_t movement_flags, EntMovementFlag movement_fl
     return (movement_flags & bit) != 0;
 }
 
-bool IsClaimCloseEnough(const Ent& ent, sim::Vec2 claimed_pos) {
-    const sim::Vec2 delta = claimed_pos - ent.pos;
+bool IsClaimCloseEnough(const Ent& ent, sim::FxVec2 claimed_pos) {
+    const sim::FxVec2 delta = claimed_pos - ent.pos;
     return gfxp::length_sq(delta) <= sim::ToSimScalar(
                kLocomotionClaimMaxDistancePx * kLocomotionClaimMaxDistancePx);
 }
@@ -692,8 +692,8 @@ bool IsPlausibleHangCandidate(
     const sim::AABB aabb = candidate.GetSimAABB();
     const bool top_blocked = IsBlockedForHangProbe(
         sim::AABB::from_corners(
-            sim::Vec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
-            sim::Vec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_pixels(1)}),
+            sim::FxVec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
+            sim::FxVec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_pixels(1)}),
         state,
         true,
         true,
@@ -805,8 +805,8 @@ bool TryCaptureHdHang(
     const sim::AABB aabb = ent.GetSimAABB();
     const bool top_blocked = IsBlockedForHangProbe(
         sim::AABB::from_corners(
-            sim::Vec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
-            sim::Vec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_pixels(1)}),
+            sim::FxVec2{aabb.tl.x, aabb.tl.y - sim::Scalar::from_pixels(1)},
+            sim::FxVec2{aabb.br.x, aabb.tl.y - sim::Scalar::from_pixels(1)}),
         state,
         check_tiles,
         check_ents,
@@ -972,9 +972,9 @@ bool TryApplyPlausibleLocomotionClaim(
     Ent& ent,
     State& state,
     const JumpAndClimbTuning& tuning,
-    sim::Vec2 claimed_pos,
-    sim::Vec2 claimed_vel,
-    sim::Vec2 claimed_acc,
+    sim::FxVec2 claimed_pos,
+    sim::FxVec2 claimed_vel,
+    sim::FxVec2 claimed_acc,
     std::uint32_t claimed_movement_flags,
     bool claimed_grounded,
     std::optional<Side> claimed_hang_side,
@@ -1010,8 +1010,8 @@ bool TryApplyPlausibleLocomotionClaim(
 
     if (claimed_hanging && IsPlausibleHangCandidate(ent, candidate, state, claimed_hang_side)) {
         ent.pos = claimed_pos;
-        ent.vel = sim::Vec2{claimed_vel.x, sim::Scalar::zero()};
-        ent.acc = sim::Vec2::zero();
+        ent.vel = sim::FxVec2{claimed_vel.x, sim::Scalar::zero()};
+        ent.acc = sim::FxVec2::zero();
         ent.grounded = false;
         ent.hang_side = claimed_hang_side;
         SetMovementFlag(ent, EntMovementFlag::Hanging, true);
@@ -1166,8 +1166,8 @@ void JumpingAndClimbingStep(
         if (!ent.IsClimbing() && can_climb && ent.climb_detach_cooldown == 0 && wants_to_attach) {
             SetMovementFlag(ent, EntMovementFlag::Climbing, true);
             ent.grounded = false;
-            ent.vel = sim::Vec2::zero();
-            ent.acc = sim::Vec2::zero();
+            ent.vel = sim::FxVec2::zero();
+            ent.acc = sim::FxVec2::zero();
         }
 
         if (ent.IsClimbing()) {

@@ -9,8 +9,8 @@ namespace splonks::ents::common {
 
 namespace {
 
-sim::Vec2 BuildThrowVelocity(const controls::ControlIntent& control) {
-    sim::Vec2 throw_vel = sim::Vec2::zero();
+sim::FxVec2 BuildThrowVelocity(const controls::ControlIntent& control) {
+    sim::FxVec2 throw_vel = sim::FxVec2::zero();
     if (control.left) {
         throw_vel.x = sim::Scalar::from_int(-10);
     } else if (control.right) {
@@ -41,7 +41,7 @@ bool TrySpawnAndThrowEntForToolUse(
     std::uint32_t thrown_immunity_timer,
     void (*setup_ent)(Ent&),
     ToolThrowVelocityBuilder build_throw_velocity,
-    std::optional<sim::Vec2> throw_velocity_override
+    std::optional<sim::FxVec2> throw_velocity_override
 ) {
     (void)audio;
     if (!trigger_pressed) {
@@ -70,7 +70,7 @@ bool TrySpawnAndThrowEntForToolUse(
         spawned.proj_contact_damage_amount = spawned_spec.proj_contact_damage_amount;
         spawned.proj_contact_timer = kProjContactDuration;
         spawned.SetSimCenter(thrower.GetSimCenter());
-        const sim::Vec2 throw_velocity =
+        const sim::FxVec2 throw_velocity =
             throw_velocity_override.value_or(
                 velocity_builder(control) * thrower.throw_velocity_scale
             );

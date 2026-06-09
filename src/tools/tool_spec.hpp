@@ -32,7 +32,7 @@ constexpr std::size_t ToolKindIndex(ToolKind kind) {
 
 constexpr std::size_t kToolKindCount = ToolKindIndex(ToolKind::ThrowStickyBomb) + 1;
 
-using ToolThrowVelocityBuilder = sim::Vec2 (*)(const controls::ControlIntent&);
+using ToolThrowVelocityBuilder = sim::FxVec2 (*)(const controls::ControlIntent&);
 
 using ToolUseFn = bool (*) (
     std::size_t ent_idx,
@@ -42,7 +42,7 @@ using ToolUseFn = bool (*) (
     std::size_t tool_slot_index,
     bool trigger_pressed,
     ToolThrowVelocityBuilder build_throw_velocity,
-    std::optional<sim::Vec2> throw_velocity_override
+    std::optional<sim::FxVec2> throw_velocity_override
 );
 
 struct ToolSpec {

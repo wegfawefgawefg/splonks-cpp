@@ -23,17 +23,17 @@ FVec2 GetCoreSizeWc(const Stage& stage) {
     return ToVec2(stage.wrap_core_size_tiles * kTileSize);
 }
 
-sim::Vec2 GetSimCoreOriginWc(const Stage& stage) {
+sim::FxVec2 GetSimCoreOriginWc(const Stage& stage) {
     const UVec2 origin = stage.wrap_core_origin_tiles * kTileSize;
     return sim::PixelVec2(static_cast<std::int32_t>(origin.x), static_cast<std::int32_t>(origin.y));
 }
 
-sim::Vec2 GetSimCoreSizeWc(const Stage& stage) {
+sim::FxVec2 GetSimCoreSizeWc(const Stage& stage) {
     const UVec2 size = stage.wrap_core_size_tiles * kTileSize;
     return sim::PixelVec2(static_cast<std::int32_t>(size.x), static_cast<std::int32_t>(size.y));
 }
 
-void ShiftActiveEnts(State& state, const sim::Vec2& sim_delta) {
+void ShiftActiveEnts(State& state, const sim::FxVec2& sim_delta) {
     for (Ent& ent : state.ents.ents) {
         if (!ent.active) {
             continue;
@@ -81,9 +81,9 @@ void WrapPosIntoCore(const Stage& stage, FVec2& pos) {
     }
 }
 
-void WrapPosIntoCore(const Stage& stage, sim::Vec2& pos) {
-    const sim::Vec2 core_origin = GetSimCoreOriginWc(stage);
-    const sim::Vec2 core_size = GetSimCoreSizeWc(stage);
+void WrapPosIntoCore(const Stage& stage, sim::FxVec2& pos) {
+    const sim::FxVec2 core_origin = GetSimCoreOriginWc(stage);
+    const sim::FxVec2 core_size = GetSimCoreSizeWc(stage);
 
     if (stage.border.wrap_x && core_size.x > sim::Scalar::zero()) {
         while (pos.x < core_origin.x) {
@@ -104,7 +104,7 @@ void WrapPosIntoCore(const Stage& stage, sim::Vec2& pos) {
     }
 }
 
-void CropEntsAndShiftBack(State& state, const sim::Vec2& sim_delta_wc) {
+void CropEntsAndShiftBack(State& state, const sim::FxVec2& sim_delta_wc) {
     for (Ent& ent : state.ents.ents) {
         if (!ent.active) {
             continue;
@@ -212,29 +212,29 @@ void ExpandStageForWrap(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<sim::Scalar>(static_cast<std::size_t>(new_tile_dims.x), sim::Scalar::zero())
     );
-    std::vector<std::vector<sim::Vec2>> fluid_velocity(
+    std::vector<std::vector<sim::FxVec2>> fluid_velocity(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<sim::Vec2>(
+        std::vector<sim::FxVec2>(
             static_cast<std::size_t>(new_tile_dims.x),
-            sim::Vec2::zero()
+            sim::FxVec2::zero()
         )
     );
-    std::vector<std::vector<sim::Vec2>> fluid_gravity(
+    std::vector<std::vector<sim::FxVec2>> fluid_gravity(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<sim::Vec2>(
+        std::vector<sim::FxVec2>(
             static_cast<std::size_t>(new_tile_dims.x),
-            sim::Vec2::zero()
+            sim::FxVec2::zero()
         )
     );
     std::vector<std::vector<std::uint8_t>> fluid_gravity_strength(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<std::uint8_t>(static_cast<std::size_t>(new_tile_dims.x), 0)
     );
-    std::vector<std::vector<sim::Vec2>> fluid_temp_gravity(
+    std::vector<std::vector<sim::FxVec2>> fluid_temp_gravity(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<sim::Vec2>(
+        std::vector<sim::FxVec2>(
             static_cast<std::size_t>(new_tile_dims.x),
-            sim::Vec2::zero()
+            sim::FxVec2::zero()
         )
     );
     std::vector<std::vector<sim::Scalar>> tile_shake(
@@ -319,7 +319,7 @@ void ExpandStageForWrap(
     stage.wrap_core_size_tiles = old_tile_dims;
 
     const IVec2 delta_pixels = ToIVec2(padding_tile_dims * kTileSize);
-    const sim::Vec2 sim_delta_wc = sim::PixelVec2(delta_pixels.x, delta_pixels.y);
+    const sim::FxVec2 sim_delta_wc = sim::PixelVec2(delta_pixels.x, delta_pixels.y);
     const FVec2 delta_wc = ToVec2(delta_pixels);
     ShiftActiveEnts(state, sim_delta_wc);
     ShiftStageSpawnsAndStamps(stage, delta_wc);
@@ -356,21 +356,21 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
         static_cast<std::size_t>(core_size.y),
         std::vector<sim::Scalar>(static_cast<std::size_t>(core_size.x), sim::Scalar::zero())
     );
-    std::vector<std::vector<sim::Vec2>> fluid_velocity(
+    std::vector<std::vector<sim::FxVec2>> fluid_velocity(
         static_cast<std::size_t>(core_size.y),
-        std::vector<sim::Vec2>(static_cast<std::size_t>(core_size.x), sim::Vec2::zero())
+        std::vector<sim::FxVec2>(static_cast<std::size_t>(core_size.x), sim::FxVec2::zero())
     );
-    std::vector<std::vector<sim::Vec2>> fluid_gravity(
+    std::vector<std::vector<sim::FxVec2>> fluid_gravity(
         static_cast<std::size_t>(core_size.y),
-        std::vector<sim::Vec2>(static_cast<std::size_t>(core_size.x), sim::Vec2::zero())
+        std::vector<sim::FxVec2>(static_cast<std::size_t>(core_size.x), sim::FxVec2::zero())
     );
     std::vector<std::vector<std::uint8_t>> fluid_gravity_strength(
         static_cast<std::size_t>(core_size.y),
         std::vector<std::uint8_t>(static_cast<std::size_t>(core_size.x), 0)
     );
-    std::vector<std::vector<sim::Vec2>> fluid_temp_gravity(
+    std::vector<std::vector<sim::FxVec2>> fluid_temp_gravity(
         static_cast<std::size_t>(core_size.y),
-        std::vector<sim::Vec2>(static_cast<std::size_t>(core_size.x), sim::Vec2::zero())
+        std::vector<sim::FxVec2>(static_cast<std::size_t>(core_size.x), sim::FxVec2::zero())
     );
     std::vector<std::vector<sim::Scalar>> tile_shake(
         static_cast<std::size_t>(core_size.y),
@@ -426,7 +426,7 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
     }
 
     const IVec2 delta_pixels = ToIVec2(core_origin * kTileSize);
-    const sim::Vec2 sim_delta_wc = sim::PixelVec2(delta_pixels.x, delta_pixels.y);
+    const sim::FxVec2 sim_delta_wc = sim::PixelVec2(delta_pixels.x, delta_pixels.y);
     const FVec2 delta_wc = ToVec2(delta_pixels);
     CropEntsAndShiftBack(state, sim_delta_wc);
     CropStageSpawnsAndStampsAndShiftBack(stage, delta_wc);

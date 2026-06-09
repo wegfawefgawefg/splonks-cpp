@@ -180,10 +180,10 @@ struct Stage {
     std::vector<std::vector<Tile>> fluid_tiles;
     std::vector<std::vector<sim::Scalar>> fluid_amount;
     std::vector<std::vector<sim::Scalar>> fluid_display_amount;
-    std::vector<std::vector<sim::Vec2>> fluid_velocity;
-    std::vector<std::vector<sim::Vec2>> fluid_gravity;
+    std::vector<std::vector<sim::FxVec2>> fluid_velocity;
+    std::vector<std::vector<sim::FxVec2>> fluid_gravity;
     std::vector<std::vector<std::uint8_t>> fluid_gravity_strength;
-    std::vector<std::vector<sim::Vec2>> fluid_temp_gravity;
+    std::vector<std::vector<sim::FxVec2>> fluid_temp_gravity;
     std::vector<std::vector<sim::Scalar>> tile_shake;
     std::vector<std::vector<sim::Scalar>> backwall_tile_shake;
     std::vector<std::vector<Tile>> backwall_tiles;
@@ -237,9 +237,9 @@ struct Stage {
     void SyncTileInstanceMetadataGrid();
     void SyncFluidTileGrid();
     void SyncFluidVelocityGrid();
-    void SetFluidGravityOverride(const IVec2& pos, sim::Vec2 gravity_value);
+    void SetFluidGravityOverride(const IVec2& pos, sim::FxVec2 gravity_value);
     void ClearFluidGravityOverride(const IVec2& pos);
-    void AddFluidTempGravity(const IVec2& pos, sim::Vec2 gravity_value);
+    void AddFluidTempGravity(const IVec2& pos, sim::FxVec2 gravity_value);
     void ClearFluidTempGravity(const IVec2& pos);
     void SetTile(const IVec2& pos, Tile tile);
     void SetFluidTile(const IVec2& pos, Tile tile);

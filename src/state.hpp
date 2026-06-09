@@ -224,7 +224,7 @@ struct StageRotationState {
     int elapsed_frames = 0;
     int duration_frames = 180;
     int quarter_turns = 1;
-    sim::Vec2 pivot = sim::Vec2{sim::Scalar::zero(), sim::Scalar::zero()};
+    sim::FxVec2 pivot = sim::FxVec2{sim::Scalar::zero(), sim::Scalar::zero()};
     StageRotationWrapPolicy wrap_policy = StageRotationWrapPolicy::DoNotChangeWrap;
 };
 

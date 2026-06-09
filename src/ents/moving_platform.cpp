@@ -119,7 +119,7 @@ void StepHorizontalPingPong(Ent& platform) {
         platform.counter_b = sim::Scalar::from_int(1);
     }
 
-    platform.vel = sim::Vec2{platform.counter_b * sim::ToSimScalar(kPlatformSpeed),
+    platform.vel = sim::FxVec2{platform.counter_b * sim::ToSimScalar(kPlatformSpeed),
                              sim::Scalar::zero()};
 }
 
@@ -138,19 +138,19 @@ void StepVerticalPingPong(Ent& platform) {
         platform.counter_b = sim::Scalar::from_int(1);
     }
 
-    platform.vel = sim::Vec2{sim::Scalar::zero(),
+    platform.vel = sim::FxVec2{sim::Scalar::zero(),
                              platform.counter_b * sim::ToSimScalar(kPlatformSpeed)};
 }
 
 void StepCircle(Ent& platform) {
-    const sim::Vec2 center = sim::PixelVec2(platform.point_a.x, platform.point_a.y);
+    const sim::FxVec2 center = sim::PixelVec2(platform.point_a.x, platform.point_a.y);
     const int radius = platform.threshold_a.to_pixels_round();
     const int path_idx = PositiveModulo(
         platform.counter_a.trunc_int(),
         static_cast<int>(kCirclePath.size())
     );
     const CircleUnit unit = kCirclePath[static_cast<std::size_t>(path_idx)];
-    const sim::Vec2 desired_pos = center + sim::PixelVec2(
+    const sim::FxVec2 desired_pos = center + sim::PixelVec2(
         RoundRatio(static_cast<std::int64_t>(unit.x) * radius, kCircleUnitScale),
         RoundRatio(static_cast<std::int64_t>(unit.y) * radius, kCircleUnitScale)
     );
@@ -216,7 +216,7 @@ void StepEntLogicAsMovingPlatform(
         break;
     case EntAiState::Pursuing:
     case EntAiState::Returning:
-        platform.vel = sim::Vec2::zero();
+        platform.vel = sim::FxVec2::zero();
         break;
     }
 

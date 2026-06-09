@@ -425,7 +425,7 @@ bool ApplyDetWorldOpsSmokeMutations(State& state, const char*& failed_step) {
         [](Ent& ent) {
             ent.SetRenderPos(FVec2::New(96.0F, 64.0F));
             ent.SetRenderVel(FVec2::New(1.0F, -2.0F));
-            ent.acc = sim::Vec2::zero();
+            ent.acc = sim::FxVec2::zero();
         }
     );
     if (rock == nullptr) {
@@ -580,8 +580,8 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
     }
 
     player->SetRenderPos(FVec2::New(4.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - player->GetSize().y));
-    player->vel = sim::Vec2::zero();
-    player->acc = sim::Vec2::zero();
+    player->vel = sim::FxVec2::zero();
+    player->acc = sim::FxVec2::zero();
     player->grounded = false;
     player->condition = EntCondition::Normal;
     player->stun_timer = 0;
@@ -591,8 +591,8 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
     const auto spawn = [&](EntType type, FVec2 pos) -> bool {
         Ent* const ent = world_ops::SpawnEnt(state, type, [&](Ent& spawned) {
             spawned.SetRenderPos(pos);
-            spawned.vel = sim::Vec2::zero();
-            spawned.acc = sim::Vec2::zero();
+            spawned.vel = sim::FxVec2::zero();
+            spawned.acc = sim::FxVec2::zero();
         });
         return ent != nullptr;
     };
@@ -649,7 +649,7 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
     Ent* const box = world_ops::SpawnEnt(state, EntType::Box, [](Ent& ent) {
         ent.SetRenderPos(FVec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize)));
         ent.SetRenderVel(FVec2::New(0.0F, 0.0F));
-        ent.acc = sim::Vec2::zero();
+        ent.acc = sim::FxVec2::zero();
     });
     if (box == nullptr) {
         failed_step = "spawn fluid scenario box";
@@ -660,8 +660,8 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
         22.0F * static_cast<float>(kTileSize),
         20.0F * static_cast<float>(kTileSize) - player->GetSize().y
     ));
-    player->vel = sim::Vec2::zero();
-    player->acc = sim::Vec2::zero();
+    player->vel = sim::FxVec2::zero();
+    player->acc = sim::FxVec2::zero();
     return true;
 }
 
@@ -687,8 +687,8 @@ bool PrepareShopDetReplayScenario(State& state, const char*& failed_step) {
         16.0F * static_cast<float>(kTileSize),
         10.0F * static_cast<float>(kTileSize) - player->GetSize().y
     ));
-    player->vel = sim::Vec2::zero();
-    player->acc = sim::Vec2::zero();
+    player->vel = sim::FxVec2::zero();
+    player->acc = sim::FxVec2::zero();
     player->grounded = false;
     state.mode = Mode::Playing;
     return true;
@@ -850,8 +850,8 @@ bool PlaceCarryTransitionSmokePlayers(State& state, Graphics& graphics, const ch
     p1->SetRenderPos(FVec2::New(8.0F * tile, floor_y - p1->GetSize().y));
     p2->SetRenderPos(FVec2::New(9.0F * tile, floor_y - p2->GetSize().y));
     for (Ent* const player : {p1, p2}) {
-        player->vel = sim::Vec2::zero();
-        player->acc = sim::Vec2::zero();
+        player->vel = sim::FxVec2::zero();
+        player->acc = sim::FxVec2::zero();
         player->condition = EntCondition::Normal;
         player->stun_timer = 0;
         player->grounded = true;
@@ -1800,7 +1800,7 @@ bool RunJoinBarrierProtocolSmoke() {
     topology.barrier_frame = host.net_session.lockstep_next_frame_to_step;
     topology.player_count = 1;
     topology.player_ids[0] = 6;
-    const sim::Vec2 topology_pos = sim::ToSimVec2(FVec2::New(128.0F, 64.0F));
+    const sim::FxVec2 topology_pos = sim::ToSimVec2(FVec2::New(128.0F, 64.0F));
     topology.player_pos_x_raw[0] = topology_pos.x.raw_value();
     topology.player_pos_y_raw[0] = topology_pos.y.raw_value();
     topology.removed_player_count = 1;
@@ -2813,7 +2813,7 @@ bool RunRetainedReconnectSmoke() {
     }
 
     state.net_session.reconnect_spawn_mode = network::NetReconnectSpawnMode::RetainedAtLastPosition;
-    const sim::Vec2 spawn_pos = network::ResolveReconnectSpawnPos(state, retained, 1);
+    const sim::FxVec2 spawn_pos = network::ResolveReconnectSpawnPos(state, retained, 1);
     if (spawn_pos != sim::PixelVec2(128, 192)) {
         std::cerr << "retained reconnect smoke failed: retained spawn pos mismatch\n";
         return false;
@@ -4721,7 +4721,7 @@ bool CheckInputLockstepSmoke() {
                 std::cerr << "input lockstep carry-transition smoke failed: peer-owned player could not re-pickup host-owned player\n";
                 return false;
             }
-            const sim::Vec2 throw_velocity{
+            const sim::FxVec2 throw_velocity{
                 sim::Scalar::from_int(2),
                 sim::Scalar::from_int(-2),
             };

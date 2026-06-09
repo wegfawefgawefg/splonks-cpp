@@ -75,7 +75,7 @@ FVec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, 
     }
 
     const sim::AABB target_aabb = target->GetSimAABB();
-    return sim::ToRenderVec2(sim::Vec2{
+    return sim::ToRenderVec2(sim::FxVec2{
         target_aabb.center().x,
         target_aabb.tl.y + target->size.y * sim::ToSimScalar(kRescueKissYOffsetFactor),
     });

@@ -15,16 +15,16 @@ constexpr std::size_t TileIndex(Tile tile) {
     return static_cast<std::size_t>(tile);
 }
 
-Ent* SpawnEntAtCenter(EntType type_, sim::Vec2 center, State& state) {
+Ent* SpawnEntAtCenter(EntType type_, sim::FxVec2 center, State& state) {
     return world_ops::SpawnEnt(state, type_, [center](Ent& ent) {
         ent.SetSimCenter(center);
-        ent.vel = sim::Vec2::zero();
+        ent.vel = sim::FxVec2::zero();
     });
 }
 
 void OnBreakAsBigGoldMaterial(const IVec2& tile_pos, State& state, Audio& audio) {
     (void)audio;
-    const sim::Vec2 center = sim::PixelVec2(
+    const sim::FxVec2 center = sim::PixelVec2(
         tile_pos.x * static_cast<int>(kTileSize) + 8,
         tile_pos.y * static_cast<int>(kTileSize) + 8
     );

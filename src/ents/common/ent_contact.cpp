@@ -94,7 +94,7 @@ std::vector<VID> GatherTouchedEntContactsForAabb(
     }
 
     std::vector<VID> touched_vids;
-    const sim::Vec2 anchor = aabb.center();
+    const sim::FxVec2 anchor = aabb.center();
     for (const VID& other_vid : QueryEntsInAabb(state, aabb, ent.vid)) {
         const Ent* const other_ent = state.ents.GetEnt(other_vid);
         if (other_ent == nullptr || !other_ent->active) {

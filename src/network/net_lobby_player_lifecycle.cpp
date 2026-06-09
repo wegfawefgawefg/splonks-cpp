@@ -45,7 +45,7 @@ void EnsureSpawnedPlayer(
     PlayerId player_id,
     bool local,
     bool primary,
-    sim::Vec2 pos,
+    sim::FxVec2 pos,
     const Graphics& graphics
 ) {
     const bool is_peer_local_player =
@@ -94,7 +94,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         return false;
     }
 
-    const std::optional<sim::Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
+    const std::optional<sim::FxVec2> entrance_pos = FindStageEntranceSpawnPos(state);
     if (!entrance_pos.has_value()) {
         if (status_out != nullptr) {
             *status_out = "Network respawn failed: no entrance was found.";
@@ -109,7 +109,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
             continue;
         }
 
-        const sim::Vec2 spawn_pos = *entrance_pos + sim::PixelVec2(respawn_index * 8, 0);
+        const sim::FxVec2 spawn_pos = *entrance_pos + sim::PixelVec2(respawn_index * 8, 0);
         ++respawn_index;
 
         Ent* ent = nullptr;
@@ -139,8 +139,8 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
             IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
         SetEntAs(*ent, respawn_type);
         ent->pos = spawn_pos;
-        ent->vel = sim::Vec2::zero();
-        ent->acc = sim::Vec2::zero();
+        ent->vel = sim::FxVec2::zero();
+        ent->acc = sim::FxVec2::zero();
         ent->grounded = false;
         ent->coyote_time = 0;
         ent->fall_timer = 0;
@@ -175,7 +175,7 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
         return false;
     }
 
-    const std::optional<sim::Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
+    const std::optional<sim::FxVec2> entrance_pos = FindStageEntranceSpawnPos(state);
     if (!entrance_pos.has_value()) {
         if (status_out != nullptr) {
             *status_out = "Network respawn failed: no entrance was found.";
@@ -191,7 +191,7 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
             continue;
         }
 
-        const sim::Vec2 spawn_pos = *entrance_pos + sim::PixelVec2(respawn_index * 8, 0);
+        const sim::FxVec2 spawn_pos = *entrance_pos + sim::PixelVec2(respawn_index * 8, 0);
         ++respawn_index;
 
         if (!IsPlayerEntDeadOrMissing(state, slot)) {
@@ -230,8 +230,8 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
             IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
         SetEntAs(*ent, respawn_type);
         ent->pos = spawn_pos;
-        ent->vel = sim::Vec2::zero();
-        ent->acc = sim::Vec2::zero();
+        ent->vel = sim::FxVec2::zero();
+        ent->acc = sim::FxVec2::zero();
         ent->grounded = false;
         ent->coyote_time = 0;
         ent->fall_timer = 0;
@@ -276,7 +276,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
         return false;
     }
 
-    const std::optional<sim::Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
+    const std::optional<sim::FxVec2> entrance_pos = FindStageEntranceSpawnPos(state);
     if (!entrance_pos.has_value()) {
         if (status_out != nullptr) {
             *status_out = "Network revive failed: no entrance was found.";
@@ -303,7 +303,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
             continue;
         }
 
-        const sim::Vec2 spawn_pos = *entrance_pos + sim::PixelVec2(spawn_index * 8, 0);
+        const sim::FxVec2 spawn_pos = *entrance_pos + sim::PixelVec2(spawn_index * 8, 0);
         ++spawn_index;
 
         Ent* ent = nullptr;
@@ -346,8 +346,8 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
         }
 
         ent->pos = spawn_pos;
-        ent->vel = sim::Vec2::zero();
-        ent->acc = sim::Vec2::zero();
+        ent->vel = sim::FxVec2::zero();
+        ent->acc = sim::FxVec2::zero();
         ent->grounded = false;
         ent->coyote_time = 0;
         ent->fall_timer = 0;

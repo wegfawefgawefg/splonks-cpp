@@ -53,7 +53,7 @@ void StepEntLogicAsGhostBall(
     // try to fetch the target
     // set your acceleration towards your target vid
     Ent& ghost_ball = state.ents.ents[ent_idx];
-    sim::Vec2 target_position = ghost_ball.pos;
+    sim::FxVec2 target_position = ghost_ball.pos;
     if (ghost_ball.ent_a.has_value()) {
         if (const Ent* const target = state.ents.GetEnt(*ghost_ball.ent_a)) {
             target_position = target->pos;

@@ -24,7 +24,7 @@ constexpr float kBoxBreakawayImpactSpeed = 2.0F;
 Ent* SpawnEntAtTopLeft(EntType type_, const FVec2& pos, State& state) {
     return world_ops::SpawnEnt(state, type_, [pos](Ent& ent) {
         ent.SetRenderPos(pos);
-        ent.vel = sim::Vec2::zero();
+        ent.vel = sim::FxVec2::zero();
     });
 }
 

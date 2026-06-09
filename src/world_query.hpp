@@ -9,10 +9,10 @@ namespace splonks {
 
 FVec2 GetNearestWorldDelta(const Stage& stage, const FVec2& from, const FVec2& to);
 FVec2 GetNearestWorldPoint(const Stage& stage, const FVec2& anchor, const FVec2& point);
-sim::Vec2 GetNearestWorldDelta(const Stage& stage, sim::Vec2 from, sim::Vec2 to);
-sim::Vec2 GetNearestWorldPoint(const Stage& stage, sim::Vec2 anchor, sim::Vec2 point);
-sim::AABB GetNearestWorldAabb(const Stage& stage, sim::Vec2 anchor, sim::AABB aabb);
-bool WorldAabbContainsPoint(const Stage& stage, sim::AABB area, sim::Vec2 point);
+sim::FxVec2 GetNearestWorldDelta(const Stage& stage, sim::FxVec2 from, sim::FxVec2 to);
+sim::FxVec2 GetNearestWorldPoint(const Stage& stage, sim::FxVec2 anchor, sim::FxVec2 point);
+sim::AABB GetNearestWorldAabb(const Stage& stage, sim::FxVec2 anchor, sim::AABB aabb);
+bool WorldAabbContainsPoint(const Stage& stage, sim::AABB area, sim::FxVec2 point);
 bool WorldAabbsIntersect(const Stage& stage, sim::AABB area, sim::AABB other);
 std::vector<IVec2> GetTileCoordsInRect(const Stage& stage, const IVec2& tl, const IVec2& br);
 
@@ -57,7 +57,7 @@ bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
 );
 std::optional<WorldTileQueryResult> QueryTileAtTilePos(const Stage& stage, const IVec2& tile_pos);
 std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, const IVec2& world_pos);
-std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, sim::Vec2 world_pos);
+std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, sim::FxVec2 world_pos);
 std::vector<VID> QueryEntsInAabb(
     const State& state,
     sim::AABB area,
@@ -103,7 +103,7 @@ WorldRayHit RaycastRenderTiles(
 
 WorldRayHit RaycastHorizontal(
     const Ent& source_ent,
-    sim::Vec2 start_pos,
+    sim::FxVec2 start_pos,
     int direction,
     int max_distance,
     const State& state,
