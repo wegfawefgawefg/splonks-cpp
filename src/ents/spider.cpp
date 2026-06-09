@@ -39,7 +39,7 @@ std::optional<sim::Vec2> GetNearestPlayerDelta(const Ent& ent, const State& stat
     return player_center - ent_center;
 }
 
-void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
+void SpawnGiantSpiderLoot(sim::Vec2 center, State& state) {
     const int gem_count = state.drng.RandomIntInclusive(1, 3);
     for (int i = 0; i < gem_count; ++i) {
         EntType gem_type = EntType::EmeraldBig;
@@ -56,7 +56,7 @@ void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
         }
 
         if (world_ops::SpawnEnt(state, gem_type, [&](Ent& gem) {
-                gem.SetRenderCenter(center);
+                gem.SetSimCenter(center);
                 gem.vel = sim::Vec2{
                     RandomSimScalar(state.drng, sim::Scalar::from_int(-2), sim::Scalar::from_int(2)),
                     sim::Scalar::from_int(-2),
@@ -67,7 +67,7 @@ void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
     }
 
     (void)world_ops::SpawnEnt(state, EntType::Paste, [&](Ent& paste) {
-        paste.SetRenderCenter(center);
+        paste.SetSimCenter(center);
         paste.vel = sim::Vec2::zero();
     });
 }
@@ -80,8 +80,9 @@ void HandleGiantSpiderDeath(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     const Ent& giant_spider = state.ents.ents[ent_idx];
-    SpawnDamageEffectAnimBurst(aframe_ids::BloodBall, giant_spider.GetRenderCenter(), state);
-    SpawnGiantSpiderLoot(giant_spider.GetRenderCenter(), state);
+    const sim::Vec2 center = giant_spider.GetSimCenter();
+    SpawnDamageEffectAnimBurst(aframe_ids::BloodBall, sim::ToRenderVec2(center), state);
+    SpawnGiantSpiderLoot(center, state);
 }
 
 void FaceTowardNearestPlayer(Ent& ent, const State& state) {

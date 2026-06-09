@@ -408,6 +408,9 @@ Current state:
   emit-point tracking, and persisted trail anchor pixels are derived from fixed
   centers; ribbon trail rendering converts fixed emit points to render
   coordinates only for presentation.
+- Completed 2026-06-08: giant-spider gem and paste death drops now use fixed
+  spawn centers. Blood burst presentation converts that fixed center to render
+  coordinates only for the effect.
 
 Cleanup:
 
