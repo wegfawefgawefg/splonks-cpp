@@ -220,7 +220,7 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
             Ent render_ent = ent;
             render_ent.pos = ToFxVec2(GetSmoothedEntRenderPos(state, graphics, ent));
             const FVec2 render_position =
-                ents::common::GetSpriteTopLeftForEnt(render_ent, *aframe);
+                ToFVec2(ents::common::GetSpriteTopLeftForEnt(render_ent, *aframe));
 
             const SDL_FRect src{
                 static_cast<float>(aframe->sample_rect.x),

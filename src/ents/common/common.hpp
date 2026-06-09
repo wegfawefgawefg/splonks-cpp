@@ -137,8 +137,7 @@ bool TryApplyPlausibleLocomotionClaim(
     std::uint32_t claimed_climb_detach_cooldown
 );
 const AFrame* GetCurrentAFrameForEnt(const Ent& ent, const Graphics& graphics);
-FVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
-sim::FxVec2 GetSimSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
+sim::FxVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
 FVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback);
 sim::FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::FxVec2 fallback);
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::FxVec2 center);

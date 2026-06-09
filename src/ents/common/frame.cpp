@@ -60,31 +60,7 @@ const AFrame* GetCurrentAFrameForEnt(const Ent& ent, const Graphics& graphics) {
     return &graphics.aframe_db.frames[anim->frame_indices[frame_index]];
 }
 
-FVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe) {
-    const FVec2 draw_offset = FVec2::New(
-        static_cast<float>(aframe.draw_offset.x),
-        static_cast<float>(aframe.draw_offset.y)
-    );
-    const FVec2 pbox_offset = FVec2::New(
-        static_cast<float>(aframe.pbox.x),
-        static_cast<float>(aframe.pbox.y)
-    );
-
-    if (ent.facing == Side::Left) {
-        return ent.GetRenderPos() - pbox_offset + draw_offset;
-    }
-
-    const float mirrored_pbox_x =
-        static_cast<float>(aframe.sample_rect.w - aframe.pbox.x - aframe.pbox.w);
-    FVec2 facing_adjusted_draw_offset = draw_offset;
-    if (ent.type_ == EntType::BaseballBat) {
-        facing_adjusted_draw_offset = FVec2::New(-draw_offset.x, draw_offset.y);
-    }
-    return ent.GetRenderPos() - FVec2::New(mirrored_pbox_x, static_cast<float>(aframe.pbox.y)) +
-           facing_adjusted_draw_offset;
-}
-
-sim::FxVec2 GetSimSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe) {
+sim::FxVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe) {
     const sim::FxVec2 draw_offset =
         sim::FxVec2::from_pixels(aframe.draw_offset.x, aframe.draw_offset.y);
     const sim::FxVec2 pbox_offset = sim::FxVec2::from_pixels(aframe.pbox.x, aframe.pbox.y);
@@ -108,7 +84,7 @@ FVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const FVec
         return fallback;
     }
 
-    const FVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
+    const FVec2 sprite_tl = ToFVec2(GetSpriteTopLeftForEnt(ent, *aframe));
     const FVec2 sprite_world_size = FVec2::New(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h)
@@ -122,7 +98,7 @@ sim::FxVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim:
         return fallback;
     }
 
-    const sim::FxVec2 sprite_tl = GetSimSpriteTopLeftForEnt(ent, *aframe);
+    const sim::FxVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
     const sim::FxVec2 sprite_world_size =
         sim::FxVec2::from_pixels(aframe->sample_rect.w, aframe->sample_rect.h) *
         ent.aframe_animator.scale;
@@ -160,7 +136,7 @@ FVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const FVec2& 
         return fallback;
     }
 
-    const FVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
+    const FVec2 sprite_tl = ToFVec2(GetSpriteTopLeftForEnt(ent, *aframe));
     float emit_x = static_cast<float>(aframe->emit_point.x);
     if (ent.facing == Side::Right) {
         emit_x = static_cast<float>(aframe->sample_rect.w - 1 - aframe->emit_point.x);
@@ -180,7 +156,7 @@ sim::FxVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::Fx
         return fallback;
     }
 
-    const sim::FxVec2 sprite_tl = GetSimSpriteTopLeftForEnt(ent, *aframe);
+    const sim::FxVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
     int emit_x = aframe->emit_point.x;
     if (ent.facing == Side::Right) {
         emit_x = aframe->sample_rect.w - 1 - aframe->emit_point.x;
@@ -205,7 +181,7 @@ sim::FxAABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics) {
         return ent.GetAABB();
     }
 
-    const sim::FxVec2 sprite_tl = GetSimSpriteTopLeftForEnt(ent, *aframe);
+    const sim::FxVec2 sprite_tl = GetSpriteTopLeftForEnt(ent, *aframe);
     int contact_x = aframe->cbox.x;
     if (ent.facing == Side::Right) {
         contact_x = aframe->sample_rect.w - aframe->cbox.x - aframe->cbox.w;

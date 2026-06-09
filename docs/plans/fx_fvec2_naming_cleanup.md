@@ -28,6 +28,13 @@ hand-converting individual call sites. Hand work is for fixing compile errors,
 resolving rare name conflicts, and reviewing boundary mistakes after each
 scripted sweep.
 
+This is also a helper-collapse pass. The fixed-point migration should not leave
+behind two versions of every helper. When a helper is meaningful in gameplay,
+the canonical helper should return fixed-point values. Presentation code should
+call that helper and convert at the boundary with `ToFVec2(...)`, `ToFloat(...)`,
+or `ToFAABB(...)`. Add a separate float helper only when it performs genuinely
+presentation-only work that cannot sensibly be represented by the fixed helper.
+
 ## Naming Rules
 
 Default gameplay lane:
@@ -53,6 +60,8 @@ Presentation lane:
 - Presentation helpers may keep `Render` in their names when the helper is
   genuinely render-specific, e.g. sprite draw bounds, camera transforms, debug
   overlays.
+- Do not duplicate gameplay/fixed helpers just to return floats. Prefer one
+  canonical fixed helper and convert at render/audio/debug/UI boundaries.
 
 Boundary conversions:
 
@@ -87,6 +96,9 @@ Progress:
   color, and AABB conversion helper names.
 - Completed 2026-06-09: sixth scripted lane collapsed entity fixed geometry
   accessors from `GetSim*`/`SetSim*` to short fixed-default names.
+- Completed 2026-06-09: seventh scripted lane renamed the fixed sprite
+  top-left helper from `GetSimSpriteTopLeftForEnt` to `GetSpriteTopLeftForEnt`
+  and removed the duplicate float helper.
 
 1. Rename the old float `Vec2` type to `FVec2`.
    - Update constructors and operators mechanically.
@@ -125,8 +137,9 @@ Progress:
 6. Rename helper APIs that are currently type-noisy.
    - `GetSimSpriteTopLeftForEnt(...)` -> `GetSpriteTopLeftForEnt(...)` if the
      fixed overload is the only gameplay-facing version.
-   - Keep float helper names explicit, e.g. `GetFSpriteTopLeftForEnt(...)` or
-     render-specific names if they are presentation-only.
+   - Do not add a matching float helper unless it is genuinely
+     presentation-only. Render callers can use the fixed helper and convert the
+     result with `ToFVec2(...)`.
    - `GetVisualCenterForEnt(..., FxVec2)` should become the default overload or
      a fixed-only helper.
    - `GetEmitPointForEnt(..., FxVec2)` should become the default overload or a
@@ -137,6 +150,17 @@ Progress:
      simulation phase.
    - Replace "render Vec2" with "float/presentation FVec2" unless the text is
      specifically about rendering.
+
+8. Audit duplicated migration helpers.
+   - Search for fixed/float helper pairs that differ only by return type or
+     naming prefix.
+   - Delete the float helper when render/audio/debug/UI can call the fixed
+     helper and convert the result at the boundary.
+   - Keep one-off adapter helpers only when they encode a real boundary or
+     domain concept, not just because a call site needed a float for rendering.
+   - Examples of suspicious names to review: `GetF*`, `GetRender*`,
+     `SetRender*`, `ToF*`, and `ToFx*`. Some are valid boundary APIs; the point
+     is to remove duplication, not to ban the words outright.
 
 ## Regex-Friendly Mappings
 
@@ -198,6 +222,8 @@ Expected final state:
 
 - No `ToRender*` / `ToSim*` conversion names in gameplay code.
 - No `GetSim*` entity geometry names.
+- No duplicate float/fixed helper pairs where the float side can be replaced by
+  fixed helper plus boundary conversion.
 - `FxVec2` is the fixed-point gameplay vector spelling.
 - `FVec2` is the float presentation vector spelling.
 - Float conversions are visible only at render/audio/debug/UI/particle/tooling
