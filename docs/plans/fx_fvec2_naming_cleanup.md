@@ -17,8 +17,9 @@ The same idea applies to rectangles and scalar conversions:
 - `FAABB` or `FRect`: float presentation rectangle. Pick one spelling before
   the rename. `FAABB` is the most mechanical continuation from current
   `RenderAABB`.
-- `FxScalar`: fixed-point scalar if we decide `Scalar` is too vague after the
-  bulk rename.
+- `sim::Scalar`: fixed-point scalar. Keep this spelling because it is always
+  scoped through `sim::`, while vectors and rectangles need the shorter
+  `Fx`/`F` contrast at call sites.
 
 This plan is intentionally a rename/collapse pass. It should not change
 gameplay behavior, lockstep protocol semantics, or rendering behavior.
@@ -106,6 +107,13 @@ Progress:
 - Completed 2026-06-09: seventh scripted lane renamed the fixed sprite
   top-left helper from `GetSimSpriteTopLeftForEnt` to `GetSpriteTopLeftForEnt`
   and removed the duplicate float helper.
+- Completed 2026-06-09: eighth docs lane updated older fxp/determinism plan
+  references from the migration vocabulary to the current `FxVec2`/`FxAABB`,
+  `FVec2`/`FAABB`, and `ToFx*`/`ToF*` spellings.
+- Completed 2026-06-09: scalar naming decision made. Keep `sim::Scalar` rather
+  than renaming more than a thousand scalar uses to `sim::FxScalar`; the
+  namespace already communicates the fixed domain, and `ToFxScalar(...)`
+  remains the explicit float-to-fixed boundary.
 
 1. Rename the old float `Vec2` type to `FVec2`.
    - Update constructors and operators mechanically.
@@ -120,8 +128,9 @@ Progress:
 3. Rename fixed aliases in `src/sim/fxp.hpp`.
    - `sim::Vec2` -> `sim::FxVec2`
    - `sim::AABB` -> `sim::FxAABB`
-   - Consider `sim::Scalar` -> `sim::FxScalar`, or keep `Scalar` only if it
-     remains obvious after the vector rename.
+   - Keep `sim::Scalar` as the fixed scalar spelling; it remains obvious because
+     scalar uses are scoped through `sim::`, and the conversion helper is still
+     explicit as `ToFxScalar(...)`.
 
 4. Shorten conversion helpers.
    - `sim::ToRenderVec2(...)` -> `ToFVec2(...)`

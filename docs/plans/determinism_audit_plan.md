@@ -114,7 +114,7 @@ The expected end state is:
   than counting broad lockstep smoke coverage as complete for this slice.
 - Audit checkpoint 2026-06-08: `gfxp` now owns a generic fixed-point
   `BasicAabb` / `Aabb` primitive beside `BasicVec2`, and Splonks vendors it
-  with a `sim::AABB` alias plus explicit render/fixed bridge helpers. Runtime
+  with a `sim::FxAABB` alias plus explicit render/fixed bridge helpers. Runtime
   `Ent::size` now stores Fixed12 values and replay/fingerprint paths serialize
   that fixed representation directly. This is a buildable checkpoint, not the
   end state: `Ent::pos`, `vel`, and `acc` plus gameplay collision/query AABB
@@ -128,14 +128,14 @@ The expected end state is:
   step remains the actual storage/math migration so gameplay branches stop
   depending on float thresholds before serialization or hashing.
 - Audit checkpoint 2026-06-08: runtime `Ent::pos`, `vel`, `acc`, and `size`
-  now store Fixed12 `sim::Vec2` values, core entity accessors expose explicit
+  now store Fixed12 `sim::FxVec2` values, core entity accessors expose explicit
   sim/render adapters, snapshots and fingerprints consume raw fixed vectors,
   and the release build passes with this storage migration in place. Collision,
   movement, stage wrap/rotation/spawning, retained players, and common contact
   damage have been moved far enough to compile against fixed entity state.
   This is still not the final geometry end state: render-space `AABB` overloads
   remain available, several gameplay call sites still bridge through
-  `ToRenderVec2` / `ToSimVec2`, and stage-fluid math still uses float
+  `ToFVec2` / `ToFxVec2`, and stage-fluid math still uses float
   vector helpers internally before writing fixed values back. The next pass
   should retire render AABB from authoritative collision/query decisions and
   narrow conversions to render/debug/UI/audio boundaries only.
@@ -150,19 +150,19 @@ The expected end state is:
   passed. Broad `--check-input-lockstep-smoke` and live two-client manual
   validation remain outstanding for this larger migration.
 - Audit checkpoint 2026-06-08: entity feet and ground-probe geometry now have
-  fixed-space helpers (`GetSimFeet` / `GetSimGroundProbe`), and the core
-  `SetGrounded` / bottom-border snap path uses fixed `sim::AABB` queries
+  fixed-space helpers (`GetFeet` / `GetGroundProbe`), and the core
+  `SetGrounded` / bottom-border snap path uses fixed `sim::FxAABB` queries
   directly. The render `GetFeet` / `GetGroundProbe` wrappers remain available
   for unmigrated call sites, but the central per-entity grounded decision no
   longer round-trips through render-space `AABB`.
 - Audit checkpoint 2026-06-08: core blocking-contact overlap recovery,
   pixel-step movement collision probes, one-way-top checks, downward floor
   snapping, push displacement checks, and ground-walker wall/ledge probes now
-  use fixed `sim::AABB` paths. World tile geometry and stage-bound checks stay
+  use fixed `sim::FxAABB` paths. World tile geometry and stage-bound checks stay
   in fixed/int space through these paths, and impassable entity checks now have
   a fixed overload for the same movement/query callers. Entity animation
   contact geometry now has fixed helpers too: unqualified contact/broadphase
-  helpers return fixed `sim::AABB`, while render-space adapters are explicitly
+  helpers return fixed `sim::FxAABB`, while render-space adapters are explicitly
   named `GetRenderContactAabbForEnt` / `GetRenderEntBroadphaseAabb`.
   Remaining caveat: many gameplay contact/interact/damage call sites still
   explicitly use the render wrappers and should migrate subsystem-by-subsystem
@@ -405,8 +405,8 @@ The expected end state is:
   alpha, self light, light strength, and light color are now stored as Fixed12
   on `EntSpec`. Entity spawn/restore copies these fixed values directly instead
   of requantizing raw float spec payloads every time an entity changes type.
-  Authored C++ literals still enter through explicit `sim::ToSimScalar` /
-  `sim::ToSimColor3` calls at spec construction, but the runtime spec table no
+  Authored C++ literals still enter through explicit `sim::ToFxScalar` /
+  `sim::ToFxColor3` calls at spec construction, but the runtime spec table no
   longer keeps duplicate raw float copies for fields whose live entity state is
   already fixed-point.
 - Fixed in stage-rotation snapshot state: `StageRotationState::pivot` is now
