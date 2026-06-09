@@ -15,7 +15,7 @@ struct RibbonParticle {
     bool finish_on_anim_end = false;
     RibbonParticleSpecId spec_id = kInvalidRibbonParticleSpecId;
     float alpha = 1.0F;
-    std::array<Vec2, kMaxRibbonParticlePoints> points{};
+    std::array<FVec2, kMaxRibbonParticlePoints> points{};
     std::uint32_t point_count = 0;
     AFrameAnimator aframe_animator{};
 

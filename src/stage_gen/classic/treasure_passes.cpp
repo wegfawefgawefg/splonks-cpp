@@ -20,8 +20,8 @@ void ConvertExitTilesToBasicExitSpawns(Stage& stage) {
                 continue;
             }
 
-            const Vec2 exit_pos =
-                Vec2::New(static_cast<float>(x * kTileSize), static_cast<float>(y * kTileSize));
+            const FVec2 exit_pos =
+                FVec2::New(static_cast<float>(x * kTileSize), static_cast<float>(y * kTileSize));
             if (!HasSpawnAtWorldPos(stage, exit_pos)) {
                 stage.ent_spawns.push_back(EntSpawn{
                     .type_ = EntType::BasicExit,
@@ -52,10 +52,10 @@ bool IsValidTreasureFloorTile(const Stage& stage, int tile_x, int tile_y) {
     return tile_above != Tile::Spikes && tile_above != Tile::Entrance;
 }
 
-std::optional<Vec2> FindBranchExitSpawnPos(const Stage& stage, DetRng& det_rng) {
-    const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
-    const std::optional<Vec2> default_exit_pos = FindExitPos(stage);
-    std::vector<Vec2> candidates;
+std::optional<FVec2> FindBranchExitSpawnPos(const Stage& stage, DetRng& det_rng) {
+    const std::optional<FVec2> entrance_pos = FindEntrancePos(stage);
+    const std::optional<FVec2> default_exit_pos = FindExitPos(stage);
+    std::vector<FVec2> candidates;
 
     for (int tile_y = 1; tile_y < static_cast<int>(stage.GetTileHeight()) - 1; ++tile_y) {
         for (int tile_x = 0; tile_x < static_cast<int>(stage.GetTileWidth()); ++tile_x) {
@@ -66,7 +66,7 @@ std::optional<Vec2> FindBranchExitSpawnPos(const Stage& stage, DetRng& det_rng) 
                 continue;
             }
 
-            const Vec2 pos = Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+            const FVec2 pos = FVec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                                        static_cast<float>(tile_y * static_cast<int>(kTileSize)));
             if (entrance_pos.has_value() && LengthSquared(pos - *entrance_pos) < 80.0F * 80.0F) {
                 continue;
@@ -115,7 +115,7 @@ void AddBranchExit(Stage& stage, const StagePassConfig& pass, DetRng& det_rng) {
         return;
     }
 
-    const std::optional<Vec2> pos = FindBranchExitSpawnPos(stage, det_rng);
+    const std::optional<FVec2> pos = FindBranchExitSpawnPos(stage, det_rng);
     if (!pos.has_value()) {
         AddStageGenAnnotation(stage, "branch exit skipped: no candidate for " + exit_id);
         return;
@@ -130,8 +130,8 @@ void AddBranchExit(Stage& stage, const StagePassConfig& pass, DetRng& det_rng) {
     AddStageGenAnnotation(stage, "branch exit placed: " + exit_id);
 }
 
-std::optional<Vec2> FindKeyChestSpawnPos(const Stage& stage) {
-    const std::optional<Vec2> exit_pos = FindExitPos(stage);
+std::optional<FVec2> FindKeyChestSpawnPos(const Stage& stage) {
+    const std::optional<FVec2> exit_pos = FindExitPos(stage);
     if (!exit_pos.has_value()) {
         return std::nullopt;
     }
@@ -150,8 +150,8 @@ std::optional<Vec2> FindKeyChestSpawnPos(const Stage& stage) {
             continue;
         }
 
-        const Vec2 spawn_pos =
-            Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+        const FVec2 spawn_pos =
+            FVec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                       static_cast<float>(tile_y * static_cast<int>(kTileSize)));
         if (!HasSpawnAtWorldPos(stage, spawn_pos)) {
             return spawn_pos;
@@ -162,8 +162,8 @@ std::optional<Vec2> FindKeyChestSpawnPos(const Stage& stage) {
 }
 
 bool HasSpawnAtTile(const Stage& stage, EntType type_, int tile_x, int tile_y) {
-    const Vec2 tile_pos =
-        Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+    const FVec2 tile_pos =
+        FVec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                   static_cast<float>(tile_y * static_cast<int>(kTileSize)));
     for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.type_ != type_) {
@@ -215,7 +215,7 @@ bool AddUdjatKeyChest(Stage& stage, DetRng& det_rng) {
         return false;
     }
 
-    const std::optional<Vec2> chest_pos = FindKeyChestSpawnPos(stage);
+    const std::optional<FVec2> chest_pos = FindKeyChestSpawnPos(stage);
     if (!chest_pos.has_value()) {
         return false;
     }
@@ -252,7 +252,7 @@ bool AddUdjatKeyChest(Stage& stage, DetRng& det_rng) {
                 continue;
             }
 
-            const Vec2 key_pos = Vec2::New(static_cast<float>(x * static_cast<int>(kTileSize) + 8),
+            const FVec2 key_pos = FVec2::New(static_cast<float>(x * static_cast<int>(kTileSize) + 8),
                                            static_cast<float>(y * static_cast<int>(kTileSize) - 4));
             if (LengthSquared(key_pos - *chest_pos) < 64.0F * 64.0F ||
                 HasSpawnAtWorldPos(stage, key_pos)) {
@@ -324,8 +324,8 @@ void AddMinesEmbeddedTreasure(Stage& stage, const ItemPoolDb& item_db, DetRng& d
 }
 
 void AddMinesTreasure(Stage& stage, int level_number, DetRng& det_rng) {
-    const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
-    const std::optional<Vec2> exit_pos = FindExitPos(stage);
+    const std::optional<FVec2> entrance_pos = FindEntrancePos(stage);
+    const std::optional<FVec2> exit_pos = FindExitPos(stage);
     const int curr_level = std::max(1, level_number);
     const int bones_chance = 0;
     const int stage_width = static_cast<int>(stage.GetTileWidth());
@@ -337,8 +337,8 @@ void AddMinesTreasure(Stage& stage, int level_number, DetRng& det_rng) {
                 continue;
             }
 
-            const Vec2 tile_pos =
-                Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+            const FVec2 tile_pos =
+                FVec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                           static_cast<float>(tile_y * static_cast<int>(kTileSize)));
 
             if (entrance_pos.has_value() &&
@@ -363,13 +363,13 @@ void AddMinesTreasure(Stage& stage, int level_number, DetRng& det_rng) {
                 continue;
             }
 
-            const Vec2 item_pos = tile_pos + Vec2::New(8.0F, -4.0F);
-            const Vec2 stack_pos = tile_pos + Vec2::New(8.0F, -8.0F);
-            const Vec2 chest_pos = tile_pos;
-            const Vec2 box_pos = tile_pos + Vec2::New(2.0F, -12.0F);
-            const Vec2 web_pos = tile_pos + Vec2::New(0.0F, -16.0F);
-            const Vec2 bones_pos = tile_pos + Vec2::New(0.0F, -16.0F);
-            const Vec2 skull_pos = tile_pos + Vec2::New(12.0F, -4.0F);
+            const FVec2 item_pos = tile_pos + FVec2::New(8.0F, -4.0F);
+            const FVec2 stack_pos = tile_pos + FVec2::New(8.0F, -8.0F);
+            const FVec2 chest_pos = tile_pos;
+            const FVec2 box_pos = tile_pos + FVec2::New(2.0F, -12.0F);
+            const FVec2 web_pos = tile_pos + FVec2::New(0.0F, -16.0F);
+            const FVec2 bones_pos = tile_pos + FVec2::New(0.0F, -16.0F);
+            const FVec2 skull_pos = tile_pos + FVec2::New(12.0F, -4.0F);
             if (HasSpawnAtWorldPos(stage, item_pos) || HasSpawnAtWorldPos(stage, stack_pos) ||
                 HasSpawnAtWorldPos(stage, chest_pos) || HasSpawnAtWorldPos(stage, box_pos) ||
                 HasSpawnAtWorldPos(stage, bones_pos) || HasSpawnAtWorldPos(stage, skull_pos)) {
@@ -476,10 +476,10 @@ void AddMinesTreasure(Stage& stage, int level_number, DetRng& det_rng) {
 }
 
 void ConvertBlocksToArrowTraps(Stage& stage, int chance_denominator, DetRng& det_rng) {
-    const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
+    const std::optional<FVec2> entrance_pos = FindEntrancePos(stage);
     chance_denominator = std::max(1, chance_denominator);
 
-    const auto should_skip_candidate = [&](int tile_x, int tile_y, const Vec2& pos) {
+    const auto should_skip_candidate = [&](int tile_x, int tile_y, const FVec2& pos) {
         if (IsShopRoomAt(stage, tile_x, tile_y)) {
             return true;
         }
@@ -543,8 +543,8 @@ void ConvertBlocksToArrowTraps(Stage& stage, int chance_denominator, DetRng& det
                 continue;
             }
 
-            const Vec2 pos =
-                Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+            const FVec2 pos =
+                FVec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                           static_cast<float>(tile_y * static_cast<int>(kTileSize)));
             if (should_skip_candidate(tile_x, tile_y, pos)) {
                 continue;

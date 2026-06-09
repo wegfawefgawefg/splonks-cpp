@@ -95,7 +95,7 @@ EntType RandomChestGemType(State& state) {
     return EntType::EmeraldBig;
 }
 
-void SpawnChestSparkles(const Vec2& emit_pos, State& state) {
+void SpawnChestSparkles(const FVec2& emit_pos, State& state) {
     const int count = rng::RandomIntInclusive(5, 7);
     for (int i = 0; i < count; ++i) {
         SpriteParticle sparkle{};
@@ -103,22 +103,22 @@ void SpawnChestSparkles(const Vec2& emit_pos, State& state) {
         sparkle.draw_layer = DrawLayer::Foreground;
         sparkle.lighting_mode = ParticleLightingMode::Emissive;
         sparkle.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(16, 28));
-        sparkle.pos = emit_pos + Vec2::New(
+        sparkle.pos = emit_pos + FVec2::New(
             rng::RandomFloat(-2.0F, 2.0F),
             rng::RandomFloat(-1.0F, 1.0F)
         );
-        sparkle.size = Vec2::New(rng::RandomFloat(5.0F, 8.0F), rng::RandomFloat(5.0F, 8.0F));
+        sparkle.size = FVec2::New(rng::RandomFloat(5.0F, 8.0F), rng::RandomFloat(5.0F, 8.0F));
         sparkle.rot = rng::RandomFloat(0.0F, 360.0F);
         sparkle.alpha = rng::RandomFloat(0.75F, 1.0F);
-        sparkle.vel = Vec2::New(
+        sparkle.vel = FVec2::New(
             rng::RandomFloat(-0.6F, 0.6F),
             rng::RandomFloat(-1.2F, -0.45F)
         );
-        sparkle.svel = Vec2::New(-0.03F, -0.03F);
+        sparkle.svel = FVec2::New(-0.03F, -0.03F);
         sparkle.rotvel = rng::RandomFloat(-5.0F, 5.0F);
         sparkle.alpha_vel = kChestSparkleAlphaVel;
-        sparkle.acc = Vec2::New(0.0F, kChestSparkleGravity);
-        sparkle.sacc = Vec2::New(-0.003F, -0.003F);
+        sparkle.acc = FVec2::New(0.0F, kChestSparkleGravity);
+        sparkle.sacc = FVec2::New(-0.003F, -0.003F);
         sparkle.alpha_acc = kChestSparkleAlphaAcc;
         state.particles.Add(std::move(sparkle));
     }
@@ -281,7 +281,7 @@ bool TryOpenTreasureChestAt(
     }
 
     SetAnim(chest, aframe_ids::ChestOpen);
-    const Vec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
+    const FVec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
     SpawnChestSparkles(render_emit_pos, state);
     (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::ChestOpen);
 
@@ -366,7 +366,7 @@ bool TryOpenKeyChestWithKey(
     SetAnim(chest, aframe_ids::KeyChestOpen);
     const sim::Vec2 emit_pos =
         common::GetEmitPointForEnt(chest, graphics, chest.GetSimCenter());
-    const Vec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
+    const FVec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
     SpawnChestSparkles(render_emit_pos, state);
     (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::Unlock);
     (void)PlayWorldSoundEmitter(state, render_emit_pos, audio_asset_ids::ChestOpen);

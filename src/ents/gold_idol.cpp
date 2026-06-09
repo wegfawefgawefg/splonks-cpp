@@ -28,7 +28,7 @@ constexpr float kRewardParticleYOffsetFactor = 0.25F;
 constexpr float kRewardParticleFloatSpeed = -0.18F;
 constexpr std::uint32_t kRewardParticleLifetimeFrames = 48;
 
-void SpawnRewardParticle(State& state, const Vec2& pos, AFrameId anim_id, const Vec2& size) {
+void SpawnRewardParticle(State& state, const FVec2& pos, AFrameId anim_id, const FVec2& size) {
     SpriteParticle particle{};
     particle.aframe_animator = AFrameAnimator::New(anim_id);
     particle.draw_layer = DrawLayer::Foreground;
@@ -37,12 +37,12 @@ void SpawnRewardParticle(State& state, const Vec2& pos, AFrameId anim_id, const 
     particle.size = size;
     particle.rot = 0.0F;
     particle.alpha = 1.0F;
-    particle.vel = Vec2::New(0.0F, kRewardParticleFloatSpeed);
-    particle.svel = Vec2::New(0.0F, 0.0F);
+    particle.vel = FVec2::New(0.0F, kRewardParticleFloatSpeed);
+    particle.svel = FVec2::New(0.0F, 0.0F);
     particle.rotvel = 0.0F;
     particle.alpha_vel = -0.01F;
-    particle.acc = Vec2::New(0.0F, 0.0F);
-    particle.sacc = Vec2::New(0.0F, 0.0F);
+    particle.acc = FVec2::New(0.0F, 0.0F);
+    particle.sacc = FVec2::New(0.0F, 0.0F);
     particle.rotacc = 0.0F;
     particle.alpha_acc = 0.0F;
     state.particles.Add(std::move(particle));
@@ -58,7 +58,7 @@ std::optional<VID> GetRewardTargetVid(const Ent& idol, const State& state) {
     return FindNearestPlayerVid(state, idol.GetSimCenter(), false);
 }
 
-Vec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& state, const Ent& idol) {
+FVec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& state, const Ent& idol) {
     if (!target_vid.has_value()) {
         return sim::ToRenderVec2(idol.GetSimCenter());
     }
@@ -90,9 +90,9 @@ std::optional<std::size_t> FindIntersectingShopIdx(const Ent& idol, const State&
 }
 
 void SpawnGoldIdolRewardParticles(std::optional<VID> target_vid, State& state, const Ent& idol) {
-    const Vec2 base_pos = GetRewardParticlePosForTarget(target_vid, state, idol);
-    SpawnRewardParticle(state, base_pos + Vec2::New(-4.0F, 0.0F), aframe_ids::BigGoldStack, Vec2::New(12.0F, 12.0F));
-    SpawnRewardParticle(state, base_pos + Vec2::New(5.0F, -2.0F), aframe_ids::GoldBars, Vec2::New(12.0F, 12.0F));
+    const FVec2 base_pos = GetRewardParticlePosForTarget(target_vid, state, idol);
+    SpawnRewardParticle(state, base_pos + FVec2::New(-4.0F, 0.0F), aframe_ids::BigGoldStack, FVec2::New(12.0F, 12.0F));
+    SpawnRewardParticle(state, base_pos + FVec2::New(5.0F, -2.0F), aframe_ids::GoldBars, FVec2::New(12.0F, 12.0F));
 }
 
 void AwardMoneyToTarget(std::optional<VID> target_vid, std::uint32_t amount, State& state) {

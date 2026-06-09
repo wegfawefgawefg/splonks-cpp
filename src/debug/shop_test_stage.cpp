@@ -52,7 +52,7 @@ void SetStageBackwallTile(Stage& stage, int x, int y, Tile tile) {
     stage.SetBackwallTile(IVec2::New(x, y), tile);
 }
 
-std::optional<Vec2> FindStoreLightTopLeftFromAnchor(
+std::optional<FVec2> FindStoreLightTopLeftFromAnchor(
     const Stage& stage,
     int anchor_tile_x,
     int start_tile_y
@@ -74,7 +74,7 @@ std::optional<Vec2> FindStoreLightTopLeftFromAnchor(
             return std::nullopt;
         }
 
-        return Vec2::New(
+        return FVec2::New(
             static_cast<float>(anchor_tile_x * static_cast<int>(kTileSize)),
             static_cast<float>(light_tile_y * static_cast<int>(kTileSize))
         );
@@ -121,7 +121,7 @@ void AddShopTestVandalismTrigger(State& state, const IVec2& tile_pos, VID shop_v
     const StageTileTrigger trigger = ents::shop::MakeShopVandalismTileTrigger(tile_pos, shop_vid);
     state.stage.tile_triggers.push_back(trigger);
     state.stage.stagegen_annotations.push_back(StageGenAnnotation{
-        .world_pos = ToVec2(tile_pos * static_cast<int>(kTileSize)) + Vec2::New(2.0F, 8.0F),
+        .world_pos = ToVec2(tile_pos * static_cast<int>(kTileSize)) + FVec2::New(2.0F, 8.0F),
         .text = trigger.debug_label == nullptr ? "" : trigger.debug_label,
     });
 }
@@ -180,7 +180,7 @@ std::optional<VID> SpawnShopTestShop(
     const std::optional<VID> shopkeeper_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::Shopkeeper,
-        Vec2::New(
+        FVec2::New(
             static_cast<float>(shopkeeper_tile_x * static_cast<int>(kTileSize)),
             9.0F * static_cast<float>(kTileSize) - 16.0F
         )
@@ -203,7 +203,7 @@ void SpawnShopTestOwnedItem(
     const std::optional<VID> item_vid = SpawnStageEntAtRenderTopLeft(
         state,
         spec.type_,
-        Vec2::New(
+        FVec2::New(
             static_cast<float>(spec.tile_x * static_cast<int>(kTileSize)),
             10.0F * static_cast<float>(kTileSize) -
                 sim::ToRenderScalar(GetEntSpec(spec.type_).size.y)
@@ -237,14 +237,14 @@ void SpawnShopTestCrapsTable(
     const std::optional<VID> dice_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::Dice,
-        Vec2::New(57.0F * static_cast<float>(kTileSize),
+        FVec2::New(57.0F * static_cast<float>(kTileSize),
                   10.0F * static_cast<float>(kTileSize) -
                       sim::ToRenderScalar(GetEntSpec(EntType::Dice).size.y))
     );
     const std::optional<VID> prize_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::JetPack,
-        Vec2::New(62.0F * static_cast<float>(kTileSize),
+        FVec2::New(62.0F * static_cast<float>(kTileSize),
                   10.0F * static_cast<float>(kTileSize) -
                       sim::ToRenderScalar(GetEntSpec(EntType::JetPack).size.y))
     );
@@ -269,7 +269,7 @@ void SpawnShopTestSign(State& state, EntType type_, int tile_x) {
     (void)SpawnStageEntAtRenderTopLeft(
         state,
         type_,
-        Vec2::New(
+        FVec2::New(
             static_cast<float>(tile_x * static_cast<int>(kTileSize)),
             5.0F * static_cast<float>(kTileSize)
         )
@@ -279,7 +279,7 @@ void SpawnShopTestSign(State& state, EntType type_, int tile_x) {
 } // namespace
 
 void SpawnShopTestStoreLight(State& state, int anchor_tile_x, int start_tile_y) {
-    const std::optional<Vec2> pos =
+    const std::optional<FVec2> pos =
         FindStoreLightTopLeftFromAnchor(state.stage, anchor_tile_x, start_tile_y);
     if (!pos.has_value()) {
         return;
@@ -325,7 +325,7 @@ void InitShopTestStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(3 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(10 * static_cast<int>(kTileSize) - 14);
-    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
     if (Ent* const player = GetPrimaryLocalPlayerMut(state)) {
         player->money = 50000;
     }
@@ -333,7 +333,7 @@ void InitShopTestStage(State& state) {
     (void)SpawnStageEntAtRenderTopLeft(
         state,
         EntType::GoldIdol,
-        Vec2::New(4.0F * static_cast<float>(kTileSize), 10.0F * static_cast<float>(kTileSize) - 16.0F)
+        FVec2::New(4.0F * static_cast<float>(kTileSize), 10.0F * static_cast<float>(kTileSize) - 16.0F)
     );
 
     const std::optional<VID> left_shop_vid =
@@ -384,7 +384,7 @@ void InitShopTestStage(State& state) {
     SpawnShopTestCrapsTable(state, right_shop_vid, ShopTestStallSpec{.left_x = 52, .right_x = 68});
     state.stage.background_stamps.push_back(BackgroundStamp{
         .anim_id = aframe_ids::DiceSign,
-        .pos = Vec2::New(
+        .pos = FVec2::New(
             58.0F * static_cast<float>(kTileSize),
             5.0F * static_cast<float>(kTileSize)
         ),

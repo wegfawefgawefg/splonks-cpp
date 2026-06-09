@@ -28,8 +28,8 @@ namespace splonks {
 namespace {
 
 struct VisibleWorldRect {
-    Vec2 tl;
-    Vec2 br;
+    FVec2 tl;
+    FVec2 br;
 };
 
 SDL_FRect GetDebugPresRect(SDL_Renderer* renderer, const Graphics& graphics) {
@@ -56,9 +56,9 @@ int FloorDivByFloat(float value, float divisor) {
     return static_cast<int>(std::floor(value / divisor));
 }
 
-std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graphics& graphics) {
-    std::vector<Vec2> offsets;
-    offsets.push_back(Vec2::New(0.0F, 0.0F));
+std::vector<FVec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graphics& graphics) {
+    std::vector<FVec2> offsets;
+    offsets.push_back(FVec2::New(0.0F, 0.0F));
 
     const float stage_width = static_cast<float>(stage.GetWidth());
     const float stage_height = static_cast<float>(stage.GetHeight());
@@ -75,7 +75,7 @@ std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graph
     offsets.clear();
     for (int copy_y = min_copy_y; copy_y <= max_copy_y; ++copy_y) {
         for (int copy_x = min_copy_x; copy_x <= max_copy_x; ++copy_x) {
-            offsets.push_back(Vec2::New(
+            offsets.push_back(FVec2::New(
                 static_cast<float>(copy_x) * stage_width,
                 static_cast<float>(copy_y) * stage_height
             ));
@@ -87,21 +87,21 @@ std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graph
 SDL_FRect WorldRectToScreen(
     const Graphics& graphics,
     const SDL_FRect& pres,
-    const Vec2& world_pos,
-    const Vec2& world_size
+    const FVec2& world_pos,
+    const FVec2& world_size
 ) {
     const float pres_scale = pres.w / static_cast<float>(graphics.dims.x);
-    const Vec2 internal_screen = Vec2::New(
+    const FVec2 internal_screen = FVec2::New(
         std::round(((world_pos.x - graphics.camera.target.x) * graphics.camera.zoom) +
                    graphics.camera.offset.x),
         std::round(((world_pos.y - graphics.camera.target.y) * graphics.camera.zoom) +
                    graphics.camera.offset.y)
     );
-    const Vec2 internal_size = Vec2::New(
+    const FVec2 internal_size = FVec2::New(
         std::round(world_size.x * graphics.camera.zoom),
         std::round(world_size.y * graphics.camera.zoom)
     );
-    const Vec2 screen = Vec2::New(
+    const FVec2 screen = FVec2::New(
         std::round(pres.x + internal_screen.x * pres_scale),
         std::round(pres.y + internal_screen.y * pres_scale)
     );
@@ -113,19 +113,19 @@ SDL_FRect WorldRectToScreen(
     };
 }
 
-Vec2 WorldPointToScreen(
+FVec2 WorldPointToScreen(
     const Graphics& graphics,
     const SDL_FRect& pres,
-    const Vec2& world_pos
+    const FVec2& world_pos
 ) {
     const float pres_scale = pres.w / static_cast<float>(graphics.dims.x);
-    const Vec2 internal_screen = Vec2::New(
+    const FVec2 internal_screen = FVec2::New(
         std::round(((world_pos.x - graphics.camera.target.x) * graphics.camera.zoom) +
                    graphics.camera.offset.x),
         std::round(((world_pos.y - graphics.camera.target.y) * graphics.camera.zoom) +
                    graphics.camera.offset.y)
     );
-    return Vec2::New(
+    return FVec2::New(
         std::round(pres.x + internal_screen.x * pres_scale),
         std::round(pres.y + internal_screen.y * pres_scale)
     );
@@ -166,7 +166,7 @@ void RenderWorldCircleOutline(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const SDL_FRect& pres,
-    const Vec2& center,
+    const FVec2& center,
     float radius,
     const SDL_Color& color
 ) {
@@ -176,13 +176,13 @@ void RenderWorldCircleOutline(
 
     constexpr int kSegments = 24;
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    Vec2 previous = center + Vec2::New(radius, 0.0F);
+    FVec2 previous = center + FVec2::New(radius, 0.0F);
     for (int i = 1; i <= kSegments; ++i) {
         const float t = static_cast<float>(i) / static_cast<float>(kSegments);
         const float angle = t * 6.28318530718F;
-        const Vec2 current = center + Vec2::New(std::cos(angle) * radius, std::sin(angle) * radius);
-        const Vec2 previous_screen = WorldPointToScreen(graphics, pres, previous);
-        const Vec2 current_screen = WorldPointToScreen(graphics, pres, current);
+        const FVec2 current = center + FVec2::New(std::cos(angle) * radius, std::sin(angle) * radius);
+        const FVec2 previous_screen = WorldPointToScreen(graphics, pres, previous);
+        const FVec2 current_screen = WorldPointToScreen(graphics, pres, current);
         SDL_RenderLine(renderer, previous_screen.x, previous_screen.y, current_screen.x, current_screen.y);
         previous = current;
     }
@@ -192,10 +192,10 @@ void RenderWorldPointMarker(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const SDL_FRect& pres,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     const SDL_Color& color
 ) {
-    const Vec2 screen = WorldPointToScreen(graphics, pres, world_pos);
+    const FVec2 screen = WorldPointToScreen(graphics, pres, world_pos);
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     for (int offset = -1; offset <= 1; ++offset) {
         SDL_RenderLine(renderer, screen.x - 7.0F, screen.y + static_cast<float>(offset), screen.x + 7.0F, screen.y + static_cast<float>(offset));
@@ -211,10 +211,10 @@ void RenderWorldVerticalGuide(
     const SDL_Color& color,
     int thickness = 3
 ) {
-    const Vec2 screen = WorldPointToScreen(
+    const FVec2 screen = WorldPointToScreen(
         graphics,
         pres,
-        Vec2::New(world_x, graphics.camera.target.y)
+        FVec2::New(world_x, graphics.camera.target.y)
     );
     if (screen.x < pres.x - 2.0F ||
         screen.x > pres.x + pres.w + 2.0F) {
@@ -236,8 +236,8 @@ void RenderWorldVerticalGuide(
 
 void RenderScreenLine(
     SDL_Renderer* renderer,
-    const Vec2& from,
-    const Vec2& to,
+    const FVec2& from,
+    const FVec2& to,
     const SDL_Color& color,
     int thickness = 1
 ) {
@@ -247,16 +247,16 @@ void RenderScreenLine(
         return;
     }
 
-    const Vec2 delta = to - from;
+    const FVec2 delta = to - from;
     const float length = std::sqrt((delta.x * delta.x) + (delta.y * delta.y));
-    Vec2 perp = Vec2::New(0.0F, 1.0F);
+    FVec2 perp = FVec2::New(0.0F, 1.0F);
     if (length > 0.0F) {
-        perp = Vec2::New(-delta.y / length, delta.x / length);
+        perp = FVec2::New(-delta.y / length, delta.x / length);
     }
 
     const int half_thickness = std::max(0, thickness / 2);
     for (int offset = -half_thickness; offset <= half_thickness; ++offset) {
-        const Vec2 screen_offset = perp * static_cast<float>(offset);
+        const FVec2 screen_offset = perp * static_cast<float>(offset);
         SDL_RenderLine(
             renderer,
             from.x + screen_offset.x,
@@ -269,59 +269,59 @@ void RenderScreenLine(
 
 void RenderScreenArrow(
     SDL_Renderer* renderer,
-    const Vec2& from,
-    const Vec2& to,
+    const FVec2& from,
+    const FVec2& to,
     const SDL_Color& color,
     int thickness = 1
 ) {
     RenderScreenLine(renderer, from, to, color, thickness);
-    const Vec2 delta = to - from;
+    const FVec2 delta = to - from;
     const float length = std::sqrt((delta.x * delta.x) + (delta.y * delta.y));
     if (length <= 0.0F) {
         return;
     }
 
-    const Vec2 dir = delta * (1.0F / length);
-    const Vec2 perp = Vec2::New(-dir.y, dir.x);
+    const FVec2 dir = delta * (1.0F / length);
+    const FVec2 perp = FVec2::New(-dir.y, dir.x);
     constexpr float kArrowHeadLength = 6.0F;
     constexpr float kArrowHeadWidth = 4.0F;
-    const Vec2 head_base = to - (dir * kArrowHeadLength);
+    const FVec2 head_base = to - (dir * kArrowHeadLength);
     RenderScreenLine(renderer, to, head_base + (perp * kArrowHeadWidth), color, thickness);
     RenderScreenLine(renderer, to, head_base - (perp * kArrowHeadWidth), color, thickness);
 }
 
-Vec2 TileTopLeftWorld(const IVec2& tile_pos) {
-    return Vec2::New(
+FVec2 TileTopLeftWorld(const IVec2& tile_pos) {
+    return FVec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
     );
 }
 
-Vec2 TileCenterWorld(const IVec2& tile_pos) {
-    return TileTopLeftWorld(tile_pos) + Vec2::New(
+FVec2 TileCenterWorld(const IVec2& tile_pos) {
+    return TileTopLeftWorld(tile_pos) + FVec2::New(
         static_cast<float>(kTileSize) * 0.5F,
         static_cast<float>(kTileSize) * 0.5F
     );
 }
 
-Vec2 TileCenterWorldRelativeToOrigin(
+FVec2 TileCenterWorldRelativeToOrigin(
     const IVec2& origin_tile,
-    const Vec2& origin_world,
+    const FVec2& origin_world,
     const IVec2& ray_tile
 ) {
-    return origin_world + Vec2::New(
+    return origin_world + FVec2::New(
         static_cast<float>((ray_tile.x - origin_tile.x) * static_cast<int>(kTileSize)),
         static_cast<float>((ray_tile.y - origin_tile.y) * static_cast<int>(kTileSize))
     );
 }
 
-Vec2 TileTopLeftWorldRelativeToOrigin(
+FVec2 TileTopLeftWorldRelativeToOrigin(
     const IVec2& origin_tile,
-    const Vec2& origin_world,
+    const FVec2& origin_world,
     const IVec2& ray_tile
 ) {
     return TileCenterWorldRelativeToOrigin(origin_tile, origin_world, ray_tile) -
-           Vec2::New(
+           FVec2::New(
                static_cast<float>(kTileSize) * 0.5F,
                static_cast<float>(kTileSize) * 0.5F
            );
@@ -347,7 +347,7 @@ void RenderAudioBrushPreview(
         return;
     }
 
-    const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+    const FVec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
     RenderWorldPointMarker(
         renderer,
         graphics,
@@ -371,12 +371,12 @@ void RenderAudioBrushPreview(
                 IVec2::New(0, -1),
                 IVec2::New(1, -1),
             }};
-            const Vec2 ray_origin_world = GetNearestWorldPoint(
+            const FVec2 ray_origin_world = GetNearestWorldPoint(
                 state.stage,
                 mouse_world,
                 TileCenterWorld(wrapped_mouse_tile)
             );
-            const std::vector<Vec2> visible_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+            const std::vector<FVec2> visible_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
             for (const IVec2& direction : kDirections) {
                 const TileStepRaycastResult ray = RaycastTileSteps(
                     state.stage,
@@ -397,23 +397,23 @@ void RenderAudioBrushPreview(
                         wrapped_mouse_tile.x + direction.x * step,
                         wrapped_mouse_tile.y + direction.y * step
                     );
-                    const Vec2 previous_world = TileCenterWorldRelativeToOrigin(
+                    const FVec2 previous_world = TileCenterWorldRelativeToOrigin(
                         wrapped_mouse_tile,
                         ray_origin_world,
                         previous_tile
                     );
-                    const Vec2 current_world = TileCenterWorldRelativeToOrigin(
+                    const FVec2 current_world = TileCenterWorldRelativeToOrigin(
                         wrapped_mouse_tile,
                         ray_origin_world,
                         current_tile
                     );
-                    for (const Vec2& offset : visible_offsets) {
-                        const Vec2 from_screen = WorldPointToScreen(
+                    for (const FVec2& offset : visible_offsets) {
+                        const FVec2 from_screen = WorldPointToScreen(
                             graphics,
                             pres,
                             previous_world + offset
                         );
-                        const Vec2 to_screen = WorldPointToScreen(
+                        const FVec2 to_screen = WorldPointToScreen(
                             graphics,
                             pres,
                             current_world + offset
@@ -428,17 +428,17 @@ void RenderAudioBrushPreview(
                     }
                 }
                 if (ray.blocked) {
-                    const Vec2 blocker_world = TileTopLeftWorldRelativeToOrigin(
+                    const FVec2 blocker_world = TileTopLeftWorldRelativeToOrigin(
                         wrapped_mouse_tile,
                         ray_origin_world,
                         ray.blocker_unwrapped_tile
                     );
-                    for (const Vec2& offset : visible_offsets) {
+                    for (const FVec2& offset : visible_offsets) {
                         const SDL_FRect blocker_rect = WorldRectToScreen(
                             graphics,
                             pres,
                             blocker_world + offset,
-                            Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                            FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                         );
                         if (IsScreenRectVisible(pres, blocker_rect)) {
                             SDL_RenderRect(renderer, &blocker_rect);
@@ -449,11 +449,11 @@ void RenderAudioBrushPreview(
         }
     }
 
-    const Vec2 listener_world = GetAudioListenerWorldPos(state);
+    const FVec2 listener_world = GetAudioListenerWorldPos(state);
     if (brush.show_occlusion_ray && brush.source_active) {
-        const Vec2 source_world =
+        const FVec2 source_world =
             GetNearestWorldPoint(state.stage, listener_world, brush.source_world_pos);
-        const Vec2 ray_delta = GetNearestWorldDelta(state.stage, source_world, listener_world);
+        const FVec2 ray_delta = GetNearestWorldDelta(state.stage, source_world, listener_world);
         const float ray_length = std::sqrt((ray_delta.x * ray_delta.x) + (ray_delta.y * ray_delta.y));
         const WorldRayHit hit = RaycastRenderTiles(
             source_world,
@@ -477,8 +477,8 @@ void RenderAudioBrushPreview(
                 SDL_Color{255, 220, 32, 255}
             );
         }
-        const Vec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
-        const Vec2 listener_screen = WorldPointToScreen(graphics, pres, listener_world);
+        const FVec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
+        const FVec2 listener_screen = WorldPointToScreen(graphics, pres, listener_world);
         RenderScreenLine(
             renderer,
             source_screen,
@@ -492,7 +492,7 @@ void RenderAudioBrushPreview(
         return;
     }
 
-    const Vec2 source_world =
+    const FVec2 source_world =
         GetNearestWorldPoint(state.stage, listener_world, brush.source_world_pos);
     const float pan_half_width = std::max(state.settings.audio.pan_half_width_px, 1.0F);
     RenderWorldVerticalGuide(
@@ -517,8 +517,8 @@ void RenderAudioBrushPreview(
         SDL_Color{0, 160, 255, 255}
     );
 
-    const Vec2 listener_screen = WorldPointToScreen(graphics, pres, listener_world);
-    const Vec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
+    const FVec2 listener_screen = WorldPointToScreen(graphics, pres, listener_world);
+    const FVec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
     RenderScreenLine(
         renderer,
         listener_screen,
@@ -554,7 +554,7 @@ void RenderShakeBrushPreview(
 
     const DebugShakeBrushState& brush = state.debug_shake_brush;
     const UVec2 mouse_pos = state.immediate_playing_inputs.mouse_pos;
-    const Vec2 mouse_world = graphics.ScreenToWc(mouse_pos);
+    const FVec2 mouse_world = graphics.ScreenToWc(mouse_pos);
     const IVec2 mouse_tile = graphics.ScreenToTileCoords(mouse_pos);
     const float radius_tiles = std::max(0.0F, brush.radius_tiles);
 
@@ -576,16 +576,16 @@ void RenderShakeBrushPreview(
                     continue;
                 }
 
-                const Vec2 tile_world = Vec2::New(
+                const FVec2 tile_world = FVec2::New(
                     static_cast<float>(wrapped.x * static_cast<int>(kTileSize)),
                     static_cast<float>(wrapped.y * static_cast<int>(kTileSize))
                 );
-                const Vec2 nearest_tile_world = GetNearestWorldPoint(state.stage, mouse_world, tile_world);
+                const FVec2 nearest_tile_world = GetNearestWorldPoint(state.stage, mouse_world, tile_world);
                 const SDL_FRect tile_rect = WorldRectToScreen(
                     graphics,
                     pres,
                     nearest_tile_world,
-                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                    FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
                 if (!IsScreenRectVisible(pres, tile_rect)) {
                     continue;
@@ -627,7 +627,7 @@ void RenderFluidBrushPreview(
 
     const DebugFluidBrushState& brush = state.debug_fluid_brush;
     const UVec2 mouse_pos = state.immediate_playing_inputs.mouse_pos;
-    const Vec2 mouse_world = graphics.ScreenToWc(mouse_pos);
+    const FVec2 mouse_world = graphics.ScreenToWc(mouse_pos);
     const IVec2 mouse_tile = graphics.ScreenToTileCoords(mouse_pos);
     const int radius_tiles = std::max(0, brush.radius_tiles);
     const SDL_Color brush_color = [&]() {
@@ -645,7 +645,7 @@ void RenderFluidBrushPreview(
     }();
 
     if (brush.mode == DebugFluidBrushState::Mode::GlobalGravityDirection) {
-        const Vec2 stage_center = Vec2::New(
+        const FVec2 stage_center = FVec2::New(
             static_cast<float>(state.stage.GetWidth()) * 0.5F,
             static_cast<float>(state.stage.GetHeight()) * 0.5F
         );
@@ -673,16 +673,16 @@ void RenderFluidBrushPreview(
                 continue;
             }
 
-            const Vec2 tile_world = Vec2::New(
+            const FVec2 tile_world = FVec2::New(
                 static_cast<float>(wrapped.x * static_cast<int>(kTileSize)),
                 static_cast<float>(wrapped.y * static_cast<int>(kTileSize))
             );
-            const Vec2 nearest_tile_world = GetNearestWorldPoint(state.stage, mouse_world, tile_world);
+            const FVec2 nearest_tile_world = GetNearestWorldPoint(state.stage, mouse_world, tile_world);
             const SDL_FRect tile_rect = WorldRectToScreen(
                 graphics,
                 pres,
                 nearest_tile_world,
-                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
             );
             if (!IsScreenRectVisible(pres, tile_rect)) {
                 continue;
@@ -692,11 +692,11 @@ void RenderFluidBrushPreview(
             SDL_RenderRect(renderer, &tile_rect);
             if (brush.mode == DebugFluidBrushState::Mode::PermanentGravity ||
                 brush.mode == DebugFluidBrushState::Mode::TemporaryGravity) {
-                const Vec2 from_world = nearest_tile_world + Vec2::New(
+                const FVec2 from_world = nearest_tile_world + FVec2::New(
                     static_cast<float>(kTileSize) * 0.5F,
                     static_cast<float>(kTileSize) * 0.5F
                 );
-                const Vec2 to_world = from_world + Vec2::New(
+                const FVec2 to_world = from_world + FVec2::New(
                                            brush.paint_gravity_x,
                                            brush.paint_gravity_y
                                        ) *
@@ -718,16 +718,16 @@ void RenderEntCollisionBoxes(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (const Ent& ent : state.ents.ents) {
             if (!ent.active) {
                 continue;
             }
 
             const RenderAABB pbox_aabb = ent.GetRenderAABB();
-            const Vec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + Vec2::New(1.0F, 1.0F);
+            const FVec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + FVec2::New(1.0F, 1.0F);
             const SDL_FRect pbox_rect = WorldRectToScreen(
                 graphics,
                 pres,
@@ -735,7 +735,7 @@ void RenderEntCollisionBoxes(
                 pbox_size
             );
             const RenderAABB cbox_aabb = ToRenderAABB(ents::common::GetContactAabbForEnt(ent, graphics));
-            const Vec2 cbox_size = cbox_aabb.br - cbox_aabb.tl + Vec2::New(1.0F, 1.0F);
+            const FVec2 cbox_size = cbox_aabb.br - cbox_aabb.tl + FVec2::New(1.0F, 1.0F);
             const SDL_FRect cbox_rect = WorldRectToScreen(
                 graphics,
                 pres,
@@ -782,7 +782,7 @@ void RenderVoidDeathLine(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.stage.HasVoidDeathY()) {
         return;
@@ -790,7 +790,7 @@ void RenderVoidDeathLine(
 
     const float void_death_y = state.stage.GetVoidDeathY();
     std::vector<float> rendered_offset_y_values;
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         bool already_rendered = false;
         for (const float rendered_offset_y : rendered_offset_y_values) {
             if (rendered_offset_y == render_offset.y) {
@@ -803,10 +803,10 @@ void RenderVoidDeathLine(
         }
         rendered_offset_y_values.push_back(render_offset.y);
 
-        const Vec2 screen = WorldPointToScreen(
+        const FVec2 screen = WorldPointToScreen(
             graphics,
             pres,
-            Vec2::New(graphics.camera.target.x + render_offset.x, void_death_y + render_offset.y)
+            FVec2::New(graphics.camera.target.x + render_offset.x, void_death_y + render_offset.y)
         );
         if (!IsScreenYVisible(pres, screen.y)) {
             continue;
@@ -841,20 +841,20 @@ void RenderEntLabels(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_ent_ids && !state.debug_overlay.show_ent_types) {
         return;
     }
 
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (const Ent& ent : state.ents.ents) {
             if (!ent.active) {
                 continue;
             }
 
             const RenderAABB pbox_aabb = ent.GetRenderAABB();
-            const Vec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + Vec2::New(1.0F, 1.0F);
+            const FVec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + FVec2::New(1.0F, 1.0F);
             const SDL_FRect pbox_rect = WorldRectToScreen(
                 graphics,
                 pres,
@@ -902,14 +902,14 @@ void RenderEntRenderCenters(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_ent_render_centers) {
         return;
     }
 
     const SDL_Color color{255, 255, 64, 255};
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (const Ent& ent : state.ents.ents) {
             if (!ent.active || !ent.render_enabled) {
                 continue;
@@ -930,15 +930,15 @@ void RenderDebugAnnotations(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_debug_annotations) {
         return;
     }
 
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (const DebugRectAnnotation& annotation : state.debug_rect_annotations) {
-            const Vec2 world_size = annotation.area.br - annotation.area.tl + Vec2::New(1.0F, 1.0F);
+            const FVec2 world_size = annotation.area.br - annotation.area.tl + FVec2::New(1.0F, 1.0F);
             const SDL_FRect rect = WorldRectToScreen(
                 graphics,
                 pres,
@@ -963,8 +963,8 @@ void RenderDebugAnnotations(
         }
 
         for (const DebugLabelAnnotation& annotation : state.debug_label_annotations) {
-            const Vec2 world_pos = annotation.world_pos + render_offset;
-            const Vec2 screen = WorldPointToScreen(graphics, pres, world_pos);
+            const FVec2 world_pos = annotation.world_pos + render_offset;
+            const FVec2 screen = WorldPointToScreen(graphics, pres, world_pos);
             if (screen.x < pres.x - 32.0F || screen.x > pres.x + pres.w + 32.0F ||
                 screen.y < pres.y - 32.0F || screen.y > pres.y + pres.h + 32.0F) {
                 continue;
@@ -987,8 +987,8 @@ void RenderDebugAnnotations(
         if (state.debug_overlay.show_stagegen_annotations) {
             const SDL_Color stagegen_color{96, 255, 160, 255};
             for (const StageGenAnnotation& annotation : state.stage.stagegen_annotations) {
-                const Vec2 world_pos = annotation.world_pos + render_offset;
-                const Vec2 screen = WorldPointToScreen(graphics, pres, world_pos);
+                const FVec2 world_pos = annotation.world_pos + render_offset;
+                const FVec2 screen = WorldPointToScreen(graphics, pres, world_pos);
                 if (screen.x < pres.x - 64.0F || screen.x > pres.x + pres.w + 64.0F ||
                     screen.y < pres.y - 64.0F || screen.y > pres.y + pres.h + 64.0F) {
                     continue;
@@ -1015,7 +1015,7 @@ void RenderChunkOverlay(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_chunk_boundaries && !state.debug_overlay.show_chunk_coords) {
         return;
@@ -1026,10 +1026,10 @@ void RenderChunkOverlay(
 
     const UVec2 room_layout_dims = state.stage.GetRoomLayoutDims();
     const UVec2 room_dims = state.stage.GetRegularRoomGridRoomDims();
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (unsigned int y = 0; y < room_layout_dims.y; ++y) {
             for (unsigned int x = 0; x < room_layout_dims.x; ++x) {
-                const Vec2 room_tl = ToVec2(state.stage.GetRegularRoomGridTlWc(IVec2::New(
+                const FVec2 room_tl = ToVec2(state.stage.GetRegularRoomGridTlWc(IVec2::New(
                     static_cast<int>(x),
                     static_cast<int>(y)
                 ))) + render_offset;
@@ -1071,14 +1071,14 @@ void RenderTileOverlay(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_tile_indexes && !state.debug_overlay.show_tile_types) {
         return;
     }
 
     const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
                  state.stage,
                  ToIVec2(visible.tl - render_offset),
@@ -1087,7 +1087,7 @@ void RenderTileOverlay(
                 continue;
             }
 
-            const Vec2 tile_tl = Vec2::New(
+            const FVec2 tile_tl = FVec2::New(
                 static_cast<float>(tile_query.tile_pos.x * static_cast<int>(kTileSize)),
                 static_cast<float>(tile_query.tile_pos.y * static_cast<int>(kTileSize))
             ) + render_offset;
@@ -1095,7 +1095,7 @@ void RenderTileOverlay(
                 graphics,
                 pres,
                 tile_tl,
-                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
             );
             if (!IsScreenRectVisible(pres, tile_rect)) {
                 continue;
@@ -1144,14 +1144,14 @@ void RenderTileOpennessOverlay(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_tile_openness) {
         return;
     }
 
     const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
                  state.stage,
                  ToIVec2(visible.tl - render_offset),
@@ -1160,12 +1160,12 @@ void RenderTileOpennessOverlay(
                 continue;
             }
 
-            const Vec2 tile_tl = TileTopLeftWorld(tile_query.tile_pos) + render_offset;
+            const FVec2 tile_tl = TileTopLeftWorld(tile_query.tile_pos) + render_offset;
             const SDL_FRect tile_rect = WorldRectToScreen(
                 graphics,
                 pres,
                 tile_tl,
-                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
             );
             if (!IsScreenRectVisible(pres, tile_rect)) {
                 continue;
@@ -1209,7 +1209,7 @@ void RenderFluidAmountOverlay(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_fluid_amounts) {
         return;
@@ -1217,7 +1217,7 @@ void RenderFluidAmountOverlay(
 
     const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
                  state.stage,
                  ToIVec2(visible.tl - render_offset),
@@ -1234,12 +1234,12 @@ void RenderFluidAmountOverlay(
                 continue;
             }
 
-            const Vec2 tile_tl = TileTopLeftWorld(tile_query.tile_pos) + render_offset;
+            const FVec2 tile_tl = TileTopLeftWorld(tile_query.tile_pos) + render_offset;
             const SDL_FRect tile_rect = WorldRectToScreen(
                 graphics,
                 pres,
                 tile_tl,
-                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
             );
             if (!IsScreenRectVisible(pres, tile_rect)) {
                 continue;
@@ -1282,13 +1282,13 @@ void RenderFluidGravityOverlay(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_fluid_gravity) {
         return;
     }
 
-    const Vec2 global_gravity = Vec2::New(
+    const FVec2 global_gravity = FVec2::New(
         sim::ToRenderScalar(state.settings.fluid.gravity_x),
         sim::ToRenderScalar(state.settings.fluid.gravity_y)
     );
@@ -1313,7 +1313,7 @@ void RenderFluidGravityOverlay(
 
     const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
                  state.stage,
                  ToIVec2(visible.tl - render_offset),
@@ -1336,13 +1336,13 @@ void RenderFluidGravityOverlay(
 
             const bool has_local_gravity =
                 state.stage.fluid_gravity_strength[grid_y][grid_x] != 0;
-            const Vec2 temp_gravity =
+            const FVec2 temp_gravity =
                 sim::ToRenderVec2(state.stage.fluid_temp_gravity[grid_y][grid_x]);
             const bool has_temp_gravity = Length(temp_gravity) > 0.01F;
-            const Vec2 base_gravity = has_local_gravity
+            const FVec2 base_gravity = has_local_gravity
                 ? sim::ToRenderVec2(state.stage.fluid_gravity[grid_y][grid_x])
                 : global_gravity;
-            const Vec2 effective_gravity = base_gravity + temp_gravity;
+            const FVec2 effective_gravity = base_gravity + temp_gravity;
             if (Length(effective_gravity) <= 0.01F && !has_local_gravity && !has_temp_gravity) {
                 continue;
             }
@@ -1356,8 +1356,8 @@ void RenderFluidGravityOverlay(
                 color = SDL_Color{255, 96, 224, 255};
             }
 
-            const Vec2 tile_center = TileCenterWorld(tile_pos) + render_offset;
-            const Vec2 center_screen = WorldPointToScreen(graphics, pres, tile_center);
+            const FVec2 tile_center = TileCenterWorld(tile_pos) + render_offset;
+            const FVec2 center_screen = WorldPointToScreen(graphics, pres, tile_center);
             if (Length(effective_gravity) <= 0.01F) {
                 SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
                 const SDL_FRect zero_rect{
@@ -1370,11 +1370,11 @@ void RenderFluidGravityOverlay(
                 continue;
             }
 
-            const Vec2 arrow_delta =
+            const FVec2 arrow_delta =
                 NormalizeOrZero(effective_gravity) *
                 std::min(Length(effective_gravity), 1.0F) *
                 (static_cast<float>(kTileSize) * 0.45F);
-            const Vec2 to_screen = WorldPointToScreen(
+            const FVec2 to_screen = WorldPointToScreen(
                 graphics,
                 pres,
                 tile_center + arrow_delta
@@ -1390,7 +1390,7 @@ void RenderAreaOverlay(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_area_boundaries &&
         !state.debug_overlay.show_area_ids &&
@@ -1398,14 +1398,14 @@ void RenderAreaOverlay(
         return;
     }
 
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (const Ent& ent : state.ents.ents) {
             if (!ent.active || ent.type_ != EntType::Shop) {
                 continue;
             }
 
             const RenderAABB area = ToRenderAABB(ents::shop::GetShopArea(ent));
-            const Vec2 area_size = area.br - area.tl + Vec2::New(1.0F, 1.0F);
+            const FVec2 area_size = area.br - area.tl + FVec2::New(1.0F, 1.0F);
             const SDL_FRect area_rect = WorldRectToScreen(
                 graphics,
                 pres,
@@ -1462,7 +1462,7 @@ void RenderAudioEmitterOverlay(
     State& state,
     const Audio& audio,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_audio_emitters) {
         return;
@@ -1471,14 +1471,14 @@ void RenderAudioEmitterOverlay(
     const bool show_occlusion_paths =
         state.debug_overlay.show_audio_occlusion_paths &&
         IsAudioOcclusionEnabled(state);
-    const Vec2 listener_world = GetAudioListenerWorldPos(state);
+    const FVec2 listener_world = GetAudioListenerWorldPos(state);
 
     for (const AudioEmitter& emitter : state.audio_emitters.emitters) {
         if (!emitter.active) {
             continue;
         }
 
-        Vec2 anchor_world = emitter.world_pos;
+        FVec2 anchor_world = emitter.world_pos;
         if (emitter.attached_ent_vid.has_value()) {
             const Ent* const attached = state.ents.GetEnt(*emitter.attached_ent_vid);
             if (attached != nullptr) {
@@ -1486,13 +1486,13 @@ void RenderAudioEmitterOverlay(
             }
         }
 
-        for (const Vec2& render_offset : render_offsets) {
-            const Vec2 source_world = emitter.world_pos + render_offset;
+        for (const FVec2& render_offset : render_offsets) {
+            const FVec2 source_world = emitter.world_pos + render_offset;
             const SDL_FRect source_rect = WorldRectToScreen(
                 graphics,
                 pres,
-                source_world - Vec2::New(2.0F, 2.0F),
-                Vec2::New(4.0F, 4.0F)
+                source_world - FVec2::New(2.0F, 2.0F),
+                FVec2::New(4.0F, 4.0F)
             );
             if (!IsScreenRectVisible(pres, source_rect)) {
                 continue;
@@ -1508,9 +1508,9 @@ void RenderAudioEmitterOverlay(
             SDL_RenderRect(renderer, &source_rect);
 
             if (show_occlusion_paths) {
-                const Vec2 listener_for_source =
+                const FVec2 listener_for_source =
                     GetNearestWorldPoint(state.stage, source_world, listener_world);
-                const Vec2 ray_delta =
+                const FVec2 ray_delta =
                     GetNearestWorldDelta(state.stage, source_world, listener_for_source);
                 const float ray_length =
                     std::sqrt((ray_delta.x * ray_delta.x) + (ray_delta.y * ray_delta.y));
@@ -1537,8 +1537,8 @@ void RenderAudioEmitterOverlay(
                         SDL_Color{255, 220, 32, 255}
                     );
                 }
-                const Vec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
-                const Vec2 listener_screen =
+                const FVec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
+                const FVec2 listener_screen =
                     WorldPointToScreen(graphics, pres, listener_for_source);
                 RenderScreenLine(
                     renderer,
@@ -1550,9 +1550,9 @@ void RenderAudioEmitterOverlay(
             }
 
             if (emitter.attached_ent_vid.has_value()) {
-                const Vec2 anchor_source_world = anchor_world + render_offset;
-                const Vec2 anchor_screen = WorldPointToScreen(graphics, pres, anchor_source_world);
-                const Vec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
+                const FVec2 anchor_source_world = anchor_world + render_offset;
+                const FVec2 anchor_screen = WorldPointToScreen(graphics, pres, anchor_source_world);
+                const FVec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
                 SDL_RenderLine(
                     renderer,
                     anchor_screen.x,
@@ -1629,7 +1629,7 @@ void RenderDebugOverlay(
     }
 
     const SDL_FRect pres = GetDebugPresRect(renderer, graphics);
-    const std::vector<Vec2> render_offsets =
+    const std::vector<FVec2> render_offsets =
         GetVisibleWrappedRenderOffsets(state.stage, graphics);
     if (state.debug_overlay.show_ent_collision_boxes) {
         RenderEntCollisionBoxes(renderer, graphics, state, pres, render_offsets);

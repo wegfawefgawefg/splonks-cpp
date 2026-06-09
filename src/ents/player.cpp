@@ -229,17 +229,17 @@ std::uint32_t GetFallDamageAmount(
 }
 
 void SpawnFallDamagePoofs(const Ent& player, State& state) {
-    const Vec2 base_pos = player.GetRenderCenter() + Vec2::New(0.0F, player.GetSize().y * 0.5F);
+    const FVec2 base_pos = player.GetRenderCenter() + FVec2::New(0.0F, player.GetSize().y * 0.5F);
     for (float direction : {-1.0F, 1.0F}) {
         SpriteParticle smoke{};
         smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = 16;
-        smoke.pos = base_pos + Vec2::New(direction * 4.0F, -2.0F);
-        smoke.size = Vec2::New(5.0F, 5.0F);
+        smoke.pos = base_pos + FVec2::New(direction * 4.0F, -2.0F);
+        smoke.size = FVec2::New(5.0F, 5.0F);
         smoke.alpha = 0.85F;
-        smoke.vel = Vec2::New(direction * 0.12F, -0.08F);
-        smoke.svel = Vec2::New(0.08F, 0.08F);
+        smoke.vel = FVec2::New(direction * 0.12F, -0.08F);
+        smoke.svel = FVec2::New(0.08F, 0.08F);
         smoke.alpha_vel = -0.05F;
         state.particles.Add(std::move(smoke));
     }

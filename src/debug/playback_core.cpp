@@ -109,8 +109,8 @@ bool IsTileBrushActive(const DebugPlayback& debug) {
     return debug.tile_brush_enabled;
 }
 
-Vec2 StageCenterWorld(const Stage& stage) {
-    return Vec2::New(static_cast<float>(stage.GetWidth()) * 0.5F,
+FVec2 StageCenterWorld(const Stage& stage) {
+    return FVec2::New(static_cast<float>(stage.GetWidth()) * 0.5F,
                      static_cast<float>(stage.GetHeight()) * 0.5F);
 }
 
@@ -143,7 +143,7 @@ void ApplyShakeBrush(State& state, Graphics& graphics) {
 
     const DebugShakeBrushState& brush = state.debug_shake_brush;
     const UVec2 mouse_pos = state.immediate_playing_inputs.mouse_pos;
-    const Vec2 mouse_world = graphics.ScreenToWc(mouse_pos);
+    const FVec2 mouse_world = graphics.ScreenToWc(mouse_pos);
     const float radius_tiles = std::max(0.0F, brush.radius_tiles);
 
     if (brush.affect_foreground_tiles && brush.foreground_tile_amount > 0.0F) {
@@ -180,8 +180,8 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
     if (brush.mode == DebugFluidBrushState::Mode::GlobalGravityDirection) {
         if (paint_water) {
             constexpr float kGravityPickerScalePx = 64.0F;
-            const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
-            const Vec2 gravity =
+            const FVec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+            const FVec2 gravity =
                 (mouse_world - StageCenterWorld(state.stage)) / kGravityPickerScalePx;
             state.settings.fluid.gravity_x = sim::ToSimScalar(std::clamp(gravity.x, -4.0F, 4.0F));
             state.settings.fluid.gravity_y = sim::ToSimScalar(std::clamp(gravity.y, -4.0F, 4.0F));

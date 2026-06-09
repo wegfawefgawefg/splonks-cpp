@@ -320,7 +320,7 @@ void RefreshPlayableCharacterLamp(State& state) {
     }
 }
 
-Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics& graphics) {
+FVec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics& graphics) {
     if (state.controlled_ent_vid.has_value()) {
         if (const Ent* const controlled = state.ents.GetEnt(*state.controlled_ent_vid)) {
             return ents::common::GetVisualCenterForEnt(
@@ -574,7 +574,7 @@ void StepPlaying(
         state.SetMode(Mode::StageTransition);
         state.frame = 0;
     } else if (lost) {
-        Vec2 game_over_pos = state.gameplay_camera_anchor_world_pos.value_or(graphics.camera.target);
+        FVec2 game_over_pos = state.gameplay_camera_anchor_world_pos.value_or(graphics.camera.target);
         if (primary_player_vid.has_value()) {
             if (const Ent* const player = state.ents.GetEnt(*primary_player_vid)) {
                 if (player->active) {

@@ -43,28 +43,28 @@ void RefreshCarryStunWhileHeld(Ent& damsel) {
     TrySetAnim(damsel, EntDisplayState::Stunned);
 }
 
-void SpawnRescueKissParticle(const Vec2& pos, State& state) {
+void SpawnRescueKissParticle(const FVec2& pos, State& state) {
     SpriteParticle kiss{};
     kiss.aframe_animator = AFrameAnimator::New(aframe_ids::Kiss);
     kiss.finish_on_anim_end = true;
     kiss.draw_layer = DrawLayer::Foreground;
     kiss.counter = kRescueKissLifetimeFrames;
     kiss.pos = pos;
-    kiss.size = Vec2::New(12.0F, 10.0F);
+    kiss.size = FVec2::New(12.0F, 10.0F);
     kiss.rot = 0.0F;
     kiss.alpha = 1.0F;
-    kiss.vel = Vec2::New(0.0F, kRescueKissFloatSpeed);
-    kiss.svel = Vec2::New(0.0F, 0.0F);
+    kiss.vel = FVec2::New(0.0F, kRescueKissFloatSpeed);
+    kiss.svel = FVec2::New(0.0F, 0.0F);
     kiss.rotvel = 0.0F;
     kiss.alpha_vel = -0.01F;
-    kiss.acc = Vec2::New(0.0F, 0.0F);
-    kiss.sacc = Vec2::New(0.0F, 0.0F);
+    kiss.acc = FVec2::New(0.0F, 0.0F);
+    kiss.sacc = FVec2::New(0.0F, 0.0F);
     kiss.rotacc = 0.0F;
     kiss.alpha_acc = 0.0F;
     state.particles.Add(std::move(kiss));
 }
 
-Vec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, const Ent& damsel) {
+FVec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, const Ent& damsel) {
     if (!target_vid.has_value()) {
         return sim::ToRenderVec2(damsel.GetSimCenter());
     }
@@ -81,7 +81,7 @@ Vec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, c
     });
 }
 
-Vec2 GetRescueKissPos(const State& state, const Ent& damsel) {
+FVec2 GetRescueKissPos(const State& state, const Ent& damsel) {
     return GetRescueKissPosForEnt(
         FindNearestPlayerVid(state, damsel.GetSimCenter(), false),
         state,
@@ -164,7 +164,7 @@ void RescueDamsel(
 ) {
     (void)audio;
     Ent& damsel = state.ents.ents[ent_idx];
-    const Vec2 kiss_pos = GetRescueKissPosForEnt(rescued_by_vid, state, damsel);
+    const FVec2 kiss_pos = GetRescueKissPosForEnt(rescued_by_vid, state, damsel);
     SpawnRescueKissParticle(kiss_pos, state);
     (void)PlayWorldSoundEmitter(state, kiss_pos, audio_asset_ids::Smooch);
     AwardDamselRescueHealthToEnt(rescued_by_vid, state);
@@ -179,7 +179,7 @@ void RescueDamsel(
 
 void KissEnt(std::optional<VID> kissed_by_vid, State& state, const Ent& damsel, Audio& audio) {
     (void)audio;
-    const Vec2 kiss_pos = GetRescueKissPosForEnt(kissed_by_vid, state, damsel);
+    const FVec2 kiss_pos = GetRescueKissPosForEnt(kissed_by_vid, state, damsel);
     SpawnRescueKissParticle(kiss_pos, state);
     (void)PlayWorldSoundEmitter(state, kiss_pos, audio_asset_ids::Smooch);
     AwardDamselRescueHealthToEnt(kissed_by_vid, state);

@@ -15,7 +15,7 @@ namespace splonks::ents::jetpack {
 
 namespace {
 
-void SpawnJetpackSmoke(State& state, const Vec2& pos) {
+void SpawnJetpackSmoke(State& state, const FVec2& pos) {
     for (int i = 0; i < 16; ++i) {
         const float vel = rng::RandomFloat(0.1F, 0.5F);
         const float svel = rng::RandomFloat(vel * 0.1F, vel * 1.0F);
@@ -25,15 +25,15 @@ void SpawnJetpackSmoke(State& state, const Vec2& pos) {
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(0, 32));
         effect.pos = pos;
-        effect.size = Vec2::New(1.0F, 1.0F) * 2.0F;
+        effect.size = FVec2::New(1.0F, 1.0F) * 2.0F;
         effect.rot = rng::RandomFloat(0.0F, 360.0F);
         effect.alpha = 1.0F;
-        effect.vel = Vec2::New(0.0F, rng::RandomFloat(0.0F, 0.3F));
-        effect.svel = Vec2::New(svel, svel);
+        effect.vel = FVec2::New(0.0F, rng::RandomFloat(0.0F, 0.3F));
+        effect.svel = FVec2::New(svel, svel);
         effect.rotvel = rng::RandomFloat(-0.2F, -0.01F);
         effect.alpha_vel = vel * 0.001F;
-        effect.acc = Vec2::New(0.0F, 0.0F);
-        effect.sacc = Vec2::New(sacc, sacc);
+        effect.acc = FVec2::New(0.0F, 0.0F);
+        effect.sacc = FVec2::New(sacc, sacc);
         effect.rotacc = 0.0F;
         effect.alpha_acc = 0.0F;
         state.particles.Add(std::move(effect));
@@ -152,9 +152,9 @@ void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio
     }
     jetpack.counter_a -= sim::Scalar::from_int(1);
 
-    const Vec2 center = jetpack.GetRenderCenter();
-    SpawnJetpackSmoke(state, center + Vec2::New(3.0F, 3.0F));
-    SpawnJetpackSmoke(state, center + Vec2::New(-3.0F, 3.0F));
+    const FVec2 center = jetpack.GetRenderCenter();
+    SpawnJetpackSmoke(state, center + FVec2::New(3.0F, 3.0F));
+    SpawnJetpackSmoke(state, center + FVec2::New(-3.0F, 3.0F));
 }
 
 /** jetpack goes up by default, and idles if it hits the ceiling.

@@ -5,12 +5,12 @@
 
 namespace splonks {
 
-struct Vec2 {
+struct FVec2 {
     float x = 0.0F;
     float y = 0.0F;
 
-    static Vec2 New(float x_value, float y_value) {
-        Vec2 result;
+    static FVec2 New(float x_value, float y_value) {
+        FVec2 result;
         result.x = x_value;
         result.y = y_value;
         return result;
@@ -59,8 +59,8 @@ struct Color3 {
     }
 };
 
-inline Vec2 operator+(const Vec2& left, const Vec2& right) {
-    return Vec2::New(left.x + right.x, left.y + right.y);
+inline FVec2 operator+(const FVec2& left, const FVec2& right) {
+    return FVec2::New(left.x + right.x, left.y + right.y);
 }
 
 inline IVec2 operator+(const IVec2& left, const IVec2& right) {
@@ -79,15 +79,15 @@ inline UVec2 operator-(const UVec2& left, const UVec2& right) {
     return UVec2::New(left.x - right.x, left.y - right.y);
 }
 
-inline Vec2 operator-(const Vec2& left, const Vec2& right) {
-    return Vec2::New(left.x - right.x, left.y - right.y);
+inline FVec2 operator-(const FVec2& left, const FVec2& right) {
+    return FVec2::New(left.x - right.x, left.y - right.y);
 }
 
 inline IVec2 operator-(const IVec2& left, const IVec2& right) {
     return IVec2::New(left.x - right.x, left.y - right.y);
 }
 
-inline bool operator==(const Vec2& left, const Vec2& right) {
+inline bool operator==(const FVec2& left, const FVec2& right) {
     return left.x == right.x && left.y == right.y;
 }
 
@@ -99,14 +99,14 @@ inline bool operator==(const UVec2& left, const UVec2& right) {
     return left.x == right.x && left.y == right.y;
 }
 
-inline Vec2& operator+=(Vec2& left, const Vec2& right) {
+inline FVec2& operator+=(FVec2& left, const FVec2& right) {
     left.x += right.x;
     left.y += right.y;
     return left;
 }
 
-inline Vec2 operator*(const Vec2& left, float right) {
-    return Vec2::New(left.x * right, left.y * right);
+inline FVec2 operator*(const FVec2& left, float right) {
+    return FVec2::New(left.x * right, left.y * right);
 }
 
 inline Color3 operator*(const Color3& left, float right) {
@@ -125,12 +125,12 @@ inline UVec2 operator*(const UVec2& left, const UVec2& right) {
     return UVec2::New(left.x * right.x, left.y * right.y);
 }
 
-inline Vec2 operator*(float left, const Vec2& right) {
-    return Vec2::New(left * right.x, left * right.y);
+inline FVec2 operator*(float left, const FVec2& right) {
+    return FVec2::New(left * right.x, left * right.y);
 }
 
-inline Vec2 operator/(const Vec2& left, float right) {
-    return Vec2::New(left.x / right, left.y / right);
+inline FVec2 operator/(const FVec2& left, float right) {
+    return FVec2::New(left.x / right, left.y / right);
 }
 
 inline Color3 operator/(const Color3& left, float right) {
@@ -145,7 +145,7 @@ inline UVec2 operator/(const UVec2& left, std::uint32_t right) {
     return UVec2::New(left.x / right, left.y / right);
 }
 
-inline IVec2 ToIVec2(const Vec2& value) {
+inline IVec2 ToIVec2(const FVec2& value) {
     return IVec2::New(static_cast<int>(value.x), static_cast<int>(value.y));
 }
 
@@ -206,16 +206,16 @@ inline UVec2 ToUVec2(const IVec2& value) {
     return UVec2::New(static_cast<std::uint32_t>(value.x), static_cast<std::uint32_t>(value.y));
 }
 
-inline Vec2 ToVec2(const UVec2& value) {
-    return Vec2::New(static_cast<float>(value.x), static_cast<float>(value.y));
+inline FVec2 ToVec2(const UVec2& value) {
+    return FVec2::New(static_cast<float>(value.x), static_cast<float>(value.y));
 }
 
-inline Vec2 ToVec2(const IVec2& value) {
-    return Vec2::New(static_cast<float>(value.x), static_cast<float>(value.y));
+inline FVec2 ToVec2(const IVec2& value) {
+    return FVec2::New(static_cast<float>(value.x), static_cast<float>(value.y));
 }
 
-inline Vec2 Max(const Vec2& value, const Vec2& minimum) {
-    return Vec2::New(value.x > minimum.x ? value.x : minimum.x,
+inline FVec2 Max(const FVec2& value, const FVec2& minimum) {
+    return FVec2::New(value.x > minimum.x ? value.x : minimum.x,
                      value.y > minimum.y ? value.y : minimum.y);
 }
 
@@ -227,23 +227,23 @@ inline float Max(float left, float right) {
     return left > right ? left : right;
 }
 
-inline float Length(const Vec2& value) {
+inline float Length(const FVec2& value) {
     return std::sqrt((value.x * value.x) + (value.y * value.y));
 }
 
-inline float LengthSquared(const Vec2& value) {
+inline float LengthSquared(const FVec2& value) {
     return (value.x * value.x) + (value.y * value.y);
 }
 
-inline Vec2 NormalizeOrZero(const Vec2& value) {
+inline FVec2 NormalizeOrZero(const FVec2& value) {
     const float length = Length(value);
     if (length == 0.0F) {
-        return Vec2::New(0.0F, 0.0F);
+        return FVec2::New(0.0F, 0.0F);
     }
     return value / length;
 }
 
-inline float LengthDeterministic(const Vec2& value) {
+inline float LengthDeterministic(const FVec2& value) {
     constexpr std::int64_t kScale = 4096;
     const std::int64_t x = static_cast<std::int64_t>(RoundToInt(value.x * static_cast<float>(kScale)));
     const std::int64_t y = static_cast<std::int64_t>(RoundToInt(value.y * static_cast<float>(kScale)));
@@ -253,7 +253,7 @@ inline float LengthDeterministic(const Vec2& value) {
     return static_cast<float>(length) / static_cast<float>(kScale);
 }
 
-inline Vec2 NormalizeOrZeroDeterministic(const Vec2& value) {
+inline FVec2 NormalizeOrZeroDeterministic(const FVec2& value) {
     constexpr std::int64_t kScale = 4096;
     const std::int64_t x = static_cast<std::int64_t>(RoundToInt(value.x * static_cast<float>(kScale)));
     const std::int64_t y = static_cast<std::int64_t>(RoundToInt(value.y * static_cast<float>(kScale)));
@@ -261,11 +261,11 @@ inline Vec2 NormalizeOrZeroDeterministic(const Vec2& value) {
     const std::uint64_t y_sq = static_cast<std::uint64_t>(y * y);
     const std::int64_t length = static_cast<std::int64_t>(IntegerSqrtFloor(x_sq + y_sq));
     if (length == 0) {
-        return Vec2::New(0.0F, 0.0F);
+        return FVec2::New(0.0F, 0.0F);
     }
     const std::int64_t normalized_x = DivRoundNearest(x * kScale, length);
     const std::int64_t normalized_y = DivRoundNearest(y * kScale, length);
-    return Vec2::New(static_cast<float>(normalized_x) / static_cast<float>(kScale),
+    return FVec2::New(static_cast<float>(normalized_x) / static_cast<float>(kScale),
                      static_cast<float>(normalized_y) / static_cast<float>(kScale));
 }
 

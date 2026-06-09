@@ -26,9 +26,9 @@ constexpr int kWaterPiranhaTestStageHeightTiles = 16;
 
 std::optional<VID> SpawnBowlingCaveman(
     State& state,
-    const Vec2& center,
+    const FVec2& center,
     EntCondition condition,
-    const Vec2& vel
+    const FVec2& vel
 ) {
     const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
@@ -47,7 +47,7 @@ std::optional<VID> SpawnBowlingCaveman(
     return vid;
 }
 
-std::optional<VID> SpawnOpposingBodySmackCaveman(State& state, const Vec2& center, const Vec2& vel) {
+std::optional<VID> SpawnOpposingBodySmackCaveman(State& state, const FVec2& center, const FVec2& vel) {
     const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
         return std::nullopt;
@@ -99,7 +99,7 @@ void GiveHeldRockToEnt(State& state, VID holder_vid) {
     rock->proj_contact_timer = 0;
     rock->vel = sim::Vec2::zero();
     rock->acc = sim::Vec2::zero();
-    rock->SetRenderCenter(holder->GetRenderCenter() + Vec2::New(4.0F, 1.0F));
+    rock->SetRenderCenter(holder->GetRenderCenter() + FVec2::New(4.0F, 1.0F));
     holder->holding_vid = rock->vid;
     holder->holding = true;
 }
@@ -127,7 +127,7 @@ void GiveHeldMattockToEnt(State& state, VID holder_vid) {
     mattock->can_collide = false;
     mattock->vel = sim::Vec2::zero();
     mattock->acc = sim::Vec2::zero();
-    mattock->SetRenderCenter(holder->GetRenderCenter() + Vec2::New(4.0F, 1.0F));
+    mattock->SetRenderCenter(holder->GetRenderCenter() + FVec2::New(4.0F, 1.0F));
     holder->holding_vid = mattock->vid;
     holder->holding = true;
 }
@@ -252,7 +252,7 @@ Stage MakeWaterPiranhaTestStage() {
     debug_stage::BuildLadder(stage, 24, 9, 12);
 
     stage.stagegen_annotations.push_back(StageGenAnnotation{
-        .world_pos = Vec2::New(8.0F * static_cast<float>(kTileSize), 9.0F * static_cast<float>(kTileSize)),
+        .world_pos = FVec2::New(8.0F * static_cast<float>(kTileSize), 9.0F * static_cast<float>(kTileSize)),
         .text = "effect-driven water pool: jump, fall timer, damping, props",
     });
     return stage;
@@ -264,15 +264,15 @@ void InitBowlingTestStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(4 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 10);
-    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 
     const float caveman_center_y =
         static_cast<float>((kBowlingTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
     (void)SpawnBowlingCaveman(
         state,
-        Vec2::New(8.0F * static_cast<float>(kTileSize), caveman_center_y),
+        FVec2::New(8.0F * static_cast<float>(kTileSize), caveman_center_y),
         EntCondition::Stunned,
-        Vec2::New(24.0F, 0.0F)
+        FVec2::New(24.0F, 0.0F)
     );
     for (Ent& ent : state.ents.ents) {
         if (!ent.active || ent.type_ != EntType::Caveman ||
@@ -291,9 +291,9 @@ void InitBowlingTestStage(State& state) {
     for (const int tile_x : kStandingCavemanTileXs) {
         const std::optional<VID> caveman_vid = SpawnBowlingCaveman(
             state,
-            Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)), caveman_center_y),
+            FVec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)), caveman_center_y),
             EntCondition::Normal,
-            Vec2::New(0.0F, 0.0F)
+            FVec2::New(0.0F, 0.0F)
         );
         if (caveman_vid.has_value()) {
             GiveHeldRockToEnt(state, *caveman_vid);
@@ -307,19 +307,19 @@ void InitOpposingBodySmackStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(2 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 10);
-    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 
     const float caveman_center_y =
         static_cast<float>((kOpposingBodySmackStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
     (void)SpawnOpposingBodySmackCaveman(
         state,
-        Vec2::New(5.0F * static_cast<float>(kTileSize), caveman_center_y),
-        Vec2::New(8.0F, 0.0F)
+        FVec2::New(5.0F * static_cast<float>(kTileSize), caveman_center_y),
+        FVec2::New(8.0F, 0.0F)
     );
     (void)SpawnOpposingBodySmackCaveman(
         state,
-        Vec2::New(9.0F * static_cast<float>(kTileSize), caveman_center_y),
-        Vec2::New(-8.0F, 0.0F)
+        FVec2::New(9.0F * static_cast<float>(kTileSize), caveman_center_y),
+        FVec2::New(-8.0F, 0.0F)
     );
 }
 
@@ -329,7 +329,7 @@ void InitMonkeyTestStage(State& state) {
 
     SpawnPlayerAtRenderPosition(
         state,
-        Vec2::New(
+        FVec2::New(
             2.0F * static_cast<float>(kTileSize),
             14.0F * static_cast<float>(kTileSize) - 14.0F
         )
@@ -349,7 +349,7 @@ void InitMonkeyTestStage(State& state) {
         if (const std::optional<VID> monkey_vid = SpawnStageEntAtRenderCenter(
             state,
             EntType::Monkey,
-            Vec2::New(
+            FVec2::New(
                 (static_cast<float>(tile_pos.x) + 0.5F) * static_cast<float>(kTileSize),
                 (static_cast<float>(tile_pos.y) + 0.5F) * static_cast<float>(kTileSize)
             )
@@ -367,7 +367,7 @@ void InitWaterPiranhaTestStage(State& state) {
 
     SpawnPlayerAtRenderPosition(
         state,
-        Vec2::New(
+        FVec2::New(
             3.0F * static_cast<float>(kTileSize),
             13.0F * static_cast<float>(kTileSize) - 14.0F
         )
@@ -376,24 +376,24 @@ void InitWaterPiranhaTestStage(State& state) {
         GiveHeldMattockToEnt(state, *player_vid);
     }
 
-    const std::array<Vec2, 3> piranha_centers{{
-        Vec2::New(10.0F * static_cast<float>(kTileSize), 11.5F * static_cast<float>(kTileSize)),
-        Vec2::New(14.0F * static_cast<float>(kTileSize), 10.5F * static_cast<float>(kTileSize)),
-        Vec2::New(18.0F * static_cast<float>(kTileSize), 11.5F * static_cast<float>(kTileSize)),
+    const std::array<FVec2, 3> piranha_centers{{
+        FVec2::New(10.0F * static_cast<float>(kTileSize), 11.5F * static_cast<float>(kTileSize)),
+        FVec2::New(14.0F * static_cast<float>(kTileSize), 10.5F * static_cast<float>(kTileSize)),
+        FVec2::New(18.0F * static_cast<float>(kTileSize), 11.5F * static_cast<float>(kTileSize)),
     }};
-    for (const Vec2& center : piranha_centers) {
+    for (const FVec2& center : piranha_centers) {
         (void)SpawnStageEntAtRenderCenter(state, EntType::Piranha, center);
     }
 
-    const std::array<std::pair<EntType, Vec2>, 8> props{{
-        {EntType::Box, Vec2::New(9.5F, 7.5F) * static_cast<float>(kTileSize)},
-        {EntType::Pot, Vec2::New(11.5F, 7.5F) * static_cast<float>(kTileSize)},
-        {EntType::Rock, Vec2::New(13.5F, 7.5F) * static_cast<float>(kTileSize)},
-        {EntType::Bomb, Vec2::New(15.5F, 7.5F) * static_cast<float>(kTileSize)},
-        {EntType::Caveman, Vec2::New(17.5F, 7.5F) * static_cast<float>(kTileSize)},
-        {EntType::GoldChunk, Vec2::New(9.5F, 12.5F) * static_cast<float>(kTileSize)},
-        {EntType::RubyBig, Vec2::New(12.5F, 12.5F) * static_cast<float>(kTileSize)},
-        {EntType::Chest, Vec2::New(18.5F, 12.5F) * static_cast<float>(kTileSize)},
+    const std::array<std::pair<EntType, FVec2>, 8> props{{
+        {EntType::Box, FVec2::New(9.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntType::Pot, FVec2::New(11.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntType::Rock, FVec2::New(13.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntType::Bomb, FVec2::New(15.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntType::Caveman, FVec2::New(17.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntType::GoldChunk, FVec2::New(9.5F, 12.5F) * static_cast<float>(kTileSize)},
+        {EntType::RubyBig, FVec2::New(12.5F, 12.5F) * static_cast<float>(kTileSize)},
+        {EntType::Chest, FVec2::New(18.5F, 12.5F) * static_cast<float>(kTileSize)},
     }};
     for (const auto& [type, center] : props) {
         (void)SpawnStageEntAtRenderCenter(state, type, center);

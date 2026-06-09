@@ -42,9 +42,9 @@ void ClearPendingFavor(Ent& machete) {
     machete.counter_b = sim::Scalar::zero();
 }
 
-Vec2 GetVictimEffectPos(const Ent& victim, const Graphics& graphics) {
+FVec2 GetVictimEffectPos(const Ent& victim, const Graphics& graphics) {
     const RenderAABB render_victim_aabb = ToRenderAABB(common::GetContactAabbForEnt(victim, graphics));
-    return Vec2::New(
+    return FVec2::New(
         (render_victim_aabb.tl.x + render_victim_aabb.br.x) * 0.5F,
         render_victim_aabb.br.y - 2.0F
     );
@@ -75,7 +75,7 @@ bool CanCarveCorpse(const Ent& victim) {
 }
 
 void CarveCorpse(Ent& machete, Ent& victim, State& state, const Graphics& graphics, Audio& audio) {
-    const Vec2 effect_pos = GetVictimEffectPos(victim, graphics);
+    const FVec2 effect_pos = GetVictimEffectPos(victim, graphics);
     common::DropHeldItemFromEnt(victim, state);
     common::ReleaseEntFromHolder(victim, state);
     victim.marked_for_destruction = true;

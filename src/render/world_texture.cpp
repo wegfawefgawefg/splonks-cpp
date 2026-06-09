@@ -8,20 +8,20 @@ namespace splonks {
 
 namespace {
 
-Vec2 WorldToScreenRaw(const Graphics& graphics, const Vec2& world_pos) {
+FVec2 WorldToScreenRaw(const Graphics& graphics, const FVec2& world_pos) {
     return ((world_pos - graphics.camera.target) * graphics.camera.zoom) + graphics.camera.offset;
 }
 
 } // namespace
 
-Vec2 WorldToScreen(const Graphics& graphics, const Vec2& world_pos) {
-    const Vec2 screen = WorldToScreenRaw(graphics, world_pos);
-    return Vec2::New(std::round(screen.x), std::round(screen.y));
+FVec2 WorldToScreen(const Graphics& graphics, const FVec2& world_pos) {
+    const FVec2 screen = WorldToScreenRaw(graphics, world_pos);
+    return FVec2::New(std::round(screen.x), std::round(screen.y));
 }
 
-SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, const Vec2& world_size) {
-    const Vec2 screen_tl = WorldToScreenRaw(graphics, world_pos);
-    const Vec2 screen_br = WorldToScreenRaw(graphics, world_pos + world_size);
+SDL_FRect WorldRectToScreen(const Graphics& graphics, const FVec2& world_pos, const FVec2& world_size) {
+    const FVec2 screen_tl = WorldToScreenRaw(graphics, world_pos);
+    const FVec2 screen_br = WorldToScreenRaw(graphics, world_pos + world_size);
     const float left = std::floor(std::min(screen_tl.x, screen_br.x));
     const float top = std::floor(std::min(screen_tl.y, screen_br.y));
     const float right = std::ceil(std::max(screen_tl.x, screen_br.x));
@@ -49,7 +49,7 @@ void RenderWorldTextureRotated(
         return;
     }
 
-    const Vec2 pivot_screen = WorldToScreen(graphics, graphics.world_rotation_pivot);
+    const FVec2 pivot_screen = WorldToScreen(graphics, graphics.world_rotation_pivot);
     const SDL_FPoint rotation_center = local_center != nullptr
         ? *local_center
         : SDL_FPoint{dst.w * 0.5F, dst.h * 0.5F};
@@ -58,12 +58,12 @@ void RenderWorldTextureRotated(
     const double radians = static_cast<double>(graphics.world_rotation_degrees) * kDegreesToRadians;
     const double c = std::cos(radians);
     const double s = std::sin(radians);
-    const Vec2 sprite_center = Vec2::New(
+    const FVec2 sprite_center = FVec2::New(
         dst.x + rotation_center.x,
         dst.y + rotation_center.y
     );
-    const Vec2 delta = sprite_center - pivot_screen;
-    const Vec2 rotated_sprite_center = pivot_screen + Vec2::New(
+    const FVec2 delta = sprite_center - pivot_screen;
+    const FVec2 rotated_sprite_center = pivot_screen + FVec2::New(
         static_cast<float>((static_cast<double>(delta.x) * c) - (static_cast<double>(delta.y) * s)),
         static_cast<float>((static_cast<double>(delta.x) * s) + (static_cast<double>(delta.y) * c))
     );

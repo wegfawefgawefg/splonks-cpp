@@ -76,7 +76,7 @@ void DoExplosion(
     State& state,
     Audio& audio
 ) {
-    const Vec2 render_center = sim::ToRenderVec2(center);
+    const FVec2 render_center = sim::ToRenderVec2(center);
     const float effect_size = size * 0.5F * static_cast<float>(kTileSize);
     {
         SpriteParticle effect{};
@@ -87,15 +87,15 @@ void DoExplosion(
         effect.lighting_mode = ParticleLightingMode::Emissive;
         effect.counter = 8;
         effect.pos = render_center;
-        effect.size = Vec2::New(effect_size, effect_size);
+        effect.size = FVec2::New(effect_size, effect_size);
         effect.rot = rng::RandomFloat(0.0F, 360.0F);
         effect.alpha = 1.0F;
-        effect.vel = Vec2::New(0.0F, 0.0F);
-        effect.svel = Vec2::New(2.0F, 2.0F);
+        effect.vel = FVec2::New(0.0F, 0.0F);
+        effect.svel = FVec2::New(2.0F, 2.0F);
         effect.rotvel = 0.0F;
         effect.alpha_vel = 0.0F;
-        effect.acc = Vec2::New(0.0F, 0.0F);
-        effect.sacc = Vec2::New(-0.2F, -0.2F);
+        effect.acc = FVec2::New(0.0F, 0.0F);
+        effect.sacc = FVec2::New(-0.2F, -0.2F);
         effect.rotacc = 0.0F;
         effect.alpha_acc = 0.0F;
         state.particles.Add(std::move(effect));
@@ -110,15 +110,15 @@ void DoExplosion(
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(64, 128));
         effect.pos = render_center;
-        effect.size = Vec2::New(0.0F, 0.0F);
+        effect.size = FVec2::New(0.0F, 0.0F);
         effect.rot = rng::RandomFloat(0.0F, 360.0F);
         effect.alpha = 1.0F;
-        effect.vel = Vec2::New(0.0F, rng::RandomFloat(-0.3F, 0.0F));
-        effect.svel = Vec2::New(svel, svel);
+        effect.vel = FVec2::New(0.0F, rng::RandomFloat(-0.3F, 0.0F));
+        effect.svel = FVec2::New(svel, svel);
         effect.rotvel = rng::RandomFloat(-0.2F, -0.01F);
         effect.alpha_vel = vel * 0.001F;
-        effect.acc = Vec2::New(0.0F, 0.0F);
-        effect.sacc = Vec2::New(sacc, sacc);
+        effect.acc = FVec2::New(0.0F, 0.0F);
+        effect.sacc = FVec2::New(sacc, sacc);
         effect.rotacc = 0.0F;
         effect.alpha_acc = 0.0F;
         state.particles.Add(std::move(effect));

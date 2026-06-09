@@ -40,7 +40,7 @@ inline bool IsValidAudioInstanceVID(const VID& vid) {
 struct AudioPlaybackParams {
     float volume_scale = 1.0F;
     bool positional = false;
-    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 world_pos = FVec2::New(0.0F, 0.0F);
     int loops = 0;
     float direct_gain = 1.0F;
     bool low_pass_enabled = false;
@@ -100,7 +100,7 @@ struct Audio {
     float music_volume = 1.0F;
     float sound_effects_volume = 1.0F;
     float pan_half_width_px = 256.0F;
-    Vec2 listener_world_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 listener_world_pos = FVec2::New(0.0F, 0.0F);
 
     static Audio New(const AudioAssetDb& asset_db);
     void Shutdown();
@@ -125,7 +125,7 @@ struct Audio {
     );
     bool StopAudioInstance(VID handle);
     bool IsAudioInstancePlaying(VID handle) const;
-    void SetListenerWorldPos(const Vec2& world_pos);
+    void SetListenerWorldPos(const FVec2& world_pos);
     void SetPanHalfWidthPx(float half_width_px);
 
   private:

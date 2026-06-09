@@ -12,15 +12,15 @@
 namespace splonks {
 
 struct HangHands {
-    Vec2 left;
-    Vec2 right;
+    FVec2 left;
+    FVec2 right;
 };
 
 struct HangHandBounds {
-    Vec2 left_tl;
-    Vec2 left_br;
-    Vec2 right_tl;
-    Vec2 right_br;
+    FVec2 left_tl;
+    FVec2 left_br;
+    FVec2 right_tl;
+    FVec2 right_br;
 };
 
 enum class EntType {

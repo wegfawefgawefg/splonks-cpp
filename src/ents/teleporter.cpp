@@ -61,23 +61,23 @@ sim::Vec2 TileCenterForTilePos(const IVec2& tile_pos) {
 }
 
 
-Vec2 GetTeleportAxis(const IVec2& direction) {
+FVec2 GetTeleportAxis(const IVec2& direction) {
     const int x = std::clamp(direction.x, -1, 1);
     const int y = std::clamp(direction.y, -1, 1);
     if (x == 0 && y == 0) {
-        return Vec2::New(1.0F, 0.0F);
+        return FVec2::New(1.0F, 0.0F);
     }
     if (x != 0 && y != 0) {
-        return Vec2::New(
+        return FVec2::New(
             static_cast<float>(x) * kDiagonalAxisComponent,
             static_cast<float>(y) * kDiagonalAxisComponent
         );
     }
-    return Vec2::New(static_cast<float>(x), static_cast<float>(y));
+    return FVec2::New(static_cast<float>(x), static_cast<float>(y));
 }
 
-Vec2 GetTeleportOrtho(const Vec2& axis) {
-    return Vec2::New(-axis.y, axis.x);
+FVec2 GetTeleportOrtho(const FVec2& axis) {
+    return FVec2::New(-axis.y, axis.x);
 }
 
 bool HasTeleportAnim(const Graphics& graphics, AFrameId anim_id) {
@@ -325,9 +325,9 @@ const TeleportProbeCandidate* FindFirstBlockedTeleportProbeCandidate(const std::
 void SpawnTelefragPhaseParticle(
     const Ent& ent,
     const Graphics& graphics,
-    const Vec2& visual_center,
-    const Vec2& start_offset,
-    const Vec2& velocity,
+    const FVec2& visual_center,
+    const FVec2& start_offset,
+    const FVec2& velocity,
     float tint_r,
     float tint_g,
     float tint_b,
@@ -343,7 +343,7 @@ void SpawnTelefragPhaseParticle(
     particle.draw_layer = ent.draw_layer;
     particle.lighting_mode = ParticleLightingMode::Emissive;
     particle.pos = visual_center + start_offset;
-    particle.size = Vec2::New(
+    particle.size = FVec2::New(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h)
     ) * sim::ToRenderScalar(ent.aframe_animator.scale);
@@ -363,15 +363,15 @@ void SpawnTelefragPhaseParticle(
 void SpawnTelefragSplitEffectAt(
     const Ent& ent,
     const Graphics& graphics,
-    const Vec2& visual_center,
+    const FVec2& visual_center,
     const IVec2& direction,
     State& state
 ) {
-    const Vec2 axis = GetTeleportAxis(direction);
-    const Vec2 ortho = GetTeleportOrtho(axis);
-    SpawnTelefragPhaseParticle(ent, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * -0.3F) - (ortho * 0.0625F), 1.0F, 0.20F, 0.20F, state);
-    SpawnTelefragPhaseParticle(ent, graphics, visual_center, Vec2::New(0.0F, 0.0F), ortho * 0.0375F, 0.25F, 1.0F, 0.25F, state);
-    SpawnTelefragPhaseParticle(ent, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * 0.3F) - (ortho * 0.0625F), 0.30F, 0.30F, 1.0F, state);
+    const FVec2 axis = GetTeleportAxis(direction);
+    const FVec2 ortho = GetTeleportOrtho(axis);
+    SpawnTelefragPhaseParticle(ent, graphics, visual_center, FVec2::New(0.0F, 0.0F), (axis * -0.3F) - (ortho * 0.0625F), 1.0F, 0.20F, 0.20F, state);
+    SpawnTelefragPhaseParticle(ent, graphics, visual_center, FVec2::New(0.0F, 0.0F), ortho * 0.0375F, 0.25F, 1.0F, 0.25F, state);
+    SpawnTelefragPhaseParticle(ent, graphics, visual_center, FVec2::New(0.0F, 0.0F), (axis * 0.3F) - (ortho * 0.0625F), 0.30F, 0.30F, 1.0F, state);
 }
 
 void SpawnTelefragSplitEffect(const Ent& ent, const Graphics& graphics, const IVec2& direction, State& state) {
@@ -387,12 +387,12 @@ void SpawnTelefragSplitEffect(const Ent& ent, const Graphics& graphics, const IV
 void SpawnTelefragMergeEffectAt(
     const Ent& ent,
     const Graphics& graphics,
-    const Vec2& visual_center,
+    const FVec2& visual_center,
     const IVec2& direction,
     State& state
 ) {
-    const Vec2 axis = GetTeleportAxis(direction);
-    const Vec2 ortho = GetTeleportOrtho(axis);
+    const FVec2 axis = GetTeleportAxis(direction);
+    const FVec2 ortho = GetTeleportOrtho(axis);
     SpawnTelefragPhaseParticle(ent, graphics, visual_center, axis * -3.0F, axis * 0.3F, 1.0F, 0.20F, 0.20F, state);
     SpawnTelefragPhaseParticle(ent, graphics, visual_center, ortho * 2.0F, ortho * -0.0875F, 0.25F, 1.0F, 0.25F, state);
     SpawnTelefragPhaseParticle(ent, graphics, visual_center, axis * 3.0F, axis * -0.3F, 0.30F, 0.30F, 1.0F, state);
@@ -463,7 +463,7 @@ void MoveTeleportHolderToDestination(
 
 void ApplyTeleportAreaShake(
     State& state,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     float foreground_tile_amount,
     float background_tile_amount,
     float ent_amount,

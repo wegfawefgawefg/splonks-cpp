@@ -67,7 +67,7 @@ struct ScriptedParticleSpec {
     std::string_view name;
     DrawLayer draw_layer = DrawLayer::Middle;
     ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
-    Vec2 size = Vec2::New(0.0F, 0.0F);
+    FVec2 size = FVec2::New(0.0F, 0.0F);
     std::uint32_t hold_frames_after_sequence = 0;
     std::span<const ScriptedParticleSequenceStep> sequence;
 };
@@ -87,7 +87,7 @@ struct SegmentedSpriteParticleSpec {
     DrawLayer draw_layer = DrawLayer::Middle;
     ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
     AFrameId anim_id = kInvalidAFrameId;
-    Vec2 segment_size = Vec2::New(0.0F, 0.0F);
+    FVec2 segment_size = FVec2::New(0.0F, 0.0F);
     float spacing = 0.0F;
 };
 

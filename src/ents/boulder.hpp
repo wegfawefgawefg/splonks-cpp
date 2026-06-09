@@ -13,7 +13,7 @@ struct State;
 namespace splonks::ents::boulder {
 
 extern const EntSpec kBoulderSpec;
-void SpawnBoulderBreakEffects(const Vec2& center, State& state);
+void SpawnBoulderBreakEffects(const FVec2& center, State& state);
 void OnDeathAsBoulder(std::size_t ent_idx, State& state, Audio& audio);
 void StepEntLogicAsBoulder(
     std::size_t ent_idx,

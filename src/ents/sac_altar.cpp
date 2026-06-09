@@ -243,7 +243,7 @@ sim::Vec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics
     );
 }
 
-Vec2 GetAltarSoundPos(const Ent& altar, const State& state, const Graphics& graphics) {
+FVec2 GetAltarSoundPos(const Ent& altar, const State& state, const Graphics& graphics) {
     if (altar.ent_a.has_value()) {
         if (const Ent* const topper = state.ents.GetEnt(*altar.ent_a)) {
             return sim::ToRenderVec2(
@@ -279,56 +279,56 @@ void TriggerTopperSacAnim(Ent& altar, State& state) {
     topper->counter_b = sim::ToSimScalar(kTopperSacAnimHoldFrames);
 }
 
-void SpawnSacrificeSmoke(State& state, const Vec2& pos) {
+void SpawnSacrificeSmoke(State& state, const FVec2& pos) {
     for (int i = 0; i < 8; ++i) {
         SpriteParticle smoke{};
         smoke.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(20, 32));
-        smoke.pos = pos + Vec2::New(
+        smoke.pos = pos + FVec2::New(
             rng::RandomFloat(-5.0F, 5.0F),
             rng::RandomFloat(-3.0F, 3.0F)
         );
         const float size = rng::RandomFloat(5.0F + kSacrificeSmokeScaleBias, 9.0F + kSacrificeSmokeScaleBias);
-        smoke.size = Vec2::New(size, size);
+        smoke.size = FVec2::New(size, size);
         smoke.rot = rng::RandomFloat(0.0F, 360.0F);
         smoke.alpha = rng::RandomFloat(0.65F, 0.95F);
-        smoke.vel = Vec2::New(
+        smoke.vel = FVec2::New(
             rng::RandomFloat(-0.25F, 0.25F),
             rng::RandomFloat(-0.85F, -0.3F)
         );
-        smoke.svel = Vec2::New(rng::RandomFloat(0.02F, 0.05F), rng::RandomFloat(0.02F, 0.05F));
+        smoke.svel = FVec2::New(rng::RandomFloat(0.02F, 0.05F), rng::RandomFloat(0.02F, 0.05F));
         smoke.rotvel = rng::RandomFloat(-0.3F, 0.3F);
         smoke.alpha_vel = -0.025F;
-        smoke.acc = Vec2::New(0.0F, -0.01F);
+        smoke.acc = FVec2::New(0.0F, -0.01F);
         smoke.alpha_acc = -0.002F;
         state.particles.Add(std::move(smoke));
     }
 }
 
-void SpawnSacrificeBodySmoke(State& state, const Vec2& pos) {
+void SpawnSacrificeBodySmoke(State& state, const FVec2& pos) {
     for (int i = 0; i < 6; ++i) {
         SpriteParticle smoke{};
         smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(12, 20));
-        smoke.pos = pos + Vec2::New(
+        smoke.pos = pos + FVec2::New(
             rng::RandomFloat(-4.0F, 4.0F),
             rng::RandomFloat(-2.0F, 2.0F)
         );
         const float size = rng::RandomFloat(3.0F, 5.0F);
-        smoke.size = Vec2::New(size, size);
+        smoke.size = FVec2::New(size, size);
         smoke.rot = rng::RandomFloat(0.0F, 360.0F);
         smoke.alpha = rng::RandomFloat(0.7F, 0.95F);
-        smoke.vel = Vec2::New(
+        smoke.vel = FVec2::New(
             rng::RandomFloat(-0.22F, 0.22F),
             rng::RandomFloat(-1.1F, -0.45F)
         );
-        smoke.svel = Vec2::New(rng::RandomFloat(0.04F, 0.10F), rng::RandomFloat(0.04F, 0.10F));
+        smoke.svel = FVec2::New(rng::RandomFloat(0.04F, 0.10F), rng::RandomFloat(0.04F, 0.10F));
         smoke.rotvel = rng::RandomFloat(-2.0F, 2.0F);
         smoke.alpha_vel = -0.055F;
-        smoke.acc = Vec2::New(0.0F, -0.015F);
-        smoke.sacc = Vec2::New(0.008F, 0.008F);
+        smoke.acc = FVec2::New(0.0F, -0.015F);
+        smoke.sacc = FVec2::New(0.008F, 0.008F);
         smoke.alpha_acc = -0.002F;
         state.particles.Add(std::move(smoke));
     }
@@ -338,76 +338,76 @@ void SpawnSacrificeBodySmoke(State& state, const Vec2& pos) {
         smoke.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(18, 28));
-        smoke.pos = pos + Vec2::New(
+        smoke.pos = pos + FVec2::New(
             rng::RandomFloat(-3.0F, 3.0F),
             rng::RandomFloat(-2.0F, 2.0F)
         );
         const float size = rng::RandomFloat(5.0F, 8.0F);
-        smoke.size = Vec2::New(size, size);
+        smoke.size = FVec2::New(size, size);
         smoke.rot = rng::RandomFloat(0.0F, 360.0F);
         smoke.alpha = rng::RandomFloat(0.65F, 0.9F);
-        smoke.vel = Vec2::New(
+        smoke.vel = FVec2::New(
             rng::RandomFloat(-0.65F, 0.65F),
             rng::RandomFloat(-0.75F, -0.2F)
         );
-        smoke.svel = Vec2::New(rng::RandomFloat(0.03F, 0.08F), rng::RandomFloat(0.03F, 0.08F));
+        smoke.svel = FVec2::New(rng::RandomFloat(0.03F, 0.08F), rng::RandomFloat(0.03F, 0.08F));
         smoke.rotvel = rng::RandomFloat(-1.5F, 1.5F);
         smoke.alpha_vel = -0.035F;
-        smoke.acc = Vec2::New(0.0F, -0.01F);
-        smoke.sacc = Vec2::New(0.006F, 0.006F);
+        smoke.acc = FVec2::New(0.0F, -0.01F);
+        smoke.sacc = FVec2::New(0.006F, 0.006F);
         smoke.alpha_acc = -0.0015F;
         state.particles.Add(std::move(smoke));
     }
 }
 
-void SpawnSacrificeSparks(State& state, const Vec2& pos) {
+void SpawnSacrificeSparks(State& state, const FVec2& pos) {
     for (int i = 0; i < 6; ++i) {
         SpriteParticle spark{};
         spark.aframe_animator = AFrameAnimator::New(aframe_ids::Spark);
         spark.draw_layer = DrawLayer::Foreground;
         spark.lighting_mode = ParticleLightingMode::Emissive;
         spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
-        spark.pos = pos + Vec2::New(
+        spark.pos = pos + FVec2::New(
             rng::RandomFloat(-2.0F, 2.0F),
             rng::RandomFloat(-1.0F, 1.0F)
         );
-        spark.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(4.0F, 7.0F));
+        spark.size = FVec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(4.0F, 7.0F));
         spark.rot = rng::RandomFloat(0.0F, 360.0F);
         spark.alpha = 1.0F;
-        spark.vel = Vec2::New(
+        spark.vel = FVec2::New(
             rng::RandomFloat(-0.55F, 0.55F),
             rng::RandomFloat(-2.6F, -1.2F)
         );
-        spark.svel = Vec2::New(-0.12F, -0.12F);
+        spark.svel = FVec2::New(-0.12F, -0.12F);
         spark.rotvel = rng::RandomFloat(-8.0F, 8.0F);
         spark.alpha_vel = -0.14F;
         state.particles.Add(std::move(spark));
     }
 }
 
-void SpawnSacrificeBlood(State& state, const Vec2& pos) {
+void SpawnSacrificeBlood(State& state, const FVec2& pos) {
     for (int i = 0; i < 14; ++i) {
         SpriteParticle blood{};
         blood.aframe_animator = AFrameAnimator::New(aframe_ids::BloodBall);
         blood.draw_layer = DrawLayer::Foreground;
         blood.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 30));
-        blood.pos = pos + Vec2::New(
+        blood.pos = pos + FVec2::New(
             rng::RandomFloat(-3.0F, 3.0F),
             rng::RandomFloat(-2.0F, 2.0F)
         );
         const float size = rng::RandomFloat(3.0F, 6.0F);
-        blood.size = Vec2::New(size, size);
+        blood.size = FVec2::New(size, size);
         blood.rot = rng::RandomFloat(0.0F, 360.0F);
         blood.alpha = rng::RandomFloat(0.75F, 1.0F);
-        blood.vel = Vec2::New(
+        blood.vel = FVec2::New(
             rng::RandomFloat(-1.2F, 1.2F),
             rng::RandomFloat(-2.4F, -0.6F)
         );
-        blood.svel = Vec2::New(-0.05F, -0.05F);
+        blood.svel = FVec2::New(-0.05F, -0.05F);
         blood.rotvel = rng::RandomFloat(-4.0F, 4.0F);
         blood.alpha_vel = -0.03F;
-        blood.acc = Vec2::New(0.0F, 0.12F);
-        blood.sacc = Vec2::New(-0.002F, -0.002F);
+        blood.acc = FVec2::New(0.0F, 0.12F);
+        blood.sacc = FVec2::New(-0.002F, -0.002F);
         blood.alpha_acc = -0.0015F;
         state.particles.Add(std::move(blood));
     }
@@ -427,7 +427,7 @@ void DeactivateAltarEnt(Ent& ent, State& state) {
 }
 
 void SpawnAltarBreakEffects(const Ent& ent, State& state) {
-    const Vec2 center = sim::ToRenderVec2(ent.GetSimCenter());
+    const FVec2 center = sim::ToRenderVec2(ent.GetSimCenter());
     SpawnSacrificeSmoke(state, center);
     SpawnSacrificeBodySmoke(state, center);
     SpawnSacrificeSparks(state, center);
@@ -467,7 +467,7 @@ void DeactivateLinkedAltarPieces(Ent& owner, State& state) {
 
 bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
     const sim::Vec2 emit_pos = GetAltarEffectPos(altar, state, graphics);
-    const Vec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
+    const FVec2 render_emit_pos = sim::ToRenderVec2(emit_pos);
 
     if (state.sac_altar_reward_tier == 0 && state.sac_altar_favor >= kAccessoryRewardFavor) {
         const EntType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
@@ -533,12 +533,12 @@ void SacrificeVictim(
     }
 
     const RenderAABB render_victim_aabb = ToRenderAABB(common::GetContactAabbForEnt(victim, graphics));
-    const Vec2 victim_effect_pos = Vec2::New(
+    const FVec2 victim_effect_pos = FVec2::New(
         (render_victim_aabb.tl.x + render_victim_aabb.br.x) * 0.5F,
         render_victim_aabb.br.y - 2.0F
     );
-    const Vec2 altar_emit = sim::ToRenderVec2(GetAltarEffectPos(altar, state, graphics));
-    const Vec2 altar_sound = GetAltarSoundPos(altar, state, graphics);
+    const FVec2 altar_emit = sim::ToRenderVec2(GetAltarEffectPos(altar, state, graphics));
+    const FVec2 altar_sound = GetAltarSoundPos(altar, state, graphics);
 
     common::DropHeldItemFromEnt(victim, state);
     common::ReleaseEntFromHolder(victim, state);
@@ -572,7 +572,7 @@ std::optional<std::int32_t> GetLivingSacrificeFavorValue(const Ent& victim) {
     return GetSacrificeFavorValueImpl(victim, true);
 }
 
-void SpawnSacrificeGainEffects(State& state, Audio& audio, const Vec2& pos) {
+void SpawnSacrificeGainEffects(State& state, Audio& audio, const FVec2& pos) {
     (void)audio;
     SpawnSacrificeBodySmoke(state, pos);
     SpawnSacrificeSparks(state, pos);
@@ -598,8 +598,8 @@ bool TryDepositStoredFavor(
         return false;
     }
 
-    const Vec2 altar_emit = sim::ToRenderVec2(GetAltarEffectPos(*owner, state, graphics));
-    const Vec2 altar_sound = GetAltarSoundPos(*owner, state, graphics);
+    const FVec2 altar_emit = sim::ToRenderVec2(GetAltarEffectPos(*owner, state, graphics));
+    const FVec2 altar_sound = GetAltarSoundPos(*owner, state, graphics);
     ApplySacAltarFavorDelta(state, favor, owner);
     TriggerTopperSacAnim(*owner, state);
     SpawnSacrificeSmoke(state, altar_emit);
@@ -630,7 +630,7 @@ void OnDeathAsSacAltarPiece(std::size_t ent_idx, State& state, Audio& audio) {
     }
 
     ApplySacAltarFavorDelta(state, -kAltarBreakFavorPenalty, owner);
-    const Vec2 owner_center = sim::ToRenderVec2(owner->GetSimCenter());
+    const FVec2 owner_center = sim::ToRenderVec2(owner->GetSimCenter());
     for (const Ent& ent : state.ents.ents) {
         if (!ent.active || !BelongsToOwnerAltar(ent, *owner)) {
             continue;

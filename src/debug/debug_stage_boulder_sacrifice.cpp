@@ -96,12 +96,12 @@ void InitBoulderTestStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(9 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 14);
-    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 
     const std::optional<VID> altar_left_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::Altar,
-        Vec2::New(4.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize))
+        FVec2::New(4.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize))
     );
     if (altar_left_vid.has_value()) {
         if (Ent* const altar_left = state.ents.GetEntMut(*altar_left_vid)) {
@@ -112,7 +112,7 @@ void InitBoulderTestStage(State& state) {
     const std::optional<VID> altar_right_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::Altar,
-        Vec2::New(5.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize))
+        FVec2::New(5.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize))
     );
     if (altar_right_vid.has_value()) {
         if (Ent* const altar_right = state.ents.GetEntMut(*altar_right_vid)) {
@@ -123,12 +123,12 @@ void InitBoulderTestStage(State& state) {
     const std::optional<VID> giant_tiki_head_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::GiantTikiHead,
-        Vec2::New(4.0F * static_cast<float>(kTileSize), 1.0F * static_cast<float>(kTileSize))
+        FVec2::New(4.0F * static_cast<float>(kTileSize), 1.0F * static_cast<float>(kTileSize))
     );
     const std::optional<VID> idol_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::GoldIdol,
-        Vec2::New(4.0F * static_cast<float>(kTileSize) + 10.0F, 4.0F * static_cast<float>(kTileSize))
+        FVec2::New(4.0F * static_cast<float>(kTileSize) + 10.0F, 4.0F * static_cast<float>(kTileSize))
     );
     if (giant_tiki_head_vid.has_value() && idol_vid.has_value()) {
         Ent* const head = state.ents.GetEntMut(*giant_tiki_head_vid);
@@ -143,43 +143,43 @@ void InitBoulderTestStage(State& state) {
     (void)SpawnStageEntAtRenderCenter(
         state,
         EntType::Rock,
-        Vec2::New(12.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
+        FVec2::New(12.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
     (void)SpawnStageEntAtRenderCenter(
         state,
         EntType::GoldChunk,
-        Vec2::New(14.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
+        FVec2::New(14.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
     (void)SpawnStageEntAtRenderCenter(
         state,
         EntType::EmeraldBig,
-        Vec2::New(16.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
+        FVec2::New(16.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
     (void)SpawnStageEntAtRenderCenter(
         state,
         EntType::Caveman,
-        Vec2::New(18.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
+        FVec2::New(18.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
 
     (void)SpawnStageEntAtRenderCenter(
         state,
         EntType::Rock,
-        Vec2::New(31.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
+        FVec2::New(31.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
     (void)SpawnStageEntAtRenderCenter(
         state,
         EntType::GoldBars,
-        Vec2::New(33.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
+        FVec2::New(33.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
     (void)SpawnStageEntAtRenderCenter(
         state,
         EntType::SapphireBig,
-        Vec2::New(35.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
+        FVec2::New(35.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
     (void)SpawnStageEntAtRenderCenter(
         state,
         EntType::Caveman,
-        Vec2::New(37.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
+        FVec2::New(37.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
 }
 
@@ -196,7 +196,7 @@ void SpawnSacAltarTestCorpsePile(State& state) {
             const std::optional<VID> caveman_vid = SpawnStageEntAtRenderCenter(
                 state,
                 EntType::Caveman,
-                Vec2::New(
+                FVec2::New(
                     base_x + static_cast<float>(col) * 9.0F + rng::RandomFloat(-1.25F, 1.25F),
                     base_y - static_cast<float>(row) * 5.5F + rng::RandomFloat(-0.75F, 0.75F)
                 )
@@ -225,7 +225,7 @@ void SpawnSacAltarTestIdols(State& state) {
         (void)SpawnStageEntAtRenderCenter(
             state,
             EntType::GoldIdol,
-            Vec2::New(x_tile * static_cast<float>(kTileSize), floor_center_y)
+            FVec2::New(x_tile * static_cast<float>(kTileSize), floor_center_y)
         );
     }
 }
@@ -238,7 +238,7 @@ void SpawnSacAltarTestLivingDamsels(State& state) {
         const std::optional<VID> damsel_vid = SpawnStageEntAtRenderCenter(
             state,
             EntType::Damsel,
-            Vec2::New(x_tile * static_cast<float>(kTileSize), floor_center_y)
+            FVec2::New(x_tile * static_cast<float>(kTileSize), floor_center_y)
         );
         if (!damsel_vid.has_value()) {
             continue;
@@ -258,7 +258,7 @@ void SpawnSacAltarTestLivingDamsels(State& state) {
 }
 
 void SpawnSacAltarTestAltar(State& state, int left_x_tile) {
-    const Vec2 altar_left_pos = Vec2::New(
+    const FVec2 altar_left_pos = FVec2::New(
         static_cast<float>(left_x_tile) * static_cast<float>(kTileSize),
         23.0F * static_cast<float>(kTileSize) - 16.0F
     );
@@ -270,12 +270,12 @@ void SpawnSacAltarTestAltar(State& state, int left_x_tile) {
     const std::optional<VID> altar_right_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::SacAltar,
-        altar_left_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F)
+        altar_left_pos + FVec2::New(static_cast<float>(kTileSize), 0.0F)
     );
     const std::optional<VID> altar_topper_vid = SpawnStageEntAtRenderTopLeft(
         state,
         EntType::SacAltarTopper,
-        altar_left_pos + Vec2::New(0.0F, -static_cast<float>(kTileSize))
+        altar_left_pos + FVec2::New(0.0F, -static_cast<float>(kTileSize))
     );
     if (altar_left_vid.has_value()) {
         if (Ent* const altar_left = state.ents.GetEntMut(*altar_left_vid)) {
@@ -309,7 +309,7 @@ void InitSacAltarTestStage(State& state) {
 
     const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 23.0F * static_cast<float>(kTileSize) - 14.0F;
-    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 
     SpawnSacAltarTestAltar(state, 6);
     SpawnSacAltarTestAltar(state, 9);

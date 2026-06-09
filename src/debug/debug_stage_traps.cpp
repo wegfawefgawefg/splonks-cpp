@@ -165,7 +165,7 @@ void InitArrowTrapTestStage(State& state) {
 
     const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 3.0F * static_cast<float>(kTileSize) - 14.0F;
-    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 
     constexpr int kTrapRows = 32;
     constexpr int kFirstTrapY = 6;
@@ -174,7 +174,7 @@ void InitArrowTrapTestStage(State& state) {
     constexpr int kRightTrapX = kArrowTrapTestStageWidthTiles - 2;
     for (int i = 0; i < kTrapRows; ++i) {
         const int tile_y = kFirstTrapY + i * kTrapStrideY;
-        const Vec2 left_pos = Vec2::New(
+        const FVec2 left_pos = FVec2::New(
             static_cast<float>(kLeftTrapX * static_cast<int>(kTileSize)),
             static_cast<float>(tile_y * static_cast<int>(kTileSize))
         );
@@ -185,7 +185,7 @@ void InitArrowTrapTestStage(State& state) {
             }
         }
 
-        const Vec2 right_pos = Vec2::New(
+        const FVec2 right_pos = FVec2::New(
             static_cast<float>(kRightTrapX * static_cast<int>(kTileSize)),
             static_cast<float>(tile_y * static_cast<int>(kTileSize))
         );
@@ -204,7 +204,7 @@ void InitSpikeTestStage(State& state) {
 
     SpawnPlayerAtRenderPosition(
         state,
-        Vec2::New(
+        FVec2::New(
             2.0F * static_cast<float>(kTileSize),
             static_cast<float>((kSpikeTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 14.0F
         )
@@ -213,7 +213,7 @@ void InitSpikeTestStage(State& state) {
     (void)SpawnStageEntAtRenderTopLeft(
         state,
         EntType::SpikeShoes,
-        Vec2::New(
+        FVec2::New(
             25.0F * static_cast<float>(kTileSize),
             static_cast<float>((kSpikeTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 16.0F
         )
@@ -226,7 +226,7 @@ void InitTrapDoorTestStage(State& state) {
 
     SpawnPlayerAtRenderPosition(
         state,
-        Vec2::New(
+        FVec2::New(
             4.0F * static_cast<float>(kTileSize),
             6.0F * static_cast<float>(kTileSize) - 14.0F
         )
@@ -242,7 +242,7 @@ void InitTrapDoorTestStage(State& state) {
         if (const std::optional<VID> door_vid = SpawnStageEntAtRenderTopLeft(
             state,
             EntType::Door,
-            Vec2::New(
+            FVec2::New(
                 static_cast<float>(door_x * static_cast<int>(kTileSize)),
                 static_cast<float>(ceiling_start_y * static_cast<int>(kTileSize))
             )
@@ -266,7 +266,7 @@ void InitCrusherTrapTestStage(State& state) {
 
     SpawnPlayerAtRenderPosition(
         state,
-        Vec2::New(
+        FVec2::New(
             2.0F * static_cast<float>(kTileSize),
             11.0F * static_cast<float>(kTileSize) - 14.0F
         )
@@ -275,7 +275,7 @@ void InitCrusherTrapTestStage(State& state) {
     (void)SpawnStageEntAtRenderTopLeft(
         state,
         EntType::ThwompTrap,
-        Vec2::New(
+        FVec2::New(
             5.0F * static_cast<float>(kTileSize),
             1.0F * static_cast<float>(kTileSize)
         )
@@ -292,7 +292,7 @@ void InitCrusherTrapTestStage(State& state) {
         (void)SpawnStageEntAtRenderTopLeft(
             state,
             EntType::TrapBlock,
-            Vec2::New(
+            FVec2::New(
                 static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
                 static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
             )
@@ -306,7 +306,7 @@ void InitCrusherTrapTestStage(State& state) {
             if (const std::optional<VID> block_vid = SpawnStageEntAtRenderTopLeft(
                 state,
                 EntType::TrapBlock,
-                Vec2::New(
+                FVec2::New(
                     static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                     static_cast<float>((7 + row) * static_cast<int>(kTileSize))
                 )
@@ -336,7 +336,7 @@ void InitCrusherTrapTestStage(State& state) {
         const std::optional<VID> block_vid = SpawnStageEntAtRenderTopLeft(
             state,
             EntType::TrapBlock,
-            Vec2::New(
+            FVec2::New(
                 static_cast<float>((kStressStartX + column) * static_cast<int>(kTileSize)),
                 static_cast<float>((kStressStartY + row) * static_cast<int>(kTileSize))
             )

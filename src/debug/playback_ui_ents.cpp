@@ -326,7 +326,7 @@ bool SwapControlledCharacter(
     const bool keep_health = !debug.character_swap_fresh || debug.character_swap_keep_health;
     const bool keep_tools = !debug.character_swap_fresh || debug.character_swap_keep_tools;
 
-    const Vec2 spawn_center = source_ent->GetRenderCenter();
+    const FVec2 spawn_center = source_ent->GetRenderCenter();
     const Side facing = source_ent->facing;
     const VID replacement_vid = source_ent->vid;
     const std::optional<VID> old_player_vid = FindPrimaryLocalPlayerVid(state);
@@ -515,7 +515,7 @@ bool SpawnDebugEnt(
         holding_player_vid = player->vid;
     }
 
-    Vec2 spawn_center = graphics.ScreenToWc(state.playing_inputs.mouse_pos);
+    FVec2 spawn_center = graphics.ScreenToWc(state.playing_inputs.mouse_pos);
     if (debug.spawn_center_on_selected && selected_ent != nullptr) {
         spawn_center = selected_ent->GetRenderCenter();
     }
@@ -651,7 +651,7 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
         }
         ImGui::Checkbox("Spawn Held By Player", &debug.spawn_held_by_player);
 
-        const Vec2 mouse_world = graphics.ScreenToWc(state.playing_inputs.mouse_pos);
+        const FVec2 mouse_world = graphics.ScreenToWc(state.playing_inputs.mouse_pos);
         ImGui::Text("Mouse WC: (%.2f, %.2f)", mouse_world.x, mouse_world.y);
 
         if (debug.pending_spawn_at_mouse && debug.spawn_center_on_selected) {
@@ -753,13 +753,13 @@ void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphi
     }
     ImGui::Text("Facing: %s", SideToString(ent.facing));
     ImGui::Text("Grounded: %s", ent.grounded ? "true" : "false");
-    const Vec2 ent_pos = ent.GetRenderPos();
-    const Vec2 ent_vel = ent.GetRenderVel();
-    const Vec2 ent_acc = ent.GetRenderAcc();
+    const FVec2 ent_pos = ent.GetRenderPos();
+    const FVec2 ent_vel = ent.GetRenderVel();
+    const FVec2 ent_acc = ent.GetRenderAcc();
     ImGui::Text("Pos: (%.2f, %.2f)", ent_pos.x, ent_pos.y);
     ImGui::Text("Vel: (%.2f, %.2f)", ent_vel.x, ent_vel.y);
     ImGui::Text("Acc: (%.2f, %.2f)", ent_acc.x, ent_acc.y);
-    const Vec2 ent_size = ent.GetSize();
+    const FVec2 ent_size = ent.GetSize();
     ImGui::Text("Size: (%.2f, %.2f)", ent_size.x, ent_size.y);
     ImGui::Text("RenderAABB TL: (%.2f, %.2f)", aabb.tl.x, aabb.tl.y);
     ImGui::Text("RenderAABB BR: (%.2f, %.2f)", aabb.br.x, aabb.br.y);

@@ -48,7 +48,7 @@ bool IsSolidTileAt(const Stage& stage, const IVec2& tile_pos) {
     return query.has_value() && query->tile != nullptr && GetTileSpec(*query->tile).solid;
 }
 
-std::optional<Vec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
+std::optional<FVec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
     if (!player.grounded) {
         return std::nullopt;
     }
@@ -86,11 +86,11 @@ std::optional<Vec2> FindMeatheadPopupCenter(const Ent& player, State& state) {
     )];
     const float center_x = static_cast<float>(choice.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2));
     const float support_top_y = static_cast<float>((choice.y + 1) * static_cast<int>(kTileSize));
-    return Vec2::New(center_x, support_top_y - (kMeatheadPopupSize * 0.5F));
+    return FVec2::New(center_x, support_top_y - (kMeatheadPopupSize * 0.5F));
 }
 
-std::optional<Vec2> SpawnMeatheadPopup(State& state, const Ent& player) {
-    const std::optional<Vec2> popup_center = FindMeatheadPopupCenter(player, state);
+std::optional<FVec2> SpawnMeatheadPopup(State& state, const Ent& player) {
+    const std::optional<FVec2> popup_center = FindMeatheadPopupCenter(player, state);
     if (!popup_center.has_value()) {
         return std::nullopt;
     }
@@ -103,8 +103,8 @@ std::optional<Vec2> SpawnMeatheadPopup(State& state, const Ent& player) {
 }
 
 void PlayMeatheadHealFeedback(State& state, const Ent& player) {
-    const std::optional<Vec2> popup_center = SpawnMeatheadPopup(state, player);
-    const Vec2 sound_pos = popup_center.value_or(player.GetRenderCenter());
+    const std::optional<FVec2> popup_center = SpawnMeatheadPopup(state, player);
+    const FVec2 sound_pos = popup_center.value_or(player.GetRenderCenter());
     (void)PlayWorldSoundEmitter(state, sound_pos, audio_asset_ids::Present);
     (void)PlayWorldSoundEmitter(state, sound_pos, audio_asset_ids::Smooch);
 }

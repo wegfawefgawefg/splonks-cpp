@@ -255,11 +255,11 @@ struct RollbackPresentationSnapshot {
     ParticleSystem particles;
     AudioEmitterManager audio_emitters;
     StageLighting stage_lighting;
-    Vec2 audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
-    std::optional<Vec2> gameplay_camera_anchor_world_pos;
+    FVec2 audio_listener_world_pos = FVec2::New(0.0F, 0.0F);
+    std::optional<FVec2> gameplay_camera_anchor_world_pos;
     std::optional<VID> controlled_ent_vid;
     std::optional<PlayerId> spectator_target_player_id;
-    Vec2 play_cam_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 play_cam_pos = FVec2::New(0.0F, 0.0F);
 };
 
 void PruneRollbackSnapshots(State& state);

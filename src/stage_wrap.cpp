@@ -15,11 +15,11 @@ namespace splonks {
 
 namespace {
 
-Vec2 GetCoreOriginWc(const Stage& stage) {
+FVec2 GetCoreOriginWc(const Stage& stage) {
     return ToVec2(stage.wrap_core_origin_tiles * kTileSize);
 }
 
-Vec2 GetCoreSizeWc(const Stage& stage) {
+FVec2 GetCoreSizeWc(const Stage& stage) {
     return ToVec2(stage.wrap_core_size_tiles * kTileSize);
 }
 
@@ -42,7 +42,7 @@ void ShiftActiveEnts(State& state, const sim::Vec2& sim_delta) {
     }
 }
 
-void ShiftStageSpawnsAndStamps(Stage& stage, const Vec2& delta) {
+void ShiftStageSpawnsAndStamps(Stage& stage, const FVec2& delta) {
     for (EntSpawn& spawn : stage.ent_spawns) {
         spawn.pos += delta;
     }
@@ -58,9 +58,9 @@ void ShiftStageSpawnsAndStamps(Stage& stage, const Vec2& delta) {
     }
 }
 
-void WrapPosIntoCore(const Stage& stage, Vec2& pos) {
-    const Vec2 core_origin = GetCoreOriginWc(stage);
-    const Vec2 core_size = GetCoreSizeWc(stage);
+void WrapPosIntoCore(const Stage& stage, FVec2& pos) {
+    const FVec2 core_origin = GetCoreOriginWc(stage);
+    const FVec2 core_size = GetCoreSizeWc(stage);
 
     if (stage.border.wrap_x && core_size.x > 0.0F) {
         while (pos.x < core_origin.x) {
@@ -114,7 +114,7 @@ void CropEntsAndShiftBack(State& state, const sim::Vec2& sim_delta_wc) {
     }
 }
 
-void CropStageSpawnsAndStampsAndShiftBack(Stage& stage, const Vec2& delta_wc) {
+void CropStageSpawnsAndStampsAndShiftBack(Stage& stage, const FVec2& delta_wc) {
     for (EntSpawn& spawn : stage.ent_spawns) {
         WrapPosIntoCore(stage, spawn.pos);
         spawn.pos = spawn.pos - delta_wc;
@@ -320,7 +320,7 @@ void ExpandStageForWrap(
 
     const IVec2 delta_pixels = ToIVec2(padding_tile_dims * kTileSize);
     const sim::Vec2 sim_delta_wc = sim::PixelVec2(delta_pixels.x, delta_pixels.y);
-    const Vec2 delta_wc = ToVec2(delta_pixels);
+    const FVec2 delta_wc = ToVec2(delta_pixels);
     ShiftActiveEnts(state, sim_delta_wc);
     ShiftStageSpawnsAndStamps(stage, delta_wc);
     graphics.play_cam.pos += delta_wc;
@@ -427,7 +427,7 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
 
     const IVec2 delta_pixels = ToIVec2(core_origin * kTileSize);
     const sim::Vec2 sim_delta_wc = sim::PixelVec2(delta_pixels.x, delta_pixels.y);
-    const Vec2 delta_wc = ToVec2(delta_pixels);
+    const FVec2 delta_wc = ToVec2(delta_pixels);
     CropEntsAndShiftBack(state, sim_delta_wc);
     CropStageSpawnsAndStampsAndShiftBack(stage, delta_wc);
     graphics.play_cam.pos = graphics.play_cam.pos - delta_wc;

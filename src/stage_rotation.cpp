@@ -31,8 +31,8 @@ float Smoothstep(float t) {
     return t * t * (3.0F - (2.0F * t));
 }
 
-Vec2 GetStagePixelDims(const Stage& stage) {
-    return Vec2::New(static_cast<float>(stage.GetWidth()), static_cast<float>(stage.GetHeight()));
+FVec2 GetStagePixelDims(const Stage& stage) {
+    return FVec2::New(static_cast<float>(stage.GetWidth()), static_cast<float>(stage.GetHeight()));
 }
 
 sim::Vec2 GetSimStagePixelDims(const Stage& stage) {
@@ -43,18 +43,18 @@ sim::Vec2 Half(sim::Vec2 value) {
     return sim::Vec2{value.x / 2, value.y / 2};
 }
 
-Vec2 RotatePointClockwise(const Vec2& point, const Vec2& old_dims) {
-    const Vec2 old_center = old_dims / 2.0F;
-    const Vec2 new_center = Vec2::New(old_dims.y, old_dims.x) / 2.0F;
-    const Vec2 delta = point - old_center;
-    return new_center + Vec2::New(-delta.y, delta.x);
+FVec2 RotatePointClockwise(const FVec2& point, const FVec2& old_dims) {
+    const FVec2 old_center = old_dims / 2.0F;
+    const FVec2 new_center = FVec2::New(old_dims.y, old_dims.x) / 2.0F;
+    const FVec2 delta = point - old_center;
+    return new_center + FVec2::New(-delta.y, delta.x);
 }
 
-Vec2 RotatePoint(const Vec2& point, Vec2 dims, int quarter_turns) {
-    Vec2 rotated = point;
+FVec2 RotatePoint(const FVec2& point, FVec2 dims, int quarter_turns) {
+    FVec2 rotated = point;
     for (int i = 0; i < quarter_turns; ++i) {
         rotated = RotatePointClockwise(rotated, dims);
-        dims = Vec2::New(dims.y, dims.x);
+        dims = FVec2::New(dims.y, dims.x);
     }
     return rotated;
 }
@@ -75,11 +75,11 @@ sim::Vec2 RotatePoint(sim::Vec2 point, sim::Vec2 dims, int quarter_turns) {
     return rotated;
 }
 
-Vec2 RotateDirectionClockwise(const Vec2& direction) {
-    return Vec2::New(-direction.y, direction.x);
+FVec2 RotateDirectionClockwise(const FVec2& direction) {
+    return FVec2::New(-direction.y, direction.x);
 }
 
-Vec2 RotateDirection(Vec2 direction, int quarter_turns) {
+FVec2 RotateDirection(FVec2 direction, int quarter_turns) {
     for (int i = 0; i < quarter_turns; ++i) {
         direction = RotateDirectionClockwise(direction);
     }
@@ -166,11 +166,11 @@ StageBorder RotateBorder(StageBorder border, int quarter_turns, StageRotationWra
     return border;
 }
 
-void RotateParticles(ParticleSystem& particles, const Vec2& old_dims, int quarter_turns) {
+void RotateParticles(ParticleSystem& particles, const FVec2& old_dims, int quarter_turns) {
     for (SpriteParticle& particle : particles.sprite_particles) {
         particle.pos = RotatePoint(particle.pos, old_dims, quarter_turns);
-        particle.vel = Vec2::New(0.0F, 0.0F);
-        particle.acc = Vec2::New(0.0F, 0.0F);
+        particle.vel = FVec2::New(0.0F, 0.0F);
+        particle.acc = FVec2::New(0.0F, 0.0F);
     }
     for (ScriptedParticle& particle : particles.scripted_particles) {
         particle.pos = RotatePoint(particle.pos, old_dims, quarter_turns);
@@ -187,7 +187,7 @@ void RotateParticles(ParticleSystem& particles, const Vec2& old_dims, int quarte
     }
 }
 
-void RotateFixedAudioEmitters(AudioEmitterManager& emitters, const Vec2& old_dims, int quarter_turns) {
+void RotateFixedAudioEmitters(AudioEmitterManager& emitters, const FVec2& old_dims, int quarter_turns) {
     for (AudioEmitter& emitter : emitters.emitters) {
         if (!emitter.active || emitter.source_mode != AudioEmitterSourceMode::FixedWorldPos) {
             continue;
@@ -205,7 +205,7 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
     Stage& stage = state.stage;
     const int old_tile_width = static_cast<int>(stage.GetTileWidth());
     const int old_tile_height = static_cast<int>(stage.GetTileHeight());
-    const Vec2 old_dims = GetStagePixelDims(stage);
+    const FVec2 old_dims = GetStagePixelDims(stage);
     const sim::Vec2 sim_old_dims = GetSimStagePixelDims(stage);
 
     stage.SyncTileInstanceMetadataGrid();
@@ -258,7 +258,7 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
 
     stage.border = RotateBorder(stage.border, quarter_turns, state.stage_rotation.wrap_policy);
     if (quarter_turns % 2 != 0) {
-        stage.camera_clamp_margin = Vec2::New(stage.camera_clamp_margin.y, stage.camera_clamp_margin.x);
+        stage.camera_clamp_margin = FVec2::New(stage.camera_clamp_margin.y, stage.camera_clamp_margin.x);
         stage.wrap_core_origin_tiles =
             UVec2::New(stage.wrap_core_origin_tiles.y, stage.wrap_core_origin_tiles.x);
         stage.wrap_core_size_tiles =
@@ -295,7 +295,7 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
 void ClearRenderRotation(Graphics& graphics) {
     graphics.world_rotation_active = false;
     graphics.world_rotation_degrees = 0.0F;
-    graphics.world_rotation_pivot = Vec2::New(0.0F, 0.0F);
+    graphics.world_rotation_pivot = FVec2::New(0.0F, 0.0F);
 }
 
 void SnapCameraAfterStageRotation(State& state, Graphics& graphics) {
@@ -303,7 +303,7 @@ void SnapCameraAfterStageRotation(State& state, Graphics& graphics) {
         return;
     }
 
-    Vec2 target = GetStageCameraCenter(state.stage);
+    FVec2 target = GetStageCameraCenter(state.stage);
     float zoom = GetDefaultFollowCameraZoom(graphics);
 
     const Ent* camera_target_ent = nullptr;

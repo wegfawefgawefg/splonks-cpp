@@ -26,7 +26,7 @@ struct ParticleSystem {
     void Add(ScriptedParticle&& particle);
     void AddScripted(
         ScriptedParticleSpecId spec_id,
-        const Vec2& pos,
+        const FVec2& pos,
         bool horizontal_flip = false
     );
     void Step(const AFrameDb& aframe_db, float dt);

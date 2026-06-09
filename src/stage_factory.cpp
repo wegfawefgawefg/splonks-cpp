@@ -158,7 +158,7 @@ Stage Stage::NewBlank() {
     stage.lights = {};
     stage.gravity = sim::ToSimScalar(kDefaultStageGravity);
     stage.border = MakeUniformBorder(Tile::Air);
-    stage.camera_clamp_margin = Vec2::New(0.0F, 0.0F);
+    stage.camera_clamp_margin = FVec2::New(0.0F, 0.0F);
     stage.camera_clamp_enabled = true;
     return stage;
 }

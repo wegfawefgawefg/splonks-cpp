@@ -24,7 +24,7 @@ bool HasAnyAreaListenerCallback(const Ent& ent) {
 
 } // namespace
 
-void AddShake(State& state, const Vec2& world_pos, float foreground_tile_amount,
+void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount,
               float background_tile_amount, float ent_amount, float radius_tiles,
               std::optional<VID> exclude_ent_vid) {
     if (foreground_tile_amount <= 0.0F && background_tile_amount <= 0.0F && ent_amount <= 0.0F) {
@@ -59,7 +59,7 @@ void AddShake(State& state, const Vec2& world_pos, float foreground_tile_amount,
 
         const sim::Vec2 nearest_center =
             GetNearestWorldPoint(state.stage, world_pos_sim, ent->GetSimCenter());
-        const Vec2 delta = sim::ToRenderVec2(nearest_center - world_pos_sim);
+        const FVec2 delta = sim::ToRenderVec2(nearest_center - world_pos_sim);
         if (radius_world > 0.0F) {
             const int radius_scaled =
                 std::max(1, RoundToInt(radius_world * static_cast<float>(kEntShakeDistanceScale)));
@@ -88,12 +88,12 @@ void AddShake(State& state, const Vec2& world_pos, float foreground_tile_amount,
     }
 }
 
-void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles,
+void AddShake(State& state, const FVec2& world_pos, float amount, float radius_tiles,
               std::optional<VID> exclude_ent_vid) {
     AddShake(state, world_pos, amount, amount, amount, radius_tiles, exclude_ent_vid);
 }
 
-void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles, ShakeMask mask,
+void AddShake(State& state, const FVec2& world_pos, float amount, float radius_tiles, ShakeMask mask,
               std::optional<VID> exclude_ent_vid) {
     if (amount <= 0.0F || mask == ShakeMask::None) {
         return;
@@ -156,7 +156,7 @@ State State::New() {
     state.sac_altar_reward_tier = 0;
     state.frame_pause = 0;
     state.audio_occlusion_enabled = true;
-    state.audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
+    state.audio_listener_world_pos = FVec2::New(0.0F, 0.0F);
     state.gameplay_camera_anchor_world_pos.reset();
     state.interact_claimed_vids_this_frame.clear();
     state.players = PlayerRegistry::New();

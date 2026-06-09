@@ -25,7 +25,7 @@ constexpr std::uint32_t kBowArrowDamage = 2;
 constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct BowAim {
-    Vec2 direction = Vec2::New(1.0F, 0.0F);
+    FVec2 direction = FVec2::New(1.0F, 0.0F);
     sim::Vec2 sim_direction = sim::Vec2{sim::Scalar::from_int(1), sim::Scalar::zero()};
     Side facing = Side::Right;
     sim::Scalar rotation = sim::Scalar::zero();
@@ -78,17 +78,17 @@ float NormalizeDegrees(float degrees) {
     return degrees;
 }
 
-Vec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
+FVec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
     if (aim_x == 0 && aim_y == 0) {
-        return facing == Side::Left ? Vec2::New(-1.0F, 0.0F) : Vec2::New(1.0F, 0.0F);
+        return facing == Side::Left ? FVec2::New(-1.0F, 0.0F) : FVec2::New(1.0F, 0.0F);
     }
     if (aim_x != 0 && aim_y != 0) {
-        return Vec2::New(
+        return FVec2::New(
             static_cast<float>(aim_x) * kDiagonalAimComponent,
             static_cast<float>(aim_y) * kDiagonalAimComponent
         );
     }
-    return Vec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
+    return FVec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
 }
 
 sim::Vec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
@@ -162,7 +162,7 @@ BowAim GetBowAim(const Ent& bow, const State& state) {
         facing = Side::Right;
     }
 
-    const Vec2 direction = DiscreteAimDirection(aim_x, aim_y, facing);
+    const FVec2 direction = DiscreteAimDirection(aim_x, aim_y, facing);
     const float world_angle = DiscreteAimWorldAngle(aim_x, aim_y, facing);
     const float base_angle = facing == Side::Left ? 180.0F : 0.0F;
     return BowAim{

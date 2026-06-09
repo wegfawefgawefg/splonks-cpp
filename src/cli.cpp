@@ -741,7 +741,7 @@ void PrintComponents(
               << '\n';
 }
 
-std::string Vec2DebugString(Vec2 value) {
+std::string Vec2DebugString(FVec2 value) {
     std::ostringstream out;
     out << std::fixed << std::setprecision(4) << "(" << value.x << "," << value.y << ")";
     return out.str();

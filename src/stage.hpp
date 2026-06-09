@@ -26,8 +26,8 @@ struct State;
 
 struct EntSpawn {
     EntType type_ = EntType::None;
-    Vec2 pos = Vec2::New(0.0F, 0.0F);
-    std::optional<Vec2> size_override = std::nullopt;
+    FVec2 pos = FVec2::New(0.0F, 0.0F);
+    std::optional<FVec2> size_override = std::nullopt;
     Side facing = Side::Left;
     std::optional<EntAiState> ai_state_override = std::nullopt;
     AFrameId anim_id = kInvalidAFrameId;
@@ -85,7 +85,7 @@ enum class BackgroundStampCondition {
 
 struct BackgroundStamp {
     AFrameId anim_id = kInvalidAFrameId;
-    Vec2 pos = Vec2::New(0.0F, 0.0F);
+    FVec2 pos = FVec2::New(0.0F, 0.0F);
     BackgroundStampCondition condition = BackgroundStampCondition::None;
 };
 
@@ -119,7 +119,7 @@ struct EmbeddedTreasure {
 };
 
 struct StageGenAnnotation {
-    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 world_pos = FVec2::New(0.0F, 0.0F);
     std::string text;
 };
 
@@ -200,7 +200,7 @@ struct Stage {
     sim::Scalar gravity = sim::ToSimScalar(kDefaultStageGravity);
     StageBorder border{};
     bool camera_clamp_enabled = true;
-    Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);
+    FVec2 camera_clamp_margin = FVec2::New(0.0F, 0.0F);
     bool wrap_transform_active = false;
     std::uint32_t wrap_padding_tiles = 0;
     UVec2 wrap_core_origin_tiles = UVec2::New(0, 0);

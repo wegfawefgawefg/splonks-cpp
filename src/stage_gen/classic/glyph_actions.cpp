@@ -17,11 +17,11 @@ std::uint32_t ToSpawnIndex(std::size_t index) {
     return static_cast<std::uint32_t>(index);
 }
 
-Vec2 GetShrineIdolTopLeft(const Vec2& tile_pos) {
+FVec2 GetShrineIdolTopLeft(const FVec2& tile_pos) {
     // The shrine idol rests on the seam between the two altar base tiles below it.
     // Spawn it already settled so the tiki head does not false-trigger from the
     // idol's initial gravity settle on frame one.
-    return tile_pos + Vec2::New(10.0F, 4.0F);
+    return tile_pos + FVec2::New(10.0F, 4.0F);
 }
 
 EntType GetShopSignEntType(ShopType shop_type, const ShopConfigDb& shop_db) {
@@ -157,12 +157,12 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
         if (!is_shop_area_room) {
             return std::nullopt;
         }
-        const Vec2 shop_size =
-            Vec2::New(static_cast<float>(room_size.x * kTileSize),
+        const FVec2 shop_size =
+            FVec2::New(static_cast<float>(room_size.x * kTileSize),
                       static_cast<float>(room_size.y * kTileSize));
         room.ent_spawns.push_back(EntSpawn{
             .type_ = EntType::Shop,
-            .pos = Vec2::New(0.0F, 0.0F),
+            .pos = FVec2::New(0.0F, 0.0F),
             .size_override = shop_size,
             .ai_state_override = room_code == static_cast<int>(RoomCode::Vault)
                                      ? std::optional<EntAiState>(EntAiState::Disturbed)
@@ -175,12 +175,12 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
         if (!is_craps_shop || !shop_spawn_index.has_value()) {
             return std::nullopt;
         }
-        const Vec2 shop_size =
-            Vec2::New(static_cast<float>(room_size.x * kTileSize),
+        const FVec2 shop_size =
+            FVec2::New(static_cast<float>(room_size.x * kTileSize),
                       static_cast<float>(room_size.y * kTileSize));
         room.ent_spawns.push_back(EntSpawn{
             .type_ = EntType::CrapsTable,
-            .pos = Vec2::New(0.0F, 0.0F),
+            .pos = FVec2::New(0.0F, 0.0F),
             .size_override = shop_size,
             .ent_a_spawn_index = ToSpawnIndex(*shop_spawn_index),
             .exit_id = "",
@@ -204,7 +204,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
         for (int x = 0; x < static_cast<int>(room_size.x); ++x) {
             const char glyph = glyphs[static_cast<std::size_t>(y * static_cast<int>(room_size.x) + x)];
             Tile tile = Tile::Air;
-            const Vec2 tile_pos = Vec2::New(static_cast<float>(x * static_cast<int>(kTileSize)),
+            const FVec2 tile_pos = FVec2::New(static_cast<float>(x * static_cast<int>(kTileSize)),
                                             static_cast<float>(y * static_cast<int>(kTileSize)));
 
             const GlyphRule* rule = glyph_map.Find(glyph);
@@ -213,7 +213,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                                          std::string(1, glyph));
             }
 
-            const auto spawn_ent_at = [&](EntType ent_type, Vec2 pos) -> std::optional<std::size_t> {
+            const auto spawn_ent_at = [&](EntType ent_type, FVec2 pos) -> std::optional<std::size_t> {
                 if (ent_type != EntType::None) {
                     room.ent_spawns.push_back(
                         EntSpawn{.type_ = ent_type, .pos = pos, .exit_id = ""});
@@ -262,7 +262,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                                                  int dy_tiles) -> std::optional<std::size_t> {
                 constexpr int kSignedTileSize = static_cast<int>(kTileSize);
                 return spawn_ent_at(ent_type,
-                                       tile_pos + Vec2::New(static_cast<float>(dx_tiles * kSignedTileSize),
+                                       tile_pos + FVec2::New(static_cast<float>(dx_tiles * kSignedTileSize),
                                                             static_cast<float>(dy_tiles * kSignedTileSize)));
             };
             const auto set_room_tile = [&](int tile_x, int tile_y, Tile value) {
@@ -437,7 +437,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     });
                     room.ent_spawns.push_back(EntSpawn{
                         .type_ = EntType::Altar,
-                        .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
+                        .pos = tile_pos + FVec2::New(static_cast<float>(kTileSize), 0.0F),
                         .anim_id = aframe_ids::AltarRight,
                         .exit_id = "",
                     });
@@ -451,14 +451,14 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     });
                     room.ent_spawns.push_back(EntSpawn{
                         .type_ = EntType::SacAltar,
-                        .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
+                        .pos = tile_pos + FVec2::New(static_cast<float>(kTileSize), 0.0F),
                         .anim_id = aframe_ids::SacAltarRight,
                         .ent_a_spawn_index = ToSpawnIndex(left_altar_spawn_index),
                         .exit_id = "",
                     });
                     room.ent_spawns.push_back(EntSpawn{
                         .type_ = EntType::SacAltarTopper,
-                        .pos = tile_pos + Vec2::New(0.0F, -static_cast<float>(kTileSize)),
+                        .pos = tile_pos + FVec2::New(0.0F, -static_cast<float>(kTileSize)),
                         .anim_id = aframe_ids::SacAltarTopper,
                         .ent_a_spawn_index = ToSpawnIndex(left_altar_spawn_index),
                         .exit_id = "",
@@ -496,16 +496,16 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     }
                     room.background_stamps.push_back(BackgroundStamp{
                         .anim_id = HashAFrameIdConstexpr("tiki_body"),
-                        .pos = tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize * 2)),
+                        .pos = tile_pos + FVec2::New(0.0F, static_cast<float>(kTileSize * 2)),
                     });
                     room.background_stamps.push_back(BackgroundStamp{
                         .anim_id = HashAFrameIdConstexpr(PickRightTikiArmFrameName(det_rng)),
-                        .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize * 2),
+                        .pos = tile_pos + FVec2::New(static_cast<float>(kTileSize * 2),
                                                     static_cast<float>(kTileSize * 2)),
                     });
                     room.background_stamps.push_back(BackgroundStamp{
                         .anim_id = HashAFrameIdConstexpr(PickLeftTikiArmFrameName(det_rng)),
-                        .pos = tile_pos + Vec2::New(-static_cast<float>(kTileSize),
+                        .pos = tile_pos + FVec2::New(-static_cast<float>(kTileSize),
                                                     static_cast<float>(kTileSize * 2)),
                     });
                 } else if (action == "dice_sign_if_craps") {

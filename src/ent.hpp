@@ -173,7 +173,7 @@ struct Ent {
     sim::Scalar threshold_a = sim::Scalar::zero();
     sim::Scalar threshold_b = sim::Scalar::zero();
 
-    static constexpr Vec2 kHangHandSize = {1.0F, 4.0F};
+    static constexpr FVec2 kHangHandSize = {1.0F, 4.0F};
 
     static Ent New();
     void Reset();
@@ -183,28 +183,28 @@ struct Ent {
     void SetSimPos(sim::Vec2 value);
     void SetSimVel(sim::Vec2 value);
     void SetSimAcc(sim::Vec2 value);
-    Vec2 GetRenderPos() const;
-    Vec2 GetRenderVel() const;
-    Vec2 GetRenderAcc() const;
-    void SetRenderPos(const Vec2& value);
-    void SetRenderVel(const Vec2& value);
-    void SetRenderAcc(const Vec2& value);
-    Vec2 GetSize() const;
+    FVec2 GetRenderPos() const;
+    FVec2 GetRenderVel() const;
+    FVec2 GetRenderAcc() const;
+    void SetRenderPos(const FVec2& value);
+    void SetRenderVel(const FVec2& value);
+    void SetRenderAcc(const FVec2& value);
+    FVec2 GetSize() const;
     sim::AABB GetSimAABB() const;
     sim::Vec2 GetSimCenter() const;
     void SetSimCenter(sim::Vec2 center);
     sim::AABB GetSimFeet() const;
     sim::AABB GetSimGroundProbe() const;
-    std::tuple<Vec2, Vec2> GetRenderBounds() const;
+    std::tuple<FVec2, FVec2> GetRenderBounds() const;
     RenderAABB GetRenderAABB() const;
-    Vec2 GetRenderCenter() const;
-    void SetRenderCenter(const Vec2& center);
+    FVec2 GetRenderCenter() const;
+    void SetRenderCenter(const FVec2& center);
     void IncTravelSound();
     bool IsHanging() const;
     bool IsClimbing() const;
     bool TrySnapToBlockingStageBottom(const Stage& stage);
     void SetGrounded(const Stage& stage);
-    std::tuple<Vec2, Vec2> GetTlAndTrCorners() const;
+    std::tuple<FVec2, FVec2> GetTlAndTrCorners() const;
     HangHands GetHangHands() const;
     HangHandBounds GetHangHandsBounds() const;
 };

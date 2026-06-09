@@ -20,10 +20,10 @@ struct DetRng {
 sim::Scalar RandomSimScalar(DetRng& rng, sim::Scalar minimum, sim::Scalar maximum);
 
 struct RenderAABB {
-    Vec2 tl;
-    Vec2 br;
+    FVec2 tl;
+    FVec2 br;
 
-    static RenderAABB New(const Vec2& top_left, const Vec2& bottom_right);
+    static RenderAABB New(const FVec2& top_left, const FVec2& bottom_right);
     struct IAABB AsIAABB() const;
 };
 
@@ -35,13 +35,13 @@ struct IAABB {
     RenderAABB AsRenderAABB() const;
 };
 
-Vec2 GetMinDisplacement(const RenderAABB& aabb1, const RenderAABB& aabb2);
+FVec2 GetMinDisplacement(const RenderAABB& aabb1, const RenderAABB& aabb2);
 bool AabbsIntersect(const RenderAABB& left, const RenderAABB& right);
 
 sim::AABB ToSimAABB(const RenderAABB& value, gfxp::Rounding rounding = gfxp::Rounding::Nearest);
 RenderAABB ToRenderAABB(const sim::AABB& value);
 IAABB ToIAABBFloorCeil(const sim::AABB& value);
-Vec2 ToRenderMinDisplacement(sim::AABB aabb1, sim::AABB aabb2);
+FVec2 ToRenderMinDisplacement(sim::AABB aabb1, sim::AABB aabb2);
 
 namespace rng {
 

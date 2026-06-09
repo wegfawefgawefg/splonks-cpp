@@ -37,19 +37,19 @@ enum class StrikeResult {
 
 struct StrikeOutcome {
     StrikeResult result = StrikeResult::Miss;
-    Vec2 sound_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 sound_pos = FVec2::New(0.0F, 0.0F);
 };
 
 struct EntStrikeOutcome {
     bool hit_any = false;
-    Vec2 sound_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 sound_pos = FVec2::New(0.0F, 0.0F);
 };
 
 struct MattockTileTargets {
     IVec2 primary = IVec2::New(0, 0);
     IVec2 secondary = IVec2::New(0, 0);
-    Vec2 primary_probe_world = Vec2::New(0.0F, 0.0F);
-    Vec2 secondary_probe_world = Vec2::New(0.0F, 0.0F);
+    FVec2 primary_probe_world = FVec2::New(0.0F, 0.0F);
+    FVec2 secondary_probe_world = FVec2::New(0.0F, 0.0F);
 };
 
 bool IsSwinging(const Ent& mattock) {
@@ -57,13 +57,13 @@ bool IsSwinging(const Ent& mattock) {
 }
 
 [[nodiscard]] RenderAABB RenderTileAabbForTilePos(const IVec2& tile_pos) {
-    const Vec2 tile_tl = Vec2::New(
+    const FVec2 tile_tl = FVec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
     );
     return RenderAABB::New(
         tile_tl,
-        tile_tl + Vec2::New(
+        tile_tl + FVec2::New(
                       static_cast<float>(kTileSize - 1),
                       static_cast<float>(kTileSize - 1)
                   )
@@ -92,22 +92,22 @@ sim::Vec2 GetFallbackStrikePoint(const Ent& mattock) {
                                               sim::Scalar::zero()};
 }
 
-void SpawnMattockImpactParticles(State& state, const Vec2& pos, int direction) {
+void SpawnMattockImpactParticles(State& state, const FVec2& pos, int direction) {
     for (int i = 0; i < 3; ++i) {
         SpriteParticle spark{};
         spark.aframe_animator = AFrameAnimator::New(aframe_ids::Spark);
         spark.draw_layer = DrawLayer::Foreground;
         spark.lighting_mode = ParticleLightingMode::Emissive;
         spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
-        spark.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-        spark.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(4.0F, 6.0F));
+        spark.pos = pos + FVec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+        spark.size = FVec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(4.0F, 6.0F));
         spark.rot = rng::RandomFloat(0.0F, 360.0F);
         spark.alpha = 1.0F;
-        spark.vel = Vec2::New(
+        spark.vel = FVec2::New(
             rng::RandomFloat(0.08F, 0.35F) * static_cast<float>(direction),
             rng::RandomFloat(-0.18F, 0.18F)
         );
-        spark.svel = Vec2::New(-0.12F, -0.12F);
+        spark.svel = FVec2::New(-0.12F, -0.12F);
         spark.rotvel = rng::RandomFloat(-6.0F, 6.0F);
         spark.alpha_vel = -0.14F;
         state.particles.Add(std::move(spark));
@@ -118,16 +118,16 @@ void SpawnMattockImpactParticles(State& state, const Vec2& pos, int direction) {
         smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(10, 16));
-        smoke.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-        smoke.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(3.0F, 5.0F));
+        smoke.pos = pos + FVec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+        smoke.size = FVec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(3.0F, 5.0F));
         smoke.rot = rng::RandomFloat(0.0F, 360.0F);
         smoke.alpha = rng::RandomFloat(0.75F, 0.95F);
-        smoke.vel = Vec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.18F, -0.06F));
-        smoke.svel = Vec2::New(rng::RandomFloat(0.06F, 0.14F), rng::RandomFloat(0.06F, 0.14F));
+        smoke.vel = FVec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.18F, -0.06F));
+        smoke.svel = FVec2::New(rng::RandomFloat(0.06F, 0.14F), rng::RandomFloat(0.06F, 0.14F));
         smoke.rotvel = rng::RandomFloat(-1.5F, 1.5F);
         smoke.alpha_vel = -0.05F;
-        smoke.acc = Vec2::New(0.0F, -0.01F);
-        smoke.sacc = Vec2::New(0.01F, 0.01F);
+        smoke.acc = FVec2::New(0.0F, -0.01F);
+        smoke.sacc = FVec2::New(0.01F, 0.01F);
         smoke.rotacc = 0.0F;
         smoke.alpha_acc = -0.003F;
         state.particles.Add(std::move(smoke));
@@ -135,7 +135,7 @@ void SpawnMattockImpactParticles(State& state, const Vec2& pos, int direction) {
 }
 
 StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& audio) {
-    const Vec2 sound_pos = Vec2::New(
+    const FVec2 sound_pos = FVec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
     );
@@ -186,11 +186,11 @@ MattockTileTargets GetMattockTileTargets(const Ent& holder, const Stage& stage) 
                                         kMattockForwardProbeBiasPixels;
     const int strike_world_y = holder_aabb.br.y.to_pixels_floor() -
                                kMattockVerticalProbeOffsetPixels;
-    const Vec2 primary_probe_world = Vec2::New(
+    const FVec2 primary_probe_world = FVec2::New(
         static_cast<float>(front_world_x),
         static_cast<float>(strike_world_y)
     );
-    const Vec2 secondary_probe_world = Vec2::New(
+    const FVec2 secondary_probe_world = FVec2::New(
         static_cast<float>(front_world_x),
         static_cast<float>(strike_world_y + static_cast<int>(kTileSize))
     );
@@ -410,7 +410,7 @@ void TryApplyMattockStrike(std::size_t ent_idx, State& state, const Graphics& gr
     }
 
     const int direction = mattock.facing == Side::Left ? -1 : 1;
-    const Vec2 effect_pos = tile_outcome.result != StrikeResult::Miss ? tile_outcome.sound_pos
+    const FVec2 effect_pos = tile_outcome.result != StrikeResult::Miss ? tile_outcome.sound_pos
                                                                       : ent_outcome.sound_pos;
     SpawnMattockImpactParticles(state, effect_pos, direction);
     (void)PlayWorldSoundEmitter(state, effect_pos, audio_asset_ids::Pickaxe);

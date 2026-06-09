@@ -158,8 +158,8 @@ void DrawAFrameIcon(
     DrawAFrameIconAtTick(renderer, graphics, anim_id, cursor, size, state.scene_frame);
 }
 
-Vec2 GetUiCountTextPosition(const IVec2& icon_cursor, const IVec2& icon_size) {
-    return Vec2::New(
+FVec2 GetUiCountTextPosition(const IVec2& icon_cursor, const IVec2& icon_size) {
+    return FVec2::New(
         static_cast<float>(icon_cursor.x + icon_size.x),
         static_cast<float>(icon_cursor.y)
     );
@@ -243,8 +243,8 @@ void DrawRightAlignedUiText(
     );
 }
 
-Vec2 GetHudEntryVisualOffset(const HudEntry& entry, const HudEntryAnimState& entry_state, std::uint64_t scene_frame) {
-    Vec2 offset = Vec2::New(0.0F, 0.0F);
+FVec2 GetHudEntryVisualOffset(const HudEntry& entry, const HudEntryAnimState& entry_state, std::uint64_t scene_frame) {
+    FVec2 offset = FVec2::New(0.0F, 0.0F);
     if (entry_state.shake > 0.0F) {
         const float phase = static_cast<float>((scene_frame + entry.key.id * 17U) % 31U);
         offset.x += std::sin(phase * 1.7F) * entry_state.shake;
@@ -350,7 +350,7 @@ void DrawHudEntry(
     }
 
     HudEntryAnimState& entry_state = GetHudEntryAnimState(entry, state.scene_frame);
-    const Vec2 offset = GetHudEntryVisualOffset(entry, entry_state, state.scene_frame);
+    const FVec2 offset = GetHudEntryVisualOffset(entry, entry_state, state.scene_frame);
     const IVec2 icon_cursor = IVec2::New(
         cursor.x + static_cast<int>(std::round(offset.x)),
         cursor.y + static_cast<int>(std::round(offset.y))
@@ -512,7 +512,7 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
         // draw health
         char text[32];
         std::snprintf(text, sizeof(text), "%u", health);
-        const Vec2 text_pos = GetUiCountTextPosition(icon_cursor, status_icon_size);
+        const FVec2 text_pos = GetUiCountTextPosition(icon_cursor, status_icon_size);
         DrawText(
             renderer,
             graphics,
@@ -556,7 +556,7 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
 
                 char text[32];
                 std::snprintf(text, sizeof(text), "%u", static_cast<unsigned int>(slot->count));
-                const Vec2 text_pos = GetUiCountTextPosition(icon_cursor, tool_slot_size);
+                const FVec2 text_pos = GetUiCountTextPosition(icon_cursor, tool_slot_size);
                 DrawText(
                     renderer,
                     graphics,
@@ -641,7 +641,7 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
         status_icon_size
     );
     {
-        const Vec2 text_pos = GetUiCountTextPosition(gold_icon_cursor, status_icon_size);
+        const FVec2 text_pos = GetUiCountTextPosition(gold_icon_cursor, status_icon_size);
         DrawText(
             renderer,
             graphics,
@@ -812,9 +812,9 @@ void RenderWorldPrompts(SDL_Renderer* renderer, const State& state, Graphics& gr
             std::sin((static_cast<float>(state.scene_frame) * 0.08F) +
                      static_cast<float>(prompt_idx) * 0.7F) *
             3.0F;
-        const Vec2 prompt_world =
+        const FVec2 prompt_world =
             GetNearestWorldPoint(state.stage, graphics.camera.target, prompt.world_pos);
-        const Vec2 screen_anchor = graphics.WcToScreen(prompt_world) + Vec2::New(0.0F, bob);
+        const FVec2 screen_anchor = graphics.WcToScreen(prompt_world) + FVec2::New(0.0F, bob);
         const float bubble_width = content_width + (kPromptPaddingX * 2.0F);
         const float bubble_height = static_cast<float>(content_height) + (kPromptPaddingY * 2.0F);
         const SDL_FRect bubble_rect{

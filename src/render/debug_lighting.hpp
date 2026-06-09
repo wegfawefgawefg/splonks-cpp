@@ -16,7 +16,7 @@ void RenderLightOverlay(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 );
 
 } // namespace splonks

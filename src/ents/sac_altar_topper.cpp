@@ -17,22 +17,22 @@ namespace {
 
 constexpr float kIdleSmokeIntervalFrames = 24.0F;
 
-void SpawnTopperSmoke(State& state, const Vec2& pos, float scale_bias) {
+void SpawnTopperSmoke(State& state, const FVec2& pos, float scale_bias) {
     SpriteParticle smoke{};
     smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
     smoke.draw_layer = DrawLayer::Foreground;
     smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 30));
-    smoke.pos = pos + Vec2::New(rng::RandomFloat(-2.0F, 2.0F), rng::RandomFloat(-1.0F, 1.0F));
+    smoke.pos = pos + FVec2::New(rng::RandomFloat(-2.0F, 2.0F), rng::RandomFloat(-1.0F, 1.0F));
     const float size = rng::RandomFloat(4.0F + scale_bias, 7.0F + scale_bias);
-    smoke.size = Vec2::New(size, size);
+    smoke.size = FVec2::New(size, size);
     smoke.rot = rng::RandomFloat(0.0F, 360.0F);
     smoke.alpha = rng::RandomFloat(0.55F, 0.85F);
-    smoke.vel = Vec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.45F, -0.18F));
-    smoke.svel = Vec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
+    smoke.vel = FVec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.45F, -0.18F));
+    smoke.svel = FVec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
     smoke.rotvel = rng::RandomFloat(-0.2F, 0.2F);
     smoke.alpha_vel = -0.02F;
-    smoke.acc = Vec2::New(0.0F, -0.005F);
-    smoke.sacc = Vec2::New(0.0F, 0.0F);
+    smoke.acc = FVec2::New(0.0F, -0.005F);
+    smoke.sacc = FVec2::New(0.0F, 0.0F);
     smoke.rotacc = 0.0F;
     smoke.alpha_acc = -0.003F;
     state.particles.Add(std::move(smoke));

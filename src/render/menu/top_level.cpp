@@ -33,11 +33,11 @@ void RenderTitle(SDL_Renderer* renderer, State& state, Graphics& graphics) {
         SDL_GetTextureSize(texture, &width, &height);
 
         const float expansion_frac = expansion_frac_base + (4.0F * max_displacement);
-        const Vec2 target_size = Vec2::New(
+        const FVec2 target_size = FVec2::New(
             static_cast<float>(graphics.dims.x) * expansion_frac,
             static_cast<float>(graphics.dims.y)
         );
-        Vec2 pos = (ToVec2(graphics.dims) - target_size) / 2.0F;
+        FVec2 pos = (ToVec2(graphics.dims) - target_size) / 2.0F;
         pos.x += parallax_param * static_cast<float>(graphics.dims.x) * max_displacement;
 
         const SDL_FRect src{0.0F, 0.0F, width, height};

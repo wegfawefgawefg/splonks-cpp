@@ -29,9 +29,9 @@ struct ClimbAnchor {
 };
 
 struct ClimbProbePoints {
-    Vec2 left = Vec2::New(0.0F, 0.0F);
-    Vec2 center = Vec2::New(0.0F, 0.0F);
-    Vec2 right = Vec2::New(0.0F, 0.0F);
+    FVec2 left = FVec2::New(0.0F, 0.0F);
+    FVec2 center = FVec2::New(0.0F, 0.0F);
+    FVec2 right = FVec2::New(0.0F, 0.0F);
 };
 
 bool CanAttachDownToClimbAnchor(const ClimbAnchor& climb_anchor, const State& state);
@@ -49,7 +49,7 @@ sim::Scalar HalfWidthFloor(const Ent& ent) {
     return sim::Scalar::from_pixels((ent.size.x / 2).to_pixels_floor());
 }
 
-void AddClimbDebugLabel(State& state, const Vec2& world_pos, const char* text) {
+void AddClimbDebugLabel(State& state, const FVec2& world_pos, const char* text) {
     if (!state.debug_overlay.show_debug_annotations) {
         return;
     }
@@ -60,7 +60,7 @@ void AddClimbDebugLabel(State& state, const Vec2& world_pos, const char* text) {
     });
 }
 
-void AddClimbDebugRect(State& state, const Vec2& world_pos, DebugAnnotationColor color) {
+void AddClimbDebugRect(State& state, const FVec2& world_pos, DebugAnnotationColor color) {
     if (!state.debug_overlay.show_debug_annotations) {
         return;
     }
@@ -72,18 +72,18 @@ void AddClimbDebugRect(State& state, const Vec2& world_pos, DebugAnnotationColor
 
 ClimbProbePoints GetClimbProbePointsAtPosition(
     const Ent& ent,
-    const Vec2& pos,
+    const FVec2& pos,
     const JumpAndClimbTuning& tuning
 ) {
-    const Vec2 size = ent.GetSize();
-    const Vec2 center = pos + (size / 2.0F);
+    const FVec2 size = ent.GetSize();
+    const FVec2 center = pos + (size / 2.0F);
     const float probe_y =
         pos.y + std::min(tuning.climb_probe_bias_pixels, std::max(0.0F, size.y - 1.0F));
     const float horizontal_offset = (size.x * 0.5F) * std::max(0.0F, tuning.climb_probe_x_scale);
     return ClimbProbePoints{
-        .left = Vec2::New(center.x - horizontal_offset, probe_y),
-        .center = Vec2::New(center.x, probe_y),
-        .right = Vec2::New(center.x + horizontal_offset, probe_y),
+        .left = FVec2::New(center.x - horizontal_offset, probe_y),
+        .center = FVec2::New(center.x, probe_y),
+        .right = FVec2::New(center.x + horizontal_offset, probe_y),
     };
 }
 
@@ -96,7 +96,7 @@ bool IsClimbableTileQuery(
 
 std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
     const Ent& ent,
-    const Vec2& pos,
+    const FVec2& pos,
     const State& state,
     const JumpAndClimbTuning& tuning
 ) {
@@ -110,7 +110,7 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
     std::optional<IVec2> best_tile = std::nullopt;
     int best_hits = 0;
     float best_score = 0.0F;
-    const Vec2 ent_center = pos + (ent.GetSize() / 2.0F);
+    const FVec2 ent_center = pos + (ent.GetSize() / 2.0F);
 
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
@@ -135,7 +135,7 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
             continue;
         }
 
-        const Vec2 tile_center = Vec2::New(
+        const FVec2 tile_center = FVec2::New(
             static_cast<float>(tile_query->tile_pos.x * static_cast<int>(kTileSize) + 8),
             static_cast<float>(tile_query->tile_pos.y * static_cast<int>(kTileSize) + 8)
         );
@@ -303,7 +303,7 @@ void SnapEntHangYToTile(Ent& ent) {
 
 bool HasClimbableTileAtPosition(
     const Ent& ent,
-    const Vec2& pos,
+    const FVec2& pos,
     const State& state,
     const JumpAndClimbTuning& tuning
 ) {
@@ -318,7 +318,7 @@ int GetAllowedClimbUpPixels(
 ) {
     int allowed_pixels = 0;
     for (int step = 1; step <= max_pixels; ++step) {
-        const Vec2 next_pos = ent.GetRenderPos() + Vec2::New(0.0F, -static_cast<float>(step));
+        const FVec2 next_pos = ent.GetRenderPos() + FVec2::New(0.0F, -static_cast<float>(step));
         if (!HasClimbableTileAtPosition(ent, next_pos, state, tuning)) {
             break;
         }
@@ -333,7 +333,7 @@ void AddClimbDebugAnnotations(const Ent& ent, State& state, const JumpAndClimbTu
     }
 
     const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, ent.GetRenderPos(), tuning);
-    const std::array<std::pair<const char*, Vec2>, 3> probe_points = {{
+    const std::array<std::pair<const char*, FVec2>, 3> probe_points = {{
         {"climb L", probes.left},
         {"climb C", probes.center},
         {"climb R", probes.right},

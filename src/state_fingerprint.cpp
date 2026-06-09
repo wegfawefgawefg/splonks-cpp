@@ -116,7 +116,7 @@ struct FingerprintWriter {
         AddBytes(text.data(), text.size());
     }
 
-    void AddVec2(const Vec2& vec) {
+    void AddVec2(const FVec2& vec) {
         const sim::Vec2 fixed = sim::ToSimVec2(vec);
         AddFixedScalar(fixed.x);
         AddFixedScalar(fixed.y);

@@ -25,7 +25,7 @@ constexpr float kLiveFluidDecay = 0.11F;
 constexpr int kLiveMinimumPropagationPasses = 18;
 
 struct LiveLightSource {
-    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 world_pos = FVec2::New(0.0F, 0.0F);
     int radius = 0;
     float source = 0.0F;
     Color3 color = Color3::White();
@@ -261,7 +261,7 @@ float GetLiveLightDecayIntoTile(const State& state, int tile_x, int tile_y) {
 void ApplyLiveLightSourceAtWorldPos(
     const State& state,
     std::vector<std::vector<Color3>>& light_grid,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     float source,
     Color3 color
 ) {
@@ -285,7 +285,7 @@ void ApplyLiveLightSourceAtWorldPos(
                 continue;
             }
 
-            const Vec2 tile_center = Vec2::New(
+            const FVec2 tile_center = FVec2::New(
                 (static_cast<float>(base_x + offset_x) + 0.5F) * static_cast<float>(kTileSize),
                 (static_cast<float>(base_y + offset_y) + 0.5F) * static_cast<float>(kTileSize)
             );
@@ -321,7 +321,7 @@ std::vector<LiveLightSource> BuildLiveLightSources(State& state) {
         }
 
         sources.push_back(LiveLightSource{
-            .world_pos = Vec2::New(
+            .world_pos = FVec2::New(
                 (static_cast<float>(center.x) + 0.5F) * static_cast<float>(kTileSize),
                 (static_cast<float>(center.y) + 0.5F) * static_cast<float>(kTileSize)
             ),
@@ -676,7 +676,7 @@ void UpdateStageLightingForTileChanges(State& state, const std::vector<IVec2>& t
 
 void AddTransientLight(
     State& state,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     float strength,
     int radius,
     std::uint32_t lifetime_frames
@@ -686,7 +686,7 @@ void AddTransientLight(
 
 void AddTransientLight(
     State& state,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     float strength,
     Color3 color,
     int radius,
@@ -763,7 +763,7 @@ float GetForegroundBrightnessForRender(const State& state, int tile_x, int tile_
 
 Color3 SampleLightColorForRender(
     const State& state,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     Color3 (*sample_tile)(const State&, int, int)
 ) {
     const int stage_width = static_cast<int>(state.stage.GetTileWidth());
@@ -811,17 +811,17 @@ Color3 SampleLightColorForRender(
 
 float SampleBrightnessForRender(
     const State& state,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     Color3 (*sample_tile)(const State&, int, int)
 ) {
     return GetBrightnessFromColor(SampleLightColorForRender(state, world_pos, sample_tile));
 }
 
-float SampleForegroundBrightnessForRender(const State& state, const Vec2& world_pos) {
+float SampleForegroundBrightnessForRender(const State& state, const FVec2& world_pos) {
     return SampleBrightnessForRender(state, world_pos, GetForegroundLightColorForRender);
 }
 
-Color3 SampleForegroundLightColorForRender(const State& state, const Vec2& world_pos) {
+Color3 SampleForegroundLightColorForRender(const State& state, const FVec2& world_pos) {
     return SampleLightColorForRender(state, world_pos, GetForegroundLightColorForRender);
 }
 
@@ -853,11 +853,11 @@ float GetBackwallBrightnessForRender(const State& state, int tile_x, int tile_y)
     return GetBrightnessFromColor(GetBackwallLightColorForRender(state, tile_x, tile_y));
 }
 
-float SampleBackwallBrightnessForRender(const State& state, const Vec2& world_pos) {
+float SampleBackwallBrightnessForRender(const State& state, const FVec2& world_pos) {
     return SampleBrightnessForRender(state, world_pos, GetBackwallLightColorForRender);
 }
 
-Color3 SampleBackwallLightColorForRender(const State& state, const Vec2& world_pos) {
+Color3 SampleBackwallLightColorForRender(const State& state, const FVec2& world_pos) {
     return SampleLightColorForRender(state, world_pos, GetBackwallLightColorForRender);
 }
 

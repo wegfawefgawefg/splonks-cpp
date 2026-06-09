@@ -45,18 +45,18 @@ SDL_FColor MakeLightColor(Color3 color) {
     };
 }
 
-Vec2 RotateTileLocalPoint(const Vec2& point, TileRotation rotation) {
+FVec2 RotateTileLocalPoint(const FVec2& point, TileRotation rotation) {
     const float tile_size = static_cast<float>(kTileSize);
-    const Vec2 center = Vec2::New(tile_size * 0.5F, tile_size * 0.5F);
-    const Vec2 local = point - center;
+    const FVec2 center = FVec2::New(tile_size * 0.5F, tile_size * 0.5F);
+    const FVec2 local = point - center;
 
     switch (rotation & kTileRotationMask) {
     case kTileRotation90:
-        return center + Vec2::New(-local.y, local.x);
+        return center + FVec2::New(-local.y, local.x);
     case kTileRotation180:
-        return center + Vec2::New(-local.x, -local.y);
+        return center + FVec2::New(-local.x, -local.y);
     case kTileRotation270:
-        return center + Vec2::New(local.y, -local.x);
+        return center + FVec2::New(local.y, -local.x);
     case kTileRotation0:
     default:
         return point;
@@ -176,9 +176,9 @@ bool RenderTileWithVertexLighting(
     const Graphics& graphics,
     const SDL_FRect& src,
     const SDL_FRect& dst,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     TileRotation tile_rotation,
-    Color3 (*sample_color)(const State&, const Vec2&)
+    Color3 (*sample_color)(const State&, const FVec2&)
 ) {
     if (renderer == nullptr || texture == nullptr || graphics.world_rotation_active ||
         src.w <= 0.0F || src.h <= 0.0F || dst.w <= 0.0F || dst.h <= 0.0F) {
@@ -202,34 +202,34 @@ bool RenderTileWithVertexLighting(
     const float v1 = (src.y + src.h) / texture_height;
     const float tile_size = static_cast<float>(kTileSize);
 
-    const auto brightness_color = [&state, sample_color](const Vec2& sample_pos) {
+    const auto brightness_color = [&state, sample_color](const FVec2& sample_pos) {
         return MakeLightColor(sample_color(state, sample_pos));
     };
 
     const std::array<SDL_Vertex, 4> vertices{
         SDL_Vertex{
             SDL_FPoint{dst.x, dst.y},
-            brightness_color(world_pos + RotateTileLocalPoint(Vec2::New(0.0F, 0.0F), tile_rotation)),
+            brightness_color(world_pos + RotateTileLocalPoint(FVec2::New(0.0F, 0.0F), tile_rotation)),
             SDL_FPoint{u0, v0},
         },
         SDL_Vertex{
             SDL_FPoint{dst.x + dst.w, dst.y},
             brightness_color(
-                world_pos + RotateTileLocalPoint(Vec2::New(tile_size, 0.0F), tile_rotation)
+                world_pos + RotateTileLocalPoint(FVec2::New(tile_size, 0.0F), tile_rotation)
             ),
             SDL_FPoint{u1, v0},
         },
         SDL_Vertex{
             SDL_FPoint{dst.x + dst.w, dst.y + dst.h},
             brightness_color(
-                world_pos + RotateTileLocalPoint(Vec2::New(tile_size, tile_size), tile_rotation)
+                world_pos + RotateTileLocalPoint(FVec2::New(tile_size, tile_size), tile_rotation)
             ),
             SDL_FPoint{u1, v1},
         },
         SDL_Vertex{
             SDL_FPoint{dst.x, dst.y + dst.h},
             brightness_color(
-                world_pos + RotateTileLocalPoint(Vec2::New(0.0F, tile_size), tile_rotation)
+                world_pos + RotateTileLocalPoint(FVec2::New(0.0F, tile_size), tile_rotation)
             ),
             SDL_FPoint{u0, v1},
         },
@@ -254,7 +254,7 @@ bool RenderTerrainTileWithVertexLighting(
     const Graphics& graphics,
     const SDL_FRect& src,
     const SDL_FRect& dst,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     TileRotation tile_rotation
 ) {
     return RenderTileWithVertexLighting(
@@ -277,7 +277,7 @@ bool RenderBackwallTileWithVertexLighting(
     const Graphics& graphics,
     const SDL_FRect& src,
     const SDL_FRect& dst,
-    const Vec2& world_pos
+    const FVec2& world_pos
 ) {
     return RenderTileWithVertexLighting(
         renderer,

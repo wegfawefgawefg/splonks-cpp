@@ -13,7 +13,7 @@ namespace splonks::stage_gen::classic {
 void AddStageGenAnnotation(Stage& stage, const std::string& text) {
     const float line = static_cast<float>(stage.stagegen_annotations.size() % 24U);
     stage.stagegen_annotations.push_back(StageGenAnnotation{
-        .world_pos = Vec2::New(4.0F, 20.0F + (line * 8.0F)),
+        .world_pos = FVec2::New(4.0F, 20.0F + (line * 8.0F)),
         .text = text,
     });
 }

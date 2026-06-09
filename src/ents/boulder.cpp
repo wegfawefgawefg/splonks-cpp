@@ -44,8 +44,8 @@ constexpr AFrameId kBoulderAnimId = HashAFrameIdConstexpr("boulder");
 constexpr AFrameId kBoulderRollAnimId = HashAFrameIdConstexpr("boulder_roll");
 constexpr AFrameId kBoulderParticleAnimId = kBoulderAnimId;
 
-Vec2 GetBoulderBottomCenter(const Ent& boulder);
-Vec2 GetBoulderFrontFaceCenter(const Ent& boulder);
+FVec2 GetBoulderBottomCenter(const Ent& boulder);
+FVec2 GetBoulderFrontFaceCenter(const Ent& boulder);
 
 sim::AABB GetLeadingBreakStrip(const Ent& boulder) {
     const sim::AABB aabb = boulder.GetSimAABB();
@@ -89,66 +89,66 @@ void StepRollingSound(State& state, Ent& boulder) {
     (void)PlayAttachedSoundEmitter(
         state,
         boulder.vid,
-        Vec2::New(0.0F, boulder.GetSize().y * 0.5F),
+        FVec2::New(0.0F, boulder.GetSize().y * 0.5F),
         audio_asset_ids::BoulderRoll,
         params
     );
 }
 
-void SpawnBoulderTrailSmoke(State& state, const Vec2& pos, Side facing) {
+void SpawnBoulderTrailSmoke(State& state, const FVec2& pos, Side facing) {
     for (int i = 0; i < 2; ++i) {
         SpriteParticle effect{};
         effect.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 32));
-        effect.pos = pos + Vec2::New(
+        effect.pos = pos + FVec2::New(
                   rng::RandomFloat(-2.0F, 2.0F),
                   rng::RandomFloat(-2.0F, 2.0F)
               );
-        effect.size = Vec2::New(rng::RandomFloat(3.0F, 6.0F), rng::RandomFloat(3.0F, 6.0F));
+        effect.size = FVec2::New(rng::RandomFloat(3.0F, 6.0F), rng::RandomFloat(3.0F, 6.0F));
         effect.rot = rng::RandomFloat(0.0F, 360.0F);
         effect.alpha = rng::RandomFloat(0.6F, 0.9F);
-        effect.vel = Vec2::New(
+        effect.vel = FVec2::New(
             facing == Side::Right ? rng::RandomFloat(-0.8F, -0.2F)
                                          : rng::RandomFloat(0.2F, 0.8F),
             rng::RandomFloat(-1.0F, -0.2F)
         );
-        effect.svel = Vec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
+        effect.svel = FVec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
         effect.rotvel = rng::RandomFloat(-0.2F, 0.2F);
         effect.alpha_vel = -0.02F;
-        effect.acc = Vec2::New(0.0F, 0.01F);
-        effect.sacc = Vec2::New(0.0F, 0.0F);
+        effect.acc = FVec2::New(0.0F, 0.01F);
+        effect.sacc = FVec2::New(0.0F, 0.0F);
         effect.rotacc = 0.0F;
         effect.alpha_acc = -0.003F;
         state.particles.Add(std::move(effect));
     }
 }
 
-void SpawnBoulderTrailPebbles(State& state, const Vec2& pos, Side facing) {
+void SpawnBoulderTrailPebbles(State& state, const FVec2& pos, Side facing) {
     const int count = rng::RandomIntExclusive(1, 3);
     for (int i = 0; i < count; ++i) {
         SpriteParticle effect{};
         effect.aframe_animator = AFrameAnimator::New(kBoulderParticleAnimId);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 34));
-        effect.pos = pos + Vec2::New(
+        effect.pos = pos + FVec2::New(
                   rng::RandomFloat(-1.0F, 1.0F),
                   rng::RandomFloat(-1.0F, 1.0F)
               );
         const float size = rng::RandomFloat(2.0F, 5.0F);
-        effect.size = Vec2::New(size, size);
+        effect.size = FVec2::New(size, size);
         effect.rot = rng::RandomFloat(0.0F, 360.0F);
         effect.alpha = 1.0F;
-        effect.vel = Vec2::New(
+        effect.vel = FVec2::New(
             facing == Side::Right ? rng::RandomFloat(0.8F, 1.8F)
                                          : rng::RandomFloat(-1.8F, -0.8F),
             rng::RandomFloat(-1.8F, -0.6F)
         );
-        effect.svel = Vec2::New(0.0F, 0.0F);
+        effect.svel = FVec2::New(0.0F, 0.0F);
         effect.rotvel = rng::RandomFloat(-0.5F, 0.5F);
         effect.alpha_vel = -0.03F;
-        effect.acc = Vec2::New(0.0F, 0.16F);
-        effect.sacc = Vec2::New(0.0F, 0.0F);
+        effect.acc = FVec2::New(0.0F, 0.16F);
+        effect.sacc = FVec2::New(0.0F, 0.0F);
         effect.rotacc = 0.0F;
         effect.alpha_acc = -0.003F;
         state.particles.Add(std::move(effect));
@@ -171,26 +171,26 @@ void PlayBoulderImpactSoundIfReady(Ent& boulder, State& state) {
     (void)PlayWorldSoundEmitter(state, GetBoulderBottomCenter(boulder), audio_asset_ids::BoulderHitGround);
 }
 
-Vec2 GetBoulderTrailingBottomCorner(const Ent& boulder) {
+FVec2 GetBoulderTrailingBottomCorner(const Ent& boulder) {
     const sim::AABB aabb = boulder.GetSimAABB();
     return sim::ToRenderVec2(boulder.facing == Side::Right
                                  ? sim::Vec2{aabb.tl.x, aabb.br.y}
                                  : sim::Vec2{aabb.br.x, aabb.br.y});
 }
 
-Vec2 GetBoulderLeadingBottomCorner(const Ent& boulder) {
+FVec2 GetBoulderLeadingBottomCorner(const Ent& boulder) {
     const sim::AABB aabb = boulder.GetSimAABB();
     return sim::ToRenderVec2(boulder.facing == Side::Right
                                  ? sim::Vec2{aabb.br.x, aabb.br.y}
                                  : sim::Vec2{aabb.tl.x, aabb.br.y});
 }
 
-Vec2 GetBoulderBottomCenter(const Ent& boulder) {
+FVec2 GetBoulderBottomCenter(const Ent& boulder) {
     const sim::AABB aabb = boulder.GetSimAABB();
     return sim::ToRenderVec2(sim::Vec2{aabb.center().x, aabb.br.y});
 }
 
-Vec2 GetBoulderFrontFaceCenter(const Ent& boulder) {
+FVec2 GetBoulderFrontFaceCenter(const Ent& boulder) {
     const sim::AABB aabb = boulder.GetSimAABB();
     return sim::ToRenderVec2(boulder.facing == Side::Right
                                  ? sim::Vec2{aabb.br.x, aabb.center().y}
@@ -209,7 +209,7 @@ void AddBoulderRollingShake(State& state, const Ent& boulder) {
 }
 
 void AddBoulderBreakShake(State& state, const Ent& boulder) {
-    const Vec2 center = GetBoulderFrontFaceCenter(boulder);
+    const FVec2 center = GetBoulderFrontFaceCenter(boulder);
     AddShake(
         state,
         center,
@@ -230,7 +230,7 @@ void AddBoulderBreakShake(State& state, const Ent& boulder) {
 }
 
 void AddBoulderWallHitShake(State& state, const Ent& boulder) {
-    const Vec2 center = GetBoulderFrontFaceCenter(boulder);
+    const FVec2 center = GetBoulderFrontFaceCenter(boulder);
     AddShake(
         state,
         center,
@@ -250,7 +250,7 @@ void AddBoulderWallHitShake(State& state, const Ent& boulder) {
 }
 
 void AddBoulderGroundSlamShake(State& state, const Ent& boulder) {
-    const Vec2 center = GetBoulderBottomCenter(boulder);
+    const FVec2 center = GetBoulderBottomCenter(boulder);
     AddShake(
         state,
         center,
@@ -299,28 +299,28 @@ extern const EntSpec kBoulderSpec{
     .aframe_animator = AFrameAnimator::New(kBoulderAnimId),
 };
 
-void SpawnBoulderBreakEffects(const Vec2& center, State& state) {
+void SpawnBoulderBreakEffects(const FVec2& center, State& state) {
     for (int i = 0; i < 20; ++i) {
         SpriteParticle smoke{};
         smoke.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(28, 56));
-        smoke.pos = center + Vec2::New(
+        smoke.pos = center + FVec2::New(
                  rng::RandomFloat(-4.0F, 4.0F),
                  rng::RandomFloat(-4.0F, 4.0F)
              );
-        smoke.size = Vec2::New(rng::RandomFloat(6.0F, 14.0F), rng::RandomFloat(6.0F, 14.0F));
+        smoke.size = FVec2::New(rng::RandomFloat(6.0F, 14.0F), rng::RandomFloat(6.0F, 14.0F));
         smoke.rot = rng::RandomFloat(0.0F, 360.0F);
         smoke.alpha = 1.0F;
-        smoke.vel = Vec2::New(
+        smoke.vel = FVec2::New(
             rng::RandomFloat(-1.2F, 1.2F),
             rng::RandomFloat(-2.2F, -0.4F)
         );
-        smoke.svel = Vec2::New(rng::RandomFloat(0.05F, 0.12F), rng::RandomFloat(0.05F, 0.12F));
+        smoke.svel = FVec2::New(rng::RandomFloat(0.05F, 0.12F), rng::RandomFloat(0.05F, 0.12F));
         smoke.rotvel = rng::RandomFloat(-0.3F, 0.3F);
         smoke.alpha_vel = -0.015F;
-        smoke.acc = Vec2::New(0.0F, 0.10F);
-        smoke.sacc = Vec2::New(0.0F, 0.0F);
+        smoke.acc = FVec2::New(0.0F, 0.10F);
+        smoke.sacc = FVec2::New(0.0F, 0.0F);
         smoke.rotacc = 0.0F;
         smoke.alpha_acc = -0.002F;
         state.particles.Add(std::move(smoke));
@@ -331,23 +331,23 @@ void SpawnBoulderBreakEffects(const Vec2& center, State& state) {
         shard.aframe_animator = AFrameAnimator::New(kBoulderParticleAnimId);
         shard.draw_layer = DrawLayer::Foreground;
         shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(30, 60));
-        shard.pos = center + Vec2::New(
+        shard.pos = center + FVec2::New(
                  rng::RandomFloat(-3.0F, 3.0F),
                  rng::RandomFloat(-3.0F, 3.0F)
              );
         const float size = rng::RandomFloat(5.0F, 16.0F);
-        shard.size = Vec2::New(size, size);
+        shard.size = FVec2::New(size, size);
         shard.rot = rng::RandomFloat(0.0F, 360.0F);
         shard.alpha = 1.0F;
-        shard.vel = Vec2::New(
+        shard.vel = FVec2::New(
             rng::RandomFloat(-3.5F, 3.5F),
             rng::RandomFloat(-5.5F, -1.8F)
         );
-        shard.svel = Vec2::New(0.0F, 0.0F);
+        shard.svel = FVec2::New(0.0F, 0.0F);
         shard.rotvel = rng::RandomFloat(-0.6F, 0.6F);
         shard.alpha_vel = -0.012F;
-        shard.acc = Vec2::New(0.0F, 0.22F);
-        shard.sacc = Vec2::New(0.0F, 0.0F);
+        shard.acc = FVec2::New(0.0F, 0.22F);
+        shard.sacc = FVec2::New(0.0F, 0.0F);
         shard.rotacc = 0.0F;
         shard.alpha_acc = -0.002F;
         state.particles.Add(std::move(shard));

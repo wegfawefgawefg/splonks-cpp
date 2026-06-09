@@ -65,7 +65,7 @@ void SpawnDebugMovingLight(State& state, int index, int count) {
     const int row = index / columns;
     const float u = columns <= 1 ? 0.5F : static_cast<float>(column) / static_cast<float>(columns - 1);
     const float v = rows <= 1 ? 0.5F : static_cast<float>(row) / static_cast<float>(rows - 1);
-    const Vec2 home = Vec2::New(std::lerp(min_x, max_x, u), std::lerp(min_y, max_y, v));
+    const FVec2 home = FVec2::New(std::lerp(min_x, max_x, u), std::lerp(min_y, max_y, v));
 
     const std::optional<VID> light_vid =
         SpawnStageEntAtRenderCenter(state, EntType::DebugMovingLight, home);
@@ -134,7 +134,7 @@ void InitLightingStressTestStage(State& state) {
 
     SpawnPlayerAtRenderPosition(
         state,
-        Vec2::New(
+        FVec2::New(
             20.0F * static_cast<float>(kTileSize),
             17.0F * static_cast<float>(kTileSize) - 14.0F
         )

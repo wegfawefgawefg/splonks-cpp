@@ -9,8 +9,8 @@ struct ScriptedParticle {
     ScriptedParticleSpecId spec_id = kInvalidScriptedParticleSpecId;
     DrawLayer draw_layer = DrawLayer::Middle;
     ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
-    Vec2 pos{};
-    Vec2 size{};
+    FVec2 pos{};
+    FVec2 size{};
     float rot = 0.0F;
     float alpha = 1.0F;
     bool horizontal_flip = false;
@@ -24,7 +24,7 @@ struct ScriptedParticle {
 
 ScriptedParticle MakeScriptedParticle(
     ScriptedParticleSpecId spec_id,
-    const Vec2& pos,
+    const FVec2& pos,
     bool horizontal_flip = false
 );
 

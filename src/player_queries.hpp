@@ -118,7 +118,7 @@ inline std::optional<VID> FindNearestPlayerVid(
 
 inline std::optional<VID> FindNearestPlayerVid(
     const State& state,
-    Vec2 world_pos,
+    FVec2 world_pos,
     bool require_normal_condition = true
 ) {
     return FindNearestPlayerVid(state, sim::ToSimVec2(world_pos), require_normal_condition);
@@ -146,7 +146,7 @@ inline Ent* FindNearestPlayerMut(
 
 inline const Ent* FindNearestPlayer(
     const State& state,
-    Vec2 world_pos,
+    FVec2 world_pos,
     bool require_normal_condition = true
 ) {
     return FindNearestPlayer(state, sim::ToSimVec2(world_pos), require_normal_condition);
@@ -154,7 +154,7 @@ inline const Ent* FindNearestPlayer(
 
 inline Ent* FindNearestPlayerMut(
     State& state,
-    Vec2 world_pos,
+    FVec2 world_pos,
     bool require_normal_condition = true
 ) {
     return FindNearestPlayerMut(state, sim::ToSimVec2(world_pos), require_normal_condition);

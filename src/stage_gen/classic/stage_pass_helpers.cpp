@@ -65,7 +65,7 @@ bool IsStartRoomAt(const Stage& stage, int tile_x, int tile_y) {
     return GetRoomAtTileCoord(stage, tile_x, tile_y) == stage.GetStartingRoom();
 }
 
-bool HasSpawnAtWorldPos(const Stage& stage, const Vec2& pos) {
+bool HasSpawnAtWorldPos(const Stage& stage, const FVec2& pos) {
     for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.pos == pos) {
             return true;
@@ -74,19 +74,19 @@ bool HasSpawnAtWorldPos(const Stage& stage, const Vec2& pos) {
     return false;
 }
 
-std::optional<Vec2> FindEntrancePos(const Stage& stage) {
+std::optional<FVec2> FindEntrancePos(const Stage& stage) {
     for (unsigned int y = 0; y < stage.GetTileHeight(); ++y) {
         for (unsigned int x = 0; x < stage.GetTileWidth(); ++x) {
             if (stage.GetTile(x, y) != Tile::Entrance) {
                 continue;
             }
-            return Vec2::New(static_cast<float>(x * kTileSize), static_cast<float>(y * kTileSize));
+            return FVec2::New(static_cast<float>(x * kTileSize), static_cast<float>(y * kTileSize));
         }
     }
     return std::nullopt;
 }
 
-std::optional<Vec2> FindExitPos(const Stage& stage) {
+std::optional<FVec2> FindExitPos(const Stage& stage) {
     for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.type_ == EntType::BasicExit) {
             return spawn.pos;
@@ -104,7 +104,7 @@ bool HasSpawnType(const Stage& stage, EntType type_) {
     return false;
 }
 
-float DistanceSqToNearestSpawnType(const Stage& stage, EntType type_, const Vec2& pos) {
+float DistanceSqToNearestSpawnType(const Stage& stage, EntType type_, const FVec2& pos) {
     float nearest = std::numeric_limits<float>::infinity();
     for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.type_ != type_) {
@@ -140,7 +140,7 @@ bool HasExitSpawn(const Stage& stage, std::string_view exit_id) {
     return false;
 }
 
-void AddAmbientSpawn(Stage& stage, EntType type_, const Vec2& pos,
+void AddAmbientSpawn(Stage& stage, EntType type_, const FVec2& pos,
                      Side facing) {
     if (HasSpawnAtWorldPos(stage, pos)) {
         return;

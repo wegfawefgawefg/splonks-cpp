@@ -20,8 +20,8 @@ namespace splonks::ents::skeleton {
 
 namespace {
 
-const Vec2 kSkullSize = Vec2::New(7.0F, 4.0F);
-const Vec2 kSkeletonSize = Vec2::New(16.0F, 16.0F);
+const FVec2 kSkullSize = FVec2::New(7.0F, 4.0F);
+const FVec2 kSkeletonSize = FVec2::New(16.0F, 16.0F);
 constexpr float kWakeHorizontalDistance = 48.0F;
 constexpr float kWakeVerticalAbove = 8.0F;
 constexpr float kWakeVerticalBelow = 32.0F;
@@ -42,7 +42,7 @@ std::optional<sim::Vec2> GetNearestPlayerDelta(const Ent& ent, const State& stat
     return player_center - ent_center;
 }
 
-void ResizeEntPreservingBottomCenter(Ent& ent, const Vec2& new_size) {
+void ResizeEntPreservingBottomCenter(Ent& ent, const FVec2& new_size) {
     const sim::Vec2 bottom_center = ent.pos + sim::Vec2{
         ent.size.x / sim::Scalar::from_int(2),
         ent.size.y,
@@ -133,7 +133,7 @@ bool IsGroundedInNarrowPit(const Ent& ent, const State& state, const Graphics& g
            common::HasWallAheadForGroundWalker(ent, state, graphics, 1);
 }
 
-void SpawnSkullBreakEffects(const Vec2& center, State& state) {
+void SpawnSkullBreakEffects(const FVec2& center, State& state) {
     SpawnBreakawayContainerShards(center, state);
 
     for (int i = 0; i < 2; ++i) {
@@ -142,19 +142,19 @@ void SpawnSkullBreakEffects(const Vec2& center, State& state) {
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = 14;
         smoke.pos = center;
-        smoke.size = Vec2::New(6.0F, 6.0F);
+        smoke.size = FVec2::New(6.0F, 6.0F);
         smoke.alpha = 0.75F;
-        smoke.vel = Vec2::New(
+        smoke.vel = FVec2::New(
             rng::RandomFloat(-0.6F, 0.6F),
             rng::RandomFloat(-1.2F, -0.3F)
         );
-        smoke.svel = Vec2::New(0.2F, 0.2F);
+        smoke.svel = FVec2::New(0.2F, 0.2F);
         smoke.alpha_vel = -0.05F;
         state.particles.Add(std::move(smoke));
     }
 }
 
-void SpawnSkeletonDeathEffects(const Vec2& center, State& state) {
+void SpawnSkeletonDeathEffects(const FVec2& center, State& state) {
     SpawnBreakawayContainerShards(center, state);
 
     for (int i = 0; i < 3; ++i) {
@@ -163,13 +163,13 @@ void SpawnSkeletonDeathEffects(const Vec2& center, State& state) {
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = 12;
         smoke.pos = center;
-        smoke.size = Vec2::New(5.0F, 5.0F);
+        smoke.size = FVec2::New(5.0F, 5.0F);
         smoke.alpha = 0.7F;
-        smoke.vel = Vec2::New(
+        smoke.vel = FVec2::New(
             rng::RandomFloat(-1.0F, 1.0F),
             rng::RandomFloat(-1.5F, -0.5F)
         );
-        smoke.svel = Vec2::New(0.15F, 0.15F);
+        smoke.svel = FVec2::New(0.15F, 0.15F);
         smoke.alpha_vel = -0.06F;
         state.particles.Add(std::move(smoke));
     }

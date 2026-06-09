@@ -19,7 +19,7 @@ void SpriteParticle::Step(const AFrameDb& aframe_db, float dt) {
     rot += rotvel;
     alpha += alpha_vel;
 
-    size = Max(size, Vec2::New(0.0F, 0.0F));
+    size = Max(size, FVec2::New(0.0F, 0.0F));
     alpha = Max(Min(alpha, 1.0F), 0.0F);
 }
 

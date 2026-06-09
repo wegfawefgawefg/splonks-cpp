@@ -7,8 +7,8 @@
 
 namespace splonks {
 
-Vec2 GetNearestWorldDelta(const Stage& stage, const Vec2& from, const Vec2& to);
-Vec2 GetNearestWorldPoint(const Stage& stage, const Vec2& anchor, const Vec2& point);
+FVec2 GetNearestWorldDelta(const Stage& stage, const FVec2& from, const FVec2& to);
+FVec2 GetNearestWorldPoint(const Stage& stage, const FVec2& anchor, const FVec2& point);
 sim::Vec2 GetNearestWorldDelta(const Stage& stage, sim::Vec2 from, sim::Vec2 to);
 sim::Vec2 GetNearestWorldPoint(const Stage& stage, sim::Vec2 anchor, sim::Vec2 point);
 sim::AABB GetNearestWorldAabb(const Stage& stage, sim::Vec2 anchor, sim::AABB aabb);
@@ -95,8 +95,8 @@ TileStepRaycastResult RaycastTileSteps(
 );
 
 WorldRayHit RaycastRenderTiles(
-    const Vec2& start_pos,
-    const Vec2& direction,
+    const FVec2& start_pos,
+    const FVec2& direction,
     int max_distance,
     const State& state
 );

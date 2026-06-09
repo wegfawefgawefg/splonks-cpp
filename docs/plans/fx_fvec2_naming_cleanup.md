@@ -72,6 +72,12 @@ Do this in compile-checked batches. Each batch should be a mostly mechanical
 scripted/regex sweep and commit, with no intentional behavior changes. Avoid
 drifting back into one-entity-at-a-time cleanup for this naming work.
 
+Progress:
+
+- Completed 2026-06-09: first scripted lane renamed the old float `Vec2` type
+  and constructor call sites to `FVec2`, while keeping fixed vectors spelled
+  `sim::Vec2` for now.
+
 1. Rename the old float `Vec2` type to `FVec2`.
    - Update constructors and operators mechanically.
    - `Vec2::New(...)` becomes `FVec2::New(...)` where the old float type is

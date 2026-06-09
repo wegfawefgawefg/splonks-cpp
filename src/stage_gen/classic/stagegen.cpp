@@ -100,10 +100,10 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
                                             glyph_map, item_db, shop_db, det_rng);
 
             const UVec2 room_pos = UVec2::New(room_x * room_size.x, room_y * room_size.y);
-            const Vec2 room_pos_wc = Vec2::New(static_cast<float>(room_pos.x * kTileSize),
+            const FVec2 room_pos_wc = FVec2::New(static_cast<float>(room_pos.x * kTileSize),
                                                static_cast<float>(room_pos.y * kTileSize));
             stage.stagegen_annotations.push_back(StageGenAnnotation{
-                .world_pos = room_pos_wc + Vec2::New(4.0F, 10.0F),
+                .world_pos = room_pos_wc + FVec2::New(4.0F, 10.0F),
                 .text = "room (" + std::to_string(room_x) + "," + std::to_string(room_y) +
                         "): " + room.source_path,
             });
@@ -146,7 +146,7 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
                 if (trigger.debug_label != nullptr) {
                     stage.stagegen_annotations.push_back(StageGenAnnotation{
                         .world_pos = ToVec2(trigger.tile_pos * static_cast<int>(kTileSize)) +
-                                     Vec2::New(2.0F, 8.0F),
+                                     FVec2::New(2.0F, 8.0F),
                         .text = trigger.debug_label,
                     });
                 }

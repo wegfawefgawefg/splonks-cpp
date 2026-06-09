@@ -245,27 +245,27 @@ void Ent::SetSimAcc(sim::Vec2 value) {
     acc = value;
 }
 
-Vec2 Ent::GetRenderPos() const {
+FVec2 Ent::GetRenderPos() const {
     return sim::ToRenderVec2(pos);
 }
 
-Vec2 Ent::GetRenderVel() const {
+FVec2 Ent::GetRenderVel() const {
     return sim::ToRenderVec2(vel);
 }
 
-Vec2 Ent::GetRenderAcc() const {
+FVec2 Ent::GetRenderAcc() const {
     return sim::ToRenderVec2(acc);
 }
 
-void Ent::SetRenderPos(const Vec2& value) {
+void Ent::SetRenderPos(const FVec2& value) {
     pos = sim::ToSimVec2(value);
 }
 
-void Ent::SetRenderVel(const Vec2& value) {
+void Ent::SetRenderVel(const FVec2& value) {
     vel = sim::ToSimVec2(value);
 }
 
-void Ent::SetRenderAcc(const Vec2& value) {
+void Ent::SetRenderAcc(const FVec2& value) {
     acc = sim::ToSimVec2(value);
 }
 
@@ -294,7 +294,7 @@ sim::AABB Ent::GetSimGroundProbe() const {
     return feet;
 }
 
-std::tuple<Vec2, Vec2> Ent::GetRenderBounds() const {
+std::tuple<FVec2, FVec2> Ent::GetRenderBounds() const {
     const sim::AABB bounds = GetSimAABB();
     return {sim::ToRenderVec2(bounds.tl), sim::ToRenderVec2(bounds.br)};
 }
@@ -303,15 +303,15 @@ RenderAABB Ent::GetRenderAABB() const {
     return ToRenderAABB(GetSimAABB());
 }
 
-Vec2 Ent::GetRenderCenter() const {
+FVec2 Ent::GetRenderCenter() const {
     return sim::ToRenderVec2(GetSimCenter());
 }
 
-void Ent::SetRenderCenter(const Vec2& center) {
+void Ent::SetRenderCenter(const FVec2& center) {
     SetSimCenter(sim::ToSimVec2(center));
 }
 
-Vec2 Ent::GetSize() const {
+FVec2 Ent::GetSize() const {
     return sim::ToRenderVec2(size);
 }
 
@@ -365,7 +365,7 @@ void Ent::SetGrounded(const Stage& stage) {
     }
 }
 
-std::tuple<Vec2, Vec2> Ent::GetTlAndTrCorners() const {
+std::tuple<FVec2, FVec2> Ent::GetTlAndTrCorners() const {
     return {GetRenderPos(), sim::ToRenderVec2(pos + sim::Vec2{size.x, sim::Scalar::zero()})};
 }
 
@@ -379,12 +379,12 @@ HangHands Ent::GetHangHands() const {
 
 HangHandBounds Ent::GetHangHandsBounds() const {
     const auto [tl, _br] = GetRenderBounds();
-    const Vec2 right_edge = tl + Vec2::New(GetSize().x, 0.0F);
+    const FVec2 right_edge = tl + FVec2::New(GetSize().x, 0.0F);
     HangHandBounds hang_hands;
     hang_hands.left_tl = tl - kHangHandSize;
     hang_hands.left_br = tl;
-    hang_hands.right_tl = right_edge - Vec2::New(0.0F, kHangHandSize.y);
-    hang_hands.right_br = right_edge + Vec2::New(kHangHandSize.x, 0.0F);
+    hang_hands.right_tl = right_edge - FVec2::New(0.0F, kHangHandSize.y);
+    hang_hands.right_br = right_edge + FVec2::New(kHangHandSize.x, 0.0F);
     return hang_hands;
 }
 

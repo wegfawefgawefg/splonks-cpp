@@ -423,8 +423,8 @@ bool ApplyDetWorldOpsSmokeMutations(State& state, const char*& failed_step) {
         state,
         EntType::Rock,
         [](Ent& ent) {
-            ent.SetRenderPos(Vec2::New(96.0F, 64.0F));
-            ent.SetRenderVel(Vec2::New(1.0F, -2.0F));
+            ent.SetRenderPos(FVec2::New(96.0F, 64.0F));
+            ent.SetRenderVel(FVec2::New(1.0F, -2.0F));
             ent.acc = sim::Vec2::zero();
         }
     );
@@ -579,7 +579,7 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
         return false;
     }
 
-    player->SetRenderPos(Vec2::New(4.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - player->GetSize().y));
+    player->SetRenderPos(FVec2::New(4.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - player->GetSize().y));
     player->vel = sim::Vec2::zero();
     player->acc = sim::Vec2::zero();
     player->grounded = false;
@@ -588,7 +588,7 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
     FillToolSlot(state.ent_tools.EnsureToolSlot(player->vid, 0), ToolKind::ThrowBomb, 3, true);
     FillToolSlot(state.ent_tools.EnsureToolSlot(player->vid, 1), ToolKind::ThrowRope, 3, true);
 
-    const auto spawn = [&](EntType type, Vec2 pos) -> bool {
+    const auto spawn = [&](EntType type, FVec2 pos) -> bool {
         Ent* const ent = world_ops::SpawnEnt(state, type, [&](Ent& spawned) {
             spawned.SetRenderPos(pos);
             spawned.vel = sim::Vec2::zero();
@@ -596,10 +596,10 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
         });
         return ent != nullptr;
     };
-    if (!spawn(EntType::Rock, Vec2::New(5.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - 8.0F)) ||
-        !spawn(EntType::Pot, Vec2::New(9.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize))) ||
-        !spawn(EntType::Box, Vec2::New(11.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize))) ||
-        !spawn(EntType::Snake, Vec2::New(16.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize)))) {
+    if (!spawn(EntType::Rock, FVec2::New(5.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - 8.0F)) ||
+        !spawn(EntType::Pot, FVec2::New(9.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize))) ||
+        !spawn(EntType::Box, FVec2::New(11.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize))) ||
+        !spawn(EntType::Snake, FVec2::New(16.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize)))) {
         failed_step = "spawn broad scenario ents";
         return false;
     }
@@ -647,8 +647,8 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
     state.stage.AddFluidTempGravity(IVec2::New(12, 11), sim::ToSimVec2(1.25F, 0.0F));
 
     Ent* const box = world_ops::SpawnEnt(state, EntType::Box, [](Ent& ent) {
-        ent.SetRenderPos(Vec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize)));
-        ent.SetRenderVel(Vec2::New(0.0F, 0.0F));
+        ent.SetRenderPos(FVec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize)));
+        ent.SetRenderVel(FVec2::New(0.0F, 0.0F));
         ent.acc = sim::Vec2::zero();
     });
     if (box == nullptr) {
@@ -656,7 +656,7 @@ bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
         return false;
     }
 
-    player->SetRenderPos(Vec2::New(
+    player->SetRenderPos(FVec2::New(
         22.0F * static_cast<float>(kTileSize),
         20.0F * static_cast<float>(kTileSize) - player->GetSize().y
     ));
@@ -683,7 +683,7 @@ bool PrepareShopDetReplayScenario(State& state, const char*& failed_step) {
         return false;
     }
     player->money = 50000;
-    player->SetRenderPos(Vec2::New(
+    player->SetRenderPos(FVec2::New(
         16.0F * static_cast<float>(kTileSize),
         10.0F * static_cast<float>(kTileSize) - player->GetSize().y
     ));
@@ -698,11 +698,11 @@ bool AddSecondLocalPlayerForDetReplay(State& state, Graphics& graphics) {
     constexpr PlayerId kSecondPlayerId = 2;
     (void)state.players.EnsureLocalPlayer(kSecondPlayerId, "Player 2", false);
 
-    Vec2 spawn_pos = Vec2::New(32.0F, 32.0F);
+    FVec2 spawn_pos = FVec2::New(32.0F, 32.0F);
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal();
         primary != nullptr && primary->ent_vid.has_value()) {
         if (const Ent* const primary_ent = state.ents.GetEnt(*primary->ent_vid)) {
-            spawn_pos = primary_ent->GetRenderPos() + Vec2::New(16.0F, 0.0F);
+            spawn_pos = primary_ent->GetRenderPos() + FVec2::New(16.0F, 0.0F);
         }
     }
 
@@ -847,8 +847,8 @@ bool PlaceCarryTransitionSmokePlayers(State& state, Graphics& graphics, const ch
 
     const float tile = static_cast<float>(kTileSize);
     const float floor_y = 20.0F * tile;
-    p1->SetRenderPos(Vec2::New(8.0F * tile, floor_y - p1->GetSize().y));
-    p2->SetRenderPos(Vec2::New(9.0F * tile, floor_y - p2->GetSize().y));
+    p1->SetRenderPos(FVec2::New(8.0F * tile, floor_y - p1->GetSize().y));
+    p2->SetRenderPos(FVec2::New(9.0F * tile, floor_y - p2->GetSize().y));
     for (Ent* const player : {p1, p2}) {
         player->vel = sim::Vec2::zero();
         player->acc = sim::Vec2::zero();
@@ -1800,7 +1800,7 @@ bool RunJoinBarrierProtocolSmoke() {
     topology.barrier_frame = host.net_session.lockstep_next_frame_to_step;
     topology.player_count = 1;
     topology.player_ids[0] = 6;
-    const sim::Vec2 topology_pos = sim::ToSimVec2(Vec2::New(128.0F, 64.0F));
+    const sim::Vec2 topology_pos = sim::ToSimVec2(FVec2::New(128.0F, 64.0F));
     topology.player_pos_x_raw[0] = topology_pos.x.raw_value();
     topology.player_pos_y_raw[0] = topology_pos.y.raw_value();
     topology.removed_player_count = 1;
@@ -2640,13 +2640,13 @@ bool RunJoinBarrierNextStageRestartSmoke() {
     return true;
 }
 
-bool AddSmokePlayer(State& state, Graphics& graphics, PlayerId player_id, Vec2 offset) {
+bool AddSmokePlayer(State& state, Graphics& graphics, PlayerId player_id, FVec2 offset) {
     (void)state.players.EnsureLocalPlayer(
         player_id,
         "Player " + std::to_string(player_id),
         false
     );
-    Vec2 spawn_pos = Vec2::New(32.0F, 32.0F) + offset;
+    FVec2 spawn_pos = FVec2::New(32.0F, 32.0F) + offset;
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal();
         primary != nullptr && primary->ent_vid.has_value()) {
         if (const Ent* const primary_ent = state.ents.GetEnt(*primary->ent_vid)) {
@@ -2673,8 +2673,8 @@ bool RunSimSnapshotMultiLocalOverlaySmoke() {
     const char* failed_step = nullptr;
     if (!PrepareLockstepSmokeState(source, source_graphics, {1}, failed_step) ||
         !PrepareLockstepSmokeState(target, target_graphics, {2}, failed_step) ||
-        !AddSmokePlayer(source, source_graphics, 3, Vec2::New(32.0F, 0.0F)) ||
-        !AddSmokePlayer(target, target_graphics, 3, Vec2::New(32.0F, 0.0F)) ||
+        !AddSmokePlayer(source, source_graphics, 3, FVec2::New(32.0F, 0.0F)) ||
+        !AddSmokePlayer(target, target_graphics, 3, FVec2::New(32.0F, 0.0F)) ||
         !ConfigureLockstepSmokeOwnership(source, {1}) ||
         !ConfigureLockstepSmokeOwnership(target, {2, 3})) {
         std::cerr << "sim snapshot multi-local overlay smoke failed during setup: "
@@ -2744,7 +2744,7 @@ bool RunRetainedReconnectSmoke() {
         return false;
     }
 
-    player->SetRenderPos(Vec2::New(128.0F, 192.0F));
+    player->SetRenderPos(FVec2::New(128.0F, 192.0F));
     player->health = 277;
     player->money = 54321;
     (void)AddEffect(*player, EffectId::Gloves);
@@ -2753,12 +2753,12 @@ bool RunRetainedReconnectSmoke() {
     FillToolSlot(state.ent_tools.EnsureToolSlot(player->vid, 1), ToolKind::ThrowRope, 7, true);
 
     Ent* const held = world_ops::SpawnEnt(state, EntType::Rock, [](Ent& ent) {
-        ent.SetRenderPos(Vec2::New(136.0F, 192.0F));
-        ent.SetRenderVel(Vec2::New(1.0F, -2.0F));
+        ent.SetRenderPos(FVec2::New(136.0F, 192.0F));
+        ent.SetRenderVel(FVec2::New(1.0F, -2.0F));
         ent.counter_a = sim::Scalar::from_int(3);
     });
     Ent* const back = world_ops::SpawnEnt(state, EntType::Cape, [](Ent& ent) {
-        ent.SetRenderPos(Vec2::New(120.0F, 192.0F));
+        ent.SetRenderPos(FVec2::New(120.0F, 192.0F));
         ent.counter_b = sim::Scalar::from_int(4);
     });
     if (held == nullptr || back == nullptr) {
@@ -2776,7 +2776,7 @@ bool RunRetainedReconnectSmoke() {
     const network::NetRetainedPlayerState* const retained =
         network::FindRetainedPlayerState(state, slot->player_id);
     if (retained == nullptr ||
-        retained->last_pos != sim::ToSimVec2(Vec2::New(128.0F, 192.0F)) ||
+        retained->last_pos != sim::ToSimVec2(FVec2::New(128.0F, 192.0F)) ||
         retained->health != 277 ||
         retained->money != 54321 ||
         !retained->held_item.valid ||
@@ -2800,7 +2800,7 @@ bool RunRetainedReconnectSmoke() {
         return false;
     }
 
-    player->SetRenderPos(Vec2::New(16.0F, 16.0F));
+    player->SetRenderPos(FVec2::New(16.0F, 16.0F));
     player->health = 1;
     player->money = 2;
     player->holding_vid.reset();
@@ -2822,7 +2822,7 @@ bool RunRetainedReconnectSmoke() {
     network::ApplyRetainedPlayerState(state, slot->player_id, *retained, spawn_pos, graphics);
     player = state.ents.GetEntMut(*slot->ent_vid);
     if (player == nullptr ||
-        player->GetRenderPos() != Vec2::New(128.0F, 192.0F) ||
+        player->GetRenderPos() != FVec2::New(128.0F, 192.0F) ||
         player->health != 277 ||
         player->money != 54321 ||
         !HasEffect(*player, EffectId::Gloves) ||

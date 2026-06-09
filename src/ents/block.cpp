@@ -66,64 +66,64 @@ void ControlEntAsBlock(
     StepControlledBlock(block, controls::GetControlIntentForEnt(block, state));
 }
 
-void SpawnBlockDeathParticles(const Vec2& center, AFrameId anim_id, State& state) {
+void SpawnBlockDeathParticles(const FVec2& center, AFrameId anim_id, State& state) {
     for (int i = 0; i < 12; ++i) {
         SpriteParticle shard{};
         shard.aframe_animator = AFrameAnimator::New(anim_id);
         shard.draw_layer = DrawLayer::Foreground;
         shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(20, 42));
-        shard.pos = center + Vec2::New(
+        shard.pos = center + FVec2::New(
                  rng::RandomFloat(-3.0F, 3.0F),
                  rng::RandomFloat(-3.0F, 3.0F)
              );
         const float size = rng::RandomFloat(3.0F, 7.0F);
-        shard.size = Vec2::New(size, size);
+        shard.size = FVec2::New(size, size);
         shard.rot = rng::RandomFloat(0.0F, 360.0F);
         shard.alpha = 1.0F;
-        shard.vel = Vec2::New(
+        shard.vel = FVec2::New(
             rng::RandomFloat(-2.4F, 2.4F),
             rng::RandomFloat(-4.2F, -1.2F)
         );
-        shard.svel = Vec2::New(0.0F, 0.0F);
+        shard.svel = FVec2::New(0.0F, 0.0F);
         shard.rotvel = rng::RandomFloat(-0.7F, 0.7F);
         shard.alpha_vel = -0.018F;
-        shard.acc = Vec2::New(0.0F, 0.18F);
-        shard.sacc = Vec2::New(0.0F, 0.0F);
+        shard.acc = FVec2::New(0.0F, 0.18F);
+        shard.sacc = FVec2::New(0.0F, 0.0F);
         shard.rotacc = 0.0F;
         shard.alpha_acc = -0.003F;
         state.particles.Add(std::move(shard));
     }
 }
 
-void SpawnBlockTrailSmoke(State& state, const Vec2& pos, Side facing) {
+void SpawnBlockTrailSmoke(State& state, const FVec2& pos, Side facing) {
     SpriteParticle smoke{};
     smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
     smoke.draw_layer = DrawLayer::Foreground;
     smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(16, 28));
-    smoke.pos = pos + Vec2::New(
+    smoke.pos = pos + FVec2::New(
              rng::RandomFloat(-1.0F, 1.0F),
              rng::RandomFloat(-1.0F, 1.0F)
          );
     const float size = rng::RandomFloat(3.0F, 5.5F);
-    smoke.size = Vec2::New(size, size);
+    smoke.size = FVec2::New(size, size);
     smoke.rot = rng::RandomFloat(0.0F, 360.0F);
     smoke.alpha = rng::RandomFloat(0.55F, 0.85F);
-    smoke.vel = Vec2::New(
+    smoke.vel = FVec2::New(
         facing == Side::Right ? rng::RandomFloat(-0.9F, -0.2F)
                                      : rng::RandomFloat(0.2F, 0.9F),
         rng::RandomFloat(-0.8F, -0.2F)
     );
-    smoke.svel = Vec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
+    smoke.svel = FVec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
     smoke.rotvel = rng::RandomFloat(-0.2F, 0.2F);
     smoke.alpha_vel = -0.02F;
-    smoke.acc = Vec2::New(0.0F, 0.01F);
-    smoke.sacc = Vec2::New(0.0F, 0.0F);
+    smoke.acc = FVec2::New(0.0F, 0.01F);
+    smoke.sacc = FVec2::New(0.0F, 0.0F);
     smoke.rotacc = 0.0F;
     smoke.alpha_acc = -0.003F;
     state.particles.Add(std::move(smoke));
 }
 
-Vec2 GetBlockTrailingBottomCorner(const Ent& block) {
+FVec2 GetBlockTrailingBottomCorner(const Ent& block) {
     const sim::AABB aabb = block.GetSimAABB();
     return sim::ToRenderVec2(block.facing == Side::Right
                                  ? sim::Vec2{aabb.tl.x, aabb.br.y}

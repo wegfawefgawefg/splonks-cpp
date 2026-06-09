@@ -131,7 +131,7 @@ struct EffectHookContext {
     EffectHookType type = EffectHookType::Throw;
     std::optional<VID> actor_vid = std::nullopt;
     std::optional<VID> target_vid = std::nullopt;
-    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 world_pos = FVec2::New(0.0F, 0.0F);
 };
 
 using EffectHookHandler = void (*)(Ent& owner, EffectInstance& effect, State& state, Audio* audio, const EffectHookContext& hook);

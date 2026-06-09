@@ -33,7 +33,7 @@ bool IsWaterSurfaceTile(const Stage& stage, const IVec2& tile_coord) {
            !IsWaterTile(stage.GetTile(above_x, above_y));
 }
 
-bool IsWaterAtWorldPos(const Stage& stage, const Vec2& world_pos, float amount_cutoff) {
+bool IsWaterAtWorldPos(const Stage& stage, const FVec2& world_pos, float amount_cutoff) {
     const std::optional<WorldTileQueryResult> tile_query =
         QueryTileAtWorldPos(stage, ToIVec2(world_pos));
     if (!tile_query.has_value()) {
@@ -49,7 +49,7 @@ bool IsWaterAtWorldPos(const Stage& stage, const Vec2& world_pos, float amount_c
     return tile_query->tile != nullptr && IsWaterTile(*tile_query->tile);
 }
 
-bool IsWaterAtWorldPos(const Stage& stage, const Vec2& world_pos) {
+bool IsWaterAtWorldPos(const Stage& stage, const FVec2& world_pos) {
     return IsWaterAtWorldPos(stage, world_pos, 0.0F);
 }
 

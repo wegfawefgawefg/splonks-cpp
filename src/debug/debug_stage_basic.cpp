@@ -44,17 +44,17 @@ void BuildMazeDoorTestPerimeter(Stage& stage) {
     }
 }
 
-Vec2 GetMazeDoorTestPlayerSpawn(MazeDoorTestRoom room) {
+FVec2 GetMazeDoorTestPlayerSpawn(MazeDoorTestRoom room) {
     switch (room) {
     case MazeDoorTestRoom::RoomA:
     case MazeDoorTestRoom::RoomB:
     case MazeDoorTestRoom::RoomC:
-        return Vec2::New(2.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize) - 14.0F);
+        return FVec2::New(2.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize) - 14.0F);
     }
-    return Vec2::New(2.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize) - 14.0F);
+    return FVec2::New(2.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize) - 14.0F);
 }
 
-void SpawnMazeDoorLogo(State& state, const Vec2& pos, const Vec2& vel, MazeDoorTestRoom target_room) {
+void SpawnMazeDoorLogo(State& state, const FVec2& pos, const FVec2& vel, MazeDoorTestRoom target_room) {
     const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid) {
         return;
@@ -220,7 +220,7 @@ void InitHangTestStage(State& state) {
 
     const float spawn_x = static_cast<float>((wall_x + 1) * static_cast<int>(kTileSize) - 8);
     const float spawn_y = static_cast<float>(top_y * static_cast<int>(kTileSize) - 14);
-    SpawnPlayerAtRenderPosition(state, Vec2::New(spawn_x, spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(spawn_x, spawn_y));
 }
 
 void InitStompTestStage(State& state) {
@@ -229,12 +229,12 @@ void InitStompTestStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(4 * static_cast<int>(kTileSize) - 3);
     const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 10);
-    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 
     if (const std::optional<VID> vid = state.ents.NewEnt()) {
         if (Ent* const stomp_pad = state.ents.GetEntMut(*vid)) {
             SetEntAs(*stomp_pad, EntType::StompPad);
-            stomp_pad->SetRenderPos(Vec2::New(
+            stomp_pad->SetRenderPos(FVec2::New(
                 static_cast<float>(4 * static_cast<int>(kTileSize)),
                 static_cast<float>(4 * static_cast<int>(kTileSize) - 7)
             ));
@@ -248,7 +248,7 @@ void InitBorderTestStage(State& state) {
 
     const float player_spawn_x = static_cast<float>(4 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(5 * static_cast<int>(kTileSize) - 10);
-    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 }
 
 void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
@@ -258,7 +258,7 @@ void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
     state.mouse_trailer_vid.reset();
 
     const MazeDoorTestRoom room = state.debug_level.maze_door_test.room;
-    const Vec2 spawn_pos = GetMazeDoorTestPlayerSpawn(room);
+    const FVec2 spawn_pos = GetMazeDoorTestPlayerSpawn(room);
     if (!carryover.players.empty()) {
         RestoreStageCarryover(state, carryover);
         PlacePlayerAtRenderPosition(state, spawn_pos);
@@ -271,30 +271,30 @@ void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
     case MazeDoorTestRoom::RoomA:
         SpawnMazeDoorLogo(
             state,
-            Vec2::New(8.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
-            Vec2::New(-1.0F, 1.0F),
+            FVec2::New(8.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
+            FVec2::New(-1.0F, 1.0F),
             MazeDoorTestRoom::RoomB
         );
         break;
     case MazeDoorTestRoom::RoomB:
         SpawnMazeDoorLogo(
             state,
-            Vec2::New(2.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
-            Vec2::New(1.0F, 1.0F),
+            FVec2::New(2.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
+            FVec2::New(1.0F, 1.0F),
             MazeDoorTestRoom::RoomA
         );
         SpawnMazeDoorLogo(
             state,
-            Vec2::New(8.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
-            Vec2::New(-1.0F, 1.0F),
+            FVec2::New(8.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
+            FVec2::New(-1.0F, 1.0F),
             MazeDoorTestRoom::RoomC
         );
         break;
     case MazeDoorTestRoom::RoomC:
         SpawnMazeDoorLogo(
             state,
-            Vec2::New(6.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
-            Vec2::New(1.0F, 1.0F),
+            FVec2::New(6.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
+            FVec2::New(1.0F, 1.0F),
             MazeDoorTestRoom::RoomA
         );
         break;

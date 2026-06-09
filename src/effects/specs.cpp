@@ -178,11 +178,11 @@ void OnMittEffectHook(
     (void)AddEffect(*thrown, EffectId::NoGravityUntilContact);
 }
 
-std::optional<Vec2> FindEntranceRevivePos(const State& state) {
+std::optional<FVec2> FindEntranceRevivePos(const State& state) {
     for (unsigned int y = 0; y < state.stage.GetTileHeight(); ++y) {
         for (unsigned int x = 0; x < state.stage.GetTileWidth(); ++x) {
             if (state.stage.GetTile(x, y) == Tile::Entrance) {
-                return Vec2::New(static_cast<float>(x), static_cast<float>(y)) *
+                return FVec2::New(static_cast<float>(x), static_cast<float>(y)) *
                        static_cast<float>(kTileSize);
             }
         }
@@ -245,7 +245,7 @@ void OnAnkhEffectHook(
     owner.jumped_this_frame = false;
     (void)TrySetAnim(owner, EntDisplayState::Neutral);
 
-    if (const std::optional<Vec2> entrance_pos = FindEntranceRevivePos(state)) {
+    if (const std::optional<FVec2> entrance_pos = FindEntranceRevivePos(state)) {
         owner.SetRenderPos(*entrance_pos);
     }
     SnapBackItemToOwner(owner, state);

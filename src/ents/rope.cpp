@@ -106,7 +106,7 @@ void StepEntLogicAsRope(
         rope.health = 0;
         // loop down up to 6 tiles, convert all air into rope tiles, but stop if interupped
         // get rope tile position,
-        const Vec2 rope_center = rope.GetRenderCenter();
+        const FVec2 rope_center = rope.GetRenderCenter();
         bool atleast_one_tile_converted = false;
         const std::optional<WorldTileQueryResult> rope_tile =
             QueryTileAtWorldPos(state.stage, ToIVec2(rope_center));

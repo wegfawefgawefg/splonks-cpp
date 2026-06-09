@@ -17,7 +17,7 @@ float Lerp(float a, float b, float t) {
     return a + ((b - a) * Clamp01(t));
 }
 
-float Distance(const Vec2& a, const Vec2& b) {
+float Distance(const FVec2& a, const FVec2& b) {
     return LengthDeterministic(a - b);
 }
 
@@ -25,7 +25,7 @@ float GetAudioOcclusionListenerEpsilonPx(const State& state) {
     return std::max(0.0F, state.settings.audio.acoustics_occlusion_listener_epsilon_px);
 }
 
-float SampleStageOpennessAtWorldPos(State& state, const Vec2& world_pos) {
+float SampleStageOpennessAtWorldPos(State& state, const FVec2& world_pos) {
     EnsureStageAcoustics(state);
 
     IVec2 world_cell = ToIVec2(world_pos);
@@ -52,7 +52,7 @@ void SetAudioOcclusionEnabled(State& state, bool enabled) {
 
 bool ShouldAudioRayHitCountAsOccluded(
     const State& state,
-    const Vec2& listener_world_pos,
+    const FVec2& listener_world_pos,
     const WorldRayHit& hit
 ) {
     if (hit.type != WorldRayHitType::Tile && hit.type != WorldRayHitType::StageBounds) {
@@ -64,14 +64,14 @@ bool ShouldAudioRayHitCountAsOccluded(
         return true;
     }
 
-    const Vec2 hit_world = Vec2::New(static_cast<float>(hit.point.x), static_cast<float>(hit.point.y));
+    const FVec2 hit_world = FVec2::New(static_cast<float>(hit.point.x), static_cast<float>(hit.point.y));
     return Distance(hit_world, listener_world_pos) > epsilon_px;
 }
 
 PositionalAudioAcoustics ComputePositionalAudioAcoustics(
     State& state,
-    const Vec2& listener_world_pos,
-    const Vec2& source_world_pos
+    const FVec2& listener_world_pos,
+    const FVec2& source_world_pos
 ) {
     PositionalAudioAcoustics result;
     const AudioSettings& settings = state.settings.audio;
@@ -119,7 +119,7 @@ PositionalAudioAcoustics ComputePositionalAudioAcoustics(
     result.low_pass_wet = 1.0F;
 
     if (settings.acoustics_enabled && IsAudioOcclusionEnabled(state)) {
-        const Vec2 ray_delta = GetNearestWorldDelta(
+        const FVec2 ray_delta = GetNearestWorldDelta(
             state.stage,
             result.wrapped_source_world_pos,
             listener_world_pos

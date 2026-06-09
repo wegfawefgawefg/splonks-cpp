@@ -6,6 +6,6 @@ namespace splonks {
 
 struct Stage;
 
-Vec2 ClampCameraTargetToStage(const Stage& stage, Vec2 target);
+FVec2 ClampCameraTargetToStage(const Stage& stage, FVec2 target);
 
 } // namespace splonks

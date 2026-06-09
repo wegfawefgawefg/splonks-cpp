@@ -8,7 +8,7 @@ namespace splonks {
 struct WorldRayHit;
 
 struct PositionalAudioAcoustics {
-    Vec2 wrapped_source_world_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 wrapped_source_world_pos = FVec2::New(0.0F, 0.0F);
     float source_openness = 0.0F;
     float listener_openness = 0.0F;
     float direct_open = 0.0F;
@@ -30,14 +30,14 @@ void SetAudioOcclusionEnabled(State& state, bool enabled);
 
 bool ShouldAudioRayHitCountAsOccluded(
     const State& state,
-    const Vec2& listener_world_pos,
+    const FVec2& listener_world_pos,
     const WorldRayHit& hit
 );
 
 PositionalAudioAcoustics ComputePositionalAudioAcoustics(
     State& state,
-    const Vec2& listener_world_pos,
-    const Vec2& source_world_pos
+    const FVec2& listener_world_pos,
+    const FVec2& source_world_pos
 );
 
 } // namespace splonks

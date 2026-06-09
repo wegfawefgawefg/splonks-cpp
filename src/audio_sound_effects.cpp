@@ -25,8 +25,8 @@ float ClampPanHalfWidthPx(float half_width_px) {
 }
 
 MIX_StereoGains BuildTrackStereoGains(
-    const Vec2& listener_world_pos,
-    const Vec2& sound_world_pos,
+    const FVec2& listener_world_pos,
+    const FVec2& sound_world_pos,
     float pan_half_width_px
 ) {
     const float dx = sound_world_pos.x - listener_world_pos.x;
@@ -56,7 +56,7 @@ void ApplyPlaybackParamsToTrack(
     audio_detail::AudioInstanceTrackRuntime& runtime,
     const AudioPlaybackParams& params,
     float sound_effects_volume,
-    const Vec2& listener_world_pos,
+    const FVec2& listener_world_pos,
     float pan_half_width_px
 ) {
     const float gain = std::clamp(
@@ -257,7 +257,7 @@ bool Audio::IsAudioInstancePlaying(VID handle) const {
     return runtime != nullptr;
 }
 
-void Audio::SetListenerWorldPos(const Vec2& world_pos) {
+void Audio::SetListenerWorldPos(const FVec2& world_pos) {
     listener_world_pos = world_pos;
 }
 

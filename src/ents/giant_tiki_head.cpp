@@ -151,7 +151,7 @@ void StepEntLogicAsGiantTikiHead(
         (void)PlayAttachedSoundEmitter(
             state,
             head.vid,
-            Vec2::New(0.0F, 0.0F),
+            FVec2::New(0.0F, 0.0F),
             audio_asset_ids::BoulderLatch
         );
         return;

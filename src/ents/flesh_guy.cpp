@@ -72,7 +72,7 @@ int FloorToTileCoord(float value) {
     return FloorToInt(value / static_cast<float>(kTileSize));
 }
 
-IVec2 WorldPosToUnwrappedTileCoord(const Vec2& world_pos) {
+IVec2 WorldPosToUnwrappedTileCoord(const FVec2& world_pos) {
     return IVec2::New(FloorToTileCoord(world_pos.x), FloorToTileCoord(world_pos.y));
 }
 
@@ -141,7 +141,7 @@ std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurface(
 
 std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurfaceAtWorldPos(
     const Stage& stage,
-    const Vec2& world_pos
+    const FVec2& world_pos
 ) {
     return QueryCollidableTileOrBorderSurface(stage, WorldPosToUnwrappedTileCoord(world_pos));
 }
@@ -254,7 +254,7 @@ std::optional<MeatSlimeSurface> GetGroundSurface(const Ent& ent, const State& st
     return std::nullopt;
 }
 
-void SpawnMeatSlime(State& state, const Vec2& particle_center, float rotation = 0.0F) {
+void SpawnMeatSlime(State& state, const FVec2& particle_center, float rotation = 0.0F) {
     ScriptedParticle particle = MakeScriptedParticle(scripted_particle_spec_ids::MeatTileTopper, particle_center);
     if (!particle.active) {
         return;
@@ -263,42 +263,42 @@ void SpawnMeatSlime(State& state, const Vec2& particle_center, float rotation = 
     state.particles.Add(std::move(particle));
 }
 
-Vec2 GetTopMeatSlimeCenter(const IVec2& tile_pos) {
-    return Vec2::New(
+FVec2 GetTopMeatSlimeCenter(const IVec2& tile_pos) {
+    return FVec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2)),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize)) +
             (kMeatTileTopperHeight * 0.5F) + kMeatTileTopperYOffset
     );
 }
 
-Vec2 GetTopMeatSlimeCenter(const MeatSlimeSurface& surface, const Stage& stage) {
+FVec2 GetTopMeatSlimeCenter(const MeatSlimeSurface& surface, const Stage& stage) {
     (void)stage;
     return GetTopMeatSlimeCenter(surface.tile_pos);
 }
 
-Vec2 GetBottomMeatSlimeCenter(const IVec2& tile_pos) {
-    return Vec2::New(
+FVec2 GetBottomMeatSlimeCenter(const IVec2& tile_pos) {
+    return FVec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2)),
         static_cast<float>((tile_pos.y + 1) * static_cast<int>(kTileSize)) -
             (kMeatTileTopperHeight * 0.5F) - kMeatTileTopperYOffset
     );
 }
 
-Vec2 GetBottomMeatSlimeCenter(const MeatSlimeSurface& surface, const Stage& stage) {
+FVec2 GetBottomMeatSlimeCenter(const MeatSlimeSurface& surface, const Stage& stage) {
     (void)stage;
     return GetBottomMeatSlimeCenter(surface.tile_pos);
 }
 
-Vec2 GetSideMeatSlimeCenter(const IVec2& tile_pos, Side tile_side) {
+FVec2 GetSideMeatSlimeCenter(const IVec2& tile_pos, Side tile_side) {
     const float tile_left = static_cast<float>(tile_pos.x * static_cast<int>(kTileSize));
     const float tile_top = static_cast<float>(tile_pos.y * static_cast<int>(kTileSize));
     const float x = tile_side == Side::Left
                         ? tile_left + kSideMeatTileInset
                         : tile_left + static_cast<float>(kTileSize) - kSideMeatTileInset;
-    return Vec2::New(x, tile_top + static_cast<float>(kTileSize / 2));
+    return FVec2::New(x, tile_top + static_cast<float>(kTileSize / 2));
 }
 
-Vec2 GetSideMeatSlimeCenter(const MeatSlimeSurface& surface, Side tile_side, const Stage& stage) {
+FVec2 GetSideMeatSlimeCenter(const MeatSlimeSurface& surface, Side tile_side, const Stage& stage) {
     (void)stage;
     return GetSideMeatSlimeCenter(surface.tile_pos, tile_side);
 }

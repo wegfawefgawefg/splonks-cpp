@@ -118,35 +118,35 @@ sim::Vec2 CobraSpitVelocity(int direction) {
     };
 }
 
-void SpawnSpitParticle(State& state, const Vec2& pos, const Vec2& vel, float alpha, float size_jitter) {
+void SpawnSpitParticle(State& state, const FVec2& pos, const FVec2& vel, float alpha, float size_jitter) {
     SpriteParticle particle{};
     particle.aframe_animator = AFrameAnimator::New(aframe_ids::CobraSpit);
     particle.draw_layer = DrawLayer::Foreground;
     particle.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(8, 16));
-    particle.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-    particle.size = Vec2::New(
+    particle.pos = pos + FVec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+    particle.size = FVec2::New(
         4.0F + rng::RandomFloat(-size_jitter, size_jitter),
         3.0F + rng::RandomFloat(-size_jitter, size_jitter)
     );
     particle.rot = rng::RandomFloat(-20.0F, 20.0F);
     particle.alpha = alpha;
     particle.vel = vel;
-    particle.svel = Vec2::New(0.03F, 0.03F);
+    particle.svel = FVec2::New(0.03F, 0.03F);
     particle.rotvel = rng::RandomFloat(-2.0F, 2.0F);
     particle.alpha_vel = -0.05F;
-    particle.acc = Vec2::New(0.0F, 0.12F);
-    particle.sacc = Vec2::New(0.0F, 0.0F);
+    particle.acc = FVec2::New(0.0F, 0.12F);
+    particle.sacc = FVec2::New(0.0F, 0.0F);
     particle.rotacc = 0.0F;
     particle.alpha_acc = -0.003F;
     state.particles.Add(std::move(particle));
 }
 
-void SpawnSpitSpray(State& state, const Vec2& origin, int direction) {
+void SpawnSpitSpray(State& state, const FVec2& origin, int direction) {
     for (int i = 0; i < 7; ++i) {
         SpawnSpitParticle(
             state,
             origin,
-            Vec2::New(
+            FVec2::New(
                 rng::RandomFloat(0.35F, 1.8F) * static_cast<float>(direction),
                 rng::RandomFloat(-0.9F, 0.25F)
             ),
@@ -156,27 +156,27 @@ void SpawnSpitSpray(State& state, const Vec2& origin, int direction) {
     }
 }
 
-void SpawnSpitTrail(State& state, const Vec2& origin, const Vec2& base_vel) {
+void SpawnSpitTrail(State& state, const FVec2& origin, const FVec2& base_vel) {
     for (int i = 0; i < 2; ++i) {
         SpawnSpitParticle(
             state,
             origin,
-            Vec2::New(
+            FVec2::New(
                 base_vel.x * rng::RandomFloat(-0.15F, 0.05F),
                 base_vel.y * rng::RandomFloat(-0.15F, 0.05F)
-            ) + Vec2::New(rng::RandomFloat(-0.1F, 0.1F), rng::RandomFloat(-0.1F, 0.1F)),
+            ) + FVec2::New(rng::RandomFloat(-0.1F, 0.1F), rng::RandomFloat(-0.1F, 0.1F)),
             rng::RandomFloat(0.45F, 0.75F),
             0.6F
         );
     }
 }
 
-void SpawnSpitImpact(State& state, const Vec2& origin) {
+void SpawnSpitImpact(State& state, const FVec2& origin) {
     for (int i = 0; i < 4; ++i) {
         SpawnSpitParticle(
             state,
             origin,
-            Vec2::New(rng::RandomFloat(-0.8F, 0.8F), rng::RandomFloat(-0.8F, 0.15F)),
+            FVec2::New(rng::RandomFloat(-0.8F, 0.8F), rng::RandomFloat(-0.8F, 0.15F)),
             rng::RandomFloat(0.6F, 0.95F),
             0.8F
         );
@@ -206,7 +206,7 @@ void FireCobraSpit(std::size_t ent_idx, State& state, Graphics& graphics) {
         return;
     }
 
-    const Vec2 render_spit_origin = sim::ToRenderVec2(spit_origin);
+    const FVec2 render_spit_origin = sim::ToRenderVec2(spit_origin);
     (void)PlayWorldSoundEmitter(state, render_spit_origin, audio_asset_ids::Tube);
     SpawnSpitSpray(state, render_spit_origin, direction);
 }

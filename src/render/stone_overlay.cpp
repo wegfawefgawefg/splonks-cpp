@@ -27,8 +27,8 @@ void RenderStoneEntOverlay(
     SDL_Renderer* renderer,
     const State& state,
     Graphics& graphics,
-    const Vec2& render_position,
-    const Vec2& render_size
+    const FVec2& render_position,
+    const FVec2& render_size
 ) {
     (void)state;
 
@@ -80,7 +80,7 @@ void RenderStoneEntOverlay(
             const SDL_FRect dst = WorldRectToScreen(
                 graphics,
                 ToVec2(tile_world_pos),
-                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
             );
             SDL_RenderTexture(renderer, tile_texture, &src, &dst);
             SDL_SetTextureAlphaMod(tile_texture, 255);

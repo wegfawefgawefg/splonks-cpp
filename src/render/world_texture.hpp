@@ -8,8 +8,8 @@ namespace splonks {
 
 struct Graphics;
 
-Vec2 WorldToScreen(const Graphics& graphics, const Vec2& world_pos);
-SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, const Vec2& world_size);
+FVec2 WorldToScreen(const Graphics& graphics, const FVec2& world_pos);
+SDL_FRect WorldRectToScreen(const Graphics& graphics, const FVec2& world_pos, const FVec2& world_size);
 void RenderWorldTextureRotated(
     SDL_Renderer* renderer,
     const Graphics& graphics,

@@ -54,7 +54,7 @@ void DrawEffectOverlayAFrameIconRotated(
     const State& state,
     Graphics& graphics,
     AFrameId anim_id,
-    const Vec2& center,
+    const FVec2& center,
     const IVec2& size,
     double rotation_degrees
 ) {
@@ -103,7 +103,7 @@ void DrawEffectOverlayAFrameIconRotated(
     );
 }
 
-std::optional<Vec2> FindDefaultExitCenter(const State& state) {
+std::optional<FVec2> FindDefaultExitCenter(const State& state) {
     const StageExitId default_exit_id = state.stage.FindExitId("default");
     const bool should_match_exit_id = !state.stage.exits.empty();
 
@@ -144,16 +144,16 @@ void RenderCompassWorldOverlay(
     const Ent&,
     const EffectInstance&
 ) {
-    const std::optional<Vec2> exit_center = FindDefaultExitCenter(state);
+    const std::optional<FVec2> exit_center = FindDefaultExitCenter(state);
     if (!exit_center.has_value()) {
         return;
     }
 
-    const Vec2 nearest_exit_center =
+    const FVec2 nearest_exit_center =
         graphics.camera.target + GetNearestWorldDelta(state.stage, graphics.camera.target, *exit_center);
-    const Vec2 exit_screen = graphics.WcToScreen(nearest_exit_center);
-    const Vec2 screen_center = graphics.camera.offset;
-    const Vec2 direction = exit_screen - screen_center;
+    const FVec2 exit_screen = graphics.WcToScreen(nearest_exit_center);
+    const FVec2 screen_center = graphics.camera.offset;
+    const FVec2 direction = exit_screen - screen_center;
     if ((direction.x * direction.x) + (direction.y * direction.y) < 1.0F) {
         return;
     }
@@ -167,9 +167,9 @@ void RenderCompassWorldOverlay(
         exit_screen.y >= min_y && exit_screen.y <= max_y;
     if (exit_in_safe_rect) {
         const float bob = std::sin(static_cast<float>(state.scene_frame) * 0.08F) * 3.0F;
-        const Vec2 exit_marker_screen =
-            graphics.WcToScreen(nearest_exit_center + Vec2::New(0.0F, -16.0F)) +
-            Vec2::New(0.0F, bob);
+        const FVec2 exit_marker_screen =
+            graphics.WcToScreen(nearest_exit_center + FVec2::New(0.0F, -16.0F)) +
+            FVec2::New(0.0F, bob);
         const int arrow_size =
             std::max(16, static_cast<int>(static_cast<float>(graphics.dims.y) * 0.045F));
         DrawEffectOverlayAFrameIconRotated(
@@ -184,7 +184,7 @@ void RenderCompassWorldOverlay(
         return;
     }
 
-    const Vec2 arrow_center = Vec2::New(
+    const FVec2 arrow_center = FVec2::New(
         std::clamp(exit_screen.x, min_x, max_x),
         std::clamp(exit_screen.y, min_y, max_y)
     );

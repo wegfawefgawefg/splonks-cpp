@@ -92,10 +92,10 @@ struct EntSpec {
 };
 
 inline sim::Vec2 EntSpecSize(float width, float height) {
-    return sim::ToSimVec2(Vec2::New(width, height));
+    return sim::ToSimVec2(FVec2::New(width, height));
 }
 
-inline sim::Vec2 EntSpecSize(const Vec2& size) {
+inline sim::Vec2 EntSpecSize(const FVec2& size) {
     return sim::ToSimVec2(size);
 }
 

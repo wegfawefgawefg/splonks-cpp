@@ -67,8 +67,8 @@ struct AudioEmitter {
         AudioEmitterTargetLossPolicy::FinishCurrentPlay;
     std::optional<VID> owner_ent_vid = std::nullopt;
     std::optional<VID> attached_ent_vid = std::nullopt;
-    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
-    Vec2 attached_offset = Vec2::New(0.0F, 0.0F);
+    FVec2 world_pos = FVec2::New(0.0F, 0.0F);
+    FVec2 attached_offset = FVec2::New(0.0F, 0.0F);
 };
 
 struct AudioEmitterManager {
@@ -87,8 +87,8 @@ struct AudioEmitterManager {
 
 const AudioEmitter* GetSoundEmitter(const State& state, VID emitter_vid);
 AudioEmitter* GetSoundEmitterMut(State& state, VID emitter_vid);
-Vec2 GetAudioListenerWorldPos(const State& state);
-void SetAudioListenerWorldPos(State& state, const Vec2& world_pos);
+FVec2 GetAudioListenerWorldPos(const State& state);
+void SetAudioListenerWorldPos(State& state, const FVec2& world_pos);
 std::optional<VID> FindOwnedSoundEmitter(
     const State& state,
     VID owner_ent_vid,
@@ -100,7 +100,7 @@ std::optional<VID> FindOwnedSoundEmitter(
 /// while still updating positional mix as the listener/camera moves.
 std::optional<VID> PlayWorldSoundEmitter(
     State& state,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params = {}
 );
@@ -110,7 +110,7 @@ std::optional<VID> PlayWorldSoundEmitter(
 std::optional<VID> PlayAttachedSoundEmitter(
     State& state,
     VID attached_ent_vid,
-    const Vec2& attached_offset,
+    const FVec2& attached_offset,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params = {}
 );
@@ -121,7 +121,7 @@ std::optional<VID> PlayEntSoundEmitter(
     const Ent& ent,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params = {},
-    const Vec2& attached_offset = Vec2::New(0.0F, 0.0F)
+    const FVec2& attached_offset = FVec2::New(0.0F, 0.0F)
 );
 /// Spawns a fixed world emitter at an ent's current center plus world_offset.
 /// Use this for transient impacts or pickups where the source may disappear immediately.
@@ -130,7 +130,7 @@ std::optional<VID> PlayEntCenterSoundEmitter(
     const Ent& ent,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params = {},
-    const Vec2& world_offset = Vec2::New(0.0F, 0.0F)
+    const FVec2& world_offset = FVec2::New(0.0F, 0.0F)
 );
 /// Finds or creates one looping attached emitter for (owner_ent_vid, audio_asset_id).
 /// Intended for per-step maintenance of persistent loops, e.g. a rolling boulder hum.
@@ -140,7 +140,7 @@ std::optional<VID> EnsureAttachedLoopingSoundEmitter(
     State& state,
     VID owner_ent_vid,
     VID attached_ent_vid,
-    const Vec2& attached_offset,
+    const FVec2& attached_offset,
     AudioAssetId audio_asset_id,
     float volume_scale = 1.0F,
     AudioEmitterTargetLossPolicy target_loss_policy =

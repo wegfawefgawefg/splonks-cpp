@@ -64,8 +64,8 @@ struct GameplaySnapshot {
     std::int32_t sac_altar_favor = 0;
     std::uint32_t sac_altar_reward_tier = 0;
     bool audio_occlusion_enabled = true;
-    Vec2 audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
-    std::optional<Vec2> gameplay_camera_anchor_world_pos;
+    FVec2 audio_listener_world_pos = FVec2::New(0.0F, 0.0F);
+    std::optional<FVec2> gameplay_camera_anchor_world_pos;
     std::vector<VID> interact_claimed_vids_this_frame;
     QuestState quest_state;
     PlayerRegistry players;
@@ -86,7 +86,7 @@ struct GameplaySnapshot {
     std::vector<WorldPrompt> world_prompts;
     std::vector<DebugRectAnnotation> debug_rect_annotations;
     std::vector<DebugLabelAnnotation> debug_label_annotations;
-    Vec2 play_cam_pos;
+    FVec2 play_cam_pos;
 };
 
 struct SimPlayerSlotSnapshot {

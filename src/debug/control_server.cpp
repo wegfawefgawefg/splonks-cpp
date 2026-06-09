@@ -245,7 +245,7 @@ std::optional<network::NetFuzzerConfig> NetFuzzerPresetByName(std::string_view r
     return std::nullopt;
 }
 
-void WriteVec2(std::ostringstream& out, const Vec2& value) {
+void WriteVec2(std::ostringstream& out, const FVec2& value) {
     out << "{\"x\":" << value.x << ",\"y\":" << value.y << "}";
 }
 
@@ -637,7 +637,7 @@ std::string HandleEntCommand(const State& state, const std::vector<std::string>&
     return out.str();
 }
 
-std::optional<Vec2> GetPrimaryLocalPlayerCenter(const State& state) {
+std::optional<FVec2> GetPrimaryLocalPlayerCenter(const State& state) {
     const PlayerSlot* const player = state.players.FindPrimaryLocal();
     if (player == nullptr || !player->ent_vid.has_value()) {
         return std::nullopt;
@@ -662,7 +662,7 @@ std::string HandleEntsCommand(const State& state, const std::vector<std::string>
     }
     limit = std::clamp(limit, 1, static_cast<int>(EntPool::kMaxNumEnts));
 
-    std::optional<Vec2> center;
+    std::optional<FVec2> center;
     if (near_primary_player) {
         center = GetPrimaryLocalPlayerCenter(state);
         if (!center.has_value()) {
@@ -680,7 +680,7 @@ std::string HandleEntsCommand(const State& state, const std::vector<std::string>
             continue;
         }
         if (center.has_value()) {
-            const Vec2 delta = ent.GetRenderCenter() - *center;
+            const FVec2 delta = ent.GetRenderCenter() - *center;
             const float dist_sq = delta.x * delta.x + delta.y * delta.y;
             if (dist_sq > radius * radius) {
                 continue;

@@ -188,7 +188,7 @@ void AddArrowTrapDebugAnnotations(Ent& trap, State& state) {
         .color = DebugAnnotationColor{255, 192, 0, 255},
     });
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
-        .world_pos = render_sensor_aabb.tl + Vec2::New(2.0F, -6.0F),
+        .world_pos = render_sensor_aabb.tl + FVec2::New(2.0F, -6.0F),
         .text = "arrow sensor",
         .color = DebugAnnotationColor{255, 192, 0, 255},
     });

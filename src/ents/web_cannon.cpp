@@ -42,7 +42,7 @@ constexpr float kCobwebOccupantSpeedThresholdSq =
 constexpr float kDiagonalAimComponent = 0.707106769F;
 
 struct WebGunAim {
-    Vec2 direction = Vec2::New(1.0F, 0.0F);
+    FVec2 direction = FVec2::New(1.0F, 0.0F);
     sim::Vec2 sim_direction = sim::Vec2{sim::Scalar::from_int(1), sim::Scalar::zero()};
     Side facing = Side::Right;
     sim::Scalar rotation = sim::Scalar::zero();
@@ -58,17 +58,17 @@ float NormalizeDegrees(float degrees) {
     return degrees;
 }
 
-Vec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
+FVec2 DiscreteAimDirection(int aim_x, int aim_y, Side facing) {
     if (aim_x == 0 && aim_y == 0) {
-        return facing == Side::Left ? Vec2::New(-1.0F, 0.0F) : Vec2::New(1.0F, 0.0F);
+        return facing == Side::Left ? FVec2::New(-1.0F, 0.0F) : FVec2::New(1.0F, 0.0F);
     }
     if (aim_x != 0 && aim_y != 0) {
-        return Vec2::New(
+        return FVec2::New(
             static_cast<float>(aim_x) * kDiagonalAimComponent,
             static_cast<float>(aim_y) * kDiagonalAimComponent
         );
     }
-    return Vec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
+    return FVec2::New(static_cast<float>(aim_x), static_cast<float>(aim_y));
 }
 
 sim::Vec2 DiscreteSimAimDirection(int aim_x, int aim_y, Side facing) {
@@ -139,7 +139,7 @@ WebGunAim GetWebGunAim(const Ent& weapon, const Ent* holder, const State& state)
         facing = Side::Right;
     }
 
-    const Vec2 direction = DiscreteAimDirection(aim_x, aim_y, facing);
+    const FVec2 direction = DiscreteAimDirection(aim_x, aim_y, facing);
     const float world_angle = DiscreteAimWorldAngle(aim_x, aim_y, facing);
     const float base_angle = facing == Side::Left ? 180.0F : 0.0F;
     return WebGunAim{
@@ -264,8 +264,8 @@ bool CanBeAffectedByCobweb(const Ent& ent) {
 
 void SpawnWebParticle(
     State& state,
-    const Vec2& pos,
-    const Vec2& vel,
+    const FVec2& pos,
+    const FVec2& vel,
     float alpha,
     float size,
     float lifetime
@@ -274,25 +274,25 @@ void SpawnWebParticle(
     particle.aframe_animator = AFrameAnimator::New(aframe_ids::WebBall);
     particle.draw_layer = DrawLayer::Foreground;
     particle.counter = static_cast<std::uint32_t>(std::max(1.0F, lifetime));
-    particle.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-    particle.size = Vec2::New(size, size);
+    particle.pos = pos + FVec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+    particle.size = FVec2::New(size, size);
     particle.rot = rng::RandomFloat(-18.0F, 18.0F);
     particle.alpha = alpha;
     particle.vel = vel;
-    particle.svel = Vec2::New(0.02F, 0.02F);
+    particle.svel = FVec2::New(0.02F, 0.02F);
     particle.rotvel = rng::RandomFloat(-1.2F, 1.2F);
     particle.alpha_vel = -0.05F;
-    particle.acc = Vec2::New(0.0F, 0.08F);
+    particle.acc = FVec2::New(0.0F, 0.08F);
     particle.alpha_acc = -0.002F;
     state.particles.Add(std::move(particle));
 }
 
-void SpawnWebSpray(State& state, const Vec2& origin, const Vec2& direction) {
-    const Vec2 normalized_direction = NormalizeOrZeroDeterministic(direction);
+void SpawnWebSpray(State& state, const FVec2& origin, const FVec2& direction) {
+    const FVec2 normalized_direction = NormalizeOrZeroDeterministic(direction);
     for (int i = 0; i < 7; ++i) {
-        const Vec2 spray_velocity =
+        const FVec2 spray_velocity =
             (normalized_direction * rng::RandomFloat(0.35F, 1.5F)) +
-            Vec2::New(rng::RandomFloat(-0.45F, 0.45F), rng::RandomFloat(-0.45F, 0.45F));
+            FVec2::New(rng::RandomFloat(-0.45F, 0.45F), rng::RandomFloat(-0.45F, 0.45F));
         SpawnWebParticle(
             state,
             origin,
@@ -304,15 +304,15 @@ void SpawnWebSpray(State& state, const Vec2& origin, const Vec2& direction) {
     }
 }
 
-void SpawnWebTrail(State& state, const Vec2& origin, const Vec2& base_vel) {
+void SpawnWebTrail(State& state, const FVec2& origin, const FVec2& base_vel) {
     for (int i = 0; i < 2; ++i) {
         SpawnWebParticle(
             state,
             origin,
-            Vec2::New(
+            FVec2::New(
                 base_vel.x * rng::RandomFloat(-0.10F, 0.04F),
                 base_vel.y * rng::RandomFloat(-0.10F, 0.04F)
-            ) + Vec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.08F, 0.08F)),
+            ) + FVec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.08F, 0.08F)),
             rng::RandomFloat(0.35F, 0.6F),
             rng::RandomFloat(3.5F, 5.0F),
             rng::RandomFloat(6.0F, 10.0F)
@@ -320,12 +320,12 @@ void SpawnWebTrail(State& state, const Vec2& origin, const Vec2& base_vel) {
     }
 }
 
-void SpawnCobwebBurst(State& state, const Vec2& origin) {
+void SpawnCobwebBurst(State& state, const FVec2& origin) {
     for (int i = 0; i < 6; ++i) {
         SpawnWebParticle(
             state,
             origin,
-            Vec2::New(rng::RandomFloat(-0.9F, 0.9F), rng::RandomFloat(-1.0F, 0.15F)),
+            FVec2::New(rng::RandomFloat(-0.9F, 0.9F), rng::RandomFloat(-1.0F, 0.15F)),
             rng::RandomFloat(0.65F, 0.9F),
             rng::RandomFloat(4.0F, 6.0F),
             rng::RandomFloat(8.0F, 14.0F)
@@ -411,14 +411,14 @@ void FireWebGun(std::size_t ent_idx, State& state, Graphics& graphics, Audio& au
 
     const sim::Vec2 muzzle_pos = weapon.GetSimCenter() + (aim.sim_direction * sim::Scalar::from_int(8));
     const sim::Vec2 spawn_pos = muzzle_pos + (aim.sim_direction * sim::Scalar::from_int(4));
-    const Vec2 render_muzzle_pos = sim::ToRenderVec2(muzzle_pos);
+    const FVec2 render_muzzle_pos = sim::ToRenderVec2(muzzle_pos);
 
     if (holder != nullptr && IsWorldPointInsideSolidTile(muzzle_pos, state)) {
         const IVec2 holder_tile = SnapWorldPointToTile(holder->GetSimCenter(), state.stage);
         if (CanSpawnCobwebAtTile(holder_tile, state)) {
             (void)SpawnCobwebEnt(state, TileCenterToWorld(holder_tile), true);
         }
-        const Vec2 holder_center = sim::ToRenderVec2(holder->GetSimCenter());
+        const FVec2 holder_center = sim::ToRenderVec2(holder->GetSimCenter());
         (void)PlayWorldSoundEmitter(state, holder_center, audio_asset_ids::PistolShoot);
         SpawnWebSpray(state, holder_center, aim.direction);
         if (holder != nullptr) {

@@ -17,7 +17,7 @@ struct SegmentedSpriteParticle {
         kInvalidSegmentedSpriteParticleSpecId;
     float alpha = 1.0F;
     bool horizontal_flip = false;
-    std::array<Vec2, kMaxSegmentedSpriteParticlePoints> points{};
+    std::array<FVec2, kMaxSegmentedSpriteParticlePoints> points{};
     std::uint32_t point_count = 0;
     AFrameAnimator aframe_animator{};
 

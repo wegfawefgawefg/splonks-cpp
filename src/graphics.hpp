@@ -36,21 +36,21 @@ enum class SpriteTexture {
 };
 
 struct PlayCam {
-    Vec2 pos;
-    Vec2 vel;
-    Vec2 acc;
+    FVec2 pos;
+    FVec2 vel;
+    FVec2 acc;
 };
 
 struct EntRenderSmoothingState {
-    Vec2 render_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 render_pos = FVec2::New(0.0F, 0.0F);
     bool active = false;
     bool smoothing_active = false;
     std::uint32_t last_seen_frame = 0;
 };
 
 struct Camera2D {
-    Vec2 target;
-    Vec2 offset;
+    FVec2 target;
+    FVec2 offset;
     float rotation = 0.0F;
     float zoom = 1.0F;
 };
@@ -71,14 +71,14 @@ struct Graphics {
     bool fullscreen = false;
     bool gpu_renderer_active = false;
     bool debug_lock_play_camera = false;
-    Vec2 debug_baseball_bat_hold_offset = Vec2::New(5.0F, -10.0F);
+    FVec2 debug_baseball_bat_hold_offset = FVec2::New(5.0F, -10.0F);
     CameraMode camera_mode = CameraMode::Follow;
     float follow_camera_zoom = 5.0F;
     float stage_fit_padding = 16.0F;
     float camera_lerp_factor = 0.12F;
     float camera_zoom_multiplier = 1.0F;
     bool world_rotation_active = false;
-    Vec2 world_rotation_pivot = Vec2::New(0.0F, 0.0F);
+    FVec2 world_rotation_pivot = FVec2::New(0.0F, 0.0F);
     float world_rotation_degrees = 0.0F;
     Camera2D camera;
     PlayCam play_cam;
@@ -100,8 +100,8 @@ struct Graphics {
     static Graphics New(SDL_Renderer* renderer, const std::string& sprite_assets_folder);
     SDL_Texture* GetTexture(TextureName texture) const;
     SDL_Texture* GetAFrameTexture(std::uint32_t image_id) const;
-    Vec2 ScreenToWc(const UVec2& screen_pos) const;
-    Vec2 WcToScreen(const Vec2& world_pos) const;
+    FVec2 ScreenToWc(const UVec2& screen_pos) const;
+    FVec2 WcToScreen(const FVec2& world_pos) const;
     IVec2 ScreenToTileCoords(const UVec2& screen_pos) const;
     void ResetTileVariation(const IVec2& tile_pos);
     void ResetTileVariations();
@@ -112,7 +112,7 @@ struct Graphics {
 };
 
 SDL_FRect GetPresRect(const Graphics& graphics, int output_width, int output_height);
-Vec2 GetStageCameraCenter(const Stage& stage);
+FVec2 GetStageCameraCenter(const Stage& stage);
 float GetDefaultFollowCameraZoom(const Graphics& graphics);
 float GetStageFitCameraZoom(const Stage& stage, const Graphics& graphics);
 

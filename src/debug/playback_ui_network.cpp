@@ -276,15 +276,15 @@ void DrawFuzzerPanel(network::NetSessionState& session) {
     ImGui::Text("Reordered: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_reordered));
 }
 
-Vec2 GetDebugBotSpawnPos(const State& state) {
+FVec2 GetDebugBotSpawnPos(const State& state) {
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal()) {
         if (primary->ent_vid.has_value()) {
             if (const Ent* const ent = state.ents.GetEnt(*primary->ent_vid)) {
-                return ent->GetRenderPos() + Vec2::New(12.0F, -2.0F);
+                return ent->GetRenderPos() + FVec2::New(12.0F, -2.0F);
             }
         }
     }
-    return Vec2::New(24.0F, 24.0F);
+    return FVec2::New(24.0F, 24.0F);
 }
 
 void AddDebugLocalPlayerBot(State& state, DebugPlayback& debug, const Graphics& graphics) {

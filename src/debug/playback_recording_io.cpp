@@ -541,12 +541,12 @@ bool ReadEntType(std::istream& in, EntType& type) {
     return true;
 }
 
-void WriteVec2(std::ostream& out, const Vec2& value) {
+void WriteVec2(std::ostream& out, const FVec2& value) {
     WriteFloat(out, value.x);
     WriteFloat(out, value.y);
 }
 
-bool ReadVec2(std::istream& in, Vec2& value) {
+bool ReadVec2(std::istream& in, FVec2& value) {
     return ReadFloat(in, value.x) &&
            ReadFloat(in, value.y);
 }
@@ -1171,7 +1171,7 @@ bool ReadMenuInputDebounceTimers(std::istream& in, MenuInputDebounceTimers& time
            ReadFloat(in, timers.down);
 }
 
-void WriteOptionalVec2(std::ostream& out, const std::optional<Vec2>& value) {
+void WriteOptionalVec2(std::ostream& out, const std::optional<FVec2>& value) {
     const std::uint8_t has_value = value.has_value() ? 1U : 0U;
     WriteUint8(out, has_value);
     if (value.has_value()) {
@@ -1179,7 +1179,7 @@ void WriteOptionalVec2(std::ostream& out, const std::optional<Vec2>& value) {
     }
 }
 
-bool ReadOptionalVec2(std::istream& in, std::optional<Vec2>& value) {
+bool ReadOptionalVec2(std::istream& in, std::optional<FVec2>& value) {
     std::uint8_t has_value = 0;
     if (!ReadUint8(in, has_value)) {
         return false;
@@ -1191,7 +1191,7 @@ bool ReadOptionalVec2(std::istream& in, std::optional<Vec2>& value) {
     if (has_value != 1) {
         return false;
     }
-    Vec2 loaded{};
+    FVec2 loaded{};
     if (!ReadVec2(in, loaded)) {
         return false;
     }

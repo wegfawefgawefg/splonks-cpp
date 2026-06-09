@@ -120,8 +120,8 @@ bool PointInAabb(const IVec2& point, sim::AABB aabb) {
 
 } // namespace
 
-Vec2 GetNearestWorldDelta(const Stage& stage, const Vec2& from, const Vec2& to) {
-    return Vec2::New(
+FVec2 GetNearestWorldDelta(const Stage& stage, const FVec2& from, const FVec2& to) {
+    return FVec2::New(
         GetNearestWrappedDelta(from.x, to.x, static_cast<float>(stage.GetWidth()), stage.WrapsX()),
         GetNearestWrappedDelta(from.y, to.y, static_cast<float>(stage.GetHeight()), stage.WrapsY())
     );
@@ -140,7 +140,7 @@ sim::Vec2 GetNearestWorldDelta(const Stage& stage, sim::Vec2 from, sim::Vec2 to)
     };
 }
 
-Vec2 GetNearestWorldPoint(const Stage& stage, const Vec2& anchor, const Vec2& point) {
+FVec2 GetNearestWorldPoint(const Stage& stage, const FVec2& anchor, const FVec2& point) {
     return anchor + GetNearestWorldDelta(stage, anchor, point);
 }
 
@@ -548,13 +548,13 @@ TileStepRaycastResult RaycastTileSteps(
 }
 
 WorldRayHit RaycastRenderTiles(
-    const Vec2& start_pos,
-    const Vec2& direction,
+    const FVec2& start_pos,
+    const FVec2& direction,
     int max_distance,
     const State& state
 ) {
-    const Vec2 step_dir = NormalizeOrZeroDeterministic(direction);
-    if (max_distance <= 0 || step_dir == Vec2::New(0.0F, 0.0F)) {
+    const FVec2 step_dir = NormalizeOrZeroDeterministic(direction);
+    if (max_distance <= 0 || step_dir == FVec2::New(0.0F, 0.0F)) {
         return WorldRayHit{};
     }
 

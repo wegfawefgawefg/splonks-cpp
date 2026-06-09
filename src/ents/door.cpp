@@ -68,21 +68,21 @@ float GetMoveDirection(const Ent& door) {
     return door.threshold_a < sim::Scalar::zero() ? -1.0F : 1.0F;
 }
 
-Vec2 GetTopEmitPos(const Ent& door) {
+FVec2 GetTopEmitPos(const Ent& door) {
     const sim::AABB aabb = door.GetSimAABB();
     return sim::ToRenderVec2(sim::Vec2{aabb.center().x, aabb.tl.y});
 }
 
-Vec2 GetBottomEmitPos(const Ent& door) {
+FVec2 GetBottomEmitPos(const Ent& door) {
     const sim::AABB aabb = door.GetSimAABB();
     return sim::ToRenderVec2(sim::Vec2{aabb.center().x, aabb.br.y});
 }
 
-Vec2 GetTrailingEmitPos(const Ent& door) {
+FVec2 GetTrailingEmitPos(const Ent& door) {
     return GetMoveDirection(door) > 0.0F ? GetTopEmitPos(door) : GetBottomEmitPos(door);
 }
 
-Vec2 GetLeadingEmitPos(const Ent& door) {
+FVec2 GetLeadingEmitPos(const Ent& door) {
     return GetMoveDirection(door) > 0.0F ? GetBottomEmitPos(door) : GetTopEmitPos(door);
 }
 
@@ -92,8 +92,8 @@ void SetDoorShake(Ent& door, float amount) {
 
 void SpawnSmokeParticle(
     State& state,
-    const Vec2& pos,
-    const Vec2& vel,
+    const FVec2& pos,
+    const FVec2& vel,
     float min_size,
     float max_size,
     std::uint32_t min_lifetime,
@@ -104,38 +104,38 @@ void SpawnSmokeParticle(
     smoke.draw_layer = DrawLayer::Foreground;
     smoke.counter = static_cast<std::uint32_t>(
         rng::RandomIntExclusive(static_cast<int>(min_lifetime), static_cast<int>(max_lifetime)));
-    smoke.pos = pos + Vec2::New(rng::RandomFloat(-1.5F, 1.5F), rng::RandomFloat(-1.0F, 1.0F));
+    smoke.pos = pos + FVec2::New(rng::RandomFloat(-1.5F, 1.5F), rng::RandomFloat(-1.0F, 1.0F));
     const float size = rng::RandomFloat(min_size, max_size);
-    smoke.size = Vec2::New(size, size);
+    smoke.size = FVec2::New(size, size);
     smoke.rot = rng::RandomFloat(0.0F, 360.0F);
     smoke.alpha = rng::RandomFloat(0.60F, 0.90F);
-    smoke.vel = vel + Vec2::New(rng::RandomFloat(-0.18F, 0.18F), rng::RandomFloat(-0.12F, 0.12F));
-    smoke.svel = Vec2::New(rng::RandomFloat(0.01F, 0.025F), rng::RandomFloat(0.01F, 0.025F));
+    smoke.vel = vel + FVec2::New(rng::RandomFloat(-0.18F, 0.18F), rng::RandomFloat(-0.12F, 0.12F));
+    smoke.svel = FVec2::New(rng::RandomFloat(0.01F, 0.025F), rng::RandomFloat(0.01F, 0.025F));
     smoke.rotvel = rng::RandomFloat(-0.25F, 0.25F);
     smoke.alpha_vel = -0.02F;
-    smoke.acc = Vec2::New(0.0F, -0.005F);
-    smoke.sacc = Vec2::New(0.0F, 0.0F);
+    smoke.acc = FVec2::New(0.0F, -0.005F);
+    smoke.sacc = FVec2::New(0.0F, 0.0F);
     smoke.rotacc = 0.0F;
     smoke.alpha_acc = -0.002F;
     state.particles.Add(std::move(smoke));
 }
 
-void SpawnSpinnySealShard(State& state, const Vec2& pos) {
+void SpawnSpinnySealShard(State& state, const FVec2& pos) {
     SpriteParticle shard{};
     shard.aframe_animator = AFrameAnimator::New(aframe_ids::LittleBrownShard);
     shard.draw_layer = DrawLayer::Foreground;
     shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 34));
-    shard.pos = pos + Vec2::New(rng::RandomFloat(-5.0F, 5.0F), rng::RandomFloat(-1.5F, 1.5F));
+    shard.pos = pos + FVec2::New(rng::RandomFloat(-5.0F, 5.0F), rng::RandomFloat(-1.5F, 1.5F));
     const float size = rng::RandomFloat(2.0F, 4.0F);
-    shard.size = Vec2::New(size, size);
+    shard.size = FVec2::New(size, size);
     shard.rot = rng::RandomFloat(0.0F, 360.0F);
     shard.alpha = 1.0F;
-    shard.vel = Vec2::New(rng::RandomFloat(-1.4F, 1.4F), rng::RandomFloat(-2.2F, -0.7F));
-    shard.svel = Vec2::New(0.0F, 0.0F);
+    shard.vel = FVec2::New(rng::RandomFloat(-1.4F, 1.4F), rng::RandomFloat(-2.2F, -0.7F));
+    shard.svel = FVec2::New(0.0F, 0.0F);
     shard.rotvel = rng::RandomFloat(-0.85F, 0.85F);
     shard.alpha_vel = -0.025F;
-    shard.acc = Vec2::New(0.0F, 0.14F);
-    shard.sacc = Vec2::New(0.0F, 0.0F);
+    shard.acc = FVec2::New(0.0F, 0.14F);
+    shard.sacc = FVec2::New(0.0F, 0.0F);
     shard.rotacc = 0.0F;
     shard.alpha_acc = -0.003F;
     state.particles.Add(std::move(shard));
@@ -145,7 +145,7 @@ void SpawnTopSmoke(State& state, const Ent& door) {
     SpawnSmokeParticle(
         state,
         GetTrailingEmitPos(door),
-        Vec2::New(0.0F, GetMoveDirection(door) > 0.0F
+        FVec2::New(0.0F, GetMoveDirection(door) > 0.0F
                             ? rng::RandomFloat(-0.55F, -0.18F)
                             : rng::RandomFloat(0.18F, 0.55F)),
         3.0F,
@@ -156,13 +156,13 @@ void SpawnTopSmoke(State& state, const Ent& door) {
 }
 
 void SpawnSealParticles(State& state, const Ent& door) {
-    const Vec2 bottom = GetLeadingEmitPos(door);
+    const FVec2 bottom = GetLeadingEmitPos(door);
     for (int i = 0; i < kSealSmokeCount; ++i) {
         const float direction = i % 2 == 0 ? -1.0F : 1.0F;
         SpawnSmokeParticle(
             state,
-            bottom + Vec2::New(direction * 5.5F, 0.0F),
-            Vec2::New(
+            bottom + FVec2::New(direction * 5.5F, 0.0F),
+            FVec2::New(
                 direction * rng::RandomFloat(0.45F, 1.25F),
                 GetMoveDirection(door) > 0.0F ? rng::RandomFloat(-0.65F, -0.25F)
                                               : rng::RandomFloat(0.25F, 0.65F)
@@ -212,7 +212,7 @@ void MaintainDoorRumbleSound(Ent& door, State& state) {
         state,
         door.vid,
         door.vid,
-        Vec2::New(0.0F, door.GetSize().y * 0.5F),
+        FVec2::New(0.0F, door.GetSize().y * 0.5F),
         audio_asset_ids::BoulderRoll,
         kDoorRumbleVolumeScale
     );
@@ -233,7 +233,7 @@ void StartDrop(Ent& door, State& state) {
     (void)PlayAttachedSoundEmitter(
         state,
         door.vid,
-        Vec2::New(0.0F, door.GetSize().y * 0.5F),
+        FVec2::New(0.0F, door.GetSize().y * 0.5F),
         audio_asset_ids::BoulderLatch,
         params
     );

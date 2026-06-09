@@ -5,7 +5,7 @@
 
 namespace splonks {
 
-void SpawnDamageEffectAnimBurst(AFrameId anim_id, const Vec2& center, State& state);
-void SpawnBreakawayContainerShards(const Vec2& center, State& state);
+void SpawnDamageEffectAnimBurst(AFrameId anim_id, const FVec2& center, State& state);
+void SpawnBreakawayContainerShards(const FVec2& center, State& state);
 
 } // namespace splonks

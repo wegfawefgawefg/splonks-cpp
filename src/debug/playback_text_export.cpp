@@ -176,13 +176,13 @@ bool ExportRecordingToTextFile(
             out << "    holding: " << (ent.holding ? "true" : "false") << "\n";
             out << "    coyote_time: " << ent.coyote_time << "\n";
             out << "    fall_timer: " << ent.fall_timer << "\n";
-            const Vec2 ent_pos = ent.GetRenderPos();
-            const Vec2 ent_vel = ent.GetRenderVel();
-            const Vec2 ent_acc = ent.GetRenderAcc();
+            const FVec2 ent_pos = ent.GetRenderPos();
+            const FVec2 ent_vel = ent.GetRenderVel();
+            const FVec2 ent_acc = ent.GetRenderAcc();
             out << "    pos: (" << ent_pos.x << ", " << ent_pos.y << ")\n";
             out << "    vel: (" << ent_vel.x << ", " << ent_vel.y << ")\n";
             out << "    acc: (" << ent_acc.x << ", " << ent_acc.y << ")\n";
-            const Vec2 ent_size = ent.GetSize();
+            const FVec2 ent_size = ent.GetSize();
             out << "    size: (" << ent_size.x << ", " << ent_size.y << ")\n";
             out << "    health: " << ent.health << "\n";
             out << "    money: " << ent.money << "\n";

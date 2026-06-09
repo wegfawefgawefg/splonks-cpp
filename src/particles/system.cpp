@@ -62,7 +62,7 @@ void ParticleSystem::Add(ScriptedParticle&& particle) {
 
 void ParticleSystem::AddScripted(
     ScriptedParticleSpecId spec_id,
-    const Vec2& pos,
+    const FVec2& pos,
     bool horizontal_flip
 ) {
     scripted_particles.push_back(MakeScriptedParticle(spec_id, pos, horizontal_flip));

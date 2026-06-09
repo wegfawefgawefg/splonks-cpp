@@ -47,7 +47,7 @@ sim::Scalar RandomSimScalar(DetRng& rng, sim::Scalar minimum, sim::Scalar maximu
     ));
 }
 
-RenderAABB RenderAABB::New(const Vec2& top_left, const Vec2& bottom_right) {
+RenderAABB RenderAABB::New(const FVec2& top_left, const FVec2& bottom_right) {
     RenderAABB result;
     result.tl = top_left;
     result.br = bottom_right;
@@ -70,8 +70,8 @@ IAABB IAABB::New(const IVec2& top_left, const IVec2& bottom_right) {
 
 RenderAABB IAABB::AsRenderAABB() const {
     RenderAABB result;
-    result.tl = Vec2::New(static_cast<float>(tl.x), static_cast<float>(tl.y));
-    result.br = Vec2::New(static_cast<float>(br.x), static_cast<float>(br.y));
+    result.tl = FVec2::New(static_cast<float>(tl.x), static_cast<float>(tl.y));
+    result.br = FVec2::New(static_cast<float>(br.x), static_cast<float>(br.y));
     return result;
 }
 
@@ -115,7 +115,7 @@ float RandomFloat(float minimum, float maximum) {
 
 } // namespace rng
 
-Vec2 GetMinDisplacement(const RenderAABB& aabb1, const RenderAABB& aabb2) {
+FVec2 GetMinDisplacement(const RenderAABB& aabb1, const RenderAABB& aabb2) {
     float dx = 0.0F;
     if (aabb1.br.x < aabb2.tl.x) {
         dx = aabb2.tl.x - aabb1.br.x;
@@ -130,7 +130,7 @@ Vec2 GetMinDisplacement(const RenderAABB& aabb1, const RenderAABB& aabb2) {
         dy = aabb2.br.y - aabb1.tl.y;
     }
 
-    return Vec2::New(dx, dy);
+    return FVec2::New(dx, dy);
 }
 
 bool AabbsIntersect(const RenderAABB& left, const RenderAABB& right) {
@@ -163,7 +163,7 @@ IAABB ToIAABBFloorCeil(const sim::AABB& value) {
                       IVec2::New(value.br.x.to_pixels_ceil(), value.br.y.to_pixels_ceil()));
 }
 
-Vec2 ToRenderMinDisplacement(sim::AABB aabb1, sim::AABB aabb2) {
+FVec2 ToRenderMinDisplacement(sim::AABB aabb1, sim::AABB aabb2) {
     return sim::ToRenderVec2(gfxp::min_displacement(aabb1, aabb2));
 }
 

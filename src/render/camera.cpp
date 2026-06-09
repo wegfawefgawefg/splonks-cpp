@@ -6,15 +6,15 @@
 
 namespace splonks {
 
-Vec2 ClampCameraTargetToStage(const Stage& stage, Vec2 target) {
+FVec2 ClampCameraTargetToStage(const Stage& stage, FVec2 target) {
     if (!stage.camera_clamp_enabled) {
         return target;
     }
 
-    const Vec2 stage_dims = ToVec2(stage.GetStageDims());
-    const Vec2 margin = stage.camera_clamp_margin;
-    const Vec2 map_tl_bound = margin;
-    const Vec2 map_br_bound = stage_dims - margin;
+    const FVec2 stage_dims = ToVec2(stage.GetStageDims());
+    const FVec2 margin = stage.camera_clamp_margin;
+    const FVec2 map_tl_bound = margin;
+    const FVec2 map_br_bound = stage_dims - margin;
 
     if (stage_dims.x <= margin.x * 2.0F) {
         target.x = stage_dims.x / 2.0F;

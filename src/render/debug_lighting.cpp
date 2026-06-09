@@ -18,19 +18,19 @@ namespace splonks {
 
 namespace {
 
-Vec2 WorldPointToScreen(
+FVec2 WorldPointToScreen(
     const Graphics& graphics,
     const SDL_FRect& pres,
-    const Vec2& world_pos
+    const FVec2& world_pos
 ) {
     const float pres_scale = pres.w / static_cast<float>(graphics.dims.x);
-    const Vec2 internal_screen = Vec2::New(
+    const FVec2 internal_screen = FVec2::New(
         std::round(((world_pos.x - graphics.camera.target.x) * graphics.camera.zoom) +
                    graphics.camera.offset.x),
         std::round(((world_pos.y - graphics.camera.target.y) * graphics.camera.zoom) +
                    graphics.camera.offset.y)
     );
-    return Vec2::New(
+    return FVec2::New(
         std::round(pres.x + internal_screen.x * pres_scale),
         std::round(pres.y + internal_screen.y * pres_scale)
     );
@@ -50,10 +50,10 @@ void RenderWorldPointMarker(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const SDL_FRect& pres,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     const SDL_Color& color
 ) {
-    const Vec2 screen = WorldPointToScreen(graphics, pres, world_pos);
+    const FVec2 screen = WorldPointToScreen(graphics, pres, world_pos);
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     for (int offset = -1; offset <= 1; ++offset) {
         SDL_RenderLine(renderer, screen.x - 7.0F, screen.y + static_cast<float>(offset), screen.x + 7.0F, screen.y + static_cast<float>(offset));
@@ -65,7 +65,7 @@ void RenderWorldCircleOutline(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const SDL_FRect& pres,
-    const Vec2& center,
+    const FVec2& center,
     float radius,
     const SDL_Color& color
 ) {
@@ -75,13 +75,13 @@ void RenderWorldCircleOutline(
 
     constexpr int kSegments = 24;
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    Vec2 previous = center + Vec2::New(radius, 0.0F);
+    FVec2 previous = center + FVec2::New(radius, 0.0F);
     for (int i = 1; i <= kSegments; ++i) {
         const float t = static_cast<float>(i) / static_cast<float>(kSegments);
         const float angle = t * 6.28318530718F;
-        const Vec2 current = center + Vec2::New(std::cos(angle) * radius, std::sin(angle) * radius);
-        const Vec2 previous_screen = WorldPointToScreen(graphics, pres, previous);
-        const Vec2 current_screen = WorldPointToScreen(graphics, pres, current);
+        const FVec2 current = center + FVec2::New(std::cos(angle) * radius, std::sin(angle) * radius);
+        const FVec2 previous_screen = WorldPointToScreen(graphics, pres, previous);
+        const FVec2 current_screen = WorldPointToScreen(graphics, pres, current);
         SDL_RenderLine(renderer, previous_screen.x, previous_screen.y, current_screen.x, current_screen.y);
         previous = current;
     }
@@ -91,7 +91,7 @@ void RenderLightMarker(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const SDL_FRect& pres,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     int radius_tiles,
     float strength,
     Color3 color,
@@ -108,7 +108,7 @@ void RenderLightMarker(
     );
     RenderWorldPointMarker(renderer, graphics, pres, world_pos, marker_color);
 
-    const Vec2 label_screen = WorldPointToScreen(graphics, pres, world_pos);
+    const FVec2 label_screen = WorldPointToScreen(graphics, pres, world_pos);
     char text[96];
     std::snprintf(text, sizeof(text), "%s r%d %.2f", label, radius_tiles, strength);
     DrawText(
@@ -130,13 +130,13 @@ void RenderLightOverlay(
     Graphics& graphics,
     const State& state,
     const SDL_FRect& pres,
-    const std::vector<Vec2>& render_offsets
+    const std::vector<FVec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_lights) {
         return;
     }
 
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (const StageLight& light : state.stage.lights) {
             if (light.radius <= 0) {
                 continue;
@@ -145,7 +145,7 @@ void RenderLightOverlay(
             if (!state.stage.IsTileCoordInside(center_tile.x, center_tile.y)) {
                 continue;
             }
-            const Vec2 world_pos = Vec2::New(
+            const FVec2 world_pos = FVec2::New(
                 (static_cast<float>(center_tile.x) + 0.5F) * static_cast<float>(kTileSize),
                 (static_cast<float>(center_tile.y) + 0.5F) * static_cast<float>(kTileSize)
             ) + render_offset;

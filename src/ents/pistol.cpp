@@ -23,47 +23,47 @@ constexpr float kPistolFireCooldownFrames = 12.0F;
 constexpr float kPistolAmmo = 4.0F;
 constexpr std::uint32_t kPistolDamage = 4;
 
-void SpawnPistolMuzzleSmoke(State& state, const Vec2& pos, int direction) {
+void SpawnPistolMuzzleSmoke(State& state, const FVec2& pos, int direction) {
     for (int i = 0; i < 4; ++i) {
         SpriteParticle effect{};
         effect.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(8, 14));
-        effect.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-        effect.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(3.0F, 5.0F));
+        effect.pos = pos + FVec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+        effect.size = FVec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(3.0F, 5.0F));
         effect.rot = rng::RandomFloat(0.0F, 360.0F);
         effect.alpha = rng::RandomFloat(0.75F, 0.95F);
-        effect.vel = Vec2::New(
+        effect.vel = FVec2::New(
             rng::RandomFloat(0.05F, 0.25F) * static_cast<float>(direction),
             rng::RandomFloat(-0.18F, -0.04F)
         );
-        effect.svel = Vec2::New(rng::RandomFloat(0.08F, 0.20F), rng::RandomFloat(0.08F, 0.20F));
+        effect.svel = FVec2::New(rng::RandomFloat(0.08F, 0.20F), rng::RandomFloat(0.08F, 0.20F));
         effect.rotvel = rng::RandomFloat(-1.5F, 1.5F);
         effect.alpha_vel = -0.05F;
-        effect.acc = Vec2::New(0.0F, -0.01F);
-        effect.sacc = Vec2::New(0.01F, 0.01F);
+        effect.acc = FVec2::New(0.0F, -0.01F);
+        effect.sacc = FVec2::New(0.01F, 0.01F);
         effect.rotacc = 0.0F;
         effect.alpha_acc = -0.003F;
         state.particles.Add(std::move(effect));
     }
 }
 
-void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
+void SpawnPistolImpactEffect(State& state, const FVec2& pos, int direction) {
     for (int i = 0; i < 3; ++i) {
         SpriteParticle spark{};
         spark.aframe_animator = AFrameAnimator::New(aframe_ids::Spark);
         spark.draw_layer = DrawLayer::Foreground;
         spark.lighting_mode = ParticleLightingMode::Emissive;
         spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
-        spark.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-        spark.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(4.0F, 6.0F));
+        spark.pos = pos + FVec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+        spark.size = FVec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(4.0F, 6.0F));
         spark.rot = rng::RandomFloat(0.0F, 360.0F);
         spark.alpha = 1.0F;
-        spark.vel = Vec2::New(
+        spark.vel = FVec2::New(
             rng::RandomFloat(-0.45F, -0.10F) * static_cast<float>(direction),
             rng::RandomFloat(-0.18F, 0.18F)
         );
-        spark.svel = Vec2::New(-0.12F, -0.12F);
+        spark.svel = FVec2::New(-0.12F, -0.12F);
         spark.rotvel = rng::RandomFloat(-6.0F, 6.0F);
         spark.alpha_vel = -0.14F;
         state.particles.Add(std::move(spark));
@@ -74,16 +74,16 @@ void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
         smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(10, 16));
-        smoke.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-        smoke.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(3.0F, 5.0F));
+        smoke.pos = pos + FVec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+        smoke.size = FVec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(3.0F, 5.0F));
         smoke.rot = rng::RandomFloat(0.0F, 360.0F);
         smoke.alpha = rng::RandomFloat(0.75F, 0.95F);
-        smoke.vel = Vec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.18F, -0.06F));
-        smoke.svel = Vec2::New(rng::RandomFloat(0.06F, 0.14F), rng::RandomFloat(0.06F, 0.14F));
+        smoke.vel = FVec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.18F, -0.06F));
+        smoke.svel = FVec2::New(rng::RandomFloat(0.06F, 0.14F), rng::RandomFloat(0.06F, 0.14F));
         smoke.rotvel = rng::RandomFloat(-1.5F, 1.5F);
         smoke.alpha_vel = -0.05F;
-        smoke.acc = Vec2::New(0.0F, -0.01F);
-        smoke.sacc = Vec2::New(0.01F, 0.01F);
+        smoke.acc = FVec2::New(0.0F, -0.01F);
+        smoke.sacc = FVec2::New(0.01F, 0.01F);
         smoke.rotacc = 0.0F;
         smoke.alpha_acc = -0.003F;
         state.particles.Add(std::move(smoke));
@@ -107,7 +107,7 @@ void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio
     const std::optional<VID> owner_vid = pistol.held_by_vid.has_value() ? pistol.held_by_vid
                                                                         : pistol.use_state.user_vid;
 
-    const Vec2 render_muzzle_pos = sim::ToRenderVec2(muzzle_pos);
+    const FVec2 render_muzzle_pos = sim::ToRenderVec2(muzzle_pos);
     (void)PlayWorldSoundEmitter(state, render_muzzle_pos, audio_asset_ids::PistolShoot);
     const Color3 muzzle_light_color = Color3::New(1.0F, 0.72F, 0.34F);
     AddTransientLight(state, render_muzzle_pos, 1.4F, muzzle_light_color, 5, 4);

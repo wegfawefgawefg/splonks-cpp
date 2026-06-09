@@ -22,8 +22,8 @@ namespace splonks {
 namespace {
 
 struct VisibleWorldRect {
-    Vec2 tl;
-    Vec2 br;
+    FVec2 tl;
+    FVec2 br;
 };
 
 enum class TileCapSide {
@@ -63,7 +63,7 @@ std::optional<IVec2> ResolveWrappedTileCoord(const Stage& stage, int tile_x, int
     return wrapped;
 }
 
-float Dot(const Vec2& left, const Vec2& right) {
+float Dot(const FVec2& left, const FVec2& right) {
     return (left.x * right.x) + (left.y * right.y);
 }
 
@@ -225,19 +225,19 @@ std::optional<TileSourceData> GetAnimatedWaterTopSourceData(
     return top_source_data;
 }
 
-Vec2 WorldPointToScreenForGeometry(const Graphics& graphics, const Vec2& world_pos) {
-    Vec2 screen = WorldToScreen(graphics, world_pos);
+FVec2 WorldPointToScreenForGeometry(const Graphics& graphics, const FVec2& world_pos) {
+    FVec2 screen = WorldToScreen(graphics, world_pos);
     if (!graphics.world_rotation_active) {
         return screen;
     }
 
-    const Vec2 pivot_screen = WorldToScreen(graphics, graphics.world_rotation_pivot);
+    const FVec2 pivot_screen = WorldToScreen(graphics, graphics.world_rotation_pivot);
     constexpr double kDegreesToRadians = 3.14159265358979323846 / 180.0;
     const double radians = static_cast<double>(graphics.world_rotation_degrees) * kDegreesToRadians;
     const double c = std::cos(radians);
     const double s = std::sin(radians);
-    const Vec2 delta = screen - pivot_screen;
-    screen = pivot_screen + Vec2::New(
+    const FVec2 delta = screen - pivot_screen;
+    screen = pivot_screen + FVec2::New(
         static_cast<float>((static_cast<double>(delta.x) * c) - (static_cast<double>(delta.y) * s)),
         static_cast<float>((static_cast<double>(delta.x) * s) + (static_cast<double>(delta.y) * c))
     );
@@ -279,8 +279,8 @@ SDL_FColor MakeFluidVertexColor(Color3 brightness, std::uint8_t alpha) {
 }
 
 struct FluidContourSegment {
-    Vec2 a;
-    Vec2 b;
+    FVec2 a;
+    FVec2 b;
 };
 
 void RenderWorldTextureQuad(
@@ -288,7 +288,7 @@ void RenderWorldTextureQuad(
     const Graphics& graphics,
     SDL_Texture* texture,
     const SDL_FRect& src,
-    const std::array<Vec2, 4>& world_points,
+    const std::array<FVec2, 4>& world_points,
     const std::array<SDL_FColor, 4>& colors
 ) {
     if (texture == nullptr || src.w <= 0.0F || src.h <= 0.0F) {
@@ -302,10 +302,10 @@ void RenderWorldTextureQuad(
         return;
     }
 
-    const Vec2 tl = WorldPointToScreenForGeometry(graphics, world_points[0]);
-    const Vec2 tr = WorldPointToScreenForGeometry(graphics, world_points[1]);
-    const Vec2 br = WorldPointToScreenForGeometry(graphics, world_points[2]);
-    const Vec2 bl = WorldPointToScreenForGeometry(graphics, world_points[3]);
+    const FVec2 tl = WorldPointToScreenForGeometry(graphics, world_points[0]);
+    const FVec2 tr = WorldPointToScreenForGeometry(graphics, world_points[1]);
+    const FVec2 br = WorldPointToScreenForGeometry(graphics, world_points[2]);
+    const FVec2 bl = WorldPointToScreenForGeometry(graphics, world_points[3]);
 
     const float u0 = src.x / texture_width;
     const float v0 = src.y / texture_height;
@@ -333,7 +333,7 @@ void RenderWorldTextureQuad(
     const Graphics& graphics,
     SDL_Texture* texture,
     const SDL_FRect& src,
-    const std::array<Vec2, 4>& world_points,
+    const std::array<FVec2, 4>& world_points,
     const SDL_FColor& color
 ) {
     RenderWorldTextureQuad(
@@ -349,7 +349,7 @@ void RenderWorldTextureQuad(
 std::array<SDL_FColor, 4> MakeFluidVertexColorsForWorldQuad(
     const State& state,
     const FluidSettings& fluid,
-    const std::array<Vec2, 4>& world_points,
+    const std::array<FVec2, 4>& world_points,
     std::uint8_t alpha
 ) {
     std::array<SDL_FColor, 4> colors{};
@@ -375,30 +375,30 @@ void RenderWorldTextureRibbon(
     const Graphics& graphics,
     SDL_Texture* texture,
     const SDL_FRect& src,
-    const Vec2& start,
-    const Vec2& end,
+    const FVec2& start,
+    const FVec2& end,
     float thickness,
     bool use_right_normal,
     const SDL_FColor& color
 ) {
-    const Vec2 delta = end - start;
+    const FVec2 delta = end - start;
     const float length = std::sqrt((delta.x * delta.x) + (delta.y * delta.y));
     if (length <= 0.01F || thickness <= 0.0F) {
         return;
     }
 
-    const Vec2 dir = delta / length;
-    const Vec2 normal = use_right_normal
-        ? Vec2::New(dir.y, -dir.x)
-        : Vec2::New(-dir.y, dir.x);
+    const FVec2 dir = delta / length;
+    const FVec2 normal = use_right_normal
+        ? FVec2::New(dir.y, -dir.x)
+        : FVec2::New(-dir.y, dir.x);
     const float max_piece_len = std::max(src.w, 1.0F);
     float consumed = 0.0F;
     while (consumed < length - 0.01F) {
         const float piece_len = std::min(max_piece_len, length - consumed);
         const float t0 = consumed / length;
         const float t1 = (consumed + piece_len) / length;
-        const Vec2 piece_start = start + (delta * t0);
-        const Vec2 piece_end = start + (delta * t1);
+        const FVec2 piece_start = start + (delta * t0);
+        const FVec2 piece_end = start + (delta * t1);
         SDL_FRect piece_src = src;
         piece_src.w = src.w * (piece_len / max_piece_len);
         RenderWorldTextureQuad(
@@ -406,7 +406,7 @@ void RenderWorldTextureRibbon(
             graphics,
             texture,
             piece_src,
-            std::array<Vec2, 4>{
+            std::array<FVec2, 4>{
                 piece_start,
                 piece_end,
                 piece_end + (normal * thickness),
@@ -419,8 +419,8 @@ void RenderWorldTextureRibbon(
 }
 
 struct RibbonPlacement {
-    Vec2 start = Vec2::New(0.0F, 0.0F);
-    Vec2 end = Vec2::New(0.0F, 0.0F);
+    FVec2 start = FVec2::New(0.0F, 0.0F);
+    FVec2 end = FVec2::New(0.0F, 0.0F);
     bool use_right_normal = false;
 };
 
@@ -429,12 +429,12 @@ RibbonPlacement MakeCenteredContourRibbonPlacement(
     bool tile_center_is_inside_fluid,
     float thickness
 ) {
-    const Vec2 delta = segment.b - segment.a;
-    const Vec2 left_normal = NormalizeOrZero(Vec2::New(-delta.y, delta.x));
-    const Vec2 right_normal = Vec2::New(left_normal.x * -1.0F, left_normal.y * -1.0F);
-    const Vec2 midpoint = (segment.a + segment.b) * 0.5F;
-    Vec2 desired_normal = NormalizeOrZero(
-        Vec2::New(static_cast<float>(kTileSize) * 0.5F, static_cast<float>(kTileSize) * 0.5F) -
+    const FVec2 delta = segment.b - segment.a;
+    const FVec2 left_normal = NormalizeOrZero(FVec2::New(-delta.y, delta.x));
+    const FVec2 right_normal = FVec2::New(left_normal.x * -1.0F, left_normal.y * -1.0F);
+    const FVec2 midpoint = (segment.a + segment.b) * 0.5F;
+    FVec2 desired_normal = NormalizeOrZero(
+        FVec2::New(static_cast<float>(kTileSize) * 0.5F, static_cast<float>(kTileSize) * 0.5F) -
         midpoint
     );
     if (!tile_center_is_inside_fluid) {
@@ -445,8 +445,8 @@ RibbonPlacement MakeCenteredContourRibbonPlacement(
     }
 
     const bool use_right_normal = Dot(right_normal, desired_normal) > Dot(left_normal, desired_normal);
-    const Vec2 ribbon_normal = use_right_normal ? right_normal : left_normal;
-    const Vec2 centered_offset = ribbon_normal * (thickness * -0.5F);
+    const FVec2 ribbon_normal = use_right_normal ? right_normal : left_normal;
+    const FVec2 centered_offset = ribbon_normal * (thickness * -0.5F);
     return RibbonPlacement{
         .start = segment.a + centered_offset,
         .end = segment.b + centered_offset,
@@ -457,8 +457,8 @@ RibbonPlacement MakeCenteredContourRibbonPlacement(
 void RenderFluidFlowIndicator(
     SDL_Renderer* renderer,
     const Graphics& graphics,
-    const Vec2& tile_world,
-    const Vec2& velocity,
+    const FVec2& tile_world,
+    const FVec2& velocity,
     std::uint64_t tick,
     float opacity
 ) {
@@ -467,16 +467,16 @@ void RenderFluidFlowIndicator(
         return;
     }
 
-    const Vec2 direction = NormalizeOrZero(velocity);
+    const FVec2 direction = NormalizeOrZero(velocity);
     const float phase = std::fmod(
         (static_cast<float>(tick % 10000ULL) * (0.015F + (speed * 0.06F))),
         1.0F
     );
-    const Vec2 point =
+    const FVec2 point =
         tile_world +
-        Vec2::New(static_cast<float>(kTileSize) * 0.5F, static_cast<float>(kTileSize) * 0.5F) +
+        FVec2::New(static_cast<float>(kTileSize) * 0.5F, static_cast<float>(kTileSize) * 0.5F) +
         direction * ((phase - 0.5F) * static_cast<float>(kTileSize) * 0.8F);
-    const Vec2 point_screen = WorldPointToScreenForGeometry(graphics, point);
+    const FVec2 point_screen = WorldPointToScreenForGeometry(graphics, point);
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     const std::uint8_t alpha = static_cast<std::uint8_t>(
@@ -502,7 +502,7 @@ std::uint32_t HashFluidCell(int tile_x, int tile_y, std::uint32_t salt) {
 void RenderFluidBubble(
     SDL_Renderer* renderer,
     const Graphics& graphics,
-    const Vec2& tile_world,
+    const FVec2& tile_world,
     int tile_x,
     int tile_y,
     std::uint64_t scene_frame,
@@ -549,9 +549,9 @@ void RenderFluidBubble(
             progress
         ) -
         (static_cast<float>(bubble_frame->sample_rect.h) * 0.5F);
-    const Vec2 bubble_world =
+    const FVec2 bubble_world =
         tile_world +
-        Vec2::New(
+        FVec2::New(
             std::round(bubble_x),
             std::round(bubble_y)
         );
@@ -564,7 +564,7 @@ void RenderFluidBubble(
     const SDL_FRect dst = WorldRectToScreen(
         graphics,
         bubble_world,
-        Vec2::New(
+        FVec2::New(
             static_cast<float>(bubble_frame->sample_rect.w),
             static_cast<float>(bubble_frame->sample_rect.h)
         )
@@ -592,9 +592,9 @@ int FloorDivByFloat(float value, float divisor) {
     return static_cast<int>(std::floor(value / divisor));
 }
 
-std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graphics& graphics) {
-    std::vector<Vec2> offsets;
-    offsets.push_back(Vec2::New(0.0F, 0.0F));
+std::vector<FVec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graphics& graphics) {
+    std::vector<FVec2> offsets;
+    offsets.push_back(FVec2::New(0.0F, 0.0F));
 
     const float stage_width = static_cast<float>(stage.GetWidth());
     const float stage_height = static_cast<float>(stage.GetHeight());
@@ -611,7 +611,7 @@ std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graph
     offsets.clear();
     for (int copy_y = min_copy_y; copy_y <= max_copy_y; ++copy_y) {
         for (int copy_x = min_copy_x; copy_x <= max_copy_x; ++copy_x) {
-            offsets.push_back(Vec2::New(
+            offsets.push_back(FVec2::New(
                 static_cast<float>(copy_x) * stage_width,
                 static_cast<float>(copy_y) * stage_height
             ));
@@ -620,12 +620,12 @@ std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graph
     return offsets;
 }
 
-Vec2 GetShakeOffset(float shake_pixels) {
+FVec2 GetShakeOffset(float shake_pixels) {
     if (shake_pixels <= 0.0F) {
-        return Vec2::New(0.0F, 0.0F);
+        return FVec2::New(0.0F, 0.0F);
     }
 
-    return Vec2::New(
+    return FVec2::New(
         rng::RandomFloat(-shake_pixels, shake_pixels),
         rng::RandomFloat(-shake_pixels, shake_pixels)
     );
@@ -717,8 +717,8 @@ const AFrame* GetTileCapAFrame(const TileCapSourceData& source_data, TileCapSide
     return nullptr;
 }
 
-Vec2 GetTileCapWorldPos(const AFrame& aframe, int tile_x, int tile_y, TileCapSide side) {
-    Vec2 pos = Vec2::New(
+FVec2 GetTileCapWorldPos(const AFrame& aframe, int tile_x, int tile_y, TileCapSide side) {
+    FVec2 pos = FVec2::New(
         static_cast<float>(tile_x * static_cast<int>(kTileSize)),
         static_cast<float>(tile_y * static_cast<int>(kTileSize))
     );
@@ -747,8 +747,8 @@ bool RenderTileCapWithVertexLighting(
     const Graphics& graphics,
     const SDL_FRect& src,
     const SDL_FRect& dst,
-    const Vec2& cap_world_pos,
-    const Vec2& cap_size,
+    const FVec2& cap_world_pos,
+    const FVec2& cap_size,
     bool horizontal_flip
 ) {
     if (renderer == nullptr || texture == nullptr || graphics.world_rotation_active ||
@@ -778,10 +778,10 @@ bool RenderTileCapWithVertexLighting(
 
     const Color3 top_left = SampleForegroundLightColorForRender(state, cap_world_pos);
     const Color3 top_right =
-        SampleForegroundLightColorForRender(state, cap_world_pos + Vec2::New(cap_size.x, 0.0F));
+        SampleForegroundLightColorForRender(state, cap_world_pos + FVec2::New(cap_size.x, 0.0F));
     const Color3 bottom_right = SampleForegroundLightColorForRender(state, cap_world_pos + cap_size);
     const Color3 bottom_left =
-        SampleForegroundLightColorForRender(state, cap_world_pos + Vec2::New(0.0F, cap_size.y));
+        SampleForegroundLightColorForRender(state, cap_world_pos + FVec2::New(0.0F, cap_size.y));
 
     const std::array<SDL_Vertex, 4> vertices{
         SDL_Vertex{SDL_FPoint{dst.x, dst.y}, MakeFluidVertexColor(top_left, 255), SDL_FPoint{u0, v0}},
@@ -822,7 +822,7 @@ void RenderTileCap(
     int tile_x,
     int tile_y,
     TileCapSide side,
-    const Vec2& render_offset
+    const FVec2& render_offset
 ) {
     if (!ShouldRenderTileCap(state.stage, tile_x, tile_y, side)) {
         return;
@@ -843,12 +843,12 @@ void RenderTileCap(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h),
     };
-    const Vec2 cap_size = Vec2::New(
+    const FVec2 cap_size = FVec2::New(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h)
     );
-    const Vec2 shake_offset = GetShakeOffset(GetTileCapShake(state.stage, tile_x, tile_y));
-    const Vec2 cap_world_pos =
+    const FVec2 shake_offset = GetShakeOffset(GetTileCapShake(state.stage, tile_x, tile_y));
+    const FVec2 cap_world_pos =
         GetTileCapWorldPos(*aframe, tile_x, tile_y, side) + render_offset + shake_offset;
     const SDL_FRect dst = WorldRectToScreen(
         graphics,
@@ -902,8 +902,8 @@ Tile GetBackwallFillTileForTileCoord(const Stage& stage, int tile_x, int tile_y)
 void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureStageLighting(state);
     state.stage.SyncTileShakeGrid();
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    for (const Vec2& render_offset : render_offsets) {
+    const std::vector<FVec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    for (const FVec2& render_offset : render_offsets) {
         for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
             for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
                 const Tile backwall_tile = state.stage.backwall_tiles[y][x];
@@ -919,16 +919,16 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                     static_cast<unsigned int>(x),
                     static_cast<unsigned int>(y)
                 );
-                const Vec2 background_shake_offset = GetShakeOffset(background_shake);
+                const FVec2 background_shake_offset = GetShakeOffset(background_shake);
                 const SDL_FRect unshaken_dst = WorldRectToScreen(
                     graphics,
                     ToVec2(tile_pos) + render_offset,
-                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                    FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
                 const SDL_FRect background_dst = WorldRectToScreen(
                     graphics,
                     ToVec2(tile_pos) + render_offset + background_shake_offset,
-                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                    FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
 
                 const TileSourceData* const backwall_source_data =
@@ -1003,8 +1003,8 @@ void RenderStageForegroundTilePass(
 ) {
     EnsureStageLighting(state);
     state.stage.SyncTileShakeGrid();
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    for (const Vec2& render_offset : render_offsets) {
+    const std::vector<FVec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    for (const FVec2& render_offset : render_offsets) {
         for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
             for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
                 const Tile tile = state.stage.tiles[y][x];
@@ -1026,11 +1026,11 @@ void RenderStageForegroundTilePass(
                     static_cast<unsigned int>(x),
                     static_cast<unsigned int>(y)
                 );
-                const Vec2 foreground_shake_offset = GetShakeOffset(foreground_shake);
+                const FVec2 foreground_shake_offset = GetShakeOffset(foreground_shake);
                 const SDL_FRect foreground_dst = WorldRectToScreen(
                     graphics,
                     ToVec2(tile_pos) + render_offset + foreground_shake_offset,
-                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                    FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
 
                 const TileSourceData* const tile_source_data =
@@ -1112,7 +1112,7 @@ void RenderStageForegroundTiles(SDL_Renderer* renderer, State& state, Graphics& 
 void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureStageLighting(state);
     state.stage.SyncTileInstanceMetadataGrid();
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    const std::vector<FVec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
     constexpr float kMinVisibleDisplayLevel = 0.0001F;
     const FluidSettings& fluid = state.settings.fluid;
@@ -1270,7 +1270,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
         }
     }
 
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
             for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
                 const int int_x = static_cast<int>(x);
@@ -1313,12 +1313,12 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                       }
                     : SDL_FRect{};
 
-                const Vec2 tile_world = ToVec2(tile_pos) + render_offset;
+                const FVec2 tile_world = ToVec2(tile_pos) + render_offset;
                 Color3 brightness = Color3::White();
                 if (fluid.lighting_enabled) {
                     const Color3 sampled_brightness = SampleBackwallLightColorForRender(
                         state,
-                        tile_world + Vec2::New(
+                        tile_world + FVec2::New(
                             static_cast<float>(kTileSizePx) * 0.5F,
                             static_cast<float>(kTileSizePx) * 0.5F
                         )
@@ -1344,7 +1344,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         x >= state.stage.fluid_velocity[y].size()) {
                         return;
                     }
-                    const Vec2 velocity = sim::ToRenderVec2(state.stage.fluid_velocity[y][x]);
+                    const FVec2 velocity = sim::ToRenderVec2(state.stage.fluid_velocity[y][x]);
                     const std::uint64_t flow_tick =
                         static_cast<std::uint64_t>(state.scene_frame) +
                         (static_cast<std::uint64_t>(x) * 29ULL) +
@@ -1362,14 +1362,14 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 if (cell->display_level <= effective_display_cutoff) {
                     continue;
                 }
-                const std::array<Vec2, 4> body_world_points{
-                    tile_world + Vec2::New(0.0F, 0.0F),
-                    tile_world + Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
-                    tile_world + Vec2::New(
+                const std::array<FVec2, 4> body_world_points{
+                    tile_world + FVec2::New(0.0F, 0.0F),
+                    tile_world + FVec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                    tile_world + FVec2::New(
                         static_cast<float>(kTileSizePx),
                         static_cast<float>(kTileSizePx)
                     ),
-                    tile_world + Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                    tile_world + FVec2::New(0.0F, static_cast<float>(kTileSizePx)),
                 };
                 RenderWorldTextureQuad(
                     renderer,
@@ -1412,14 +1412,14 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 };
                 if (!neighbor_is_fluid_or_solid(0, -1)) {
                     render_cell_edge_topper(FluidContourSegment{
-                        .a = Vec2::New(0.0F, 0.0F),
-                        .b = Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                        .a = FVec2::New(0.0F, 0.0F),
+                        .b = FVec2::New(static_cast<float>(kTileSizePx), 0.0F),
                     });
                 }
                 if (!neighbor_is_fluid_or_solid(1, 0)) {
                     render_cell_edge_topper(FluidContourSegment{
-                        .a = Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
-                        .b = Vec2::New(
+                        .a = FVec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                        .b = FVec2::New(
                             static_cast<float>(kTileSizePx),
                             static_cast<float>(kTileSizePx)
                         ),
@@ -1427,8 +1427,8 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 }
                 if (!neighbor_is_fluid_or_solid(0, 1)) {
                     render_cell_edge_topper(FluidContourSegment{
-                        .a = Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
-                        .b = Vec2::New(
+                        .a = FVec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                        .b = FVec2::New(
                             static_cast<float>(kTileSizePx),
                             static_cast<float>(kTileSizePx)
                         ),
@@ -1436,8 +1436,8 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 }
                 if (!neighbor_is_fluid_or_solid(-1, 0)) {
                     render_cell_edge_topper(FluidContourSegment{
-                        .a = Vec2::New(0.0F, 0.0F),
-                        .b = Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                        .a = FVec2::New(0.0F, 0.0F),
+                        .b = FVec2::New(0.0F, static_cast<float>(kTileSizePx)),
                     });
                 }
                 RenderFluidBubble(
@@ -1469,7 +1469,7 @@ void RenderStageTileCaps(SDL_Renderer* renderer, State& state, Graphics& graphic
         return;
     }
 
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    const std::vector<FVec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     constexpr std::array<TileCapSide, 4> kCapSides{
         TileCapSide::Top,
         TileCapSide::Bottom,
@@ -1477,7 +1477,7 @@ void RenderStageTileCaps(SDL_Renderer* renderer, State& state, Graphics& graphic
         TileCapSide::Right,
     };
 
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
             for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
                 const int tile_x = static_cast<int>(x);
@@ -1532,7 +1532,7 @@ void RenderStageTileCaps(SDL_Renderer* renderer, State& state, Graphics& graphic
                     tile_x,
                     tile_y,
                     side,
-                    Vec2::New(0.0F, 0.0F)
+                    FVec2::New(0.0F, 0.0F)
                 );
             }
         }
@@ -1548,8 +1548,8 @@ void RenderStageTileWrapperLayer(
     EnsureStageLighting(state);
 
     const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
-    const Vec2 visible_tl_wc = visible.tl;
-    const Vec2 visible_br_wc = visible.br;
+    const FVec2 visible_tl_wc = visible.tl;
+    const FVec2 visible_br_wc = visible.br;
 
     const int visible_tl_tile_x =
         static_cast<int>(std::floor(visible_tl_wc.x / static_cast<float>(kTileSize))) - 1;
@@ -1610,11 +1610,11 @@ void RenderStageTileWrapperLayer(
                         static_cast<float>(air_source_data->sample_rect.h),
                     };
                     const float border_shake = GetBorderTileShake(state.stage, tile_x, tile_y);
-                    const Vec2 border_shake_offset = GetShakeOffset(border_shake);
+                    const FVec2 border_shake_offset = GetShakeOffset(border_shake);
                     const SDL_FRect dst = WorldRectToScreen(
                         graphics,
                         ToVec2(tile_pos) + border_shake_offset,
-                        Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                        FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                     );
                     ApplyBackwallTileBrightness(air_texture, state, graphics, tile_x, tile_y);
                     RenderWorldTexture(renderer, graphics, air_texture, &air_src, dst);
@@ -1640,7 +1640,7 @@ void RenderStageTileWrapperLayer(
                     static_cast<float>(tile_source_data->sample_rect.h),
                 };
                 const float border_shake = GetBorderTileShake(state.stage, tile_x, tile_y);
-                const Vec2 border_shake_offset = GetShakeOffset(border_shake);
+                const FVec2 border_shake_offset = GetShakeOffset(border_shake);
                 if (border_shake > 0.0F &&
                     ShouldRenderImmediateBorderBacking(state.stage, tile_x, tile_y)) {
                     const Tile backing_tile =
@@ -1660,7 +1660,7 @@ void RenderStageTileWrapperLayer(
                             const SDL_FRect backing_dst = WorldRectToScreen(
                                 graphics,
                                 ToVec2(tile_pos),
-                                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                                FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                             );
                             ApplyBackwallTileBrightness(
                                 backing_texture,
@@ -1677,7 +1677,7 @@ void RenderStageTileWrapperLayer(
                 const SDL_FRect dst = WorldRectToScreen(
                     graphics,
                     ToVec2(tile_pos) + border_shake_offset,
-                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                    FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
                 ApplyTerrainTileBrightness(tile_texture, state, graphics, tile_x, tile_y);
                 RenderWorldTexture(renderer, graphics, tile_texture, &src, dst);
@@ -1698,7 +1698,7 @@ void RenderStageForegroundTileWrapper(SDL_Renderer* renderer, State& state, Grap
 
 void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureStageLighting(state);
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    const std::vector<FVec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const BackgroundStamp& stamp : state.stage.background_stamps) {
         if (stamp.anim_id == kInvalidAFrameId) {
             continue;
@@ -1730,11 +1730,11 @@ void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& grap
         const int tile_y =
             static_cast<int>((stamp.pos.y + (static_cast<float>(aframe->sample_rect.h) * 0.5F)) /
                              static_cast<float>(kTileSize));
-        for (const Vec2& render_offset : render_offsets) {
+        for (const FVec2& render_offset : render_offsets) {
             const SDL_FRect dst = WorldRectToScreen(
                 graphics,
                 stamp.pos + render_offset,
-                Vec2::New(
+                FVec2::New(
                     static_cast<float>(aframe->sample_rect.w),
                     static_cast<float>(aframe->sample_rect.h)
                 )
@@ -1749,7 +1749,7 @@ void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& grap
 void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     const bool reveal_hidden_embeds = ShouldRevealEmbeddedTreasure(state);
     EnsureStageLighting(state);
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    const std::vector<FVec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (std::size_t y = 0; y < state.stage.embedded_treasures.size(); ++y) {
         for (std::size_t x = 0; x < state.stage.embedded_treasures[y].size(); ++x) {
             const EmbeddedTreasure& embedded_treasure = state.stage.embedded_treasures[y][x];
@@ -1783,7 +1783,7 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 continue;
             }
 
-            const Vec2 tile_world_pos = Vec2::New(
+            const FVec2 tile_world_pos = FVec2::New(
                 static_cast<float>(x * kTileSize),
                 static_cast<float>(y * kTileSize)
             );
@@ -1791,7 +1791,7 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 (static_cast<int>(kTileSize) - aframe->sample_rect.w) / 2;
             const int render_offset_y =
                 (static_cast<int>(kTileSize) - aframe->sample_rect.h) / 2;
-            const Vec2 render_world_pos = tile_world_pos + Vec2::New(
+            const FVec2 render_world_pos = tile_world_pos + FVec2::New(
                 static_cast<float>(render_offset_x),
                 static_cast<float>(render_offset_y)
             );
@@ -1801,7 +1801,7 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 static_cast<float>(aframe->sample_rect.w),
                 static_cast<float>(aframe->sample_rect.h),
             };
-            const Vec2 overlay_center = tile_world_pos + Vec2::New(
+            const FVec2 overlay_center = tile_world_pos + FVec2::New(
                 static_cast<float>(kTileSize) * 0.5F,
                 static_cast<float>(kTileSize) * 0.5F
             );
@@ -1815,11 +1815,11 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
             );
             SDL_SetTextureColorModFloat(sprite_texture, brightness.r, brightness.g, brightness.b);
             SDL_SetTextureAlphaMod(sprite_texture, 224);
-            for (const Vec2& render_offset : render_offsets) {
+            for (const FVec2& render_offset : render_offsets) {
                 const SDL_FRect dst = WorldRectToScreen(
                     graphics,
                     render_world_pos + render_offset,
-                    Vec2::New(
+                    FVec2::New(
                         static_cast<float>(aframe->sample_rect.w),
                         static_cast<float>(aframe->sample_rect.h)
                     )

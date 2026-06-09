@@ -21,8 +21,8 @@ namespace splonks {
 namespace {
 
 struct VisibleWorldRect {
-    Vec2 tl;
-    Vec2 br;
+    FVec2 tl;
+    FVec2 br;
 };
 
 VisibleWorldRect GetVisibleWorldRect(const Graphics& graphics) {
@@ -40,9 +40,9 @@ int FloorDivByFloat(float value, float divisor) {
     return static_cast<int>(std::floor(value / divisor));
 }
 
-std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graphics& graphics) {
-    std::vector<Vec2> offsets;
-    offsets.push_back(Vec2::New(0.0F, 0.0F));
+std::vector<FVec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graphics& graphics) {
+    std::vector<FVec2> offsets;
+    offsets.push_back(FVec2::New(0.0F, 0.0F));
 
     const float stage_width = static_cast<float>(stage.GetWidth());
     const float stage_height = static_cast<float>(stage.GetHeight());
@@ -59,7 +59,7 @@ std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graph
     offsets.clear();
     for (int copy_y = min_copy_y; copy_y <= max_copy_y; ++copy_y) {
         for (int copy_x = min_copy_x; copy_x <= max_copy_x; ++copy_x) {
-            offsets.push_back(Vec2::New(
+            offsets.push_back(FVec2::New(
                 static_cast<float>(copy_x) * stage_width,
                 static_cast<float>(copy_y) * stage_height
             ));
@@ -87,9 +87,9 @@ void RenderAnimatedParticleSprite(
     SDL_Renderer* renderer,
     const State& state,
     Graphics& graphics,
-    const std::vector<Vec2>& render_offsets,
-    const Vec2& pos,
-    const Vec2& size,
+    const std::vector<FVec2>& render_offsets,
+    const FVec2& pos,
+    const FVec2& size,
     float rotation,
     float alpha,
     bool horizontal_flip,
@@ -112,7 +112,7 @@ void RenderAnimatedParticleSprite(
     }
 
     const SDL_FlipMode flip = horizontal_flip ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-    const Vec2 half_size = size / 2.0F;
+    const FVec2 half_size = size / 2.0F;
     Color3 lighting_color = Color3::White();
     switch (lighting_mode) {
     case ParticleLightingMode::SceneLit:
@@ -138,7 +138,7 @@ void RenderAnimatedParticleSprite(
         static_cast<float>(aframe->sample_rect.w),
         static_cast<float>(aframe->sample_rect.h),
     };
-    for (const Vec2& render_offset : render_offsets) {
+    for (const FVec2& render_offset : render_offsets) {
         const SDL_FRect dst = WorldRectToScreen(graphics, (pos - half_size) + render_offset, size);
         const SDL_FPoint center{dst.w / 2.0F, dst.h / 2.0F};
         RenderWorldTextureRotated(renderer, graphics, texture, &src, dst, rotation, &center, flip);
@@ -153,7 +153,7 @@ void RenderSpriteParticlesForLayer(
     Graphics& graphics,
     DrawLayer layer
 ) {
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    const std::vector<FVec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const SpriteParticle& particle : state.particles.sprite_particles) {
         if (particle.draw_layer != layer || particle.IsFinished()) {
             continue;
@@ -184,7 +184,7 @@ void RenderScriptedParticlesForLayer(
     Graphics& graphics,
     DrawLayer layer
 ) {
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    const std::vector<FVec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const ScriptedParticle& particle : state.particles.scripted_particles) {
         if (particle.draw_layer != layer || particle.IsFinished()) {
             continue;
@@ -211,7 +211,7 @@ void RenderRibbonParticlesForLayer(
     Graphics& graphics,
     DrawLayer layer
 ) {
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    const std::vector<FVec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const RibbonParticle& particle : state.particles.ribbon_particles) {
         if (particle.IsFinished()) {
             continue;
@@ -222,9 +222,9 @@ void RenderRibbonParticlesForLayer(
             continue;
         }
         for (std::size_t i = 0; i + 1 < particle.point_count; ++i) {
-            const Vec2 a = particle.points[i];
-            const Vec2 b = particle.points[i + 1];
-            const Vec2 diff = b - a;
+            const FVec2 a = particle.points[i];
+            const FVec2 b = particle.points[i + 1];
+            const FVec2 diff = b - a;
             const float length = Length(diff);
             if (length <= 0.01F) {
                 continue;
@@ -236,7 +236,7 @@ void RenderRibbonParticlesForLayer(
                 graphics,
                 render_offsets,
                 (a + b) * 0.5F,
-                Vec2::New(length, spec->width),
+                FVec2::New(length, spec->width),
                 rotation,
                 particle.alpha,
                 false,
@@ -254,7 +254,7 @@ void RenderSegmentedSpriteParticlesForLayer(
     Graphics& graphics,
     DrawLayer layer
 ) {
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    const std::vector<FVec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const SegmentedSpriteParticle& particle : state.particles.segmented_sprite_particles) {
         if (particle.IsFinished()) {
             continue;
@@ -267,17 +267,17 @@ void RenderSegmentedSpriteParticlesForLayer(
         const float spacing =
             spec->spacing > 0.0F ? spec->spacing : Max(spec->segment_size.x, 1.0F);
         for (std::size_t i = 0; i + 1 < particle.point_count; ++i) {
-            const Vec2 a = particle.points[i];
-            const Vec2 b = particle.points[i + 1];
-            const Vec2 diff = b - a;
+            const FVec2 a = particle.points[i];
+            const FVec2 b = particle.points[i + 1];
+            const FVec2 diff = b - a;
             const float length = Length(diff);
             if (length <= 0.01F) {
                 continue;
             }
-            const Vec2 dir = diff / length;
+            const FVec2 dir = diff / length;
             const float rotation = std::atan2(diff.y, diff.x) * (180.0F / 3.14159265F);
             for (float distance_along = 0.0F; distance_along < length; distance_along += spacing) {
-                const Vec2 center = a + (dir * distance_along);
+                const FVec2 center = a + (dir * distance_along);
                 RenderAnimatedParticleSprite(
                     renderer,
                     state,

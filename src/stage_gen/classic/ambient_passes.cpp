@@ -44,10 +44,10 @@ bool IsOpenAmbientFloorSpot(const Stage& stage, int tile_x, int tile_y) {
                          static_cast<unsigned int>(tile_y - 1)) != Tile::Spikes;
 }
 
-void AddGiantSpiderHangSpawn(Stage& stage, const Vec2& pos) {
+void AddGiantSpiderHangSpawn(Stage& stage, const FVec2& pos) {
     AddAmbientSpawn(stage, EntType::GiantSpiderHang, pos);
     AddAmbientSpawn(stage, EntType::Cobweb, pos);
-    AddAmbientSpawn(stage, EntType::Cobweb, pos + Vec2::New(static_cast<float>(kTileSize), 0.0F));
+    AddAmbientSpawn(stage, EntType::Cobweb, pos + FVec2::New(static_cast<float>(kTileSize), 0.0F));
 }
 
 void AddAmbientMinesEnts(Stage& stage, DetRng& det_rng) {
@@ -67,16 +67,16 @@ void AddAmbientMinesEnts(Stage& stage, DetRng& det_rng) {
                 continue;
             }
 
-            const Vec2 tile_pos =
-                Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+            const FVec2 tile_pos =
+                FVec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                           static_cast<float>(tile_y * static_cast<int>(kTileSize)));
 
             if (tile_y < stage_height - 4 && IsOpenAmbientCeilingSpot(stage, tile_x, tile_y)) {
-                const Vec2 ceiling_spawn_pos =
-                    tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize));
-                const Vec2 ceiling_spawn_pos_2 =
+                const FVec2 ceiling_spawn_pos =
+                    tile_pos + FVec2::New(0.0F, static_cast<float>(kTileSize));
+                const FVec2 ceiling_spawn_pos_2 =
                     tile_pos +
-                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize));
+                    FVec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize));
                 const bool open_below_right = IsOpenAmbientCeilingSpot(stage, tile_x + 1, tile_y);
 
                 if (gen_giant_spider && !giant_spider_spawned && open_below_right &&
@@ -103,7 +103,7 @@ void AddAmbientMinesEnts(Stage& stage, DetRng& det_rng) {
             if (!IsOpenAmbientFloorSpot(stage, tile_x, tile_y)) {
                 continue;
             }
-            const Vec2 floor_spawn_pos = tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
+            const FVec2 floor_spawn_pos = tile_pos - FVec2::New(0.0F, static_cast<float>(kTileSize));
             if (det_rng.RandomIntInclusive(1, 60) == 1) {
                 AddAmbientSpawn(stage, EntType::Snake, floor_spawn_pos);
             } else if (det_rng.RandomIntInclusive(1, 800) == 1) {
@@ -124,8 +124,8 @@ void AddAmbientJungleEnts(Stage& stage, bool black_market, DetRng& det_rng) {
                 stage.GetTile(static_cast<unsigned int>(tile_x), static_cast<unsigned int>(tile_y));
             const bool in_shop = IsShopRoomAt(stage, tile_x, tile_y);
             const bool in_start = IsStartRoomAt(stage, tile_x, tile_y);
-            const Vec2 tile_pos =
-                Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+            const FVec2 tile_pos =
+                FVec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                           static_cast<float>(tile_y * static_cast<int>(kTileSize)));
 
             if (!in_shop && IsVineAmbientTile(tile) && det_rng.RandomIntInclusive(1, 15) == 1) {
@@ -134,7 +134,7 @@ void AddAmbientJungleEnts(Stage& stage, bool black_market, DetRng& det_rng) {
 
             if (!in_shop && IsWaterAmbientTile(tile) &&
                 !IsCollidableTileAt(stage, tile_x, tile_y) && det_rng.RandomIntInclusive(1, 30) == 1) {
-                AddAmbientSpawn(stage, EntType::Piranha, tile_pos + Vec2::New(4.0F, 4.0F));
+                AddAmbientSpawn(stage, EntType::Piranha, tile_pos + FVec2::New(4.0F, 4.0F));
             }
 
             if (!IsCollidableTileAt(stage, tile_x, tile_y) || in_shop) {
@@ -145,8 +145,8 @@ void AddAmbientJungleEnts(Stage& stage, bool black_market, DetRng& det_rng) {
             }
 
             if (tile_y < stage_height - 4 && IsOpenAmbientCeilingSpot(stage, tile_x, tile_y)) {
-                const Vec2 ceiling_spawn_pos =
-                    tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize));
+                const FVec2 ceiling_spawn_pos =
+                    tile_pos + FVec2::New(0.0F, static_cast<float>(kTileSize));
                 if (dark_level && det_rng.RandomIntInclusive(1, 40) == 1) {
                     AddAmbientSpawn(stage, EntType::Scarab, ceiling_spawn_pos);
                 } else if (det_rng.RandomIntInclusive(1, 80) == 1) {
@@ -157,7 +157,7 @@ void AddAmbientJungleEnts(Stage& stage, bool black_market, DetRng& det_rng) {
             if (!IsOpenAmbientFloorSpot(stage, tile_x, tile_y)) {
                 continue;
             }
-            const Vec2 floor_spawn_pos = tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
+            const FVec2 floor_spawn_pos = tile_pos - FVec2::New(0.0F, static_cast<float>(kTileSize));
             const bool in_water = IsWaterAmbientTile(stage.GetTile(
                 static_cast<unsigned int>(tile_x), static_cast<unsigned int>(tile_y - 1)));
             if (!in_water) {
@@ -193,16 +193,16 @@ void AddAmbientIceEnts(Stage& stage, DetRng& det_rng) {
                 continue;
             }
 
-            const Vec2 tile_pos =
-                Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+            const FVec2 tile_pos =
+                FVec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                           static_cast<float>(tile_y * static_cast<int>(kTileSize)));
 
             if (IsCollidableTileAt(stage, tile_x, tile_y)) {
                 if (!IsStartRoomAt(stage, tile_x, tile_y) && tile_y < stage_height - 4 &&
                     dark_level && IsOpenAmbientCeilingSpot(stage, tile_x, tile_y) &&
                     det_rng.RandomIntInclusive(1, 40) == 1) {
-                    const Vec2 ceiling_spawn_pos =
-                        tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize));
+                    const FVec2 ceiling_spawn_pos =
+                        tile_pos + FVec2::New(0.0F, static_cast<float>(kTileSize));
                     AddAmbientSpawn(stage, EntType::Scarab, ceiling_spawn_pos);
                 }
 
@@ -211,8 +211,8 @@ void AddAmbientIceEnts(Stage& stage, DetRng& det_rng) {
                         64.0F * 64.0F) {
                     continue;
                 }
-                const Vec2 floor_spawn_pos =
-                    tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
+                const FVec2 floor_spawn_pos =
+                    tile_pos - FVec2::New(0.0F, static_cast<float>(kTileSize));
                 if (det_rng.RandomIntInclusive(1, 20) == 1) {
                     AddAmbientSpawn(stage, EntType::Yeti, floor_spawn_pos);
                 }
@@ -228,7 +228,7 @@ void AddAmbientIceEnts(Stage& stage, DetRng& det_rng) {
             }
             if (det_rng.RandomIntInclusive(1, ufo_denominator) == 1) {
                 AddAmbientSpawn(stage, EntType::Ufo,
-                                tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize)));
+                                tile_pos - FVec2::New(0.0F, static_cast<float>(kTileSize)));
             }
         }
     }
@@ -247,15 +247,15 @@ void AddAmbientTempleEnts(Stage& stage, DetRng& det_rng) {
                 continue;
             }
 
-            const Vec2 tile_pos =
-                Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+            const FVec2 tile_pos =
+                FVec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                           static_cast<float>(tile_y * static_cast<int>(kTileSize)));
 
             if (tile_y < stage_height - 4 && dark_level &&
                 IsOpenAmbientCeilingSpot(stage, tile_x, tile_y) &&
                 det_rng.RandomIntInclusive(1, 40) == 1) {
-                const Vec2 ceiling_spawn_pos =
-                    tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize));
+                const FVec2 ceiling_spawn_pos =
+                    tile_pos + FVec2::New(0.0F, static_cast<float>(kTileSize));
                 AddAmbientSpawn(stage, EntType::Scarab, ceiling_spawn_pos);
             }
 
@@ -265,13 +265,13 @@ void AddAmbientTempleEnts(Stage& stage, DetRng& det_rng) {
                 continue;
             }
 
-            const Vec2 floor_spawn_pos = tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
+            const FVec2 floor_spawn_pos = tile_pos - FVec2::New(0.0F, static_cast<float>(kTileSize));
             if (gen_tomb_lord && !tomb_lord_spawned && tile_y >= 2 &&
                 !IsCollidableTileAt(stage, tile_x + 1, tile_y - 1) &&
                 !IsCollidableTileAt(stage, tile_x + 2, tile_y - 1) &&
                 det_rng.RandomIntInclusive(1, 40) == 1) {
                 AddAmbientSpawn(stage, EntType::TombLord,
-                                floor_spawn_pos - Vec2::New(0.0F, static_cast<float>(kTileSize)));
+                                floor_spawn_pos - FVec2::New(0.0F, static_cast<float>(kTileSize)));
                 tomb_lord_spawned = true;
                 gen_tomb_lord = false;
             } else if (det_rng.RandomIntInclusive(1, 40) == 1) {

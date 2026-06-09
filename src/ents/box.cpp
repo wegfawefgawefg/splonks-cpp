@@ -21,7 +21,7 @@ constexpr float kControlledSlideVel = 3.75F;
 constexpr std::uint32_t kControlledSlideCooldownFrames = 120;
 constexpr float kBoxBreakawayImpactSpeed = 2.0F;
 
-Ent* SpawnEntAtTopLeft(EntType type_, const Vec2& pos, State& state) {
+Ent* SpawnEntAtTopLeft(EntType type_, const FVec2& pos, State& state) {
     return world_ops::SpawnEnt(state, type_, [pos](Ent& ent) {
         ent.SetRenderPos(pos);
         ent.vel = sim::Vec2::zero();
@@ -167,7 +167,7 @@ void OnDeathAsBox(std::size_t ent_idx, State& state, Audio& audio) {
 
     const Ent& box = state.ents.ents[ent_idx];
 
-    const Vec2 spawn_pos = box.GetRenderPos();
+    const FVec2 spawn_pos = box.GetRenderPos();
     SpawnBreakawayContainerShards(sim::ToRenderVec2(box.GetSimCenter()), state);
 
     // Matches ClassicHD's actual open-crate roll order, with unimplemented Shotgun

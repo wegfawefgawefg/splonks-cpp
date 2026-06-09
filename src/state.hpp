@@ -153,12 +153,12 @@ struct DebugAnnotationColor {
 };
 
 struct DebugRectAnnotation {
-    RenderAABB area = RenderAABB::New(Vec2::New(0.0F, 0.0F), Vec2::New(0.0F, 0.0F));
+    RenderAABB area = RenderAABB::New(FVec2::New(0.0F, 0.0F), FVec2::New(0.0F, 0.0F));
     DebugAnnotationColor color{};
 };
 
 struct DebugLabelAnnotation {
-    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 world_pos = FVec2::New(0.0F, 0.0F);
     std::string text;
     DebugAnnotationColor color{};
 };
@@ -181,7 +181,7 @@ struct DebugAudioBrushState {
     AudioAssetId audio_asset_id = audio_asset_ids::BoulderRoll;
     float volume_scale = 1.0F;
     bool source_active = false;
-    Vec2 source_world_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 source_world_pos = FVec2::New(0.0F, 0.0F);
 };
 
 struct DebugFluidBrushState {
@@ -229,7 +229,7 @@ struct StageRotationState {
 };
 
 struct WorldPrompt {
-    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 world_pos = FVec2::New(0.0F, 0.0F);
     const char* action_text = "";
     const char* message_text = "";
     bool show_down_arrow = false;
@@ -347,8 +347,8 @@ struct State {
     std::uint32_t sac_altar_reward_tier = 0;
     std::uint32_t frame_pause = 0;
     bool audio_occlusion_enabled = true;
-    Vec2 audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
-    std::optional<Vec2> gameplay_camera_anchor_world_pos;
+    FVec2 audio_listener_world_pos = FVec2::New(0.0F, 0.0F);
+    std::optional<FVec2> gameplay_camera_anchor_world_pos;
     std::vector<VID> interact_claimed_vids_this_frame;
     PerformanceStats performance_stats;
     PlayerRegistry players;
@@ -396,12 +396,12 @@ struct State {
     bool IsInteractClaimedForEnt(VID ent_vid) const;
 };
 
-void AddShake(State& state, const Vec2& world_pos, float foreground_tile_amount,
+void AddShake(State& state, const FVec2& world_pos, float foreground_tile_amount,
               float background_tile_amount, float ent_amount, float radius_tiles,
               std::optional<VID> exclude_ent_vid = std::nullopt);
-void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles,
+void AddShake(State& state, const FVec2& world_pos, float amount, float radius_tiles,
               std::optional<VID> exclude_ent_vid = std::nullopt);
-void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles, ShakeMask mask,
+void AddShake(State& state, const FVec2& world_pos, float amount, float radius_tiles, ShakeMask mask,
               std::optional<VID> exclude_ent_vid = std::nullopt);
 
 } // namespace splonks

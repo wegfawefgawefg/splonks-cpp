@@ -185,7 +185,7 @@ void DrawShakeBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         "%.2f px"
     );
     ImGui::SliderFloat("Brush Radius (tiles)", &state.debug_shake_brush.radius_tiles, 0.0F, 12.0F, "%.2f");
-    const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+    const FVec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
     const IVec2 mouse_tile = graphics.ScreenToTileCoords(state.immediate_playing_inputs.mouse_pos);
     ImGui::Text("Mouse WC: (%.1f, %.1f)", mouse_world.x, mouse_world.y);
     ImGui::Text("Mouse Tile: (%d, %d)", mouse_tile.x, mouse_tile.y);
@@ -235,7 +235,7 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Audio& audio, Grap
     }
     ImGui::SliderFloat("Volume Scale", &brush.volume_scale, 0.0F, 2.0F, "%.2fx");
 
-    const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+    const FVec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
     ImGui::Text("Mouse WC: (%.1f, %.1f)", mouse_world.x, mouse_world.y);
     if (brush.source_active) {
         ImGui::Text(
@@ -310,7 +310,7 @@ void DrawTileBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics)
     (void)DrawTileCombo("Paint Tile", debug.tile_brush_tile);
     ImGui::SliderInt("Rotation", &debug.tile_brush_rotation, 0, 3);
     ImGui::SliderInt("Brush Radius (tiles)", &debug.tile_brush_radius_tiles, 0, 16);
-    const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+    const FVec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
     const IVec2 mouse_tile = graphics.ScreenToTileCoords(state.immediate_playing_inputs.mouse_pos);
     ImGui::Text("Mouse WC: (%.1f, %.1f)", mouse_world.x, mouse_world.y);
     ImGui::Text("Mouse Tile: (%d, %d)", mouse_tile.x, mouse_tile.y);
@@ -521,7 +521,7 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
 
     ImGui::SliderInt("Brush Radius (tiles)", &brush.radius_tiles, 0, 16);
     ImGui::Checkbox("Replace Non-Air Tiles", &brush.replace_solid_tiles);
-    const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+    const FVec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
     const IVec2 mouse_tile = graphics.ScreenToTileCoords(state.immediate_playing_inputs.mouse_pos);
     ImGui::Text("Mouse WC: (%.1f, %.1f)", mouse_world.x, mouse_world.y);
     ImGui::Text("Mouse Tile: (%d, %d)", mouse_tile.x, mouse_tile.y);
@@ -754,7 +754,7 @@ void DrawCameraSettingsWindow(DebugPlayback& debug, State& state, Graphics& grap
     ImGui::SliderFloat("Zoom Multiplier", &graphics.camera_zoom_multiplier, 0.25F, 4.0F, "%.2f");
     ImGui::SliderFloat("Lerp", &graphics.camera_lerp_factor, 0.01F, 1.0F, "%.2f");
 
-    const Vec2 stage_center = GetStageCameraCenter(state.stage);
+    const FVec2 stage_center = GetStageCameraCenter(state.stage);
     const float stage_fit_zoom = GetStageFitCameraZoom(state.stage, graphics) * graphics.camera_zoom_multiplier;
     const float follow_zoom = GetDefaultFollowCameraZoom(graphics) * graphics.camera_zoom_multiplier;
     ImGui::Text("Current Target: (%.1f, %.1f)", graphics.camera.target.x, graphics.camera.target.y);

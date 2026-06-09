@@ -129,18 +129,18 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
     graphics.fullscreen = false;
     graphics.gpu_renderer_active = false;
     graphics.world_rotation_active = false;
-    graphics.world_rotation_pivot = Vec2::New(0.0F, 0.0F);
+    graphics.world_rotation_pivot = FVec2::New(0.0F, 0.0F);
     graphics.world_rotation_degrees = 0.0F;
 
-    const Vec2 screen_center = ToVec2(graphics.dims / 2U);
-    graphics.camera.target = Vec2::New(0.0F, 0.0F);
+    const FVec2 screen_center = ToVec2(graphics.dims / 2U);
+    graphics.camera.target = FVec2::New(0.0F, 0.0F);
     graphics.camera.offset = screen_center;
     graphics.camera.rotation = 0.0F;
     graphics.camera.zoom = 3.0F;
 
-    graphics.play_cam.pos = Vec2::New(0.0F, 0.0F);
-    graphics.play_cam.vel = Vec2::New(0.0F, 0.0F);
-    graphics.play_cam.acc = Vec2::New(0.0F, 0.0F);
+    graphics.play_cam.pos = FVec2::New(0.0F, 0.0F);
+    graphics.play_cam.vel = FVec2::New(0.0F, 0.0F);
+    graphics.play_cam.acc = FVec2::New(0.0F, 0.0F);
     return graphics;
 }
 
@@ -162,7 +162,7 @@ SDL_FRect GetPresRect(const Graphics& graphics, int output_width, int output_hei
     };
 }
 
-Vec2 GetStageCameraCenter(const Stage& stage) {
+FVec2 GetStageCameraCenter(const Stage& stage) {
     return ToVec2(stage.GetStageDims()) / 2.0F;
 }
 
@@ -176,7 +176,7 @@ float GetDefaultFollowCameraZoom(const Graphics& graphics) {
 }
 
 float GetStageFitCameraZoom(const Stage& stage, const Graphics& graphics) {
-    const Vec2 stage_dims = ToVec2(stage.GetStageDims());
+    const FVec2 stage_dims = ToVec2(stage.GetStageDims());
     const float padded_width = std::max(1.0F, stage_dims.x + (graphics.stage_fit_padding * 2.0F));
     const float padded_height = std::max(1.0F, stage_dims.y + (graphics.stage_fit_padding * 2.0F));
     const float zoom_x = static_cast<float>(graphics.dims.x) / padded_width;
@@ -200,15 +200,15 @@ SDL_Texture* Graphics::GetAFrameTexture(std::uint32_t image_id) const {
     return aframe_images[index];
 }
 
-Vec2 Graphics::ScreenToWc(const UVec2& screen_pos) const {
+FVec2 Graphics::ScreenToWc(const UVec2& screen_pos) const {
     const SDL_FRect pres = GetPresRect(
         *this,
         static_cast<int>(window_dims.x),
         static_cast<int>(window_dims.y)
     );
 
-    Vec2 screen = ToVec2(screen_pos);
-    screen = screen - Vec2::New(pres.x, pres.y);
+    FVec2 screen = ToVec2(screen_pos);
+    screen = screen - FVec2::New(pres.x, pres.y);
 
     const float pres_scale = pres.w / static_cast<float>(dims.x);
     if (pres_scale > 0.0F) {
@@ -220,7 +220,7 @@ Vec2 Graphics::ScreenToWc(const UVec2& screen_pos) const {
     return screen + camera.target;
 }
 
-Vec2 Graphics::WcToScreen(const Vec2& world_pos) const {
+FVec2 Graphics::WcToScreen(const FVec2& world_pos) const {
     return ((world_pos - camera.target) * camera.zoom) + camera.offset;
 }
 

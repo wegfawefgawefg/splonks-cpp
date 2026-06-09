@@ -40,7 +40,7 @@ bool HandleMissingTarget(AudioEmitter& emitter, bool owner_missing) {
         }
         emitter.source_mode = AudioEmitterSourceMode::FixedWorldPos;
         emitter.attached_ent_vid.reset();
-        emitter.attached_offset = Vec2::New(0.0F, 0.0F);
+        emitter.attached_offset = FVec2::New(0.0F, 0.0F);
         if (owner_missing) {
             emitter.owner_ent_vid.reset();
         }
@@ -48,7 +48,7 @@ bool HandleMissingTarget(AudioEmitter& emitter, bool owner_missing) {
     case AudioEmitterTargetLossPolicy::KeepPlayingDetached:
         emitter.source_mode = AudioEmitterSourceMode::FixedWorldPos;
         emitter.attached_ent_vid.reset();
-        emitter.attached_offset = Vec2::New(0.0F, 0.0F);
+        emitter.attached_offset = FVec2::New(0.0F, 0.0F);
         if (owner_missing) {
             emitter.owner_ent_vid.reset();
         }
@@ -151,8 +151,8 @@ std::optional<VID> AudioEmitterManager::NewEmitter() {
     emitter.sound_instance_vid = kInvalidAudioInstanceVID;
     emitter.owner_ent_vid.reset();
     emitter.attached_ent_vid.reset();
-    emitter.attached_offset = Vec2::New(0.0F, 0.0F);
-    emitter.world_pos = Vec2::New(0.0F, 0.0F);
+    emitter.attached_offset = FVec2::New(0.0F, 0.0F);
+    emitter.world_pos = FVec2::New(0.0F, 0.0F);
     return emitter.vid;
 }
 
@@ -209,11 +209,11 @@ AudioEmitter* GetSoundEmitterMut(State& state, VID emitter_vid) {
     return state.audio_emitters.GetEmitterMut(emitter_vid);
 }
 
-Vec2 GetAudioListenerWorldPos(const State& state) {
+FVec2 GetAudioListenerWorldPos(const State& state) {
     return state.audio_listener_world_pos;
 }
 
-void SetAudioListenerWorldPos(State& state, const Vec2& world_pos) {
+void SetAudioListenerWorldPos(State& state, const FVec2& world_pos) {
     state.audio_listener_world_pos = world_pos;
 }
 
@@ -241,7 +241,7 @@ std::optional<VID> FindOwnedSoundEmitter(
 /// while positional mix still updates as the listener moves.
 std::optional<VID> PlayWorldSoundEmitter(
     State& state,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params
 ) {
@@ -270,7 +270,7 @@ std::optional<VID> PlayWorldSoundEmitter(
 std::optional<VID> PlayAttachedSoundEmitter(
     State& state,
     VID attached_ent_vid,
-    const Vec2& attached_offset,
+    const FVec2& attached_offset,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params
 ) {
@@ -304,7 +304,7 @@ std::optional<VID> PlayEntSoundEmitter(
     const Ent& ent,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params,
-    const Vec2& attached_offset
+    const FVec2& attached_offset
 ) {
     AudioEmitterPlayParams ent_params = params;
     if (!ent_params.owner_ent_vid.has_value()) {
@@ -324,7 +324,7 @@ std::optional<VID> PlayEntCenterSoundEmitter(
     const Ent& ent,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params,
-    const Vec2& world_offset
+    const FVec2& world_offset
 ) {
     AudioEmitterPlayParams ent_params = params;
     if (!ent_params.owner_ent_vid.has_value()) {
@@ -345,7 +345,7 @@ std::optional<VID> EnsureAttachedLoopingSoundEmitter(
     State& state,
     VID owner_ent_vid,
     VID attached_ent_vid,
-    const Vec2& attached_offset,
+    const FVec2& attached_offset,
     AudioAssetId audio_asset_id,
     float volume_scale,
     AudioEmitterTargetLossPolicy target_loss_policy

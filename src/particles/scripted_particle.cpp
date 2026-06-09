@@ -33,7 +33,7 @@ void StartSequenceStep(
 
 ScriptedParticle MakeScriptedParticle(
     ScriptedParticleSpecId spec_id,
-    const Vec2& pos,
+    const FVec2& pos,
     bool horizontal_flip
 ) {
     ScriptedParticle particle;

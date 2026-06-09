@@ -137,12 +137,12 @@ bool TryApplyPlausibleLocomotionClaim(
     std::uint32_t claimed_climb_detach_cooldown
 );
 const AFrame* GetCurrentAFrameForEnt(const Ent& ent, const Graphics& graphics);
-Vec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
+FVec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
 sim::Vec2 GetSimSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
-Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback);
+FVec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback);
 sim::Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, sim::Vec2 fallback);
 void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, sim::Vec2 center);
-Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback);
+FVec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const FVec2& fallback);
 sim::Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, sim::Vec2 fallback);
 sim::AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics);
 sim::AABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);

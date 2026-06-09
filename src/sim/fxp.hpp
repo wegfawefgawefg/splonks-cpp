@@ -28,7 +28,7 @@ struct Color3 {
     return value.to_float();
 }
 
-[[nodiscard]] inline Vec2 ToSimVec2(const splonks::Vec2& value,
+[[nodiscard]] inline Vec2 ToSimVec2(const splonks::FVec2& value,
                                     gfxp::Rounding rounding = gfxp::Rounding::Nearest) {
     return Vec2{ToSimScalar(value.x, rounding), ToSimScalar(value.y, rounding)};
 }
@@ -38,8 +38,8 @@ struct Color3 {
     return Vec2{ToSimScalar(x, rounding), ToSimScalar(y, rounding)};
 }
 
-[[nodiscard]] inline splonks::Vec2 ToRenderVec2(const Vec2& value) {
-    return splonks::Vec2::New(value.x.to_float(), value.y.to_float());
+[[nodiscard]] inline splonks::FVec2 ToRenderVec2(const Vec2& value) {
+    return splonks::FVec2::New(value.x.to_float(), value.y.to_float());
 }
 
 [[nodiscard]] constexpr Vec2 PixelVec2(std::int32_t x, std::int32_t y) {

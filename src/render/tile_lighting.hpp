@@ -28,7 +28,7 @@ bool RenderTerrainTileWithVertexLighting(
     const Graphics& graphics,
     const SDL_FRect& src,
     const SDL_FRect& dst,
-    const Vec2& world_pos,
+    const FVec2& world_pos,
     TileRotation tile_rotation
 );
 
@@ -39,7 +39,7 @@ bool RenderBackwallTileWithVertexLighting(
     const Graphics& graphics,
     const SDL_FRect& src,
     const SDL_FRect& dst,
-    const Vec2& world_pos
+    const FVec2& world_pos
 );
 
 void ApplyTerrainTileBrightness(

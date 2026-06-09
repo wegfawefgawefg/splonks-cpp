@@ -22,7 +22,7 @@ constexpr int kParachuteTestStageHeightTiles = 72;
 
 std::optional<VID> SpawnMovingPlatform(
     State& state,
-    const Vec2& pos,
+    const FVec2& pos,
     EntAiState mode,
     const IVec2& point_a,
     const IVec2& point_b,
@@ -159,22 +159,22 @@ void InitMovingPlatformTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    const Vec2 left_platform_pos = Vec2::New(
+    const FVec2 left_platform_pos = FVec2::New(
         6.0F * static_cast<float>(kTileSize),
         8.0F * static_cast<float>(kTileSize)
     );
-    const Vec2 middle_platform_pos = Vec2::New(
+    const FVec2 middle_platform_pos = FVec2::New(
         23.0F * static_cast<float>(kTileSize),
         10.0F * static_cast<float>(kTileSize)
     );
-    const Vec2 circle_center = Vec2::New(
+    const FVec2 circle_center = FVec2::New(
         37.0F * static_cast<float>(kTileSize),
         8.0F * static_cast<float>(kTileSize)
     );
     const float circle_radius = 40.0F;
-    const Vec2 right_platform_pos = circle_center + Vec2::New(circle_radius, 0.0F);
+    const FVec2 right_platform_pos = circle_center + FVec2::New(circle_radius, 0.0F);
 
-    SpawnPlayerAtRenderPosition(state, Vec2::New(left_platform_pos.x + 6.0F, left_platform_pos.y - 14.0F));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(left_platform_pos.x + 6.0F, left_platform_pos.y - 14.0F));
 
     (void)SpawnMovingPlatform(
         state,
@@ -184,7 +184,7 @@ void InitMovingPlatformTestStage(State& state) {
         IVec2::New(14 * static_cast<int>(kTileSize), 8 * static_cast<int>(kTileSize))
     );
 
-    const Vec2 icy_platform_pos = Vec2::New(
+    const FVec2 icy_platform_pos = FVec2::New(
         14.0F * static_cast<float>(kTileSize),
         5.0F * static_cast<float>(kTileSize)
     );
@@ -230,7 +230,7 @@ void InitAudioTestStage(State& state) {
 
     const float player_spawn_x = 48.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 23.0F * static_cast<float>(kTileSize) - 14.0F;
-    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
 }
 
 void InitParachuteTestStage(State& state) {
@@ -239,7 +239,7 @@ void InitParachuteTestStage(State& state) {
 
     const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 5.0F * static_cast<float>(kTileSize) - 14.0F;
-    SpawnPlayerAtRenderPosition(state, Vec2::New(player_spawn_x, player_spawn_y));
+    SpawnPlayerAtRenderPosition(state, FVec2::New(player_spawn_x, player_spawn_y));
     if (Ent* const player = GetPrimaryLocalPlayerMut(state)) {
         (void)AddEffect(*player, EffectId::Parachute, 1);
     }

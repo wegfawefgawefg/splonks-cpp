@@ -56,7 +56,7 @@ void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const
 }
 
 void SpawnTileBreakAnim(AFrameId anim_id, const IVec2& tile_pos, State& state) {
-    const Vec2 center = Vec2::New(
+    const FVec2 center = FVec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
     );
@@ -89,7 +89,7 @@ void BreakStageTilesAtCoordsInternal(
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound,
     bool suppress_tile_break_sound,
-    std::optional<Vec2> sound_center,
+    std::optional<FVec2> sound_center,
     bool suppress_drop_spawns
 ) {
     std::optional<AudioAssetId> break_sound = std::nullopt;
@@ -139,7 +139,7 @@ void BreakStageTilesAtCoordsInternal(
         UpdateStageLightingForTileChanges(state, changed_tiles);
         UpdateStageAcousticsForTileChanges(state, changed_tiles);
     }
-    const Vec2 emitter_center = sound_center.value_or(Vec2::New(0.0F, 0.0F));
+    const FVec2 emitter_center = sound_center.value_or(FVec2::New(0.0F, 0.0F));
     if (override_break_sound.has_value()) {
         (void)PlayWorldSoundEmitter(state, emitter_center, *override_break_sound);
     } else if (break_sound.has_value()) {
@@ -184,10 +184,10 @@ void BreakStageTilesAtCoords(
     bool suppress_tile_break_sound,
     bool suppress_drop_spawns
 ) {
-    Vec2 sound_center = Vec2::New(0.0F, 0.0F);
+    FVec2 sound_center = FVec2::New(0.0F, 0.0F);
     if (!tile_positions.empty()) {
         for (const IVec2& tile_pos : tile_positions) {
-            sound_center += Vec2::New(
+            sound_center += FVec2::New(
                 static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
                 static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
             );

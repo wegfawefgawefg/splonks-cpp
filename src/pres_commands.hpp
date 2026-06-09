@@ -39,8 +39,8 @@ struct PresCommand {
     AudioAssetId audio_asset_id = kInvalidAudioAssetId;
     std::optional<VID> source_vid = std::nullopt;
     std::optional<VID> target_vid = std::nullopt;
-    Vec2 source_pos = Vec2::New(0.0F, 0.0F);
-    Vec2 target_pos = Vec2::New(0.0F, 0.0F);
+    FVec2 source_pos = FVec2::New(0.0F, 0.0F);
+    FVec2 target_pos = FVec2::New(0.0F, 0.0F);
     IVec2 direction = IVec2::New(1, 0);
     std::uint32_t effect_count = 0;
     float effect_scale = 1.0F;

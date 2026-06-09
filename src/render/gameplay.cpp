@@ -23,23 +23,23 @@ namespace splonks {
 namespace {
 
 struct CameraFocus {
-    Vec2 target = Vec2::New(0.0F, 0.0F);
+    FVec2 target = FVec2::New(0.0F, 0.0F);
     float zoom = 1.0F;
     bool has_target = false;
 };
 
 struct CameraViewBounds {
-    Vec2 tl = Vec2::New(0.0F, 0.0F);
-    Vec2 br = Vec2::New(0.0F, 0.0F);
+    FVec2 tl = FVec2::New(0.0F, 0.0F);
+    FVec2 br = FVec2::New(0.0F, 0.0F);
 };
 
-void LerpCamera(Graphics& graphics, const Vec2& target, float zoom) {
+void LerpCamera(Graphics& graphics, const FVec2& target, float zoom) {
     const float t = std::clamp(graphics.camera_lerp_factor, 0.0F, 1.0F);
     graphics.camera.target += (target - graphics.camera.target) * t;
     graphics.camera.zoom += (zoom - graphics.camera.zoom) * t;
 }
 
-Vec2 RotateWorldPointForActiveWorldRotation(const Graphics& graphics, const Vec2& world_pos) {
+FVec2 RotateWorldPointForActiveWorldRotation(const Graphics& graphics, const FVec2& world_pos) {
     if (!graphics.world_rotation_active) {
         return world_pos;
     }
@@ -48,8 +48,8 @@ Vec2 RotateWorldPointForActiveWorldRotation(const Graphics& graphics, const Vec2
     const float radians = graphics.world_rotation_degrees * kDegreesToRadians;
     const float c = std::cos(radians);
     const float s = std::sin(radians);
-    const Vec2 delta = world_pos - graphics.world_rotation_pivot;
-    return graphics.world_rotation_pivot + Vec2::New(
+    const FVec2 delta = world_pos - graphics.world_rotation_pivot;
+    return graphics.world_rotation_pivot + FVec2::New(
         (delta.x * c) - (delta.y * s),
         (delta.x * s) + (delta.y * c)
     );
@@ -156,20 +156,20 @@ const char* GetStageTransitionMessage(const State& state) {
     return GetStageTypeTransitionMessage(target.stage_type);
 }
 
-CameraViewBounds GetCameraViewBounds(const Graphics& graphics, const Vec2& target, float zoom) {
+CameraViewBounds GetCameraViewBounds(const Graphics& graphics, const FVec2& target, float zoom) {
     return CameraViewBounds{
         .tl = target - (graphics.camera.offset / zoom),
         .br = target + ((ToVec2(graphics.dims) - graphics.camera.offset) / zoom),
     };
 }
 
-Vec2 GetCameraTargetForCenteredViewBounds(
+FVec2 GetCameraTargetForCenteredViewBounds(
     const Graphics& graphics,
     const CameraViewBounds& bounds,
     float zoom
 ) {
-    const Vec2 center = (bounds.tl + bounds.br) / 2.0F;
-    const Vec2 centered_offset = graphics.camera.offset - (ToVec2(graphics.dims) / 2.0F);
+    const FVec2 center = (bounds.tl + bounds.br) / 2.0F;
+    const FVec2 centered_offset = graphics.camera.offset - (ToVec2(graphics.dims) / 2.0F);
     return center + (centered_offset / zoom);
 }
 
@@ -194,14 +194,14 @@ CameraFocus ComputeLocalPlayerCameraFocus(const State& state, const Graphics& gr
         return {};
     }
 
-    const Vec2 anchor_center =
+    const FVec2 anchor_center =
         ents::common::GetVisualCenterForEnt(*anchor_ent, graphics, anchor_ent->GetRenderCenter());
     const float default_zoom = GetDefaultFollowCameraZoom(graphics);
-    Vec2 union_tl = Vec2::New(
+    FVec2 union_tl = FVec2::New(
         std::numeric_limits<float>::max(),
         std::numeric_limits<float>::max()
     );
-    Vec2 union_br = Vec2::New(
+    FVec2 union_br = FVec2::New(
         std::numeric_limits<float>::lowest(),
         std::numeric_limits<float>::lowest()
     );
@@ -217,11 +217,11 @@ CameraFocus ComputeLocalPlayerCameraFocus(const State& state, const Graphics& gr
             continue;
         }
 
-        const Vec2 visual_center =
+        const FVec2 visual_center =
             ents::common::GetVisualCenterForEnt(*player, graphics, player->GetRenderCenter());
-        const Vec2 local_center =
+        const FVec2 local_center =
             anchor_center + GetNearestWorldDelta(state.stage, anchor_center, visual_center);
-        const Vec2 single_camera_target = ClampCameraTargetToStage(state.stage, local_center);
+        const FVec2 single_camera_target = ClampCameraTargetToStage(state.stage, local_center);
         const CameraViewBounds player_view =
             GetCameraViewBounds(graphics, single_camera_target, default_zoom);
         union_tl.x = std::min(union_tl.x, player_view.tl.x);
@@ -260,7 +260,7 @@ CameraFocus ComputeLocalPlayerCameraFocus(const State& state, const Graphics& gr
 } // namespace
 
 void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
-    Vec2 target = GetStageCameraCenter(state.stage);
+    FVec2 target = GetStageCameraCenter(state.stage);
     float zoom = GetDefaultFollowCameraZoom(graphics);
 
     const Ent* camera_target_ent = nullptr;
@@ -281,7 +281,7 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     } else if (camera_target_ent != nullptr && camera_target_ent->active) {
         if (!graphics.debug_lock_play_camera) {
             const CameraFocus local_focus = ComputeLocalPlayerCameraFocus(state, graphics);
-            const Vec2 raw_follow_target =
+            const FVec2 raw_follow_target =
                 local_focus.has_target
                     ? local_focus.target
                     : ents::common::GetVisualCenterForEnt(
@@ -289,7 +289,7 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                           graphics,
                           camera_target_ent->GetRenderCenter()
                       );
-            const Vec2 camera_follow_target =
+            const FVec2 camera_follow_target =
                 RotateWorldPointForActiveWorldRotation(graphics, raw_follow_target);
             if (local_focus.has_target) {
                 zoom = local_focus.zoom;
@@ -297,7 +297,7 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
             if (graphics.world_rotation_active) {
                 graphics.play_cam.pos = camera_follow_target;
             } else {
-                const Vec2 delta = GetNearestWorldDelta(
+                const FVec2 delta = GetNearestWorldDelta(
                     state.stage,
                     graphics.play_cam.pos,
                     camera_follow_target
